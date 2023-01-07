@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>SPS Rebuild Performance Test</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { font-family: monospace; cursor: default; }
+        canvas { z-index: 0; position: absolute; background: #4d5663; width: 100%; height: 100%; }
+        h1 { z-index: 10; position: absolute; color: white; font-size: 14px; margin: 20px; }
+        button { z-index: 10; position: absolute; margin: 20px; top: 30px; }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <h1>0 ms</h1>
+    <button onclick="createSPS()">REBUILD</button>
+<script>
+    const TOTAL = 64000;
+    let SPS = null;
+
+    const tex = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAZABkAAD/7AARRHVja3kAAQAEAAAAUAAA/+EDKmh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8APD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS41LWMwMTQgNzkuMTUxNDgxLCAyMDEzLzAzLzEzLTEyOjA5OjE1ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtbG5zOnhtcD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wLyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpDN0NCMEI3QzdEODMxMUVEQUVGMEQ2OEM4NUQ3QTQzOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpDN0NCMEI3QjdEODMxMUVEQUVGMEQ2OEM4NUQ3QTQzOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgKFdpbmRvd3MpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6QThBMUI3NjM1RkFBMTFFREFBMUQ4QTg1RjNCRUMwN0MiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QThBMUI3NjQ1RkFBMTFFREFBMUQ4QTg1RjNCRUMwN0MiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7/7gAOQWRvYmUAZMAAAAAB/9sAhAACAgICAgICAgICAwICAgMEAwICAwQFBAQEBAQFBgUFBQUFBQYGBwcIBwcGCQkKCgkJDAwMDAwMDAwMDAwMDAwMAQMDAwUEBQkGBgkNCwkLDQ8ODg4ODw8MDAwMDA8PDAwMDAwMDwwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAAQABADAREAAhEBAxEB/8QAbgABAQEAAAAAAAAAAAAAAAAABQIJAQEAAwEAAAAAAAAAAAAAAAADAAEFBhAAAwABAwQCAwAAAAAAAAAAAQIDBBEhBQBBEhOxFCJCBhEAAAUDAwUAAAAAAAAAAAAAAAERIQLwkRJB0QMxUYGh8f/aAAwDAQACEQMRAD8A0H/oszI4yUc37XI0xovMZNaZc0aciPH2BBHVmP6p37dcHySxdxrcZK2vnf2BqctyNeHy+VTOz4y1c8dRMmTik1UlXZTEEHXZl2I6M+QziZkdWCYJIo3c9xeY03pkNAYKyPrpgi2XkUdvUNQzKKaeW347jx+Lk/YSK6rYgFybcdWNWl9VUItphJfIJLsrE2UGmhZqHTxKb79FNKWuoSOS/LD/2Q==";
+    const canvas = document.getElementsByTagName('canvas')[0];
+    const engine = new BABYLON.Engine(canvas, true, {});
+    engine.disablePerformanceMonitorInBackground = true;
+    engine.disableWebGL2Support = false;
+    engine.preserveDrawingBuffer = true;
+    engine.premultipliedAlpha = false;
+    engine.enableOfflineSupport = false;
+    engine.doNotHandleContextLost = true;
+
+    engine.runRenderLoop(function () {
+        scene.render();
+    });
+
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+    //scene.debugLayer.show();
+
+    const camera = new BABYLON.ArcRotateCamera("camera", 0, 0, 10, BABYLON.Vector3.Zero(), scene);
+    camera.setPosition(new BABYLON.Vector3(100, 100, 100));
+    camera.setTarget(BABYLON.Vector3.Zero());
+    camera.attachControl(canvas, true);
+    const ambient = new BABYLON.HemisphericLight("ambient", new BABYLON.Vector3(0, 1, 0), scene);
+
+    const box = BABYLON.MeshBuilder.CreateBox("box");
+
+    function createSPS() {
+        const start = performance.now();
+
+        if (SPS) {
+            SPS.dispose();
+            SPS = null;
+        }
+        SPS = new BABYLON.SolidParticleSystem("SPS", scene, { isPickable: true, updatable: true, expandable: false, boundingSphereOnly: true });
+        SPS.addShape(box, TOTAL);
+
+        const mesh = SPS.buildMesh();
+        const mat = new BABYLON.StandardMaterial("mat");
+        mat.diffuseTexture = new BABYLON.Texture(tex);
+        mat.freeze();
+        mesh.material = mat;
+        mesh.freezeWorldMatrix();
+        mesh.freezeNormals();
+
+        SPS.initParticles = () => {
+            for (let i = 0; i < SPS.nbParticles; i++) {
+                SPS.particles[i].position.x = BABYLON.Scalar.RandomRange(-30, 30);
+                SPS.particles[i].position.y = BABYLON.Scalar.RandomRange(-30, 30);
+                SPS.particles[i].position.z = BABYLON.Scalar.RandomRange(-30, 30);
+            }
+        };
+
+        SPS.initParticles();
+        SPS.setParticles();
+        SPS.refreshVisibleSize();
+        SPS.computeBoundingBox = false;
+        SPS.computeParticleColor = false;
+        SPS.computeParticleRotation = false;
+        SPS.computeParticleTexture = false;
+        SPS.computeParticleVertex = false;
+
+        const end = performance.now();
+        document.getElementsByTagName('h1')[0].innerHTML = end - start + ' ms';
+    }
+
+    createSPS();
+
+    window.addEventListener("resize", function () { 
+        engine.resize();
+    }, false);
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+; Voxel Builder file format (VBX)
+
+[project]
+name=test_symmetry
+
+[data]
+voxels=0,4,0,#CCCCCC,true;-1,4,0,#CCCCCC,true;-3,4,0,#FFADAF,true;-4,4,0,#FFADAF,true;1,4,0,#CCCCCC,true;3,4,0,#FF5256,true;4,4,0,#FF5256,true;0,3,0,#CCCCCC,true;0,1,0,#A4FFB7,true;0,0,0,#A4FFB7,true;-1,3,0,#CCCCCC,true;1,3,0,#CCCCCC,true;0,5,0,#CCCCCC,true;0,7,0,#52FF76,true;0,8,0,#52FF76,true;-1,5,0,#CCCCCC,true;1,5,0,#CCCCCC,true;0,4,-1,#CCCCCC,true;0,4,-3,#A8D0FF,true;0,4,-4,#A8D0FF,true;-1,4,-1,#CCCCCC,true;1,4,-1,#CCCCCC,true;0,3,-1,#CCCCCC,true;0,5,-1,#CCCCCC,true;0,4,1,#CCCCCC,true;0,4,3,#52A3FF,true;0,4,4,#52A3FF,true;-1,4,1,#CCCCCC,true;1,4,1,#CCCCCC,true;0,3,1,#CCCCCC,true;0,5,1,#CCCCCC,true;

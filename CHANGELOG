@@ -1,0 +1,117 @@
+All notable changes to this project will be documented in this file,
+UIX improvement and code management is not included in this file.
+
+[3.9.4]
+- coming soon...
+
+[3.9.3]
+- new workplane, draw anywhere in the space with a transformable workplane!
+- new sphere generator
+- fix color palette (canvas height > 64000px is not supported by chrome)
+- update and speed up fill tool
+- update bakery to respect voxel colors (bind to vertex colors)
+
+[3.9.2]
+- new optional uvs for bakery
+- new axis-view similar to blender
+- ghostvoxels updated to colored thin-instances
+- calc azimuthal angle of the axis-view for drone camera
+- improve renderer and fix ACES tone mapping
+- unify perspective and orthographic zoom
+- make onion-skin persistent
+- speed up dynamic palette generation with a canvas layer (no more ul/li tags)
+- update scene grid, faster and more accurate
+
+[3.9.1]
+- new load from MagicaVoxel .vox file
+- new box-bake
+- new custom confirm dialog (window.confirm deprecated)
+- new renderer show voxels if there is no bake to render
+- change file extension to ".vbx" to prevent conflict
+- speed up box tools preview (from 5 fps to 60 fps)
+- remove marquee tool (save 200 lines)
+- speed up voxel data load time
+- split storage for voxels and bakes
+- speed up voxelization (2x faster)
+- update scene to right-handed system
+- improve rendering and fix SSAO
+
+[3.9.0]
+- new pull-color tool
+- new fixed height for box-add (draw walls)
+- new symmetry support for box-add, box-remove and box-paint tools
+- fix color bucket performance issue
+- fix touch not drawing rapidly
+- fix unwanted undo records on camera movement
+- speed up SPS by eliminating the need for computeParticleColor
+- improve bake to mesh, gamma correct bakery colors
+- improve rendering for all 3 modes
+
+[3.8.9]
+- new box-add, box-remove and box-paint tools
+- new reduce voxels (10x10x10 - 512 deleted = 488 voxels)
+- update file format to a new expandable ini (smaller file size)
+- loader detect old format, your data is safe and automagically updated
+
+[3.8.8]
+- new fill tool with ray caster
+- new quick save and load bakes
+- new pixel-monk joined the party!
+- fix and improve undo/redo
+
+[3.8.7]
+- new post-process settings
+- new import baked meshes from VOX file
+- fix z-fighting (double-sided planes issue)
+- fix debug layer crash and fix exported glb for blender (material string-float issue)
+- fix bakery materials, polish merge tool, respect instances
+- update bakery to single-sided, 50% less vertices, faster and smaller file size
+
+[3.8.6]
+- new interactive merge tool, merge bakes
+- new screenshot with pixel density enhancement
+- fix terrain, missing voxels on higher heights
+- update material and texture workflow
+
+[3.8.5]
+- new photographic reticle and joystick controls for touchscreen (render mode)
+- new bake all and split by color groups
+
+[3.8.4]
+- new baked mesh is clean, no shared faces, grouped by color
+- new electron package for desktop users
+- new save file dialog for chrome browser
+- major bug fixes and code improvements
+
+[3.8.3]
+- improve render pipeline
+- improve camera, add multiple cameras
+
+[3.8.2]
+- new separated modeling and bakery modes
+- improve bakery, baked meshes attached to project and stored in vox file
+- improve hdri and rendering quality
+
+[3.8.1]
+- new integrated asset-viewer (preview/convert/copy model)
+- improve pbr material for baked meshes and exported glb
+
+[3.8.0]
+- new marquee selection tool
+- new orthographic camera
+- improve pbr material with environment and textures
+- user-defined texture slots
+- simplify color layers to just colors!
+
+[3.7.8]
+- new project name for file io
+- new hdri environment for pbr material
+- new isometric generator
+
+[3.7.4]
+- update engine to Babylon 5.0.0+
+- new image voxelization
+- bug 5.x -> workplane/grid -> scaling animation issue
+- bug 5.x -> tool -> transform -> setOverlayCube -> normal scaling issue
+- bug 5.x -> tool -> remove -> ghostVoxel -> another scaling (overlap) issue!
+- bug camera -> framing behavior -> unable to draw at bottom view
