@@ -2,7 +2,10 @@ All notable changes to this project will be documented in this file,
 UIX improvement and code management is not included in this file.
 
 [3.9.4]
-- coming soon...
+- uix improvements
+- new set vertex colors to albedo color
+- update workplane gizmo to reset on selected axis
+in progress...
 
 [3.9.3]
 - new workplane, draw anywhere in the space with a transformable workplane!

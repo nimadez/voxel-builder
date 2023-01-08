@@ -1,6 +1,6 @@
 <!--
     Aug 2019
-    3.9.3 beta 2023
+    3.9.4 beta 2023
     @nimadez
 
     # Voxel Builder
@@ -84,10 +84,10 @@
         input[type=range]::-webkit-slider-thumb:hover { cursor: pointer; }
         input[type=checkbox] { accent-color: steelblue; transform: scale(0.8); margin: 3px 0 3px 0; vertical-align: -2px; }
         input[type=checkbox]:disabled { opacity: 0.5; }
-        input[type=color] { width: 28px; height: 28px; background: none; outline: none; border: none; border-radius: 100%; }
-        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type=color] { width: 28px; height: 28px; border-radius: 3px; background: none; outline: none; border: none; }
+        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border: solid 1px #00000000; }
         input[type=color]::-webkit-color-swatch { border: none; border-radius: 3px; border: solid 1px #444; }
-        input[type=color]:hover { background: white; cursor: pointer; }
+        input[type=color]:hover { background: orange; cursor: pointer; }
         ul { position: absolute; list-style-type: none; }
         ul li { background: var(--btn-bg); color: var(--btn-color); border: 1px solid #161a2096; border-radius: 3px; padding: 2px; text-align: center; }
         ul li:hover, .tool_selector, .tool_bakery_selector { background: orange; color: black; }
@@ -108,7 +108,7 @@
         .menu_R .category { color: var(--cat-color); background: var(--cat-bg); font-size: 10px; letter-spacing: 0.06em; text-align: center; margin: 3px 0 3px 0; padding: 2px 0 2px 0; border-radius: 0; }
         .menu_R .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_R :first-child { cursor: pointer; }
-        .menu_R :first-child span { color: var(--label); letter-spacing: 0.08em; font-size: 10px; font-weight: bold; vertical-align: -4px; }
+        .menu_R :first-child span { color: var(--btn-color); letter-spacing: 0.06em; font-size: 10px; vertical-align: -4px; }
         .menu_R li i:first-child { color: var(--label); margin-top: 6px; }
         .menu_R li:hover i:first-child { color: orange; }
         .menu_L { z-index: 1000; background: #2a2f3a; position: absolute; top: 0; left: 0; padding: 0 6px 6px 6px; width: 100px; height: fit-content; transform: translate(-200px, 0); transition: transform 0.15s ease; box-shadow: 1px 1px 3px #404b58AA; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; }
@@ -118,7 +118,7 @@
         .menu_L .category { color: var(--cat-color); background: var(--cat-bg); font-size: 10px; letter-spacing: 0.06em; text-align: center; margin: 3px 0 3px 0; padding: 2px 0 2px 0; border-radius: 0; }
         .menu_L .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_L :first-child { cursor: pointer; }
-        .menu_L :first-child span { color: var(--label); letter-spacing: 0.08em; font-size: 10px; font-weight: bold; vertical-align: -4px; }
+        .menu_L :first-child span { color: var(--btn-color); letter-spacing: 0.06em; font-size: 10px; vertical-align: -4px; }
         .menu_L li i:first-child { color: var(--label); margin-top: 6px; transform: rotate(180deg); }
         .menu_L li:hover i:first-child { color: orange; }
         #toolbar_C { z-index: 500; width: 200px; left: 50%; margin-left: -100px; top: 3px; text-align: center; }
@@ -127,7 +127,7 @@
         #toolbar_C li:nth-child(1) { border-top-left-radius: 3px; border-bottom-left-radius: 3px; }
         #toolbar_C li:nth-child(3) { border-top-right-radius: 3px; border-bottom-right-radius: 3px; }
         #toolbar_C li.mode_select { background: var(--btn-bg); color: orange; }
-        #toolbar_C_mem { z-index: 500; width: 200px; left: 50%; margin-left: -100px; top: 30px; text-align: center; }
+        #toolbar_C_mem { z-index: 500; width: 200px; left: 50%; margin-left: -100px; top: 28px; text-align: center; }
         #toolbar_C_mem li { display: inline-block; width: 47px; font-size: 10px; color: var(--btn-color); padding: 5px 0 5px 0; margin: 0 -2px 0 -2px; box-shadow: inset 1px 1px 1px #37414e, inset -1px -1px 1px #2f3742; border-radius: 0; cursor: pointer; }
         #toolbar_C_mem li:hover { color: #222; }
         #toolbar_C_mem :nth-child(1) { font-weight: normal; border-top-left-radius: 3px; border-bottom-left-radius: 3px; }
@@ -157,7 +157,7 @@
         #hover li:nth-child(7) { position: absolute; top: -115%; left: -115%; }
         #hover li:nth-child(8) { position: absolute; top: -115%; left: 115%; }
         #hover li:nth-child(9) { position: absolute; top: 125%; left: 0%; }
-        #palette { z-index: 500; width: 40px; background: #31394b20; position: absolute; left: 3px; top: 80px; bottom: 135px; overflow-y: scroll; overflow-x: hidden; }
+        #palette { z-index: 500; width: 41px; background: #31394b20; position: absolute; left: 3px; top: 80px; bottom: 135px; overflow-y: scroll; overflow-x: hidden; }
         #colorpicker { z-index: 500; position: absolute; width: 28px; left: 6px; bottom: 95px; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: absolute; }
         #menu-about .about { font-size: 11px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 5px 5px 0 5px; cursor: help; }
@@ -169,17 +169,17 @@
         #menu-texture img { object-fit: fill; border: solid 1px #6b798d; width: 24px; height: 24px; margin: 0 5px 4px 2px; }
         #btn-symm-axis { color: orange; font-size: 12px; font-weight: bold; }
         #btn-symm-axis:hover { background: var(--input-bg); }
-        #axisview-hitbox { z-index: 500; display: none; width: 40px; height: 40px; position: absolute; right: 30px; bottom: 30px; }
         #btn-helper-symmetry { z-index: 500; display: unset; font-size: 18px; width: 20px; padding: 5px; position: absolute; right: 3px; bottom: 85px; text-align: center; cursor: pointer; }
         #btn-helper-workplane { z-index: 500; display: unset; width: 20px; padding: 5px; position: absolute; right: 3px; bottom: 120px; text-align: center; cursor: pointer; }
         #btn-helper-workplane i { font-size: 18px; color: aqua; opacity: 0.6; }
-        #input-env-background { width: 100%; height: 16px; }
-        #input-env-lightcolor { width: 100%; height: 16px; }
-        #input-material-emissive { width: 100%; height: 16px; }
+        #input-env-background { width: 100%; height: 18px; }
+        #input-env-lightcolor { width: 100%; height: 18px; }
+        #input-material-emissive { width: 100%; height: 18px; }
         #reticle { z-index: 500; display: none; width: 100px; height: 100px; position: absolute; left: 50%; top: 50%; margin-left: -50px; margin-top: -50px; text-align: center; pointer-events: none; }
         #reticle :nth-child(1) { font-size: 12px; color: #00ffff60; line-height: 100px; grid-column: 1; grid-row: 1; }
         #reticle :nth-child(2) { border: solid 1px #cccccc10; margin: 25px; grid-column: 1; grid-row: 1; }
         #reticle :nth-child(3) { border: dashed 1px #cccccc20; border-radius: 50%; transform: scale(1.2); grid-column: 1; grid-row: 1; }
+        #axisview-hitbox { z-index: 500; display: none; width: 40px; height: 40px; position: absolute; right: 30px; bottom: 30px; }
         #appiframe { z-index: 6000; display: none; position: absolute; left: 50%; top: 50%; }
         #info { z-index: 10; color: #97a5b880; font-size: 9px; position: absolute; width: 300px; bottom: 2px; left: 50%; margin-left: -150px; text-align: center; pointer-events: none; }
         #info span { z-index: 10; color: #97a5b8; letter-spacing: 0.05em; }
@@ -298,7 +298,7 @@
         <li class="spacer"></li>
         <li class="about">
             <label>Version</label>
-            <br>3.9.3 Beta 2023
+            <br>3.9.4b Jan-2023
             <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">Repository</a>
             <br><label>Developer</label>
             <br>&#8627; <a href="https://nimadez.github.io/">Nima Dezfuli</a>
@@ -339,7 +339,7 @@
         <li class="category">GRID</li>
         <li>
             <label>&nbsp;X&nbsp;</label> <input id="input-grid-x" type="number" value="10" min="2" max="100"><br>
-            <label>&nbsp;Y&nbsp;</label> <input id="input-grid-y" type="number" value="10" min="2" max="100"><br>
+            <label>&nbsp;Y&nbsp;</label> <input id="input-grid-y" type="number" value="10" min="1" max="100"><br>
             <label>&nbsp;Z&nbsp;</label> <input id="input-grid-z" type="number" value="10" min="2" max="100"><br>
             <button onclick="generator.createGrid()">Grid / Plane</button>
             <button onclick="generator.createSphere()">Sphere</button>
@@ -435,7 +435,7 @@
         <li class="category">CLEAR</li>
         <li><button onclick="bakery.clearBakes(true)">Clear Bakes</button></li>
         <li class="category">OPTIONS</li>
-        <li><input type="checkbox" id="input-bakery-uvs" checked> <label for="input-bakery-uvs">Custom UVs</label></li>
+        <li><input type="checkbox" id="input-bakery-uvs"> <label for="input-bakery-uvs">Per-Face UVs</label></li>
     </ul>
     <ul class="menu_R" id="menu-bakes">
         <li onclick="ui.toggleMenuBakes()"><i class="material-icons">exit_to_app</i> <span>BAKES</span></li>
@@ -447,13 +447,14 @@
         <li><button class="tool_merge" onclick="toolBakery.toolSelector('merge')">Pick</button></li>
         <li><button onclick="toolBakery.mergeBakes()">Merge Selected</button></li>
         <li><button onclick="toolBakery.cancelTools()">Cancel</button></li>
+        <li class="category">MESH</li>
+        <li><button onclick="bakery.updateVertexColors()">Set Vertex Colors</button></li>
     </ul>
     <ul class="menu_L" id="menu-camera">
         <li onclick="ui.toggleMenuCamera()"><i class="material-icons">exit_to_app</i> <span>CAMERA</span></li>
         <li class="category">FOCUS</li>
-        <li><button onclick="camera.frame()">Frame Camera</button></li>
-        <li class="spacer"></li>
         <li><label>Field of View</label> <input id="input-camera-fov" oninput="camera.setFov(this)" type="range" value="0.8" min="0.1" max="1.0" step="0.01"></li>
+        <li><button onclick="camera.frame()">Frame Camera</button></li>
         <li class="category">VIEW</li>
         <li><button id="btn-ortho" onclick="camera.switchOrtho()">Perspective</button></li>
         <li class="category">CONTROLS</li>
@@ -462,15 +463,15 @@
     <ul class="menu_L" id="menu-env">
         <li onclick="ui.toggleMenuEnv()"><i class="material-icons">exit_to_app</i> <span>ENVIRONMENT</span></li>
         <li class="category">BACKGROUND</li>
+        <li><input type="checkbox" id="input-env-bgcheck" onclick="scene.autoClear = this.checked"> <label for="input-env-bgcheck">Enable</label></li>
         <li><input type="color" id="input-env-background" value="#646480"></li>
-        <li><input type="checkbox" id="input-env-bgcheck" onclick="scene.autoClear = this.checked"> <label for="input-env-bgcheck">Use Background</label></li>
         <li class="category">HDRI</li>
         <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
         <li><button onclick="hdri.unloadHDR(true)">Unload</button></li>
-        <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display HDRI</label></li>
+        <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display</label></li>
         <li class="category">LIGHT</li>
         <li><input type="color" id="input-env-lightcolor" value="#CCCCCC"></li>
-        <li><label>Intensity</label><input type="range" value="0.5" min="0" max="1.0" step="0.01" oninput="updateLightIntensity(this.value)"></li>
+        <li><label>Intensity</label><input type="range" value="0.4" min="0" max="1.0" step="0.01" oninput="updateLightIntensity(this.value)"></li>
         <li><label>Angle</label><input type="range" value="120" min="0" max="360" step="10" oninput="updateLightAngles(this.value)"></li>
         <li><input type="checkbox" id="input-display-shadows" onclick="enableShadows(this.checked)" checked> <label for="input-display-shadows">Shadows</label></li>
     </ul>
@@ -754,21 +755,21 @@
         axisHelper.yAxis.parent = cube;
         axisHelper.zAxis.parent = cube;
 
-        let btn = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.45, segments: 5 }, scene);
+        let axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.45, segments: 5 }, scene);
         for (let i = 0; i < 6; i++) {
-            const c = btn.clone();
-            c.renderOverlay = true;
-            c.renderOutline = true;
-            c.outlineWidth = 0.04;
-            c.overlayAlpha = 0.9;
-            c.doNotSyncBoundingInfo = true;
-            c.doNotSerialize = true;
-            c.convertToUnIndexedMesh();
-            c.freezeNormals();
-            viewAxes.push(c);
+            const a = axis.clone();
+            a.renderOverlay = true;
+            a.renderOutline = true;
+            a.outlineWidth = 0.04;
+            a.overlayAlpha = 0.9;
+            a.doNotSyncBoundingInfo = true;
+            a.doNotSerialize = true;
+            a.convertToUnIndexedMesh();
+            a.freezeNormals();
+            viewAxes.push(a);
         }
-        btn.dispose();
-        btn = null;
+        axis.dispose();
+        axis = null;
 
         viewAxes[0].position.x = 0.85;
         viewAxes[0].renderOutline = false;
@@ -1493,7 +1494,7 @@
     // Builder (SPS particles)
     // voxel = {
     //    position: vector3,
-    //    color: #HEXHEX (uppercase/no opacity)
+    //    color: #HEXHEX (uppercase/no alpha)
     //    visible: bool
     // }
 
@@ -1595,7 +1596,7 @@
                 const count = this.removeDuplicates();
                 ui.notification(`found ${ count } duplicates`);
                 engine.hideLoadingUI();
-            }, 100);
+            }, 0);
         }
 
         this.findIndexByPosition = function(pos) {
@@ -1757,7 +1758,7 @@
                 test = null;
                 toDelete = null;
                 engine.hideLoadingUI();
-            }, 100);
+            }, 0);
         }
 
         this.getData = function() { // raw io, used in Memory and Storage
@@ -1810,7 +1811,9 @@
                 this.normalizeVoxelPositions(false);
             if (helper.workPlane.isVisible) {
                 helper.workPlane.isVisible = false;
-                helper.resetWorkplane();
+                helper.resetWorkplane(BABYLON.Axis.X);
+                helper.resetWorkplane(BABYLON.Axis.Z);
+                helper.resetWorkplane(BABYLON.Axis.Y); // important
                 uix.unbindWorkplane();
             }
             ui.updateStatus();
@@ -2000,7 +2003,7 @@
                 this.gridPlane.material.gridRatio = 0.5 / radius;
                 if (this.gridPlane.material.gridRatio < 0.01) // enlarge grid unit
                     this.gridPlane.material.gridRatio *= 2;   // for larger meshes
-            }, 200);
+            }, 0);
         }
 
         this.toggleWorkplane = function() {
@@ -2021,10 +2024,10 @@
             if (axis.z == 1) this.workPlane.rotation.z = PIH;
         }
 
-        this.resetWorkplane = function() {
-            this.workPlane.position = BABYLON.Vector3.Zero();
-            this.workPlane.position.y -= 0.5;
-            this.setWorkPlane(BABYLON.Axis.Y);
+        this.resetWorkplane = function(axis) { // BABYLON.Axis.X
+            if (axis.x == 1) { this.workPlane.position.x = 0;    this.setWorkPlane(BABYLON.Axis.X); }
+            if (axis.y == 1) { this.workPlane.position.y = -0.5; this.setWorkPlane(BABYLON.Axis.Y); }
+            if (axis.z == 1) { this.workPlane.position.z = 0;    this.setWorkPlane(BABYLON.Axis.Z); }
         }
 
         this.setAxisPlane = function(axis, pos) { // BABYLON.Axis.X
@@ -2680,7 +2683,7 @@
                 helper.clearGhostVoxels();
                 setTimeout(() => { // a little hack to prevent last ghost/overlay
                     helper.clearOverlays(); // in touchscreen
-                }, 100);
+                }, 0);
                 ui.domMarquee.style = "display: none; left: 0; top: 0; width: 0; height: 0;";
                 ui.updateStatus();
             }
@@ -2911,7 +2914,7 @@
         }
 
         this.deleteHalf = function(side) { // preserve 0 borders, prevent duplicates at the middle
-            let p = null; // reminder: 0.00000001 for vertex, voxel is 1.0, >=0.1 is more than enough!
+            let p = null; // modo reminder: 0.00000001 for vertex, voxel is 1.0, >=0.1 is more than enough!
             for (let i = 0; i < builder.SPS.particles.length; i++) {
                 p = builder.SPS.particles[i].position;
                 if (this.axis == 'x') {
@@ -3145,6 +3148,7 @@
             builder.loadData(data, false, false);
             memory.clear();
             symmetry.resetAxis();
+            bakery.clearBakes();
             camera.frame();
             data = null;
         }
@@ -3167,6 +3171,7 @@
             builder.loadData(data, false, false);
             memory.clear();
             symmetry.resetAxis();
+            bakery.clearBakes();
             camera.frame();
             data = null;
         }
@@ -3193,8 +3198,9 @@
             if (data.length > MAXAMOUNT)
                 ui.notification('warning: 64k voxel limit', 5000);
             builder.loadData(data, false, true);
-            symmetry.resetAxis();
             memory.clear();
+            symmetry.resetAxis();
+            bakery.clearBakes();
             camera.frame();
             pos = null;
             data = null;
@@ -3231,6 +3237,7 @@
             builder.loadData(data, true, true);
             memory.clear();
             symmetry.resetAxis();
+            bakery.clearBakes();
             camera.frame();
             data = null;
         }
@@ -3281,7 +3288,7 @@
                 ui.updateStatus();
                 updateShadowMap();
                 engine.hideLoadingUI();
-            }, 100);
+            }, 0);
         }
 
         this.bakeColor = function(hex) {
@@ -3306,7 +3313,7 @@
                 ui.updateStatus();
                 updateShadowMap();
                 engine.hideLoadingUI();
-            }, 100);
+            }, 0);
         }
 
         this.bakeAllColors = async function() {
@@ -3326,7 +3333,7 @@
                 ui.updateStatus();
                 updateShadowMap();
                 engine.hideLoadingUI();
-            }, 100);
+            }, 0);
         }
 
         this.cloneSelected = function() {
@@ -3557,6 +3564,23 @@
             }
         }
 
+        this.updateVertexColors = async function(hex = currentColor) {
+            if (this.selected) {
+                if (!await ui.showConfirm('Set all vertex colors<br>to albedo color, continue?')) return;
+                let positions = this.selected.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+                let colors = [];
+                const rgb = hexToRgbFloat(hex);
+                for (let i = 0; i < positions.length/3; i++) {
+                    colors.push(rgb.r, rgb.g, rgb.b, 1);
+                }
+                this.selected.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
+                positions = null;
+                colors = null;
+            } else {
+                ui.notification('select a bake');
+            }
+        }
+
         this.loadBakes = function(url, isLoadBakery) {
             engine.displayLoadingUI();
             BABYLON.SceneLoader.LoadAssetContainerAsync("", url, scene, null, '.glb')
@@ -3605,7 +3629,7 @@
         }
 
         this.reconstructMesh = function(name, isTestColor, voxels) {
-            const isCustomUVs = ui.domBakeryFaceUvs.checked;
+            const isPerFaceUV = ui.domBakeryPerFaceUvs.checked;
             let planes = [];
             let colors = [];
             let plane = null;
@@ -3614,7 +3638,7 @@
             function createSide(index, side, position, nearby, rotX, rotY, colors) {
                 idx = builder.findIndexByPosition(voxels[index].position.add(nearby));
                 if (idx == -1) { // test by side
-                    plane = createPlane(side, isCustomUVs);
+                    plane = createPlane(side, isPerFaceUV);
                     plane.position = voxels[index].position.add(position);
                     plane.rotation.x = rotX;
                     plane.rotation.y = rotY;
@@ -3623,7 +3647,7 @@
                 } else { // test by color
                     if (isTestColor) {
                         if (voxels[index].color !== builder.voxels[idx].color) {
-                            plane = createPlane(side, isCustomUVs);
+                            plane = createPlane(side, isPerFaceUV);
                             plane.position = voxels[index].position.add(position);
                             plane.rotation.x = rotX;
                             plane.rotation.y = rotY;
@@ -3675,21 +3699,21 @@
             return mesh;
         }
 
-        function createPlane(side, isCustomUVs) {
+        function createPlane(side, isPerFaceUV) {
             let indices = [ 0, 1, 2, 0, 2, 3 ];
             let positions = [ -0.5, -0.5, 0, 0.5, -0.5, 0, 0.5,  0.5, 0, -0.5,  0.5, 0 ];
             let normals = [ 0, 0, -1.0, 0, 0, -1.0, 0, 0, -1.0, 0, 0, -1.0 ];
             
             let uvs = [];
-            if (isCustomUVs) {
+            if (isPerFaceUV) {
+                uvs = [ 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0 ];
+            } else {
                 if (side == 'right')  uvs.push(1,1/3, 0,1/3,  0,2/3, 1,2/3);
                 if (side == 'left')   uvs.push(1,1/3, 0,1/3,  0,2/3, 1,2/3);
                 if (side == 'top')    uvs.push(0,1,   1,1,    1,2/3, 0,2/3);
                 if (side == 'bottom') uvs.push(0,1/3, 1,1/3,  1,0,   0,0);
                 if (side == 'front')  uvs.push(1,1/3, 0,1/3,  0,2/3, 1,2/3);
                 if (side == 'back')   uvs.push(1,1/3, 0,1/3,  0,2/3, 1,2/3);
-            } else {
-                uvs = [ 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0 ];
             }
 
             BABYLON.VertexData._ComputeSides(BABYLON.VertexData.FRONTSIDE, positions, indices, normals, uvs);
@@ -4067,7 +4091,7 @@
                 chunks = null;
                 buffer = null;
                 engine.hideLoadingUI();
-            }, 100);
+            }, 0);
         }
     }
     
@@ -4136,7 +4160,7 @@
         this.domPipelineChromatic = document.getElementById('input-pipeline-chromatic');
         this.domHdriToggle = document.getElementById('input-hdri-toggle');
         this.domCamFov = document.getElementById('input-camera-fov');
-        this.domBakeryFaceUvs = document.getElementById('input-bakery-uvs');
+        this.domBakeryPerFaceUvs = document.getElementById('input-bakery-uvs');
         this.domAutoRotation = document.getElementById('input-autorotate');
         this.domMaterialAutoUpdate = document.getElementById('input-material-autoupdate');
         this.domTexturePresets = document.getElementById('texturepresets');
@@ -4172,7 +4196,8 @@
             this.domColorPickerGlobal.addEventListener('input', (ev) => {
                 currentColor = ui.domColorPickerGlobal.value.toUpperCase();
                 uix.colorPicker.value = BABYLON.Color3.FromHexString(currentColor);
-                if (MODE == 1) bakery.setMaterial('albedo'); // update material
+                if (MODE == 1)
+                    bakery.setMaterial('albedo'); // update material
             }, false);
 
             this.domColorPickerEmissive.addEventListener('input', (ev) => {
@@ -4554,7 +4579,7 @@
 
         this.resizeAppIframe = function() {
             const width = canvas.width / 1;
-            const height = canvas.height / 1.2;
+            const height = canvas.height / 1.1;
             this.domAppIframe.parentElement.style.width = width + 'px';
             this.domAppIframe.parentElement.style.height = height + 'px';
             this.domAppIframe.parentElement.style.marginLeft = -(width/2) + 'px';
@@ -4717,7 +4742,7 @@
 
             this.gizmo.gizmos.positionGizmo.scaleRatio = 0.8;
             this.gizmo.gizmos.positionGizmo.snapDistance  = 0.5;
-            this.gizmo.gizmos.positionGizmo.planarGizmoEnabled = true;
+            this.gizmo.gizmos.positionGizmo.planarGizmoEnabled = false;
             this.gizmo.gizmos.positionGizmo.updateGizmoRotationToMatchAttachedMesh = true;
             [this.gizmo.gizmos.positionGizmo.xGizmo,
              this.gizmo.gizmos.positionGizmo.yGizmo,
@@ -4726,17 +4751,8 @@
                     updateShadowMap();
                 });
             });
-            [this.gizmo.gizmos.positionGizmo.xPlaneGizmo,
-             this.gizmo.gizmos.positionGizmo.yPlaneGizmo,
-             this.gizmo.gizmos.positionGizmo.zPlaneGizmo].forEach((gizmo) => {
-                gizmo.scaleRatio = 0.5;
-                gizmo.snapDistance = 0.1;
-                gizmo.dragBehavior.onDragEndObservable.add(() => {
-                    updateShadowMap();
-                });
-            });
             
-            this.gizmo.gizmos.rotationGizmo.scaleRatio = 0.45;
+            this.gizmo.gizmos.rotationGizmo.scaleRatio = 0.4;
             this.gizmo.gizmos.rotationGizmo.snapDistance = Math.PI / 8;
             this.gizmo.gizmos.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
             [this.gizmo.gizmos.rotationGizmo.xGizmo,
@@ -4801,14 +4817,33 @@
             this.workplaneGizmos[2].dragBehavior.onDragEndObservable.add(() => {
                 helper.workPlane.visibility = 0.3;
             });
-            this.workplaneGizmos[3] = new BABYLON.AxisScaleGizmo(BABYLON.Axis.Y, new BABYLON.Color3(1,1,0), this.utilLayer, undefined, 20);
-            this.workplaneGizmos[3].scaleRatio = -0.12;
+
+            this.workplaneGizmos[3] = new BABYLON.AxisScaleGizmo(BABYLON.Axis.X, new BABYLON.Color3(1,1,0), this.utilLayer, undefined, 5);
+            this.workplaneGizmos[3].scaleRatio = -0.3;
             this.workplaneGizmos[3].attachedMesh = helper.workPlane;
             this.workplaneGizmos[3].updateGizmoRotationToMatchAttachedMesh = false;
             this.workplaneGizmos[3].dragBehavior.onDragStartObservable.add(() => {
                 uix.workplaneGizmos[3].dragBehavior.releaseDrag();
                 tool.toolSelector('camera');
-                helper.resetWorkplane();
+                helper.resetWorkplane(BABYLON.Axis.X);
+            });
+            this.workplaneGizmos[4] = new BABYLON.AxisScaleGizmo(BABYLON.Axis.Y, new BABYLON.Color3(1,1,0), this.utilLayer, undefined, 5);
+            this.workplaneGizmos[4].scaleRatio = -0.3;
+            this.workplaneGizmos[4].attachedMesh = helper.workPlane;
+            this.workplaneGizmos[4].updateGizmoRotationToMatchAttachedMesh = false;
+            this.workplaneGizmos[4].dragBehavior.onDragStartObservable.add(() => {
+                uix.workplaneGizmos[4].dragBehavior.releaseDrag();
+                tool.toolSelector('camera');
+                helper.resetWorkplane(BABYLON.Axis.Y);
+            });
+            this.workplaneGizmos[5] = new BABYLON.AxisScaleGizmo(BABYLON.Axis.Z, new BABYLON.Color3(1,1,0), this.utilLayer, undefined, 5);
+            this.workplaneGizmos[5].scaleRatio = -0.3;
+            this.workplaneGizmos[5].attachedMesh = helper.workPlane;
+            this.workplaneGizmos[5].updateGizmoRotationToMatchAttachedMesh = false;
+            this.workplaneGizmos[5].dragBehavior.onDragStartObservable.add(() => {
+                uix.workplaneGizmos[5].dragBehavior.releaseDrag();
+                tool.toolSelector('camera');
+                helper.resetWorkplane(BABYLON.Axis.Z);
             });
         }
 
@@ -5117,9 +5152,9 @@
     
     const easingFunction = new BABYLON.CubicEase();
     easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-    function animator(target, property, from, to, fps=10, totalFrames=10, callback=null) {
+    function animator(target, property, from, to, fps=10, frames=10, callback=null) {
         BABYLON.Animation.CreateAndStartAnimation('animator',
-            target, property, fps, totalFrames, from, to, 0, easingFunction, callback);
+            target, property, fps, frames, from, to, 0, easingFunction, callback);
     }
 
     function updateShadowMap() {
@@ -5200,18 +5235,16 @@
     }
 
     function createScreenshot(scale = 3) {
-        if (MODE !== 2) { // compatible with MODE==2 only
-            ui.notification('switch to render mode');
-            return;
-        }
         if (isMobileDevice()) scale = 2;
         const canvasWidth = canvas.width;   // take shot twice larger
         const canvasHeight = canvas.height; // to improve pixel density
         engine.setSize(canvasWidth * scale, canvasHeight * scale);
-        isRenderAxisView = false; // hide axisview
-        BABYLON.ScreenshotTools.CreateScreenshotWithResizeAsync(engine, camera.camera2,
-            canvasWidth * scale, canvasHeight * scale).then((data) => {
+        isRenderAxisView = false;
+        uix.colorPicker.isVisible = false;
+        BABYLON.ScreenshotTools.CreateScreenshotWithResizeAsync(engine,
+            scene.activeCamera, canvasWidth * scale, canvasHeight * scale).then((data) => {
                 isRenderAxisView = true;
+                uix.colorPicker.isVisible = true;
                 engine.setSize(canvasWidth, canvasHeight);
         });
     }
@@ -5220,6 +5253,7 @@
         engine.clearInternalTexturesCache();
         scene.cleanCachedTextureBuffer();
         BABYLON.Tools.ClearLogCache();
+        memory.clear();
         ui.notification('cache cleared');
     }
 
@@ -5617,7 +5651,7 @@
     ui.domHelp.innerHTML = `
         <img width="100%" src="https://repository-images.githubusercontent.com/565157149/a9fc7534-727b-4b8c-8f5d-03fa42091f0b">
         <br><h1>Voxel-based 3D modeling application</h1>
-        <br>A 3D modeling application for designers, artists and architects, to explore and develop ideas quickly, easily, and creatively, written in JavaScript using Babylon.js and available for both desktop and mobile devices.
+        <br>A 3D modeling application for designers, artists and architects, to explore and develop ideas quickly, easily, and creatively, written in JavaScript using Babylon.js and available for both desktop and mobile devices
         <br>
         <br><b>MODEL</b> - Create, manipulate, draw and paint voxel particles
         <br><b>BAKE</b> - Bake voxel particles into mesh, transform, replicate and setup materials
@@ -5637,13 +5671,14 @@
         <br>- Load from <a href="https://ephtracy.github.io/"><b>MagicaVoxel</b></a> <i>(voxel and color supported)</i>
         <br>- Export Voxels to GLB <i>(no grid texture, triangulated mess)</i>
         <br>- Export Bakes to GLB <i>(textures and materials included, support Blender)</i>
-        <br>- Take pixel perfect screenshot to PNG
+        <br>- Take pixel perfect screenshot to PNG <i>(support all three modes)</i>
         <br>- Import baked meshes from VBX file <i>(to import bakes from multiple files)</i>
         <br>- Support file drag and drop (VBX, VOX, OBJ, HDR, PNG/JPG/SVG)
         <br><i>* baked meshes stored as GLB in a VBX file</i>
         <br>
         <br><b>Local storage</b>
         <br>- Quick save and load support voxels and bakes <i>(topbar buttons)</i>
+        <br><i>* remember to save both, they stored in different storages</i>
         <br>- Undo/redo supported by voxels, not bakes <i>(may change)</i>
         <br>- Data stored in the browser's history
         <br>- Memory support drawing, painting, symmetry, and respect hidden voxels
@@ -5655,7 +5690,8 @@
         <br>- Create grid, plane, sphere or oval
         <br>- Create isometric room
         <br>- Create random terrain
-        <br><i>* use "box add" with fixed "height" to draw walls</i>
+        <br><i>* generator resets scene, it is equal to a new project</i>
+        <br><i>* use "box add" with optional "height" to draw walls</i>
         <br><i>* sphere/oval is not filled</i>
         <br>
         <br><b>3D Voxelization</b>
@@ -5689,10 +5725,10 @@
         <br>- Add: add new voxels <i>(symmetry supported)</i>
         <br>- Remove: delete voxels <i>(symmetry supported)</i>
         <br>- Box Add: add voxels by drawing a box <i>(symmetry supported)</i>
-        <br><i>* set fixed "height" to draw walls</i>
+        <br><i>* set "height" to larger than 0 (zero) to draw walls</i>
         <br><i>* draw line and connect two voxels at far distance as well</i>
         <br>- Box Remove: remove voxels by drawing a box <i>(symmetry supported)</i>
-        <br>- Fill <span class="flag">[slow]</span>: add a cluster of voxels to fill by rectangle area
+        <br>- Fill (slow): add a cluster of voxels to fill by rectangle area
         <br><i>* selection based on camera view, set camera angle carefully</i>
         <br><i>* use orthographic views to improve accuracy</i>
         <br><i>* use "workplane" to expand the selection area, make it easier to fill corners</i>
@@ -5701,7 +5737,7 @@
         <br><i>* this tool overlap voxels in most cases, use "kill duplicates"</i>
         <br>- Workplane: draw anywhere in the space with a transformable workplane!
         <br><i>* support "add", "box add" and "fill" tools (include symmetry)</i>
-        <br><i>* hit yellow gizmo to reset workplane</i>
+        <br><i>* hit yellow gizmo to reset workplane on selected axis</i>
         <br><br><img src="https://github.com/nimadez/voxel-builder/raw/main/media/workplane.jpg?raw=true">
         <br>
         <br><b>Painting</b>
@@ -5711,10 +5747,10 @@
         <br>- Eyedropper: pick a voxel color, not a pixel color!
         <br>
         <br><b>Voxels</b>
-        <br>- Onion Skin: show transparent voxels
+        <br>- Onion Skin: display transparent voxels
         <br>- Normalize Voxel Positions: transform model to center and drop the base to the floor
         <br>- Reduce Voxels: remove all the voxels between the voxels <i>(1 voxel deleted in a 3x3x3 cube)</i>
-        <br>- Kill Duplicates: remove all the duplicated voxels <i>(not supposed to happen by machine)</i>
+        <br>- Kill Duplicates: remove all the duplicated voxels <i>(not supposed to happen by code)</i>
         <br>- Box Hide: hide voxels by drawing a box, hide single voxel as well
         <br>- Hide Color: hide voxels by picking voxels color
         <br>- Visibility options: use visibility options to access underlying voxels
@@ -5733,8 +5769,8 @@
         <br>- Box Bake: bake by drawing a box <i>(bake a part)</i>
         <br><i>* mesh is not closed when cutting color groups</i>
         <br>- Bake All Colors: clear and bake all voxels grouped by colors <i>(bake multiple parts)</i>
-        <br>- Custom UVs: define output uvs, default 1:3 ratio, or basic square <i>(power of two)</i>
-        <br><i>* unable to use the patterns and texture presets when unchecked</i>
+        <br>- Per-Face UVs: define texture coordinates, custom 1:3 UVs, or per-face UVs
+        <br><i>* unable to use the patterns and texture presets when checked</i>
         <br><br><img src="https://github.com/nimadez/voxel-builder/raw/main/media/bakery_faces.jpg?raw=true">
         <br>
         <br><b>Replicate and merge bakes</b>
@@ -5743,6 +5779,7 @@
         <br><i>* they removed by deleting the source (unless reloading the file)</i>
         <br>- Merge Tool: click on pick button, select/deselect bakes, then hit merge!
         <br><i>* unable to merge instances, multi-material is not supported yet</i>
+        <br>- Set Vertex Colors: set all vertex colors to albedo color
         <br>
         <br><b>Setup PBR material</b>
         <br>- Albedo, roughness, metallic, emissive and alpha properties
@@ -5750,9 +5787,9 @@
         <br>- Use color pickers to update albedo color
         <br>
         <br><b>Import textures</b>
-        <br>- Imported texture is not persistent, but attached to bake material and restored
+        <br>- Imported texture is not persistent, but attached to material and restored
         <br>- Custom UV Texture: PNG 8-bit 16x48 or larger <i>(1:3 ratio, bottom:bottom|sides:middle|top:top)</i>
-        <br>- Square UV Texture: All square images <i>(power of two)</i>
+        <br>- Per-Face UV Texture: All square images <i>(power of two)</i>
         <br><br><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAwCAMAAAAvgQplAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTZCMzVFRUU4MzEwMTFFRDlBNzFFMTE4QzM2RUY4NUMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTZCMzVFRUQ4MzEwMTFFRDlBNzFFMTE4QzM2RUY4NUMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmE2MjNhNDkzLTgxYTMtZTY0NS1hNjkzLWIxMGJlN2ZkYTZiNyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6Pyqi/AAAAKlBMVEX54OL2+/1trUjx+Pz9/v/N6Pbd7/nY7fiKvHG31Kn///8bq+BiqDffACRQL3/wAAAAaklEQVR42syQSxKAMAhD8a+h3v+6dqgzYnRa3JkdrxBIZSdJDOCU7xDQyG9BJVwixYH9xwVWKxwoj24E5IHvYGPwsoXvSD1dWg2npCiwHYsHneqE8Q5yWwOU2ptCWx7KYH6YDmQaDXcIMADj0yJr4nQMSAAAAABJRU5ErkJggg==">
         <br>
         <br><h1>RENDER</h1>

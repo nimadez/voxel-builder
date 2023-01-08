@@ -3,12 +3,12 @@
 ![banner](https://repository-images.githubusercontent.com/565157149/a9fc7534-727b-4b8c-8f5d-03fa42091f0b "banner")
 
 ### **Voxel-based 3D modeling application**
-A 3D modeling application for designers, artists and architects, to explore and develop ideas quickly, easily, and creatively, written in JavaScript using Babylon.js and available for both desktop and mobile devices.
+A 3D modeling application for designers, artists and architects, to explore and develop ideas quickly, easily, and creatively, written in JavaScript using Babylon.js and available for both desktop and mobile devices
 
-**Version 3.9.3 Beta 2023**
+**Version 3.9.4 Beta 2023**
 
 [ [Try now](https://nimadez.github.io/voxel-builder) ]<br>
-[Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG) | [Bug report](https://github.com/nimadez/voxel-builder/issues/) | [Feature request](https://github.com/nimadez/voxel-builder/discussions/categories/feature-requests/) | [Submit artwork](https://github.com/nimadez/voxel-builder/discussions/categories/submit-artworks)
+[Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG) | [Bug report](https://github.com/nimadez/voxel-builder/issues/) | [Discussions](https://github.com/nimadez/voxel-builder/discussions/)
 
 ## Features
 
@@ -27,14 +27,12 @@ A 3D modeling application for designers, artists and architects, to explore and 
 - Axis view *(similar to Blender)*
 - Bake voxel particles into mesh
 - Clone, instance, replicate, merge bakes and parts
-- Simple PBR rendering, HDR images, camera and post-process settings
+- Simple PBR rendering, HDR image, camera and post-process settings
 - WASD controls on desktop, joystick controls on touchscreen
 - Asset viewer *(load OBJ, GLB, STL, FBX, HDR, EXR, export OBJ/GLB)*
 - Pixel Monk *(integrated pixel editor)*
 - Clean handcrafted user-interface
 - Single HTML file
-
-###### ***This application is under active development<br>Check "Documentation" for details<br>Documentation is constantly updated to cover new changes***
 
 ##### ***Supported Platforms***
 - Electron
@@ -53,13 +51,14 @@ Cons: unable to remove shared faces
 [ Max. 64.000 (40x40x40) Voxel Particles ]
 You may go up to 256K but you can't interact with voxels:
 - Picking issue (need a GPU picking shader)
-- SPS rebuild delay (the CPU issue)
-Workaround: bake to mesh, 64K voxels per bake!
+- SPS rebuild delay (CPU issue)
 
 https://nimadez.github.io/voxel-builder/tests/sps-pick
 https://nimadez.github.io/voxel-builder/tests/sps-rebuild
 Pick test: 24 fps | Rebuild test: 800~1000 ms delay
 (Intel Core i5 8600K 3.6Ghz, nVidia GTX-1050-Ti 4GB)
+
+Workaround: bake to mesh, 64K voxels per bake!
 
 [ The Challenge ]
 Minimum dependency, single "index.html" file

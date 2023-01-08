@@ -63,9 +63,9 @@
         button { background: #303947; color: #9aaabd; box-shadow: inset 1px 1px 1px #37414e, inset -1px -1px 1px #2f3742; border-radius: 3px; padding: 5px 0 5px 0; border: 1px solid #161a2040; }
         button:hover { background: indianred; color: #222; cursor: pointer; }
         button:disabled { background: #303947; opacity: 0.5; pointer-events: none; }
-        input[type=color] { width: 90%; height: 15px; border: none; vertical-align: middle; }
+        input[type=color] { width: 60px; height: 25px; background: transparent; border: none; vertical-align: middle; }
         input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type=color]::-webkit-color-swatch { border: none; }
+        input[type=color]::-webkit-color-swatch { border: none; border-top-left-radius: 5px; border-top-right-radius: 5px; }
         input[type=color]:hover { cursor: pointer; }
         input[type=range] { accent-color: cadetblue; width: 100%; height: 2px; vertical-align: middle; }
         input[type=range]::-webkit-slider-thumb { transform: scale(0.8); }
@@ -105,9 +105,6 @@
         #hover li:last-child { width: 100%; padding: 0 3px 5px 3px; cursor: crosshair; }
         #hover input[type=range] { width: 60px; }
         #hover input[type=range]::-webkit-slider-thumb { transform: scale(1); }
-        #hover input[type=color] { width: 60px; height: 25px; border-top-left-radius: 20px; border-top-right-radius: 20px; }
-        #hover input[type=color]::-webkit-color-swatch-wrapper { border-top-left-radius: 5px; border-top-right-radius: 5px; }
-        #hover input[type=color]::-webkit-color-swatch { border: none; border-top-left-radius: 5px; border-top-right-radius: 5px; }
         #dynamicpalette { z-index: 500; display: none; background: #000000AA; width: 100px; height: 200px; position: absolute; left: 0; bottom: 0; overflow-y: scroll; line-height: 0; }
         #dynamicpalette li { border: solid 1px #333; display: inline-block; width: 26px; height: 26px; border-radius: 0; }
         #dynamicpalette li:hover { border: solid 1px indianred; }

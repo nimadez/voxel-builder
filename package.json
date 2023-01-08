@@ -1,6 +1,6 @@
 {
     "name": "voxel-builder",
-    "version": "3.9.3",
+    "version": "3.9.4",
     "description": "Voxel-based 3D modeling application",
     "main": "main.js",
     "scripts": {
