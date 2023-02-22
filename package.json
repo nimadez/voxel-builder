@@ -1,0 +1,15 @@
+{
+    "name": "voxel-builder",
+    "version": "3.9.5",
+    "description": "Voxel-based 3D modeling application",
+    "main": "main.js",
+    "scripts": {
+      "start": "electron ."
+    },
+    "repository": "https://github.com/nimadez/voxel-builder",
+    "author": "@nimadez",
+    "license": "MIT",
+    "devDependencies": {
+      "electron": "^18.0.0"
+    }
+}
