@@ -1304,11 +1304,9 @@
             this.textures[3] = this.createTexture('texpat3', texpat3, BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR);
             numDefTex = this.textures.length;
 
-            this.addTexture(tex0); // import samples
-            this.addTexture(tex1);
-            this.addTexture(tex2);
-            this.addTexture(tex3);
-            this.addTexture(tex4);
+            // import samples
+            const tex_ = [tex0,tex1,tex2,tex3,tex4];
+            for (const t in tex_){this.addTexture(tex_[t]);}
 
             this.tex_cel = this.createVoxelTexture('#000000');
             this.setPBRTexture(); //def: 1
