@@ -1,0 +1,4 @@
+* linguist-vendored
+*.js linguist-vendored=false
+libs/*.js binary
+samples/*.vbx binary
