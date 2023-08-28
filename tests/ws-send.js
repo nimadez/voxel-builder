@@ -1,3 +1,7 @@
+//
+// Websockets server test
+// requirement: npm install ws
+//
 const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: 8011 });
@@ -28,7 +32,7 @@ wss.on("connection", (ws) => {
     ws.on("message", () => {
         setTimeout(() => {
             beat(ws);
-        }, 1000/30);
+        }, 1000/10);
     });
     
     ws.on("close", () => {
