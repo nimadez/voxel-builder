@@ -5,8 +5,8 @@
 #define MAXSAMPLES 4096
 #define RAY_OFFSET 1e-5
 
+uniform vec2 uResolution;
 uniform int uSamples;
-uniform float uFov;
 uniform float uAperture;
 uniform float uFocalLength;
 uniform int uBounces;
@@ -18,14 +18,16 @@ uniform float uEnvPower;
 uniform vec3 uEmissive;
 uniform float uMetallic;
 uniform bool uFastMode;
+uniform int uRenderPassId;
 
-uniform mat4 cameraWorldMatrix;
-uniform mat4 invProjectionMatrix;
+uniform BVH bvh;
 uniform sampler2D normalAttribute;
 uniform sampler2D colorAttribute;
 uniform sampler2D uvAttribute;
-uniform usampler2D materialIndexAttribute;
-uniform BVH bvh;
+//uniform usampler2D materialIndexAttribute;
+
+uniform mat4 cameraWorldMatrix;
+uniform mat4 invProjectionMatrix;
 uniform float seed;
 
 varying vec2 vUv;
@@ -37,14 +39,14 @@ struct Camera {
     vec3 forward;
     vec3 origin;
     float fov;
-    float focalLength;
     float aperture;
+    float focalLength;
     float nearPlane;
     float farPlane;
 };
 Camera cam = Camera(
     vec3(0),vec3(0),vec3(0),vec3(0),
-    1.0, 100.0, 0.0, 0.01, 1000.0
+    1.0, 0.0, 50.0, 0.01, 1000.0
 );
 
 struct HitResult {
@@ -57,7 +59,6 @@ struct HitResult {
 };
 
 
-// TODO: this hash is not robust for unbiased rendering
 float hash(float s) { return fract(sin(s)*43758.5453); }
 
 float blueNoise() {
@@ -79,17 +80,15 @@ vec3 cosineHemisphere(vec3 n, float seed) {
     float b = 2.0*u-1.0;  // by @fizzer
     vec3 dir = vec3(sqrt(1.0-b*b)*vec2(cos(a),sin(a)),b);
     return n + dir;
+    //return uniformVector(seed) + n;
 }
-//vec3 cosineHemisphere(vec3 n, float seed) {
-//    return uniformVector(seed) + n; // to compare results
-//}
 
-vec3 background(vec3 rd, float k) { // equalize to babylon.js skybox
-    return k * pow(texture(uCubeMap, vec3(rd.x, -rd.y, rd.z)).rgb, vec3(0.7));
+vec3 background(vec3 rd, float a) { // equalized to bjs skybox
+    return a * pow(texture(uCubeMap, vec3(rd.x, -rd.y, rd.z)).rgb, vec3(0.7));
 }
 
 vec3 imageBasedLighting(vec3 rd, float k) {
-    return k * texture(uCubeMap, vec3(rd.x, -rd.y, rd.z)).rgb;
+    return k * clamp(texture(uCubeMap, vec3(rd.x, -rd.y, rd.z)).rgb, 0.0,1.0);
 }
 
 void adaptCamera(mat4 mat) {
@@ -97,7 +96,7 @@ void adaptCamera(mat4 mat) {
     cam.up      = vec3(mat[1][0], mat[1][1], mat[1][2]);
     cam.forward = vec3(mat[2][0], mat[2][1], mat[2][2]);
     cam.origin  = vec3(mat[3][0], mat[3][1], mat[3][2]);
-    cam.fov     = uFov;
+    //cam.fov     = 2.0 * atan(invProjectionMatrix[1][1]) * 180.0 / PI;
     cam.aperture = uAperture;
     cam.focalLength = uFocalLength;
 }
@@ -107,69 +106,84 @@ vec4 pathtrace(vec3 ro, vec3 rd, float seed) {
     vec3 att = vec3(1); // attenuation
 
     HitResult hit;
-    float firstDepth;
+    vec3 point;
+    float totalDist;
+    float firstDepth = cam.nearPlane;
+
+    vec3 normal;
+    vec3 color;
+    vec2 uv;
+    //uint materialIndex;
 
     for (int b = 0; b < uBounces; b++) {
 
-        if (bvhIntersectFirstHit(bvh, ro, rd, hit.faceIndices, hit.faceNormal, hit.barycoord, hit.side, hit.dist)) {
-            if (b == 0) {
-                firstDepth = hit.dist;
-
-                if (hit.dist > cam.farPlane * 10.0) {
-                    acc = background(rd, 1.0);
-                    break;
-                }
-            }
-
-            uint materialIndex = uTexelFetch1D(materialIndexAttribute, hit.faceIndices.x).r;
-            vec3 color = hit.side * textureSampleBarycoord(colorAttribute, hit.barycoord, hit.faceIndices.xyz).xyz;
-
-            // pure black object is emissive (materialIndex == 0u)
-            if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
-                float k = 15.0 * 15.0;
-                acc += att * uEmissive * k;
-                break;
-            }
-
-            vec3 point = ro + rd * hit.dist;
-            vec3 absPoint = abs(point);
-            float maxPoint = max(absPoint.x, max(absPoint.y, absPoint.z));
-            ro = point + hit.faceNormal * (maxPoint + 1.0) * RAY_OFFSET;
-
-            vec3 normal = hit.side * textureSampleBarycoord(normalAttribute, hit.barycoord, hit.faceIndices.xyz).xyz;
-            vec2 uv = hit.side * textureSampleBarycoord(uvAttribute, hit.barycoord, hit.faceIndices.xyz).xy;
-            color *= color;
-
-            float cseed = seed + 63.2981*float(b);
-
-            if (materialIndex == 1u) {
-                // ideal lambert
-                rd = normalize(cosineHemisphere(normal * hash(cseed+68.4523), cseed));
-                float pdf = dot(normal, rd) * (1.0 / PI);
-                att *= pdf * (color + texture2D(uTexture, uv).rgb);
-            } else if (materialIndex == 2u) {
-                // ideal metallic
-                float g = clamp(1.0-uMetallic, 0.0,1.0);
-                g = g * g;
-                rd = normalize(reflect(rd, normal)) + uniformVector(cseed) * g;
-                att *= color + texture2D(uTexture, uv).rgb;
-            }
-            
-            if (uFastMode) rd *= 2.0; // pseudo flush rays
-
-        } else {
-            if (b == 0) {
+        if (!bvhIntersectFirstHit(bvh, ro, rd, hit.faceIndices, hit.faceNormal, hit.barycoord, hit.side, hit.dist)) {
+             if (b == 0) {
                 acc = background(rd, 1.0);
             } else {
                 acc += att * imageBasedLighting(rd, uEnvPower);
             }
             break;
+        } else {
+            point = ro + rd * hit.dist;
+            totalDist = distance(ro, point);
+
+            if (b == 0) firstDepth = totalDist;
+
+            if (firstDepth >= cam.farPlane) { // far clip
+                acc = background(rd, 1.0);
+                break;
+            }
+
+            //materialIndex = uTexelFetch1D(materialIndexAttribute, hit.faceIndices.x).r;
+            color = hit.side * textureSampleBarycoord(colorAttribute, hit.barycoord, hit.faceIndices.xyz).xyz;
+            color *= color;
+
+            if (uRenderPassId > 0) {
+                // -1: none 0: post fx
+                if (uRenderPassId == 1) { // mask pass
+                    return vec4(1);
+                } else if (uRenderPassId == 2) { // depth pass
+                    firstDepth = (firstDepth >= cam.farPlane) ? 1.0 : firstDepth;
+                    return vec4(vec3(1), firstDepth / float(uBounces));
+                } else if (uRenderPassId == 3) { // color pass
+                    return vec4(color / float(uBounces), 1.0);
+                }
+            }
+
+            // pure black object is emissive (materialIndex == 0u)
+            if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
+                float k = 13.0 * 13.0;
+                acc += att * uEmissive * k * totalDist;
+                break;
+            }
+
+            normal = hit.side * textureSampleBarycoord(normalAttribute, hit.barycoord, hit.faceIndices.xyz).xyz;
+            uv = hit.side * textureSampleBarycoord(uvAttribute, hit.barycoord, hit.faceIndices.xyz).xy;
+
+            float cseed = seed + 63.2981*float(b);
+            vec3 absPoint = abs(point);
+            float maxPoint = max(absPoint.x, max(absPoint.y, absPoint.z));
+            ro = point + hit.faceNormal * (maxPoint + 1.0) * RAY_OFFSET;
+
+            if (uMetallic == 0.0) {
+                // ideal lambert (1u)
+                rd = normalize(cosineHemisphere(normal * hash(cseed+68.4523), cseed));
+                float pdf = dot(rd, normal) * (1.0 / PI);
+                att *= pdf * (color + texture2D(uTexture, uv).rgb);
+            } else {
+                // ideal metallic (2u)
+                float g = clamp(1.0-uMetallic, 0.0,1.0);
+                g = g * g;
+                rd = normalize(reflect(rd, normal)) + uniformVector(cseed) * g;
+                att *= color + texture2D(uTexture, uv).rgb;
+            }
         }
 
         // roulette
         if (b >= 3) {
             float q = min(max(att.x, max(att.y, att.z)) + 0.001, 0.95);
-            if (hash(seed+13.6091) > q)
+            if (hash(seed+13.6091) >= q)
                 break;
             att /= q;
         }
@@ -181,11 +195,13 @@ vec4 pathtrace(vec3 ro, vec3 rd, float seed) {
 
 void main() {
     float noise = seed+blueNoise();
+    float seed1 = hash(noise+12.1476);
+    float seed2 = hash(noise+32.4920);
     vec3 ro, rd;
-    vec4 col;
 
-    //vec2 ofAA = vec2(s1, s2) - 0.5; // using CPU for AA jitter
-    vec2 ndc = 2.0 * vUv - vec2(1.0);
+    //vec2 ofAA = vec2(seed1, seed2) - 0.5; // using CPU for AA jitter
+    //vec2 ndc = 2.0 * (gl_FragCoord.xy+ofAA)/uResolution.xy - vec2(1);
+    vec2 ndc = 2.0 * vUv - vec2(1);
 
     ndcToCameraRay(ndc, cameraWorldMatrix, invProjectionMatrix, ro, rd);
     adaptCamera(cameraWorldMatrix);
@@ -193,19 +209,17 @@ void main() {
     vec3 randAperturePos = vec3(0);
     vec3 rdOF = rd;
     if (cam.aperture > 0.0) {
-        vec3 focalPoint = cam.focalLength * rd;
-        float camSeed1 = hash(noise+12.1476) * PI2;
-        float camSeed2 = hash(noise+32.4920) * cam.aperture;
+        vec3 focalPoint = normalize(rd) * cam.focalLength;
+        float camSeed1 = seed1 * PI2;
+        float camSeed2 = seed2 * cam.aperture;
         randAperturePos = (cos(camSeed1)*cam.right + sin(camSeed1)*cam.up) * sqrt(camSeed2);
-        rdOF = normalize(focalPoint - randAperturePos);
+        rdOF = focalPoint - randAperturePos;
     }
 
     float prevWeight = float(uSamples) / float(uSamples + 1);
     float currWeight = 1.0 - prevWeight;
-    col = pathtrace(ro + randAperturePos, rdOF, noise) * currWeight;
+    vec4 col = pathtrace(ro + randAperturePos, rdOF, noise) * currWeight;
     col += texelFetch(uBuffer, ivec2(gl_FragCoord), 0) * prevWeight;
-    if (uSamples == 0)
-        col *= 0.1;
 
     gl_FragColor = col;
 }

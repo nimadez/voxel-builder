@@ -6,6 +6,7 @@ window.ptDeactivate = pt.deactivate;
 window.ptToggle = pt.toggle;
 window.ptIsActive = pt.isActive;
 window.ptReset = pt.reset;
+window.ptUpdateCamera = pt.updateCamera;
 window.ptGetShot = pt.getShot;
 window.ptDispose = pt.dispose;
 

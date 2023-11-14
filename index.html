@@ -14,7 +14,7 @@
     <meta name="twitter:creator" content="@nimadez">
     <meta name="twitter:title" content="Voxel Builder">
     <meta name="twitter:description" content="Voxel-based 3D modeling application for desktop and mobile browsers">
-    <meta name="twitter:image" content="https://repository-images.githubusercontent.com/565157149/09627ada-d430-4464-ac92-dfcfb4b1760a">
+    <meta name="twitter:image" content="https://repository-images.githubusercontent.com/565157149/f979eefb-c4dc-4321-a6fd-08dc5dd02ada">
     <title>Voxel Builder</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAiJJREFUWEdjZBhgwDjA9jMMTgfkNm38zsjAwIEROv8Z2ifV+1cRCrW8po3/samZVOeP4WEMAVyaYQYyMjL6Tqz124LLEYT0ozsCpwPqpCIx7Gh6thwshs0nIPG8po0ZDAwM09NE2hgk2C6j6MelF9MBjRvWMDAyBheKlzLwMj8hyhCYIpjvSXE81kSIy6CXv7UZZr6uYfjPwFA7uc6/BT2IcOnDF3IkOQBkIS7Dchs3RjMyMiyJFZrIoMhxguiQw+qAjJbN0mz//j3R4rjCECLUSpRh5AQ/yGCc5QAuA3/942XoeDGLgYHh/9pJdQEhhOKfUMIl2QHYoiG/ZaPd/38MB4ME5jDocO0lKsTg2RpfoUJsoiI3+PFGATRfg0s0XNnqP8P/h5PrAhSIdSg2z+KtC4jxGcM/Zl0Gpr+XPfhWMpjxbCAp+AmGAL5QgCUumI3oofTxjzzDxFcdDP///185uT4gAldUE6wNiQoFLNFEKPUTlQiJSQcgNbY82xkc+RaRHPxERQEx0YAe/Cvf1jPc/KnB8O0Hg8ScNv+X+HIawSggJhTQHUBs8JMQAps2MTD89y0WL2TgZn6B4qFtH3IYvASmkBX8RDuAUCgg206K74eWA3KaNyky/f9/T4/zAkOAYCfOdEWzECAmGki1nKQoGBQOIOQImocAsgNwJQJcLWay6wJsGnG1/f/9YlSa0uJ3H1/Jhy5HVElIioGkqh11AACQYjUw+9rFtwAAAABJRU5ErkJggg==">
     <link rel="manifest" href="manifest.webmanifest">
@@ -78,8 +78,8 @@
         select { font-family: var(--font); font-size: 11px; width: 100%; background: var(--btn-bg); color: var(--btn-color); padding: 3px 0 3px 0; border: solid 1px #161a2080; border-radius: 3px; outline: none; text-align: center; vertical-align: middle; }
         select:hover { color: steelblue; cursor: pointer; }
         option { font-family: var(--font); font-size: 12px; color: silver; background: var(--btn-bg); }
-        #canvas_render { z-index: 0; position: absolute; width: 100%; height: 100%; background: linear-gradient(0deg, #384052 0%, #515a6e 100%); }
-        #canvas_palette { z-index: 1; position: relative; width: 100%; height: 64000px; }
+        #canvas_render { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(0deg, #384052 0%, #515a6e 100%); }
+        #canvas_palette { z-index: 1; image-rendering: pixelated; position: relative; width: 100%; height: 64000px; }
         #canvas_pt { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell; }
         .menu_R { z-index: 500; background: var(--menu-bg); position: absolute; top: 0; right: 0; padding: 0 4px 4px 4px; width: 110px; height: fit-content; transform: translate(200px, 0); transition: transform 0.1s ease; box-shadow: -1px 1px 3px #404b58AA; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; }
         .menu_R li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
@@ -131,17 +131,18 @@
         #toolbar_L li:first-child :first-child { width: 50%; float: left; }
         #toolbar_L li:first-child :last-child { width: 50%; }
         #toolbar_L button { width: 100%; font-size: 10px; padding: 5px; letter-spacing: 0.05em; border-radius: 0; }
-        #hover { z-index: 450; top: 25%; left: 30%; position: absolute; background: none; }
+        #hover { z-index: 450; display: none; bottom: 15%; left: 50%; margin-left: -12px; position: absolute; background: none; }
         #hover li { padding: 3px; margin: -1px; box-shadow: inset 1px 1px 1px #37414e, inset -1px -1px 1px #2f3742; cursor: pointer; }
         #hover li:nth-child(1) { opacity: 0.95; cursor: move; box-shadow: none; }
-        #hover li:nth-child(2) { opacity: 0.8; position: absolute; top: -24px; left: 0%; }
-        #hover li:nth-child(3) { opacity: 0.8; position: absolute; top: 0; left: 24px; }
-        #hover li:nth-child(4) { opacity: 0.8; position: absolute; top: 0; left: -24px; }
-        #hover li:nth-child(5) { opacity: 0.8; position: absolute; top: 24px; left: -24px; border-bottom-left-radius: 40%; }
-        #hover li:nth-child(6) { opacity: 0.8; position: absolute; top: 24px; left: 24px; border-bottom-right-radius: 40%; }
-        #hover li:nth-child(7) { opacity: 0.8; position: absolute; top: -24px; left: -24px; border-top-left-radius: 40%; }
-        #hover li:nth-child(8) { opacity: 0.8; position: absolute; top: -24px; left: 24px; border-top-right-radius: 40%; }
-        #hover li:nth-child(9) { opacity: 0.8; position: absolute; top: 24px; left: 0%; }
+        #hover li:nth-child(2) { opacity: 0.85; position: absolute; top: -25px; left: 0%; }
+        #hover li:nth-child(3) { opacity: 0.85; position: absolute; top: 0; left: 25px; }
+        #hover li:nth-child(4) { opacity: 0.85; position: absolute; top: 0; left: -25px; }
+        #hover li:nth-child(5) { opacity: 0.85; position: absolute; top: 25px; left: -25px; border-bottom-left-radius: 40%; }
+        #hover li:nth-child(6) { opacity: 0.85; position: absolute; top: 25px; left: 25px; border-bottom-right-radius: 40%; }
+        #hover li:nth-child(7) { opacity: 0.85; position: absolute; top: -25px; left: -25px; border-top-left-radius: 40%; }
+        #hover li:nth-child(8) { opacity: 0.85; position: absolute; top: -25px; left: 25px; border-top-right-radius: 40%; }
+        #hover li:nth-child(9) { opacity: 0.85; position: absolute; top: 25px; left: 0%; }
+        #hover li.hover_disabled { opacity: 0; pointer-events: none; }
         #pathtracer { z-index: 10; display: none; width: 100%; height: 100%; position: fixed; }
         #palette { z-index: 400; background: #31394b30; position: absolute; left: 2px; top: 130px; bottom: 135px; overflow-y: scroll; overflow-x: hidden; }
         #colorpicker { z-index: 500; position: absolute; width: 30px; left: 4px; bottom: 98px; }
@@ -161,6 +162,11 @@
         #btn-helper-workplane { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; left: 50%; bottom: 20px; transform: translateX(-50%); position: absolute; }
         #btn-helper-workplane i { font-size: 18px; color: aqua; opacity: 0.8; }
         #input-camera-fov-num { text-align: center; cursor: text; }
+        #sandbox_controls { display: none; }
+        #sandbox_controls .sandbox-gravity { z-index: 1000; font-size: 40px; width: 48px; border: solid 1px #cccccc20; color: #cccccc50; padding: 5px; left: 10px; bottom: 10px; border-radius: 50%; position: absolute; text-align: center; }
+        #sandbox_controls .sandbox-jump { z-index: 1000; display: none; border: solid 1px #cccccc20; color: #cccccc50; padding: 10px; right: 40px; bottom: 100px; border-radius: 50%; position: absolute; text-align: center; }
+        #sandbox_controls .sandbox-run { z-index: 1000; display: none; border: solid 1px #cccccc20; color: #cccccc50; padding: 10px; right: 100px; bottom: 40px; border-radius: 50%; position: absolute; text-align: center; }
+        #sandbox_controls .material-icons { font-size: 40px; }
         #reticle { z-index: 500; display: none; width: 100px; height: 100px; position: absolute; left: 50%; top: 50%; margin-left: -50px; margin-top: -50px; text-align: center; pointer-events: none; }
         #reticle :nth-child(1) { font-size: 12px; color: #00ffff80; line-height: 100px; grid-column: 1; grid-row: 1; }
         #reticle :nth-child(2) { border: solid 1px #cccccc15; margin: 25px; grid-column: 1; grid-row: 1; }
@@ -176,12 +182,11 @@
         #confirm span { width: 100%; margin-bottom: 5px; font-size: 11px; letter-spacing: 0.03em; color: orange; display: block; }
         #confirm button { width: 48%; font-size: 12px; text-transform: uppercase; }
         #confirmblocker { z-index: 2400; display: none; opacity: 0.5; background: #181b22; position: absolute; width: 100%; height: 100%; }
-        #notifier { z-index: 2000; display: none; background: #2a2f3aF1; color: aqua; border: solid 1px #222; box-shadow: 0 0 3px #21262e99; font-size: 10px; position: absolute; width: fit-content; left: 50%; bottom: 20%; margin-left: -200px; padding: 2px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
+        #notifier { z-index: 2000; display: none; background: #2a2f3aF1; color: aqua; border: solid 1px #222; box-shadow: 0 0 3px #21262e99; font-size: 10px; position: absolute; width: fit-content; left: 50%; top: 50%; margin-left: -200px; transform: translateY(-50%); padding: 2px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #loadingscreen { z-index: 5000; opacity: 0.8; transition: opacity 1s ease-out; background: #181b22; position: absolute; width: 100%; height: 100%; }
         #loadingscreen .logo { transform-style: preserve-3d; animation: bouncing 2s infinite; width: 30px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -30px; }
         #loadingscreen .progress { color: slategray; font-size: 10px; font-weight: bold; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 40px; text-align: center; }
-        #intro { z-index: 6000; display: none; opacity: 0; color: #97a5b8; font-size: 10px; line-height: 1.5em; letter-spacing: 0.1em; transition: opacity 0.5s; position: absolute; width: 200px; left: 50%; margin-left: -100px; bottom: 100px; text-transform: uppercase; text-align: center; }
-        #intro button { font-size: 10px; font-weight: bold; width: 130px; margin-bottom: 5px; }
+        #loadingscreen .version { color: slategray; font-size: 10px; letter-spacing: 0.1em; width: 200px; height: 20px; position: absolute; left: 50%; bottom: 10%; margin-left: -100px; text-align: center; }
         .dropzone { width: 100%; padding: 3px 0 3px 0; background: #22263090; color: #586474; border-radius: 3px; font-size: 9px; letter-spacing: 0.05em; text-align: center; }
         .dropzone:hover { background: #222630; color: #586474; }
         .spacer { height: 3px; }
@@ -235,8 +240,8 @@
     </ul>
     <ul id="toolbar_L">
         <li>
-            <button onclick="ui.toggleMenuPathtracer()"><i class="material-icons">tungsten</i></button>
-            <button id="btn-pt-render" title="R"><i class="material-icons">camera</i></button>
+            <button title="Render Settings" onclick="ui.toggleMenuPathtracer()"><i class="material-icons">tungsten</i></button>
+            <button id="btn-pt-render" title="Render"><i class="material-icons">camera</i></button>
         </li>
         <li><button onclick="ui.toggleMenuCamera()">CAMERA</button></li>
         <li title="Environment"><button onclick="ui.toggleMenuEnv()">ENV.</button></li>
@@ -249,7 +254,7 @@
     <ul id="toolbar_C">
         <li onclick="ui.setMode(0)" class="mode mode_select">MODEL</li>
         <li onclick="ui.setMode(1)" class="mode">BAKERY</li>
-        <li onclick="ui.setMode(2)" class="mode">RENDER</li>
+        <li onclick="ui.setMode(2)" class="mode">SANDBOX</li>
     </ul>
     <ul id="toolbar_C_mem">
         <li><b>SAVE</b></li>
@@ -277,7 +282,6 @@
                 <option value="samples/test_symmetry2.vbx">Symm Even</option>
                 <option value="samples/test_voxelizer_2d.vbx">Voxelizer 2D</option>
                 <option value="samples/test_pixelmonk.vbx">Pixel Monk 2D</option>
-                <option value="samples/test_faceuv.vbx">Face UV</option>
                 <option value="samples/test_texture.vbx">Texture (old startup)</option>
             </select>
             <select onchange="project.loadFromUrl(this.options[this.selectedIndex].value)">
@@ -292,10 +296,9 @@
         <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/apps/asset-viewer', '_blank').focus();">Asset Viewer</button></li>
         <li class="spacer"></li>
         <li class="about">
-            4.1.0 Beta 2023
+            4.1.1 Beta 2023
             <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub Repository</a>
-            <br>Developer
-            <br>&#8627; <a href="https://nimadez.github.io/">Nima Dezfuli</a>
+            <br>©2019 <a href="https://nimadez.github.io/">@nimadez</a>
         </li>
     </ul>
     <ul class="menu_R" id="menu-prefs">
@@ -379,7 +382,9 @@
             <button onclick="voxelizer.loadUrl(this.nextElementSibling.value)">Upload URL</button>
             <input type="url" class="ignorekeys" value="" placeholder="Enter URL" title="GLB OBJ" spellcheck="false">
         </li>
-        <li><input type="checkbox" id="input-voxelizer-usebvh" onclick="document.getElementById('input-voxelizer-density').disabled = this.checked" checked> <label for="input-voxelizer-usebvh">Use BVH</label></li>
+        <li><input type="checkbox" id="input-voxelizer-usebvh"
+            onclick="document.getElementById('input-voxelizer-density').disabled = this.checked; document.getElementById('input-voxelizer-bvhres').disabled = !this.checked" checked> 
+            <label for="input-voxelizer-usebvh">Use BVH</label></li>
         <li class="row"><label style="margin-right: 15px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="5" max="1000"></li>
         <li class="row"><label style="margin-right: 6px">Density</label><input disabled type="number" class="ignorekeys" id="input-voxelizer-density" value="20" min="1" max="500"></li>
         <li class="row"><label style="margin-right: 5px">Resolution</label><input type="number" class="ignorekeys" id="input-voxelizer-bvhres" value="100" min="1" max="1000"></li>
@@ -419,7 +424,7 @@
         <li><button onclick="tool.toolSelector('boxrem')" class="tool_boxrem">Box Remove</button></li>
         <li class="spacer"></li>
         <li><button onclick="tool.toolSelector('fill')" class="tool_fill">Fill (slow)</button></li>
-        <li class="category">PULL TOOLS</li>
+        <li class="category">TRANSFORM</li>
         <li><button onclick="tool.toolSelector('pull')" class="tool_pull">Pull Voxel</button></li>
         <li title="Experimental"><button onclick="tool.toolSelector('pullcolor')" class="tool_pullcolor">Pull Color Group</button></li>
     </ul>
@@ -427,8 +432,8 @@
         <li onclick="ui.toggleMenuPaint()"><i class="material-icons">exit_to_app</i> <span>PAINTING</span></li>
         <li class="category">PAINT COLOR</li>
         <li><button onclick="tool.toolSelector('paint')" class="tool_paint">Paint</button></li>
-        <li class="category">FILL COLOR</li>
         <li><button onclick="tool.toolSelector('boxpaint')" class="tool_boxpaint">Box Paint</button></li>
+        <li class="category">FILL COLOR</li>
         <li><button onclick="tool.toolSelector('bucket')" class="tool_bucket">Bucket</button></li>
         <li><button onclick="builder.setAllVoxelColors()">Paint All</button></li>
         <li class="category">PICK COLOR</li>
@@ -437,13 +442,13 @@
     </ul>
     <ul class="menu_R" id="menu-voxels">
         <li onclick="ui.toggleMenuVoxels()"><i class="material-icons">exit_to_app</i> <span>VOXELS</span></li>
-        <li class="category">DISPLAY</li>
-        <li><input type="checkbox" id="input-voxels-onion" onclick="builder.toggleOnionSkin()"> <label for="input-voxels-onion">Onion Skin</label></li>
         <li class="category">NORMALIZE</li>
         <li onclick="builder.normalizeVoxelPositions(true)"><button>Normalize<br>Voxel Positions</button></li>
-        <li class="category">OPTIMIZE</li>
+        <li class="category">CLEANUP</li>
         <li onclick="builder.reduceVoxels()"><button>Reduce Voxels</button></li>
         <li onclick="builder.removeDuplicatesFunc()"><button>Kill Duplicates</button></li>
+        <li class="category">DISPLAY</li>
+        <li><input type="checkbox" id="input-voxels-onion" onclick="builder.toggleOnionSkin()"> <label for="input-voxels-onion">Onion Skin</label></li>
     </ul>
     <ul class="menu_R" id="menu-bakery">
         <li onclick="ui.toggleMenuBakery()"><i class="material-icons">exit_to_app</i> <span>BAKERY</span></li>
@@ -473,22 +478,32 @@
         <li><input type="color" id="input-vertex-color" value="#899AAE"></li>
     </ul>
     <ul class="menu_L" id="menu-pathtracer">
-        <li onclick="ui.toggleMenuPathtracer()"><i class="material-icons">exit_to_app</i> <span>PATHTRACER</span></li>
+        <li onclick="ui.toggleMenuPathtracer()"><i class="material-icons">exit_to_app</i> <span>PT RENDERER</span></li>
         <li class="category">RENDER</li>
         <li class="row">
-            <select id="input-pt-bounces">
-                <option value="4">Normal</option>
-                <option value="5">High Bounces</option>
-                <option value="3">Low Bounces</option>
-                <option value="1">Mask</option>
+            <select id="input-pt-bounces" title="Bounces" style="width: 60%">
+                <option value="6">6</option>
+                <option value="5">5</option>
+                <option value="4" selected>4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
             </select>
-            <button id="btn-pt-fast" style="width: 60%">Fast</button>
+            <select id="input-pt-passes" title="Render Pass">
+                <option value="-1">None</option>
+                <option value="0" selected>Post FX</option>
+                <option value="1">Mask</option>
+                <option value="2">Depth</option>
+                <option value="3">Color</option>
+            </select>
         </li>
-        <li><input id="input-pt-postfx" type="checkbox"></input> <label for="input-pt-postfx">Post Process</label></li>
+        <li class="row">
+            <button onclick="createScreenshot()">Shot</button>
+            <button id="btn-pt-fast">Fast</button>
+        </li>
         <li class="category">IBL</li>
         <li class="row">
             <select id="input-pt-hdri">
-                <option value="assets/snow_field_2_puresky_1k.hdr">Default</option>
+                <option value="assets/snow_field_2_puresky_1k.hdr" selected>Default</option>
                 <option value="assets/black.hdr">Black</option>
                 <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/master/footprint_court.hdr">Footprint Court</option>
                 <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">Venice Sunset</option>
@@ -498,15 +513,22 @@
             </select>
             <button onclick="document.getElementById('openfile_pt_hdr').click()" style="width: 60%">Load</button>
         </li>
-        <li class="row"><label style="margin-right: 16px">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="4.5" min="0" max="30" step="0.5"></li>
+        <li class="row"><label style="margin-right: 16px">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="4" min="0" max="100" step="0.5"></li>
         <li class="category">CAMERA</li>
-        <li class="row"><label style="margin-right: 5px">Aperture</label> <input type="number" id="input-pt-aperture" class="ignorekeys" value="0" min="0" max="10.8" step="0.01"></li>
-        <li class="row"><label style="margin-right: 12px">Focal Length</label> <input type="number" id="input-pt-focallength" class="ignorekeys" value="200" min="0" max="10000" step="0.5"></li>
+        <li class="row"><label style="margin-right: 5px">Aperture</label> <input type="number" id="input-pt-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>
+        <li class="row"><label style="margin-right: 12px">Focal Length</label> <input type="number" id="input-pt-focallength" class="ignorekeys" value="50" min="0" max="500" step="0.5"></li>
         <li class="category">MATERIAL</li>
-        <li class="row"><label style="margin-right: 4px">Emissive</label> <input type="color" id="input-pt-emissive" value="#C2B261"></li>
-        <li class="row"><label style="margin-right: 9px">Metallic</label> <input type="number" id="input-pt-metallic" class="ignorekeys" value="0.1" min="0" max="1" step="0.01"></li>
+        <li class="row" title="Presets">
+            <select id="input-pt-presets">
+                <option value="0">Ideal Lambert</option>
+                <option value="1" selected>Ideal Metallic</option>
+            </select>
+        </li>
+        <li class="spacer"></li>
+        <li class="row"><label style="margin-right: 4px">Emissive</label> <input type="color" id="input-pt-emissive" value="#847843"></li>
+        <li class="row"><label style="margin-right: 9px">Metallic</label> <input type="number" id="input-pt-metallic" class="ignorekeys" value="0.2" min="0" max="1" step="0.01"></li>
         <li><input id="input-pt-overmat" type="checkbox"></input> <label for="input-pt-overmat">Override Colors</label></li>
-        <li><input id="input-pt-usetexture" type="checkbox" checked></input> <label for="input-pt-usetexture">Grid Texture</label></li>
+        <li><input id="input-pt-usetexture" type="checkbox" checked></input> <label for="input-pt-usetexture">Voxel Texture</label></li>
         <li class="category">MESHES</li>
         <li><input id="input-pt-ground" type="checkbox"></input> <label for="input-pt-ground">Add Ground</label></li>
         <li><button onclick="bakery.updateVertexColors('#000000')">Convert to Emitter</button></li>
@@ -548,7 +570,7 @@
         <li><input type="range" id="input-hdri-blur" value="0" min="0" max="1" step="0.01" oninput="hdri.setBlurAmount(this.value)"></li>
         <li class="category">SUN LIGHT</li>
         <li><input type="color" id="input-light-color" value="#BBB1A0"></li>
-        <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.6" min="0" max="1" step="0.01" oninput="updateLightIntensity(this.value)"></li>
+        <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.6" min="0" max="2" step="0.01" oninput="updateLightIntensity(this.value)"></li>
         <li class="row"><label>Angle°</label>&nbsp;<input type="number" id="input-light-angle" value="120" min="0" max="360" step="1" oninput="updateLightAngle(this.value)"></li>
         <li class="row"><label>Height</label>&nbsp;<input type="number" id="input-light-height" value="100" min="0" max="500" step="5" oninput="updateLightHeight(this.value)"></li>
         <li><input type="checkbox" id="input-light-shadows" onclick="enableShadows(this.checked)" checked> <label for="input-light-shadows">Shadows</label></li>
@@ -601,7 +623,7 @@
         <li><input type="checkbox" id="input-pipeline-dof" onclick="pipeline.init()"> <label for="input-pipeline-dof">Enable DOF</label></li>
         <li><input disabled id="input-pipeline-dofdist" oninput="pipeline.updateProps()" type="range" value="450" min="0" max="1000" step="1"></li>
         <li><label>Sharpen</label> <input id="input-pipeline-sharpen" oninput="pipeline.updateProps()" type="range" value="0.2" min="0" max="1.0" step="0.01"></li>
-        <li><label>Film Grain</label> <input id="input-pipeline-grain" oninput="pipeline.updateProps()" type="range" value="5" min="0" max="10" step="0.01"></li>
+        <li><label>Film Grain</label> <input id="input-pipeline-grain" oninput="pipeline.updateProps()" type="range" value="3" min="0" max="10" step="0.01"></li>
         <li><label>Vignette</label> <input id="input-pipeline-vignette" oninput="pipeline.updateProps()" type="range" value="1" min="0" max="10" step="0.01"></li>
         <li><label>Chromatic Aberr.</label> <input id="input-pipeline-chromatic" oninput="pipeline.updateProps()" type="range" value="1" min="0" max="50" step="1"></li>
     </ul>
@@ -632,12 +654,12 @@
         <li class="tool_camera" onclick="tool.toolSelector('camera')" onpointerdown="ui.dragElement(this)"><i class="material-icons">control_camera</i></li>
         <li class="tool_boxpaint" onclick="tool.toolSelector('boxpaint')"><i class="material-icons">imagesearch_roller</i></li>
         <li class="tool_boxadd" onclick="tool.toolSelector('boxadd')"><i class="material-icons">add</i></li>
-        <li class="tool_bucket" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></li>
         <li class="tool_eyedrop" onclick="tool.toolSelector('eyedrop')"><i class="material-icons">colorize</i></li>
+        <li class="tool_bucket hover_disabled" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></li>
+        <li class="tool_remove hover_disabled" onclick="tool.toolSelector('remove')"><i class="material-icons">clear</i></li>
+        <li class="tool_paint hover_disabled" onclick="tool.toolSelector('paint')"><i class="material-icons">brush</i></li>
+        <li class="tool_add hover_disabled" onclick="tool.toolSelector('add')"><i class="material-icons">create</i></li>
         <li class="tool_boxrem" onclick="tool.toolSelector('boxrem')"><i class="material-icons">remove</i></li>
-        <li class="tool_paint" onclick="tool.toolSelector('paint')"><i class="material-icons">brush</i></li>
-        <li class="tool_add" onclick="tool.toolSelector('add')"><i class="material-icons">create</i></li>
-        <li class="tool_remove" onclick="tool.toolSelector('remove')"><i class="material-icons">clear</i></li>
     </ul>
     <ul id="menu_inscreen">
         <li id="btn-helper-symmetry" title="Symmetry" onclick="symmetry.switchAxis()">S</li>
@@ -650,6 +672,11 @@
         <canvas id="canvas_pt"></canvas>
         <div id="info_pt"><span>0</span> | SL <span>0</span> / 4096 | <span>0</span> | BOUNCE <span>0</span> | DPR <span>1.0</span></div>
     </div>
+    <div id="sandbox_controls">
+        <div class="sandbox-gravity" onclick="camera.switchGravity(this)">G</div>
+        <div class="sandbox-jump" onpointerdown="camera.jump()"><i class="material-icons">upgrade</i></div>
+        <div class="sandbox-run" onpointerdown="camera.speedUp()"><i class="material-icons">directions_run</i></div>
+    </div>
     <div id="marquee"></div>
     <div id="palette"><canvas id="canvas_palette"></canvas></div>
     <div id="reticle"><i class="material-icons">add</i><span></span><span></span></div>
@@ -659,11 +686,11 @@
     <div id="loadingscreen">
         <div class="logo"><div class="cube"><div class="cube-faces"><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div><div class="cube-face shadow"></div></div></div></div>
         <div class="progress">- PLEASE WAIT -</div>
+        <div class="version">4.1.1 BETA 2023</div>
     </div>
     <div id="confirm"><span>title here</span> <button>Cancel</button> <button>Ok</button></div>
     <div id="confirmblocker"></div>
     <div id="notifier"></div>
-    <div id="intro"><button onclick="preferences.setNoIntro(true)">NO INTRO NEXT TIME?</button><br>4.1.0 Beta 2023</div>
     <!-- hidden -->
     <input style="display: none" type="file" id="openfile_vbx" accept=".vbx" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_vbx_import" accept=".vbx" onclick="this.value = null">

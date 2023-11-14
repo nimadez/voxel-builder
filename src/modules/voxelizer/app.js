@@ -19,7 +19,7 @@ export function voxelize(positions, indices, resolution, scale, color) {
     const bvh = new MeshBVH(mesh.geometry);
 
     const step = 1;
-    const minStart = (-scale / 2.0) + step;
+    const minStart = Math.floor((-scale / 2.0) + step * 0.5);
     const box = new THREE.Box3();
     const invMat = new THREE.Matrix4().copy(mesh.matrixWorld).invert();
 

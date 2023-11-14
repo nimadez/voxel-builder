@@ -7,7 +7,7 @@
     Based on my previous experiment "nRAY: Raymarched Pathtracer"
 
     Notice: Mobile GPU is not supported
-    https://github.com/gkjohnson/three-gpu-pathtracer/issues/441#issuecomment-1610640494
+    There is an issue with three-mesh-bvh that may be fixed in the future.
 */
 import * as THREE from 'three';
 import { OrbitControls } from '../../../libs/addons/OrbitControls.js';
@@ -17,17 +17,18 @@ import { RGBELoader } from '../../../libs/addons/RGBELoader.js';
 import {
     MeshBVH, MeshBVHUniformStruct, FloatVertexAttributeTexture,
 	shaderStructs, shaderIntersectFunction, //shaderDistanceFunction,
-    UIntVertexAttributeTexture, SAH
+    CENTER,// SAH,
+    //UIntVertexAttributeTexture
 } from '../../../libs/three-mesh-bvh.module.js'; // 0.6.8
 
 
 const DPR = 1;
 const DPR_MOVE = 0.5;
-const DPR_FASTMODE = 0.7;
-const CAM_FAR = 500;
+const DPR_FASTMODE = 0.75;
+const CAM_FAR = 1000;
 const MAXSAMPLES = 4096;
-const MAXWHITE = 0.86 / 1.2;
-const GRAY = MAXWHITE / 1.2;
+const MAXWHITE = 0.86;
+const GRAY = MAXWHITE / 1.5;
 const FPS = 1000 / 60;
 const RAD2DEG_STATIC = 180 / Math.PI;
 let imageFragment = null;
@@ -70,7 +71,7 @@ class Pathtracer {
             canvas: this.canvas, antialias: false, preserveDrawingBuffer: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio * DPR);
-        this.renderer.setClearColor(0x000000, 1);
+        this.renderer.setClearColor(0x000000, 0);
         this.renderer.info.autoReset = false;
 
         this.scene = new THREE.Scene();
@@ -79,7 +80,7 @@ class Pathtracer {
         this.camera.updateProjectionMatrix();
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.minDistance = 0.5;
+        this.controls.minDistance = 1;
         this.controls.maxDistance = CAM_FAR;
         this.controls.update();
         this.controls.addEventListener('start', () => {
@@ -91,13 +92,8 @@ class Pathtracer {
                 this.resetSamples();
         });
         this.controls.addEventListener('end', () => {
-            if (isLoaded && this.uniRender) {
+            if (isLoaded)
                 this.resize();
-                this.uniRender['uFov'].value = this.camera.fov;
-
-                scene.activeCamera.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
-                scene.activeCamera.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
-            }
         });
 
         this.RTTA = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
@@ -110,6 +106,7 @@ class Pathtracer {
 
     create() {
         this.camera.position.set(scene.activeCamera.position.x, scene.activeCamera.position.y, scene.activeCamera.position.z);
+        this.camera.fov = scene.activeCamera.fov * RAD2DEG_STATIC;
         this.camera.updateProjectionMatrix();
         this.controls.target = new THREE.Vector3(scene.activeCamera.target.x, scene.activeCamera.target.y, scene.activeCamera.target.z);
         this.controls.update();
@@ -117,33 +114,32 @@ class Pathtracer {
         this.loadHDR(document.getElementById('input-pt-hdri').value);
         this.setShaderMaterials();
         this.createGeometry();
-        this.resize();
         this.animate();
+        this.resize();
 
         // restore states
         this.updateUniformCameraAperture(document.getElementById('input-pt-aperture').value);
         this.updateUniformCameraFocalLength(document.getElementById('input-pt-focallength').value);
-        this.updateUniformPostFx(document.getElementById('input-pt-postfx').checked);
     }
 
     setShaderMaterials() {
         this.uniImage = {
             uBuffer: { value: this.rtTexture },
-            uTime: { value: 1.0 },
-            uPostFx: { value: false }
+            uRenderPassId: { value: document.getElementById('input-pt-passes').value },
         };
         this.uniRender = {
-            uFov: { value: this.camera.fov },
+            uBuffer: { value: this.RTTB.texture },
+            uRenderPassId: { value: document.getElementById('input-pt-passes').value },
+            uBounces: { value: document.getElementById('input-pt-bounces').value },
+            uSamples: { value: 0 },
+            uResolution: { value: new THREE.Vector2(1, 1) },
             uAperture: { value: 0.0 },
             uFocalLength: { value: document.getElementById('input-pt-focallength').value },
-            uSamples: { value: 0 },
-            uBounces: { value: document.getElementById('input-pt-bounces').value },
-            uBuffer: { value: this.RTTB.texture },
+            uEnvPower: { value: document.getElementById('input-pt-envpower').value },
             uNoise: { value: noiseTexture },
             uCubeMap: { value: this.envTexture },
-            uEnvPower: { value: document.getElementById('input-pt-envpower').value },
             uTexture: { value: this.nullTexture },
-            uEmissive: { value: new THREE.Color(document.getElementById('input-pt-emissive').value).convertLinearToSRGB() },
+            uEmissive: { value: new THREE.Color(document.getElementById('input-pt-emissive').value) },
             uMetallic: { value: document.getElementById('input-pt-metallic').value },
             uFastMode: { value: isFastMode },
 
@@ -155,10 +151,10 @@ class Pathtracer {
             normalAttribute: { value: new FloatVertexAttributeTexture() },
             colorAttribute: { value: new FloatVertexAttributeTexture() },
             uvAttribute: { value: new FloatVertexAttributeTexture() },
-            materialIndexAttribute: { value: new UIntVertexAttributeTexture() }
+            //materialIndexAttribute: { value: new UIntVertexAttributeTexture() }
         };
 
-        const vShader = "precision highp float; varying vec2 vUv; void main() { gl_Position = vec4(position, 1.0); vUv = uv; }";
+        const vShader = "precision highp float; varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position, 1.0); }";
         const rtMaterialImage = new THREE.ShaderMaterial({
             uniforms: this.uniImage,
             vertexShader: vShader,
@@ -173,7 +169,7 @@ class Pathtracer {
             depthTest: false,
             depthWrite: false
         });
-        rtMaterialImage.transparent = false;
+        rtMaterialImage.transparent = true;
         rtMaterialRender.transparent = false;
 
         this.rtQuadA = new FullScreenQuad(rtMaterialImage);
@@ -231,7 +227,7 @@ class Pathtracer {
             this.geom = this.createPlaneGeometry(this.geom);
 
         this.uniRender['bvh'].value.updateFrom(new MeshBVH(this.geom, {
-            strategy: SAH,  // def: CENTER
+            strategy: CENTER,  // CENTER|AVERAGE|SAH
             maxDepth: 40,   // def: 40
             maxLeafTris: 1  // def: 10
         }));
@@ -241,9 +237,9 @@ class Pathtracer {
         this.uniRender['uvAttribute'].value.updateFrom(this.geom.attributes.uv);
 
         // restore states
-        (document.getElementById('input-pt-metallic').value == 0) ?
-            this.updateAttributeMaterialIndex(1) :
-            this.updateAttributeMaterialIndex(2);
+        //(document.getElementById('input-pt-metallic').value == 0) ?
+        //    this.updateAttributeMaterialIndex(1) :
+        //    this.updateAttributeMaterialIndex(2);
         this.updateAttributeColors(document.getElementById('input-pt-overmat').checked);
         this.updateUniformTexture(document.getElementById('input-pt-usetexture').checked);
 
@@ -252,7 +248,7 @@ class Pathtracer {
     }
 
     createPlaneGeometry(geom) {
-        const plane = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+        const plane = new THREE.PlaneGeometry(CAM_FAR*2, CAM_FAR*2, 1, 1);
         plane.rotateX(Math.PI / 2);
         plane.translate(0, -0.5, 0);
         const colors = new Float32Array(plane.attributes.position.count * 4);
@@ -261,12 +257,16 @@ class Pathtracer {
         return mergeGeometries([ plane, geom ], false);
     }
 
-    updateAttributeMaterialIndex(idx) {
+    /* updateAttributeMaterialIndex(idx) {
         // TODO: we need to find a way to tag each voxel for a specific material index,
         // it's easier to do in bakery mode because we can select meshes and apply properties,
         // but voxels only have position, color and visibility, we need to use colors to
         // tag material indexes, then manually set voxel colors for each material,
         // another option is to access SPS particles to register new materialIndex value.
+        //
+        // The new issue is slowing down the bvh generation,
+        // if we want to check the mesh again here, the startup
+        // is slow when stopping and starting the render.
         
         this.geom.addGroup(0, Infinity, this.materials[idx]);
         const materialIndex = getGroupMaterialIndicesAttribute(this.geom, this.materials, this.materials);
@@ -275,7 +275,7 @@ class Pathtracer {
 
         this.uniRender['materialIndexAttribute'].value.updateFrom(this.geom.attributes.materialIndex);
         this.resetSamples();
-    }
+    } */
 
     updateAttributeColors(isOverride) {
         if (isOverride) {
@@ -286,11 +286,6 @@ class Pathtracer {
             this.uniRender['colorAttribute'].value.updateFrom(this.geom.attributes.color);
         }
         this.resetSamples();
-    }
-
-    updateUniformPostFx(isEnabled) {
-        this.uniImage['uPostFx'].value = isEnabled;
-        //this.resetSamples();
     }
 
     updateUniformBounces(val) {
@@ -334,6 +329,12 @@ class Pathtracer {
         this.uniRender['uFastMode'].value = val;
     }
 
+    updateUniformRenderPassId(val) {
+        this.uniImage['uRenderPassId'].value = val;
+        this.uniRender['uRenderPassId'].value = val;
+        this.resetSamples();
+    }
+
     resetSamples() {
         this.samples = 0;
     }
@@ -347,7 +348,7 @@ class Pathtracer {
                 then = now - (elapsed % FPS);
 
                 // CPU AA jitter (GPU has more to do)
-                if (pt.samples === 0) {
+                if (pt.samples == 0) {
                     pt.camera.clearViewOffset();
                 } else {
                     pt.camera.setViewOffset(
@@ -356,12 +357,10 @@ class Pathtracer {
                         pt.renderer.domElement.width, pt.renderer.domElement.height,
                     );
                 }
-                
+
                 pt.camera.updateMatrixWorld();
-                pt.camera.fov = scene.activeCamera.fov * RAD2DEG_STATIC;
 
                 pt.uniImage['uBuffer'].value = pt.rtTexture;
-                pt.uniImage['uTime'].value = now / 1000;
                 pt.uniRender['uSamples'].value = pt.samples;
                 pt.uniRender['uBuffer'].value = pingPong ? pt.RTTB.texture : pt.RTTA.texture;
                 pt.uniRender['cameraWorldMatrix'].value.copy(pt.camera.matrixWorld);
@@ -404,6 +403,8 @@ class Pathtracer {
         this.RTTA.setSize(w * dpr, h * dpr);
         this.RTTB.setSize(w * dpr, h * dpr);
 
+        this.uniRender['uResolution'].value.set(this.renderer.domElement.width, this.renderer.domElement.height);
+
         // force update, prevent delay
         this.rtTexture = pingPong ? this.RTTA.texture : this.RTTB.texture;
         this.resetSamples();
@@ -428,6 +429,8 @@ class Pathtracer {
 
         isRendering = false;
         ui.domPathtracerBtn.classList.add('btn_select_pt');
+        if (MODE == 0)
+            ui.domHover.style.display = 'none';
 
         this.create();
         this.container.style.display = 'unset';
@@ -435,6 +438,9 @@ class Pathtracer {
 
     deactivate() {
         if (!isLoaded) return;
+
+        scene.activeCamera.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+        scene.activeCamera.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
         
         isLoaded = false;
         cancelAnimationFrame(pt.animate);
@@ -504,6 +510,14 @@ function reset() {
         pt.resetSamples();
 }
 
+function updateCamera(fov) {
+    if (isLoaded) {
+        pt.camera.fov = fov * RAD2DEG_STATIC;
+        pt.camera.updateProjectionMatrix();
+        pt.resetSamples();
+    }
+}
+
 function getShot() { // TODO: use framebuffer
     return pt.renderer.domElement.toDataURL('image/png');
 }
@@ -569,12 +583,12 @@ document.getElementById('btn-pt-fast').onclick = (ev) => {
 
 document.getElementById('input-pt-bounces').onchange = (ev) => {
     if (isLoaded)
-        pt.updateUniformBounces(ev.target.value);
+        pt.updateUniformBounces(parseInt(ev.target.value));
 };
 
-document.getElementById('input-pt-postfx').oninput = (ev) => {
+document.getElementById('input-pt-passes').onchange = (ev) => {
     if (isLoaded)
-        pt.updateUniformPostFx(ev.target.checked);
+        pt.updateUniformRenderPassId(parseInt(ev.target.value));
 };
 
 document.getElementById('input-pt-envpower').oninput = (ev) => {
@@ -601,9 +615,9 @@ document.getElementById('input-pt-emissive').oninput = (ev) => {
 
 document.getElementById('input-pt-metallic').oninput = (ev) => {
     if (isLoaded) {
-        (ev.target.value == 0) ?
-            pt.updateAttributeMaterialIndex(1) :
-            pt.updateAttributeMaterialIndex(2);
+        //(ev.target.value == 0) ?
+        //    pt.updateAttributeMaterialIndex(1) :
+        //    pt.updateAttributeMaterialIndex(2);
         pt.updateUniformMaterialMetallic(parseFloat(ev.target.value));
     }
 };
@@ -641,6 +655,28 @@ document.getElementById('openfile_pt_hdr').addEventListener("change", (ev) => {
     }
 }, false);
 
+document.getElementById('input-pt-presets').onchange = (ev) => {
+    switch (ev.target.value) {
+        case "0": // default lambert
+            document.getElementById('input-pt-envpower').value = 20;
+            document.getElementById('input-pt-metallic').value = 0;
+            if (isLoaded) {
+                pt.updateUniformEnvPower(20);
+                pt.updateUniformMaterialMetallic(0);
+            }
+            break;
+        case "1": // default metallic
+            document.getElementById('input-pt-envpower').value = 4;
+            document.getElementById('input-pt-metallic').value = 0.2;
+            if (isLoaded) {
+                pt.updateUniformEnvPower(4);
+                pt.updateUniformMaterialMetallic(0.2);
+            }
+            break;
+    }
+    pt.resetSamples();
+};
+
 
 // Utils
 
@@ -668,7 +704,7 @@ function createVoxelTexture(hex, size=256) {
     c.height = size;
     const ctx = c.getContext('2d');
     ctx.lineWidth = 8;
-    ctx.strokeStyle = hex + '60';
+    ctx.strokeStyle = hex;
     ctx.strokeRect(0, 0, size, size);
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = THREE.RepeatWrapping;
@@ -683,7 +719,7 @@ function createVoxelTexture(hex, size=256) {
 }
 
 // source: https://github.com/gkjohnson/three-gpu-pathtracer
-function getGroupMaterialIndicesAttribute(geometry, materials, allMaterials) {
+/* function getGroupMaterialIndicesAttribute(geometry, materials, allMaterials) {
     const indexAttr = geometry.index;
     const posAttr = geometry.attributes.position;
     const vertCount = posAttr.count;
@@ -720,7 +756,7 @@ function getGroupMaterialIndicesAttribute(geometry, materials, allMaterials) {
     }
 
     return new THREE.BufferAttribute(materialArray, 1, false);
-}
+} */
 
 function timeFormat(t) {
     const sec_num = parseInt(t, 10);
@@ -742,6 +778,7 @@ export {
     toggle,
     isActive,
     reset,
+    updateCamera,
     getShot,
     dispose
 }

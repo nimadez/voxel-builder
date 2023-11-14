@@ -1,4 +1,16 @@
-## 4.1.0 nightly
+## 4.1.1 nightly
+- Fix voxelizer floor issue
+- Simplified the hover menu, a revision needed
+- Render tab renamed to sandbox
+- Gravity is enabled in sandbox (see wiki)
+- Optimize and cleanup pt shader
+- Speed up bvh generation
+- Take care of ibl clamp (support all hdr images now)
+- Add multi-pass rendering
+- Fix chrome save-as dialog (navigator.vendor has been deprecated by google)
+- in progress...
+
+## 4.1.0 (PT update)
 - Fix the uvs in bakery mode, grid texture enabled
 - Metallic replaced roughness
 - Equalize babylon.js hdri for pt
@@ -8,7 +20,6 @@
 - Implant the multi-material system (unused, see comments)
 - New floor generator, create floor and stand for pt renders
 - Add optional post-process effects
-- in progress...
 
 ## 4.0.9 (PT update)
 - PT supports bakery

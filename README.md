@@ -1,12 +1,10 @@
 # Voxel Builder
 
-![banner](https://repository-images.githubusercontent.com/565157149/09627ada-d430-4464-ac92-dfcfb4b1760a)
-
-![screenshot](media/screenshot_pt.jpg)
+![banner](https://repository-images.githubusercontent.com/565157149/f979eefb-c4dc-4321-a6fd-08dc5dd02ada)
 
 **Voxel-based 3D modeling application**
 
-Version 4.1.0 Beta 2023<br>
+Version 4.1.1 Beta 2023<br>
 Babylon.js 6.26.0 ```main engine```<br>
 Three.js r158
 
@@ -19,11 +17,10 @@ Three.js r158
 **File I/O**
 - Save and load VBX [wiki](https://github.com/nimadez/voxel-builder/wiki/VBX-Format)
 - Import MagicaVoxel VOX
-- Export to GLB/GLTF/OBJ/STL
-- Screenshot 4x to PNG
+- Export to GLB, GLTF, OBJ, STL
+- Screenshot to PNG
 - Quick save and load, undo/redo
-- Load HDR images and textures
-- Load 3D models and images for voxelization
+- Load HDR images and PBR textures
 - Support file drag and drop<br>*(VBX, VOX, OBJ, GLB, HDR, PNG, JPG, SVG)*
 - [Blender importer script](https://github.com/nimadez/voxel-builder/blob/main/scripts/blender-importer.py) for VBX files
 
@@ -43,8 +40,7 @@ Three.js r158
 
 **Rendering**
 - Real-time GPU path tracing [wiki](https://github.com/nimadez/voxel-builder/wiki/Real-Time-GPU-Path-Tracing)
-- Basic PBR rendering, HDRI lighting, and post-processing
-- Sandbox WASD controls on desktop, joystick controls on touchscreen
+- PBR rendering in sandbox [wiki](https://github.com/nimadez/voxel-builder/wiki/sandbox)
 
 **Extensibility**
 - ES modules [wiki](https://github.com/nimadez/voxel-builder/wiki/Modules)
@@ -63,6 +59,7 @@ Three.js r158
 > - Touch pen or Wacom tablet recommended for best experience
 > - Install the webapp to start fullscreen in landscape orientation
 > - Voxel Builder is not optimized for small screens
+> - VB is a desktop app and its capabilities are not fully tested on mobile devices
 
 ## Known Issues
 ```
@@ -81,12 +78,6 @@ with more powerful computers.
 Multiple meshes need to have the same properties,
 or they won't merge, the only solution is to merge meshes
 before exporting to GLB.
-
-■ Pathtracing is not supported on mobile devices
-See comments @src/modules/pathtracer/app.js
-
-■ Pathtracer does not support multi-material
-See comments @src/modules/pathtracer/app.js
 ```
 
 ## FAQ
@@ -116,7 +107,7 @@ See comments @src/modules/pathtracer/app.js
 ↑ I wrote a playground for learning Babylon.js
 ```
 
-Latest:<br>
+Latest<br>
 ![screenshot](media/screenshot.jpg?raw=true "Screenshot")
 
 Version 3.0.0 *(BJS 4)* to 4.0.0 *(BJS 6)*<br>

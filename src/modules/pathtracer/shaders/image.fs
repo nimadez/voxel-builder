@@ -3,8 +3,7 @@ precision mediump int;
 precision mediump sampler2D;
 
 uniform sampler2D uBuffer;
-uniform float uTime;
-uniform bool uPostFx;
+uniform int uRenderPassId;
 
 varying vec2 vUv;
 
@@ -16,22 +15,26 @@ void main()	{
     vec4 data = texelFetch(uBuffer, ivec2(gl_FragCoord), 0);
     vec3 col = data.rgb / data.a;
     
-    col = ACES(col);                    // tonemapping
-    col = pow(col, vec3(0.4545));       // gamma 1.0/2.2
+    // tonemapping
+    col = ACES(col);
 
-    if (uPostFx) {
-        vec2 cen = vUv - vec2(0.5);
-
-        // grading
+    // grading
+    if (uRenderPassId == 0) {
         col = pow(col, vec3(0.8, 0.85, 0.9));
+    }
 
+    // gamma 1.0/2.2
+    col = pow(col, vec3(0.4545));
+
+    if (uRenderPassId == 0) {
         // film grain
-        float strength = 8.0;
-        float x = (vUv.x + 4.0) * (vUv.y + 4.0) * (uTime * 10.0);
+        float strength = 5.0;
+        float x = (vUv.x + 4.0) * (vUv.y + 4.0) * 10.0;
         vec3 grain = vec3(mod((mod(x, 13.0) + 1.0) * (mod(x, 123.0) + 1.0), 0.01)-0.005) * strength;
         col *= 1.0 - grain;
 
         // vignette
+        //vec2 cen = vUv - vec2(0.5);
         col *= vec3(1) * smoothstep(1.8, 0.5, length(vUv * 2.0 - 1.0)) * 0.5 + 0.5;
     }
     
