@@ -7,7 +7,17 @@
     Based on my previous experiment "nRAY: Raymarched Pathtracer"
 
     Notice: Mobile GPU is not supported
-    There is an issue with three-mesh-bvh that may be fixed in the future.
+    Unable to run three-mesh-bvh examples on S22 ultra
+
+    Notice: Multi-material is a known issue
+    Unable to extract three.js geometry groups from babylon.js mesh,
+    without performance hit on bvh regeneration, the startup is unbearable.
+
+    Dev note: not every material is fine for a clean-hard-edge voxel surface,
+    for example, dielectric and SSS look bad and just slow down the shader.
+
+    Dev note: real-time voxel editing is possible by setting pointerEvents to none,
+    but it uses more hardware resources because we have to keep both engines running.
 */
 import * as THREE from 'three';
 import { OrbitControls } from '../../../libs/addons/OrbitControls.js';
@@ -29,6 +39,7 @@ const CAM_FAR = 1000;
 const MAXSAMPLES = 4096;
 const MAXWHITE = 0.86;
 const GRAY = MAXWHITE / 1.5;
+const EMISSIVE_POWER = 12.0;
 const FPS = 1000 / 60;
 const RAD2DEG_STATIC = 180 / Math.PI;
 let imageFragment = null;
@@ -38,6 +49,7 @@ let then = performance.now();
 let pingPong = 0;
 let isLoaded = false;
 let isFastMode = false;
+let lastHDR = null;
 
 
 class Pathtracer {
@@ -59,10 +71,9 @@ class Pathtracer {
         this.CRTT = undefined;
         this.envTexture = undefined;
         this.rtTexture = undefined;
-        this.voxelTexture = createVoxelTexture('#222222');
+        this.voxelTexture = createVoxelTexture('#1E1E1E');
         this.nullTexture = new THREE.Texture();
         this.geom = undefined;
-        this.materials = [ 0, 1, 2 ]; // emissive, lambert, metallic
         this.init();
     }
 
@@ -111,41 +122,58 @@ class Pathtracer {
         this.controls.target = new THREE.Vector3(scene.activeCamera.target.x, scene.activeCamera.target.y, scene.activeCamera.target.z);
         this.controls.update();
 
-        this.loadHDR(document.getElementById('input-pt-hdri').value);
         this.setShaderMaterials();
         this.createGeometry();
         this.animate();
         this.resize();
 
-        // restore states
+        // restore previous states
+        if (hdri.hdrMap.url !== lastHDR)
+            pt.loadHDR(hdri.hdrMap.url);
+        this.updateAttributeColors(document.getElementById('input-pt-overmat').checked);
+        this.updateUniformBounces(document.getElementById('input-pt-bounces').value);
+        this.updateUniformRenderPassId(document.getElementById('input-pt-passes').value);
         this.updateUniformCameraAperture(document.getElementById('input-pt-aperture').value);
         this.updateUniformCameraFocalLength(document.getElementById('input-pt-focallength').value);
+        this.updateUniformEnvPower(document.getElementById('input-pt-envpower').value);
+        this.updateUniformSunLight(document.getElementById('input-pt-sunlight').checked);
+        this.updateUniformSunDir(-light.getDirection().x, -light.getDirection().y, -light.getDirection().z);
+        this.updateUniformBackground(document.getElementById('input-pt-background').checked);
+        this.updateUniformMaterialId(document.getElementById('input-pt-material').value);
+        this.updateUniformMaterialEmissive(document.getElementById('input-pt-emissive').value);
+        this.updateUniformMaterialRoughness(document.getElementById('input-pt-roughness').value);
+        this.updateUniformTexture(document.getElementById('input-pt-usetexture').checked);
     }
 
     setShaderMaterials() {
         this.uniImage = {
             uBuffer: { value: this.rtTexture },
-            uRenderPassId: { value: document.getElementById('input-pt-passes').value },
+            uRenderPassId: { value: 0 }
         };
         this.uniRender = {
             uBuffer: { value: this.RTTB.texture },
-            uRenderPassId: { value: document.getElementById('input-pt-passes').value },
-            uBounces: { value: document.getElementById('input-pt-bounces').value },
+            uRenderPassId: { value: 0 },
+            
+            uBounces: { value: 4 },
             uSamples: { value: 0 },
-            uResolution: { value: new THREE.Vector2(1, 1) },
+            uResolution: { value: new THREE.Vector2() },
             uAperture: { value: 0.0 },
-            uFocalLength: { value: document.getElementById('input-pt-focallength').value },
-            uEnvPower: { value: document.getElementById('input-pt-envpower').value },
+            uFocalLength: { value: 50.0 },
+            uEnvPower: { value: 1.0 },
+            uSunLight: { value: false },
+            uSunDir: { value: new THREE.Vector3() },
+            uBackground: { value: true },
             uNoise: { value: noiseTexture },
             uCubeMap: { value: this.envTexture },
             uTexture: { value: this.nullTexture },
-            uEmissive: { value: new THREE.Color(document.getElementById('input-pt-emissive').value) },
-            uMetallic: { value: document.getElementById('input-pt-metallic').value },
+            uMaterialId: { value: 0 },
+            uEmissive: { value: new THREE.Color() },
+            uRoughness: { value: 0.0 },
             uFastMode: { value: isFastMode },
 
             cameraWorldMatrix: { value: new THREE.Matrix4() },
             invProjectionMatrix: { value: new THREE.Matrix4() },
-            seed: { value: 0 },
+            seed: { value: 0.00001 + Math.random() * (0.01, 0.00001) },
 
             bvh: { value: new MeshBVHUniformStruct() },
             normalAttribute: { value: new FloatVertexAttributeTexture() },
@@ -236,13 +264,6 @@ class Pathtracer {
         this.uniRender['colorAttribute'].value.updateFrom(this.geom.attributes.color);
         this.uniRender['uvAttribute'].value.updateFrom(this.geom.attributes.uv);
 
-        // restore states
-        //(document.getElementById('input-pt-metallic').value == 0) ?
-        //    this.updateAttributeMaterialIndex(1) :
-        //    this.updateAttributeMaterialIndex(2);
-        this.updateAttributeColors(document.getElementById('input-pt-overmat').checked);
-        this.updateUniformTexture(document.getElementById('input-pt-usetexture').checked);
-
         isLoaded = true;
         this.resetSamples();
     }
@@ -252,22 +273,12 @@ class Pathtracer {
         plane.rotateX(Math.PI / 2);
         plane.translate(0, -0.5, 0);
         const colors = new Float32Array(plane.attributes.position.count * 4);
-        colors.fill(GRAY);
+        colors.fill(GRAY/1.1); // alpha channel ignored
         plane.setAttribute('color', new THREE.BufferAttribute(colors, 4));
         return mergeGeometries([ plane, geom ], false);
     }
 
     /* updateAttributeMaterialIndex(idx) {
-        // TODO: we need to find a way to tag each voxel for a specific material index,
-        // it's easier to do in bakery mode because we can select meshes and apply properties,
-        // but voxels only have position, color and visibility, we need to use colors to
-        // tag material indexes, then manually set voxel colors for each material,
-        // another option is to access SPS particles to register new materialIndex value.
-        //
-        // The new issue is slowing down the bvh generation,
-        // if we want to check the mesh again here, the startup
-        // is slow when stopping and starting the render.
-        
         this.geom.addGroup(0, Infinity, this.materials[idx]);
         const materialIndex = getGroupMaterialIndicesAttribute(this.geom, this.materials, this.materials);
         this.geom.setAttribute('materialIndex', materialIndex);
@@ -280,7 +291,7 @@ class Pathtracer {
     updateAttributeColors(isOverride) {
         if (isOverride) {
             const colors = new Float32Array(this.geom.attributes.position.count * 4);
-            colors.fill(GRAY);
+            colors.fill(GRAY); // alpha channel ignored
             this.uniRender['colorAttribute'].value.updateFrom(new THREE.BufferAttribute(colors, 4));
         } else {
             this.uniRender['colorAttribute'].value.updateFrom(this.geom.attributes.color);
@@ -288,8 +299,15 @@ class Pathtracer {
         this.resetSamples();
     }
 
-    updateUniformBounces(val) {
-        this.uniRender['uBounces'].value = val;
+    updateUniformRenderPassId(id) {
+        id = parseInt(id);
+        this.uniImage['uRenderPassId'].value = id;
+        this.uniRender['uRenderPassId'].value = id;
+        this.resetSamples();
+    }
+
+    updateUniformBounces(num) {
+        this.uniRender['uBounces'].value = parseInt(num);
         this.resetSamples();
     }
 
@@ -300,39 +318,59 @@ class Pathtracer {
         this.resetSamples();
     }
 
-    updateUniformMaterialEmissive(hex) {
-        this.uniRender['uEmissive'].value = new THREE.Color(hex);
+    updateUniformMaterialId(id) {
+        this.uniRender['uMaterialId'].value = parseInt(id);
         this.resetSamples();
     }
 
-    updateUniformMaterialMetallic(val) {
-        this.uniRender['uMetallic'].value = val;
+    updateUniformMaterialEmissive(hex) {
+        const k = EMISSIVE_POWER * EMISSIVE_POWER;
+        const col = new THREE.Color(hex);
+        col.r *= k;
+        col.g *= k;
+        col.b *= k;
+        this.uniRender['uEmissive'].value = col;
+        this.resetSamples();
+    }
+
+    updateUniformMaterialRoughness(val) {
+        val = parseFloat(val);
+        this.uniRender['uRoughness'].value = val * val;
         this.resetSamples();
     }
 
     updateUniformCameraAperture(val) {
-        this.uniRender['uAperture'].value = val / 1000;
+        this.uniRender['uAperture'].value = parseFloat(val) / 1000;
         this.resetSamples();
     }
 
     updateUniformCameraFocalLength(val) {
-        this.uniRender['uFocalLength'].value = val;
+        this.uniRender['uFocalLength'].value = parseFloat(val);
         this.resetSamples();
     }
 
     updateUniformEnvPower(val) {
-        this.uniRender['uEnvPower'].value = val;
+        this.uniRender['uEnvPower'].value = parseFloat(val);
         this.resetSamples();
     }
 
-    updateUniformFastMode(val) {
-        this.uniRender['uFastMode'].value = val;
+    updateUniformSunLight(isEnabled) {
+        this.uniRender['uSunLight'].value = isEnabled;
+        this.resetSamples();
     }
 
-    updateUniformRenderPassId(val) {
-        this.uniImage['uRenderPassId'].value = val;
-        this.uniRender['uRenderPassId'].value = val;
+    updateUniformSunDir(x, y, z) {
+        this.uniRender['uSunDir'].value = new THREE.Vector3(x, y, z).normalize();
         this.resetSamples();
+    }
+
+    updateUniformBackground(isEnabled) {
+        this.uniRender['uBackground'].value = isEnabled;
+        this.resetSamples();
+    }
+
+    updateUniformFastMode(isEnabled) {
+        this.uniRender['uFastMode'].value = isEnabled;
     }
 
     resetSamples() {
@@ -358,7 +396,7 @@ class Pathtracer {
                     );
                 }
 
-                pt.camera.updateMatrixWorld();
+                pt.camera.updateMatrixWorld(true);
 
                 pt.uniImage['uBuffer'].value = pt.rtTexture;
                 pt.uniRender['uSamples'].value = pt.samples;
@@ -368,6 +406,7 @@ class Pathtracer {
                 pt.uniRender['seed'].value = (pt.uniRender['seed'].value + 0.00001) % 2;
 
                 pt.renderer.setRenderTarget(pingPong ? pt.RTTA : pt.RTTB);
+                //pt.renderer.clear();
                 pt.rtQuadB.render(pt.renderer);
 
                 pt.rtTexture = pingPong ? pt.RTTA.texture : pt.RTTB.texture;
@@ -410,18 +449,36 @@ class Pathtracer {
         this.resetSamples();
     }
 
-    async loadHDR(envMap) {
-        await loadRGBE(envMap).then(data => {
+    loadHDR(url) {
+        loadRGBE(url).then(tex => {
+            lastHDR = url;
             if (this.envTexture) this.envTexture.dispose();
-            //data.colorspace = THREE.LinearSRGBColorSpace;
-            data.minFilter = THREE.LinearFilter;
-            data.magFilter = THREE.LinearFilter;
-            data.generateMipmaps = false;
-            data.flipY = false;
-            this.envTexture = this.CRTT.fromEquirectangularTexture(this.renderer, data).texture;
-            this.uniRender['uCubeMap'].value = this.envTexture;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter;
+            tex.generateMipmaps = false;
+            tex.flipY = false;
+            this.envTexture = this.CRTT.fromEquirectangularTexture(this.renderer, tex).texture;
+            if (this.uniRender) // workaround for error: loading hdr before pt.init
+                this.uniRender['uCubeMap'].value = this.envTexture;
             this.resetSamples();
         });
+    }
+
+    shot() { // TODO: use framebuffer
+        const uri = this.renderer.domElement.toDataURL('image/png');
+        saveDialogImage(uri, `shot_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
+    }
+
+    toggle() {
+        if (isMobileDevice()) {
+            ui.notification("mobile is not supported, try again later!");
+            return;
+        }
+        if (MODE == 1 && bakery.meshes.length == 0) {
+            ui.notification("no baked meshes");
+            return;
+        }
+        (!isLoaded) ? this.activate() : this.deactivate();
     }
 
     activate() {
@@ -481,59 +538,16 @@ class Pathtracer {
 
 const pt = new Pathtracer();
 
-function activate() {
-    pt.activate();
-}
 
-function deactivate() {
-    pt.deactivate();
-}
-
-function toggle() {
-    if (isMobileDevice()) {
-        ui.notification("Mobile is not supported, try again later!");
-        return;
-    }
-    if (MODE == 1 && bakery.meshes.length == 0) {
-        ui.notification("no baked meshes");
-        return;
-    }
-    (!isLoaded) ? pt.activate() : pt.deactivate();
-}
-
-function isActive() {
-    return pt.renderer && isLoaded;
-}
-
-function reset() {
-    if (isLoaded)
-        pt.resetSamples();
-}
-
-function updateCamera(fov) {
-    if (isLoaded) {
-        pt.camera.fov = fov * RAD2DEG_STATIC;
-        pt.camera.updateProjectionMatrix();
-        pt.resetSamples();
-    }
-}
-
-function getShot() { // TODO: use framebuffer
-    return pt.renderer.domElement.toDataURL('image/png');
-}
-
-function dispose() {
-    pt.dispose();
-}
-
-
+// -------------------------------------------------------
 // Load assets
 
-await loadFile('src/modules/pathtracer/shaders/image.fs').then(data => {
+
+loadFile('src/modules/pathtracer/shaders/image.fs').then(data => {
     imageFragment = data;
 });
 
-await loadFile('src/modules/pathtracer/shaders/render.fs').then(data => {
+loadFile('src/modules/pathtracer/shaders/render.fs').then(data => {
     renderFragment =  `
         precision highp isampler2D;
         precision highp usampler2D;
@@ -544,7 +558,7 @@ await loadFile('src/modules/pathtracer/shaders/render.fs').then(data => {
         ` + data;
 });
 
-await loadTexture('assets/bluenoise256.png').then(tex => {
+loadTexture('assets/bluenoise256.png').then(tex => {
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.format = THREE.RGBAFormat;
@@ -555,7 +569,9 @@ await loadTexture('assets/bluenoise256.png').then(tex => {
 });
 
 
+// -------------------------------------------------------
 // Register events
+
 
 pt.canvas.addEventListener('wheel', () => {
     if (isLoaded) {
@@ -567,7 +583,84 @@ pt.canvas.addEventListener('wheel', () => {
 }, false);
 
 ui.domPathtracerBtn.onclick = () => {
-    toggle();
+    pt.toggle();
+};
+
+document.getElementById('input-pt-passes').onchange = (ev) => {
+    if (isLoaded)
+        pt.updateUniformRenderPassId(ev.target.value);
+};
+
+document.getElementById('input-pt-bounces').onchange = (ev) => {
+    if (isLoaded)
+        pt.updateUniformBounces(ev.target.value);
+};
+
+document.getElementById('input-pt-envpower').onchange = (ev) => {
+    if (isLoaded) {
+        if (ev.target.value < 0.01) ev.target.value = 0.01;
+        pt.updateUniformEnvPower(ev.target.value);
+    }
+};
+
+document.getElementById('input-pt-envpower').onwheel = (ev) => {
+    if (isLoaded)
+        pt.updateUniformEnvPower(ev.target.value);
+};
+
+document.getElementById('input-pt-sunlight').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformSunLight(ev.target.checked);
+};
+
+document.getElementById('input-pt-background').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformBackground(ev.target.checked);
+};
+
+document.getElementById('input-pt-aperture').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformCameraAperture(ev.target.value);
+};
+
+document.getElementById('input-pt-focallength').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformCameraFocalLength(ev.target.value);
+};
+
+document.getElementById('input-pt-material').onchange = (ev) => {
+    if (isLoaded)
+        pt.updateUniformMaterialId(ev.target.value);
+};
+
+document.getElementById('input-pt-emissive').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformMaterialEmissive(ev.target.value);
+};
+
+document.getElementById('input-pt-roughness').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformMaterialRoughness(ev.target.value);
+};
+
+document.getElementById('input-pt-usetexture').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateUniformTexture(ev.target.checked);
+};
+
+document.getElementById('input-pt-overmat').oninput = (ev) => {
+    if (isLoaded)
+        pt.updateAttributeColors(ev.target.checked);
+};
+
+document.getElementById('input-pt-ground').oninput = () => {
+    if (isLoaded)
+        pt.createGeometry();
+};
+
+document.getElementById('btn-pt-shot').onclick = () => {
+    if (isLoaded)
+        pt.shot();
 };
 
 document.getElementById('btn-pt-fast').onclick = (ev) => {
@@ -581,104 +674,15 @@ document.getElementById('btn-pt-fast').onclick = (ev) => {
     }
 };
 
-document.getElementById('input-pt-bounces').onchange = (ev) => {
-    if (isLoaded)
-        pt.updateUniformBounces(parseInt(ev.target.value));
-};
-
-document.getElementById('input-pt-passes').onchange = (ev) => {
-    if (isLoaded)
-        pt.updateUniformRenderPassId(parseInt(ev.target.value));
-};
-
-document.getElementById('input-pt-envpower').oninput = (ev) => {
-    let power = parseFloat(ev.target.value);
-    if (ev.target.value == 0) power = 0.1;
-    if (isLoaded)
-        pt.updateUniformEnvPower(power);
-};
-
-document.getElementById('input-pt-aperture').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformCameraAperture(parseFloat(ev.target.value));
-};
-
-document.getElementById('input-pt-focallength').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformCameraFocalLength(parseFloat(ev.target.value));
-};
-
-document.getElementById('input-pt-emissive').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformMaterialEmissive(ev.target.value);
-};
-
-document.getElementById('input-pt-metallic').oninput = (ev) => {
-    if (isLoaded) {
-        //(ev.target.value == 0) ?
-        //    pt.updateAttributeMaterialIndex(1) :
-        //    pt.updateAttributeMaterialIndex(2);
-        pt.updateUniformMaterialMetallic(parseFloat(ev.target.value));
-    }
-};
-
-document.getElementById('input-pt-usetexture').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformTexture(ev.target.checked);
-};
-
-document.getElementById('input-pt-overmat').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateAttributeColors(ev.target.checked);
-};
-
-document.getElementById('input-pt-hdri').onchange = (ev) => {
-    if (isLoaded)
-        pt.loadHDR(ev.target.value);
-};
-
-document.getElementById('input-pt-ground').onchange = () => {
-    if (isLoaded)
-        pt.createGeometry();
-};
-
 window.addEventListener('resize', () => {
     if (isLoaded)
         pt.resize();
 }, false);
 
-document.getElementById('openfile_pt_hdr').addEventListener("change", (ev) => {
-    if (ev.target.files.length > 0) {
-        const url = URL.createObjectURL(ev.target.files[0]);
-        pt.loadHDR(url);
-        URL.revokeObjectURL(url);
-    }
-}, false);
 
-document.getElementById('input-pt-presets').onchange = (ev) => {
-    switch (ev.target.value) {
-        case "0": // default lambert
-            document.getElementById('input-pt-envpower').value = 20;
-            document.getElementById('input-pt-metallic').value = 0;
-            if (isLoaded) {
-                pt.updateUniformEnvPower(20);
-                pt.updateUniformMaterialMetallic(0);
-            }
-            break;
-        case "1": // default metallic
-            document.getElementById('input-pt-envpower').value = 4;
-            document.getElementById('input-pt-metallic').value = 0.2;
-            if (isLoaded) {
-                pt.updateUniformEnvPower(4);
-                pt.updateUniformMaterialMetallic(0.2);
-            }
-            break;
-    }
-    pt.resetSamples();
-};
-
-
+// -------------------------------------------------------
 // Utils
+
 
 async function loadFile(url) {
     return new Promise(resolve => {
@@ -718,46 +722,6 @@ function createVoxelTexture(hex, size=256) {
     return tex;
 }
 
-// source: https://github.com/gkjohnson/three-gpu-pathtracer
-/* function getGroupMaterialIndicesAttribute(geometry, materials, allMaterials) {
-    const indexAttr = geometry.index;
-    const posAttr = geometry.attributes.position;
-    const vertCount = posAttr.count;
-    const totalCount = indexAttr ? indexAttr.count : vertCount;
-    let groups = geometry.groups;
-    if (groups.length === 0) {
-        groups = [ { count: totalCount, start: 0, materialIndex: 0 } ];
-    }
-
-    // use an array with the minimum precision required to store all material id references.
-    let materialArray;
-    if (allMaterials.length <= 255) {
-        materialArray = new Uint8Array(vertCount);
-    } else {
-        materialArray = new Uint16Array(vertCount);
-    }
-
-    for (let i = 0; i < groups.length; i++) {
-        const group = groups[i];
-        const start = group.start;
-        const count = group.count;
-        const endCount = Math.min(count, totalCount - start);
-
-        const mat = Array.isArray(materials) ? materials[ group.materialIndex ] : materials;
-        const materialIndex = allMaterials.indexOf(mat);
-
-        for (let j = 0; j < endCount; j++) {
-            let index = start + j;
-            if (indexAttr) {
-                index = indexAttr.getX(index);
-            }
-            materialArray[ index ] = materialIndex;
-        }
-    }
-
-    return new THREE.BufferAttribute(materialArray, 1, false);
-} */
-
 function timeFormat(t) {
     const sec_num = parseInt(t, 10);
     let h = Math.floor(sec_num / 3600);
@@ -770,15 +734,22 @@ function timeFormat(t) {
 }
 
 
+// -------------------------------------------------------
 // Exports
 
+
 export {
-    activate,
-    deactivate,
-    toggle,
-    isActive,
-    reset,
-    updateCamera,
-    getShot,
-    dispose
+    pt
+}
+
+export function isActive() {
+    return pt.renderer && isLoaded;
+}
+
+export function updateCamera(fov) {
+    if (isLoaded) {
+        pt.camera.fov = fov * RAD2DEG_STATIC;
+        pt.camera.updateProjectionMatrix();
+        pt.resetSamples();
+    }
 }

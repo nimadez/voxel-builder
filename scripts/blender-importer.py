@@ -1,5 +1,5 @@
 """
-    # Blender 3.x.x
+    # Blender 4.x.x
     # Run script inside Blender and select .VBX file
     # This script only supports the latest JSON VBX
 """
@@ -49,7 +49,7 @@ def create(filePath):
 
     materials = []
     for hex in uniqueColors:
-        rgb = tuple(int(hex[i:i + 2], 16) / 255. for i in (1, 3, 5))
+        rgb = tuple(pow(int(hex[i:i + 2], 16) / 255, 2.2) for i in (1, 3, 5))
         mat = bpy.data.materials.new("voxel_%s" %(hex))
         mat.use_nodes = True
         principled = mat.node_tree.nodes['Principled BSDF']

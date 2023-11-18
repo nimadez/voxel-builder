@@ -1,16 +1,30 @@
-## 4.1.1 nightly
-- Fix voxelizer floor issue
-- Simplified the hover menu, a revision needed
+## 4.1.2 nightly
+- Babylon.js updated to 6.29.2
+- Fix lambert material
+- Optimize pt shader performance
+- Manage and refactor pathtracer code
+- Update blender-importer script for blender 4
+- Add optional opaque background for pt
+- Reduce shader calculations (move to cpu)
+- Add basic directional sun light
+- New universal and dynamic sun-locator system
+- PT sun direction is equal to babylon.js scene
+- PT hdri is merged with babylon.js scene
+- Sort all the scene lighting functions (funcs to class)
+- in progress...
+
+## 4.1.1
+- Fix bvh voxelizer floor issue
+- Simplified the hover menu
 - Render tab renamed to sandbox
 - Gravity is enabled in sandbox (see wiki)
 - Optimize and cleanup pt shader
 - Speed up bvh generation
 - Take care of ibl clamp (support all hdr images now)
 - Add multi-pass rendering
-- Fix chrome save-as dialog (navigator.vendor has been deprecated by google)
-- in progress...
+- Fix chrome save-as dialog (navigator.vendor has been deprecated)
 
-## 4.1.0 (PT update)
+## 4.1.0
 - Fix the uvs in bakery mode, grid texture enabled
 - Metallic replaced roughness
 - Equalize babylon.js hdri for pt
@@ -21,7 +35,7 @@
 - New floor generator, create floor and stand for pt renders
 - Add optional post-process effects
 
-## 4.0.9 (PT update)
+## 4.0.9
 - PT supports bakery
 - Add keyboard shortcut R for pt renderer
 - Optimize and speed up the bake-to-mesh process
@@ -33,7 +47,7 @@
 - Optimize pt camera navigation performance
 - Add grid texture in bakery mode
 
-## 4.0.8 (PT update)
+## 4.0.8
 - Add progress bar
 - Add optional emissive color
 - Add optional ground

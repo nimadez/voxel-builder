@@ -80,7 +80,11 @@
         option { font-family: var(--font); font-size: 12px; color: silver; background: var(--btn-bg); }
         #canvas_render { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(0deg, #384052 0%, #515a6e 100%); }
         #canvas_palette { z-index: 1; image-rendering: pixelated; position: relative; width: 100%; height: 64000px; }
-        #canvas_pt { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell; }
+        #canvas_pt { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell;
+            background-color: #363d46;
+            background-image: linear-gradient(45deg, #30373d 25%, transparent 20%), linear-gradient(-45deg, #30373d 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #30373d 75%), linear-gradient(-45deg, transparent 75%, #30373d 75%);
+            background-size: 38px 38px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
         .menu_R { z-index: 500; background: var(--menu-bg); position: absolute; top: 0; right: 0; padding: 0 4px 4px 4px; width: 110px; height: fit-content; transform: translate(200px, 0); transition: transform 0.1s ease; box-shadow: -1px 1px 3px #404b58AA; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px; }
         .menu_R li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
         .menu_R li:hover { background: none; }
@@ -159,7 +163,7 @@
         #btn-symm-axis:hover { background: var(--input-bg); }
         #menu_inscreen { z-index: 9; display: unset; background: #30394740; width: 30px; right: 0; bottom: 95px; position: absolute; text-align: center; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
         #btn-helper-symmetry { padding: 5px; font-size: 17px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
-        #btn-helper-workplane { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; left: 50%; bottom: 20px; transform: translateX(-50%); position: absolute; }
+        #btn-helper-workplane { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; left: 50%; bottom: 30px; transform: translateX(-50%); position: absolute; }
         #btn-helper-workplane i { font-size: 18px; color: aqua; opacity: 0.8; }
         #input-camera-fov-num { text-align: center; cursor: text; }
         #sandbox_controls { display: none; }
@@ -174,10 +178,10 @@
         #axisview-hitbox { z-index: 500; display: none; width: 40px; height: 40px; position: absolute; right: 30px; bottom: 30px; }
         #info { z-index: 9; background: #2c313a60; color: #97a5b880; font-size: 9px; position: absolute; padding: 2px; width: auto; bottom: 0; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: #97a5b8; letter-spacing: 0.05em; }
-        #info_ws { z-index: 10; display: none; background: #2c313a60; color: #97a5b8AA; font-size: 11px; position: absolute; padding: 2px; width: auto; bottom: 15px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
-        #info_pt { z-index: 100; background: #2c313a60; color: #97a5b880; font-size: 9px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
+        #info_ws { z-index: 10; display: none; background: #2c313a60; color: #97a5b8AA; font-size: 11px; position: absolute; padding: 2px; width: auto; bottom: 18px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
+        #info_pt { z-index: 100; background: #2c313a60; color: #97a5b880; font-size: 9px; position: absolute; padding: 2px 2px 3px 2px; width: 100%; bottom: 0; text-align: center; pointer-events: none; }
         #info_pt span { color: #97a5b8; letter-spacing: 0.05em; }
-        #progressbar { z-index: 1500; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 2px; bottom: 0; position: fixed; }
+        #progressbar { z-index: 1500; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 1px; bottom: 0; position: fixed; }
         #confirm { z-index: 2500; display: none; background: #2a2f3aDD; width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,0); margin-top: -30px; padding: 5px; border-radius: 3px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-align: center; }
         #confirm span { width: 100%; margin-bottom: 5px; font-size: 11px; letter-spacing: 0.03em; color: orange; display: block; }
         #confirm button { width: 48%; font-size: 12px; text-transform: uppercase; }
@@ -272,6 +276,7 @@
             <select onchange="project.loadFromUrl(this.options[this.selectedIndex].value)">
                 <option value="samples/startup.vbx">Startup</option>
                 <option value="samples/pt_cornellbox.vbx">PT: Cornell Box</option>
+                <option value="samples/pt_indirect.vbx">PT: Indirect Bounce</option>
                 <option value="samples/pt_bakery.vbx">PT: Bakery Test</option>
                 <option value="samples/test_archinterior.vbx">Arch Interior</option>
                 <option value="samples/test_boxtool.vbx">Box Tool</option>
@@ -296,9 +301,10 @@
         <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/apps/asset-viewer', '_blank').focus();">Asset Viewer</button></li>
         <li class="spacer"></li>
         <li class="about">
-            4.1.1 Beta 2023
+            4.1.2 Beta 2023
             <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub Repository</a>
-            <br>©2019 <a href="https://nimadez.github.io/">@nimadez</a>
+            <br>Developer
+            <br>&#8627; <a href="https://nimadez.github.io/">Nima Dezfuli</a>
         </li>
     </ul>
     <ul class="menu_R" id="menu-prefs">
@@ -481,7 +487,7 @@
         <li onclick="ui.toggleMenuPathtracer()"><i class="material-icons">exit_to_app</i> <span>PT RENDERER</span></li>
         <li class="category">RENDER</li>
         <li class="row">
-            <select id="input-pt-bounces" title="Bounces" style="width: 60%">
+            <select id="input-pt-bounces" title="Bounces" style="width: 70%">
                 <option value="6">6</option>
                 <option value="5">5</option>
                 <option value="4" selected>4</option>
@@ -490,43 +496,29 @@
             </select>
             <select id="input-pt-passes" title="Render Pass">
                 <option value="-1">None</option>
-                <option value="0" selected>Post FX</option>
+                <option value="0" selected>FX</option>
                 <option value="1">Mask</option>
                 <option value="2">Depth</option>
                 <option value="3">Color</option>
             </select>
         </li>
         <li class="row">
-            <button onclick="createScreenshot()">Shot</button>
+            <button id="btn-pt-shot" style="width: 70%">Shot</button>
             <button id="btn-pt-fast">Fast</button>
         </li>
-        <li class="category">IBL</li>
-        <li class="row">
-            <select id="input-pt-hdri">
-                <option value="assets/snow_field_2_puresky_1k.hdr" selected>Default</option>
-                <option value="assets/black.hdr">Black</option>
-                <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/master/footprint_court.hdr">Footprint Court</option>
-                <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">Venice Sunset</option>
-                <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/pedestrian_overpass_1k.hdr">Pedestrian Overpass</option>
-                <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/blouberg_sunrise_2_1k.hdr">Blouberg Sunrise</option>
-                <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/quarry_01_1k.hdr">Quarry</option>
-            </select>
-            <button onclick="document.getElementById('openfile_pt_hdr').click()" style="width: 60%">Load</button>
-        </li>
-        <li class="row"><label style="margin-right: 16px">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="4" min="0" max="100" step="0.5"></li>
-        <li class="category">CAMERA</li>
-        <li class="row"><label style="margin-right: 5px">Aperture</label> <input type="number" id="input-pt-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>
-        <li class="row"><label style="margin-right: 12px">Focal Length</label> <input type="number" id="input-pt-focallength" class="ignorekeys" value="50" min="0" max="500" step="0.5"></li>
+        <li><input id="input-pt-background" type="checkbox" checked></input> <label for="input-pt-background">Background</label></li>
+        <li class="category">ENVIRONMENT</li>
+        <li class="row"><label style="min-width: 53%">IBL Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="4.5" min="0.01" max="20" step="0.05"></li>
+        <li><input id="input-pt-sunlight" type="checkbox"></input> <label for="input-pt-sunlight">Sun Light</label></li>
         <li class="category">MATERIAL</li>
-        <li class="row" title="Presets">
-            <select id="input-pt-presets">
-                <option value="0">Ideal Lambert</option>
-                <option value="1" selected>Ideal Metallic</option>
+        <li>
+            <select id="input-pt-material">
+                <option value="1">Lambert</option>
+                <option value="2" selected>Metallic</option>
             </select>
         </li>
-        <li class="spacer"></li>
-        <li class="row"><label style="margin-right: 4px">Emissive</label> <input type="color" id="input-pt-emissive" value="#847843"></li>
-        <li class="row"><label style="margin-right: 9px">Metallic</label> <input type="number" id="input-pt-metallic" class="ignorekeys" value="0.2" min="0" max="1" step="0.01"></li>
+        <li class="row"><label style="margin-right: 15px">Emissive</label> <input type="color" id="input-pt-emissive" value="#847843"></li>
+        <li class="row"><label style="margin-right: 4px">Roughness</label> <input type="number" id="input-pt-roughness" class="ignorekeys" value="0.8" min="0" max="1" step="0.01"></li>
         <li><input id="input-pt-overmat" type="checkbox"></input> <label for="input-pt-overmat">Override Colors</label></li>
         <li><input id="input-pt-usetexture" type="checkbox" checked></input> <label for="input-pt-usetexture">Voxel Texture</label></li>
         <li class="category">MESHES</li>
@@ -543,7 +535,10 @@
             <input id="input-camera-fov-num" type="number" class="ignorekeys" value="0.7" min="0.1" max="1" step="0.01" oninput="this.nextElementSibling.value = this.value; camera.setFov(this.value)">
             <input id="input-camera-fov" type="range" value="0.7" min="0.1" max="1" step="0.01" oninput="this.previousElementSibling.value = this.value; camera.setFov(this.value)">
         </li>
-        <li class="category">ANIMATIONS</li>
+        <li class="category">DEPTH OF FIELD</li>
+        <li class="row"><label style="min-width: 50%">Aperture</label> <input type="number" id="input-pt-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>
+        <li class="row"><label style="min-width: 50%">Focal Len.</label> <input type="number" id="input-pt-focallength" class="ignorekeys" value="50" min="0" max="500" step="0.05"></li>
+        <li class="category">ANIMATION</li>
         <li><input type="checkbox" id="input-autorotate" onclick="camera.toggleCameraAutoRotation()"> <label for="input-autorotate">Auto Rotate</label></li>
     </ul>
     <ul class="menu_L" id="menu-env">
@@ -557,6 +552,7 @@
         <li>
             <select onchange="hdri.loadHDR(this.options[this.selectedIndex].value)">
                 <option value="assets/snow_field_2_puresky_1k.hdr">Default</option>
+                <option value="assets/black.hdr">Black</option>
                 <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/master/footprint_court.hdr">Footprint Court</option>
                 <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">Venice Sunset</option>
                 <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/pedestrian_overpass_1k.hdr">Pedestrian Overpass</option>
@@ -566,26 +562,25 @@
         </li>
         <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
         <li><button onclick="hdri.unloadHDR(true)">Unload</button></li>
-        <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display</label></li>
+        <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display HDRI</label></li>
         <li><input type="range" id="input-hdri-blur" value="0" min="0" max="1" step="0.01" oninput="hdri.setBlurAmount(this.value)"></li>
         <li class="category">SUN LIGHT</li>
         <li><input type="color" id="input-light-color" value="#BBB1A0"></li>
-        <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.6" min="0" max="2" step="0.01" oninput="updateLightIntensity(this.value)"></li>
-        <li class="row"><label>Angle°</label>&nbsp;<input type="number" id="input-light-angle" value="120" min="0" max="360" step="1" oninput="updateLightAngle(this.value)"></li>
-        <li class="row"><label>Height</label>&nbsp;<input type="number" id="input-light-height" value="100" min="0" max="500" step="5" oninput="updateLightHeight(this.value)"></li>
-        <li><input type="checkbox" id="input-light-shadows" onclick="enableShadows(this.checked)" checked> <label for="input-light-shadows">Shadows</label></li>
+        <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.6" min="0" max="1" step="0.01" oninput="light.updateIntensity(this.value)"></li>
+        <li><input type="checkbox" id="input-light-locator"> <label for="input-light-locator">Sun Locator</label></li>
+        <li><input type="checkbox" id="input-light-shadows" onclick="light.enableShadows(this.checked)" checked> <label for="input-light-shadows">Shadows</label></li>
     </ul>
     <ul class="menu_L" id="menu-material">
         <li onclick="ui.toggleMenuMaterial()"><i class="material-icons">exit_to_app</i> <span>PBR MATERIAL</span></li>
         <li class="category">PROPERTIES</li>
-        <li class="row"><label style="margin-right: 16px;">Rough</label> <input id="input-material-roughness" type="number" value="1" min="0" max="1" step="0.01" oninput="bakery.setMaterial('roughness'); document.getElementById('input-material-roughness-range').value = this.value"></li>
+        <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-material-roughness" type="number" value="1" min="0" max="1" step="0.01" oninput="bakery.setMaterial('roughness'); document.getElementById('input-material-roughness-range').value = this.value"></li>
         <li><input type="range" id="input-material-roughness-range" value="1" min="0" max="1" step="0.01" oninput="document.getElementById('input-material-roughness').value = this.value; bakery.setMaterial('roughness')"></li>
-        <li class="row"><label style="margin-right: 8px;">Metallic</label> <input id="input-material-metallic" type="number" value="1" min="0" max="1" step="0.01" oninput="bakery.setMaterial('metallic'); document.getElementById('input-material-metallic-range').value = this.value"></li>
+        <li class="row"><label style="margin-right: 21px">Metallic</label> <input id="input-material-metallic" type="number" value="1" min="0" max="1" step="0.01" oninput="bakery.setMaterial('metallic'); document.getElementById('input-material-metallic-range').value = this.value"></li>
         <li><input type="range" id="input-material-metallic-range" value="1" min="0" max="1" step="0.01" oninput="document.getElementById('input-material-metallic').value = this.value; bakery.setMaterial('metallic')"></li>
-        <li class="row"><label style="margin-right: 20px;">Alpha</label> <input id="input-material-alpha" type="number" value="1" min="0.1" max="1" step="0.01" oninput="bakery.setMaterial('alpha'); document.getElementById('input-material-alpha-range').value = this.value"></li>
+        <li class="row"><label style="margin-right: 32px">Alpha</label> <input id="input-material-alpha" type="number" value="1" min="0.1" max="1" step="0.01" oninput="bakery.setMaterial('alpha'); document.getElementById('input-material-alpha-range').value = this.value"></li>
         <li><input type="range" id="input-material-alpha-range" value="1" min="0.1" max="1" step="0.01" oninput="document.getElementById('input-material-alpha').value = this.value; bakery.setMaterial('alpha')"></li>
-        <li class="row"><label style="margin-right: 20px;">Albedo</label> <input type="color" id="input-material-albedo" value="#FFFFFF"></li>
-        <li class="row"><label style="margin-right: 10px;">Emissive</label> <input type="color" id="input-material-emissive" value="#000000"></li>
+        <li class="row"><label style="margin-right: 20px">Albedo</label> <input type="color" id="input-material-albedo" value="#FFFFFF"></li>
+        <li class="row"><label style="margin-right: 10px">Emissive</label> <input type="color" id="input-material-emissive" value="#000000"></li>
         <li class="category">REPLICATE</li>
         <li class="row">
             <button onclick="bakery.storeMaterial(this)">Store</button>
@@ -670,7 +665,7 @@
     <!-- dynamic -->
     <div id="pathtracer">
         <canvas id="canvas_pt"></canvas>
-        <div id="info_pt"><span>0</span> | SL <span>0</span> / 4096 | <span>0</span> | BOUNCE <span>0</span> | DPR <span>1.0</span></div>
+        <div id="info_pt"><span>0</span> | SL <span>0</span> / 4096 | <span>0</span> | BOUNCE <span>0</span></div>
     </div>
     <div id="sandbox_controls">
         <div class="sandbox-gravity" onclick="camera.switchGravity(this)">G</div>
@@ -686,7 +681,7 @@
     <div id="loadingscreen">
         <div class="logo"><div class="cube"><div class="cube-faces"><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div><div class="cube-face shadow"></div></div></div></div>
         <div class="progress">- PLEASE WAIT -</div>
-        <div class="version">4.1.1 BETA 2023</div>
+        <div class="version">4.1.2 BETA 2023</div>
     </div>
     <div id="confirm"><span>title here</span> <button>Cancel</button> <button>Ok</button></div>
     <div id="confirmblocker"></div>

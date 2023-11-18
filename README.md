@@ -4,8 +4,8 @@
 
 **Voxel-based 3D modeling application**
 
-Version 4.1.1 Beta 2023<br>
-Babylon.js 6.26.0 ```main engine```<br>
+Version 4.1.2 Beta 2023<br>
+Babylon.js 6.29.2 ```main engine```<br>
 Three.js r158
 
 [Try Now](https://nimadez.github.io/voxel-builder)<br>
@@ -132,7 +132,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [KhronosGroup glTF-Sample-Environments](https://github.com/KhronosGroup/glTF-Sample-Environments)
 - [Shadertoy](https://www.shadertoy.com/)
 
-Thanks to friends whose knowledge has helped the progress of this project:
+Thank you to those who have contributed knowledge to this project:
 - [Allen Hastings](https://www.linkedin.com/in/allenhastings)
 - [Erich Loftis](https://github.com/erichlof)
 - [Eric Heitz](https://eheitzresearch.wordpress.com/772-2/)

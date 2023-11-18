@@ -6,26 +6,27 @@
     01. Initialize
     02. Scene
     03. Camera
-    04. HDRI and Skybox
-    05. Pipeline (post-process)
-    06. Material
-    07. Builder (SPS particles)
-    08. Palette (color palette)
-    09. Helper (overlays)
-    10. Tool, ToolBakery
-    11. Symmetry
-    12. Voxelizer
-    13. Generator
-    14. Bakery
-    15. Snapshot
-    16. Memory
-    17. Project
-    18. UserInterface
-    19. UserInterfaceAdvanced
-    20. Preferences
-    21. Events
-    22. Websocket
-    23. Utils
+    04. Light
+    05. HDRI and Skybox
+    06. Pipeline (post-process)
+    07. Material
+    08. Builder (SPS particles)
+    09. Palette (color palette)
+    10. Helper (overlays)
+    11. Tool, ToolBakery
+    12. Symmetry
+    13. Voxelizer
+    14. Generator
+    15. Bakery
+    16. Snapshot
+    17. Memory
+    18. Project
+    19. UserInterface
+    20. UserInterfaceAdvanced
+    21. Preferences
+    22. Events
+    23. Websocket
+    24. Utils
 */
 
 const ENVMAP = "assets/snow_field_2_puresky_1k.hdr";
@@ -63,6 +64,8 @@ const PIH = Math.PI / 2;
 const MAXAMOUNT = 64000;
 const FPS_TOOLMOVE = 1000 / 60;
 const GRAVITY = (-9.81 / 60) * 4;
+const SUN_POS = new BABYLON.Vector3(10, 80, 10);
+const SUN_ANG = 120;
 const viewAxes = [];
 
 let isRendering = true;
@@ -91,6 +94,7 @@ engine.loadingScreen = new CustomLoadingScreen();
 engine.displayLoadingUI();
 
 
+let light = undefined;
 const camera = new Camera();
 const scene = createScene(engine);
 camera.init(scene);
@@ -127,7 +131,6 @@ const client = new WebsocketClient();
 // intro
 scene.executeOnceBeforeRender(() => {
     preferences.init();
-    hdri.initHDRI();
 }, 0);
 
 scene.executeWhenReady(() => {
@@ -189,29 +192,12 @@ function createScene(engine) {
     ambient.groundColor = new BABYLON.Color3(0.3, 0.3, 0.3);
     ambient.intensity = 0.5;
 
-    const light = new BABYLON.DirectionalLight("direct", new BABYLON.Vector3(0, -1, 0), scene);
-    light.position.y = 100; // startup, overrided
-    setLightPositionByAngle(light, 120, 50);
-    light.autoUpdateExtends = true; // to REFRESHRATE_RENDER_ONCE
-    light.diffuse = BABYLON.Color3.FromHexString('#BBB1A0');
-    light.intensity = 0.6;
-    light.shadowMaxZ = 2500;
-    light.shadowMinZ = -2500;
-
-    // shadows updated manually on mesh changes to save performance
-    const shadowGen = new BABYLON.ShadowGenerator(512, light);
-    shadowGen.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
-    shadowGen.filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM; //overrided
-    shadowGen.useExponentialShadowMap = true; //def: true
-    shadowGen.usePercentageCloserFiltering = true; // webgl2 only, fallback -> usePoissonSampling
-    shadowGen.forceBackFacesOnly = false;
-    shadowGen.bias = 0.00005; //def: 0.00005
-    shadowGen.setDarkness(0); //overrided
+    light = new Light(scene);
     
     const shadowcatcher = BABYLON.MeshBuilder.CreateGround("shadowcatcher", { width: 1000, height: 1000 }, scene);
     shadowcatcher.material = new BABYLON.ShadowOnlyMaterial('shadowcatcher', scene);
     shadowcatcher.material.shadowColor = BABYLON.Color3.FromHexString('#161a20');
-    shadowcatcher.material.activeLight = light;
+    shadowcatcher.material.activeLight = light.directional;
     shadowcatcher.material.backFaceCulling = true;
     shadowcatcher.material.alpha = 0.3;
     shadowcatcher.position.y = -0.5;
@@ -586,6 +572,85 @@ function Camera() {
 
 
 // -------------------------------------------------------
+// Light
+
+
+function Light(scene) {
+    this.directional = null;
+
+    this.init = function() {
+        this.directional = new BABYLON.DirectionalLight("directional", new BABYLON.Vector3(0, -1, 0), scene);
+        this.directional.position.y = SUN_POS.y; // overrided
+        setLightPositionByAngle(this.directional, SUN_ANG);
+        this.directional.autoUpdateExtends = true; // to REFRESHRATE_RENDER_ONCE
+        this.directional.diffuse = BABYLON.Color3.FromHexString('#BBB1A0');
+        this.directional.intensity = 0.6;
+        this.directional.shadowMaxZ = 2500;
+        this.directional.shadowMinZ = -2500;
+    
+        // shadows updated manually on mesh changes to save performance
+        const shadowGen = new BABYLON.ShadowGenerator(512, this.directional);
+        shadowGen.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        shadowGen.filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM; //overrided
+        shadowGen.useExponentialShadowMap = true; //def: true
+        shadowGen.usePercentageCloserFiltering = true; // webgl2 only, fallback -> usePoissonSampling
+        shadowGen.forceBackFacesOnly = false;
+        shadowGen.bias = 0.00005; //def: 0.00005
+        shadowGen.setDarkness(0); //overrided in setMode() and setRenderMode()
+    }
+
+    this.updateShadowMap = function() {
+        this.directional.getShadowGenerator().getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+    }
+    
+    this.updateAngle = function(angle) {
+        setLightPositionByAngle(this.directional, angle);
+        this.updateShadowMap();
+    }
+    
+    this.updateHeight = function(posY) {
+        this.directional.position.y = posY;
+        this.directional.setDirectionToTarget(BABYLON.Vector3.Zero());
+        this.updateShadowMap();
+    }
+    
+    this.updateIntensity = function(value) {
+        this.directional.intensity = value;
+    }
+    
+    this.updateColor = function(hex) {
+        this.directional.diffuse = BABYLON.Color3.FromHexString(hex);
+    }
+
+    this.updateDarkness = function(val) {
+        this.directional.getShadowGenerator().setDarkness(val);
+    }
+    
+    this.getDirection = function() {
+        return this.directional.direction;
+    }
+    
+    this.enableShadows = function(isEnabled) {
+        scene.getNodeByName("shadowcatcher").isVisible = isEnabled;
+        this.directional.shadowEnabled = isEnabled;
+        if (MODE == 0) builder.createSPS();
+    }
+
+    this.addMesh = function(mesh) {
+        this.directional.getShadowGenerator().addShadowCaster(mesh);
+    }
+
+    function setLightPositionByAngle(light, angle, dist = 50) {
+        light.position.x = Math.cos(angle * Math.PI / 180) * dist;
+        light.position.z = Math.sin(angle * Math.PI / 180) * dist;
+        light.setDirectionToTarget(BABYLON.Vector3.Zero());
+    }
+
+    this.init();
+}
+
+
+// -------------------------------------------------------
 // HDRI and Skybox
 
 
@@ -594,9 +659,7 @@ function HDRI(scene) {
     this.skybox = null;
     this.isLoaded = false;
 
-    this.initHDRI = async () => { await this.init() }
-
-    this.init = async function() {
+    this.init = function() {
         this.hdrMap = new BABYLON.HDRCubeTexture(ENVMAP, scene, 512, undefined,undefined,undefined,undefined, () => {
             hdri.hdrMap.gammaSpace = false;
             hdri.skybox = hdri.createSkybox(hdri.hdrMap.clone(), parseFloat(ui.domHdriBlur.value));
@@ -605,6 +668,9 @@ function HDRI(scene) {
     }
 
     this.loadHDR = function(url) {
+        if (window.pt)
+            window.pt.loadHDR(url);
+
         if (this.hdrMap) {
             this.hdrMap.dispose();
             this.hdrMap = null;
@@ -878,8 +944,8 @@ function Material(scene) {
         mat.albedoTexture = this.tex_pbr.clone();
         mat.reflectionTexture = hdri.hdrMap.clone();
         mat.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
-        mat.roughness = 0.6;
-        mat.metallic = 0.6;
+        mat.roughness = 0.8;
+        mat.metallic = 0.5;
         mat.alpha = 1;
         mat.alphaCutOff = 0.5;
         mat.alphaMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
@@ -946,7 +1012,7 @@ function Material(scene) {
         const mat = new BABYLON.StandardMaterial("ghostvoxel", scene);
         mat.diffuseColor = new BABYLON.Color3(0, 0, 0);
         mat.specularColor = new BABYLON.Color3(0, 0, 0);
-        mat.emissiveColor = new BABYLON.Color3(0.4, 0.4, 0.4); // TODO: relative to scene.lights[1].intensity
+        mat.emissiveColor = new BABYLON.Color3(0.4, 0.4, 0.4);
         mat.emissiveTexture = this.tex_cel;
         mat.opacityTexture = this.tex_cel;
         mat.opacityFresnelParameters = new BABYLON.FresnelParameters();
@@ -1088,8 +1154,8 @@ function Builder(scene) {
         this.SPS.computeParticleTexture = false;
         this.SPS.computeParticleVertex = false;
 
-        scene.lights[1].getShadowGenerator().addShadowCaster(this.SPS.mesh);
-        updateShadowMap();
+        light.addMesh(this.SPS.mesh);
+        light.updateShadowMap();
         
         this.setOnionSkin();
         
@@ -1200,7 +1266,7 @@ function Builder(scene) {
         this.createSPS();
         palette.create();
         memory.record();
-        updateShadowMap();
+        light.updateShadowMap();
     }
 
     this.setMeshVisibility = function(isVisible) {
@@ -1250,7 +1316,7 @@ function Builder(scene) {
             memory.record(); // record on changes
             ui.notification('normalized');
         }
-        updateShadowMap();
+        light.updateShadowMap();
     }
 
     this.reduceVoxels = async function() {
@@ -1974,11 +2040,11 @@ function Tool(scene) {
                 this.pull(pos, pos.add(norm), index);
                 if (symmetry.axis !== '')
                     this.pullSymmetry(pos, pos.add(norm), index, symmetry.axis);
-                updateShadowMap(); // important
+                light.updateShadowMap(); // important
                 break;
             case 'pullcolor':
                 this.pullColor(norm, builder.voxels[index].color);
-                updateShadowMap();
+                light.updateShadowMap();
                 break;
             case 'paint':
                 this.paint(index, pos);
@@ -2068,7 +2134,7 @@ function Tool(scene) {
                     this.pull(pos, pos.add(norm), index);
                     if (symmetry.axis !== '')
                         this.pullSymmetry(pos, pos.add(norm), index, symmetry.axis);
-                    updateShadowMap(); // important
+                    light.updateShadowMap(); // important
                 }
                 break;
             case 'pullcolor':
@@ -2250,7 +2316,7 @@ function Tool(scene) {
                     builder.SPS.setParticles();
                     palette.create();
                     memory.record();
-                    updateShadowMap();
+                    light.updateShadowMap();
                 }
                 break;
             case 'fill':
@@ -3012,7 +3078,7 @@ function Bakery(scene) {
 
         baked.checkCollisions = true;
         baked.receiveShadows = true;
-        scene.lights[1].getShadowGenerator().addShadowCaster(baked);
+        light.addMesh(baked);
 
         this.meshes.push(baked);
     }
@@ -3030,7 +3096,7 @@ function Bakery(scene) {
             uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
 
             camera.frame();
-            updateShadowMap();
+            light.updateShadowMap();
             engine.hideLoadingUI();
         }, 100);
     }
@@ -3053,7 +3119,7 @@ function Bakery(scene) {
             uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
 
             camera.frame();
-            updateShadowMap();
+            light.updateShadowMap();
             engine.hideLoadingUI();
         }, 100);
     }
@@ -3070,7 +3136,7 @@ function Bakery(scene) {
             this.bakeToMesh(true);
 
             camera.frame();
-            updateShadowMap();
+            light.updateShadowMap();
             engine.hideLoadingUI();
         }, 100);
     }
@@ -3088,7 +3154,7 @@ function Bakery(scene) {
                 this.bakeToMesh(true, builder.getVoxelsByColor(palette.uniqueColors[i]));
 
             camera.frame();
-            updateShadowMap();
+            light.updateShadowMap();
             engine.hideLoadingUI();
         }, 100);
     }
@@ -3101,8 +3167,8 @@ function Bakery(scene) {
 
             clone.checkCollisions = true;
             clone.receiveShadows = true;
-            scene.lights[1].getShadowGenerator().addShadowCaster(clone);
-            updateShadowMap();
+            light.addMesh(clone);
+            light.updateShadowMap();
 
             uix.bindTransformGizmo(clone);
             uix.gizmo.attachToMesh(clone);
@@ -3135,8 +3201,8 @@ function Bakery(scene) {
 
         mesh.checkCollisions = true;
         mesh.receiveShadows = true;
-        scene.lights[1].getShadowGenerator().addShadowCaster(mesh);
-        updateShadowMap();
+        light.addMesh(mesh);
+        light.updateShadowMap();
 
         uix.bindTransformGizmo(mesh);
         uix.gizmo.attachToMesh(mesh);
@@ -3153,7 +3219,7 @@ function Bakery(scene) {
             this.selected.dispose();
             this.selected = null;
             uix.unbindTransformGizmo();
-            updateShadowMap();
+            light.updateShadowMap();
         } else {
             ui.notification('select a bake');
         }
@@ -3203,7 +3269,7 @@ function Bakery(scene) {
             this.meshes = [];
             this.selected = null;
             uix.unbindTransformGizmo();
-            updateShadowMap();
+            light.updateShadowMap();
         }
     }
     
@@ -3347,7 +3413,7 @@ function Bakery(scene) {
                     if (!isInsideBakery)
                         (isLoadBakery) ? ui.setMode(1) : ui.setMode(0);
                     bakery.updateReflectionTextures();
-                    updateShadowMap();
+                    light.updateShadowMap();
                 }
                 engine.hideLoadingUI();
             }).catch((reason) => {
@@ -3371,7 +3437,7 @@ function Bakery(scene) {
         
         mesh.checkCollisions = true;
         mesh.receiveShadows = true;
-        scene.lights[1].getShadowGenerator().addShadowCaster(mesh);
+        light.addMesh(mesh);
     }
 
     const facePositions = [
@@ -3680,14 +3746,11 @@ function Project(scene) {
         }
 
         const json = {
-            version: "Voxel Builder 4.1.1",
+            version: "Voxel Builder 4.1.2",
             project: {
                 name: ui.domProjectName.value,
                 bgcolor: ui.domColorPickerBackground.value.toUpperCase(),
-                lightcolor: ui.domColorPickerLightColor.value.toUpperCase(),
-                lightangle: parseInt(ui.domLightAngle.value),
-                lightheight: parseInt(ui.domLightHeight.value),
-                lightintensity: parseFloat(ui.domLightIntensity.value)
+                lightcolor: ui.domColorPickerLightColor.value.toUpperCase()
             },
             data: {
                 voxels: data,
@@ -3739,19 +3802,7 @@ function Project(scene) {
         }
         if (data.project.lightcolor) {
             setProjectValues(ui.domColorPickerLightColor, data.project.lightcolor, '#CCCCCC');
-            updateLightColor(ui.domColorPickerLightColor.value);
-        }
-        if (data.project.lightangle) {
-            setProjectValues(ui.domLightAngle, parseInt(data.project.lightangle), 120);
-            updateLightAngle(ui.domLightAngle.value);
-        }
-        if (data.project.lightheight) {
-            setProjectValues(ui.domLightHeight, parseInt(data.project.lightheight), 100);
-            updateLightHeight(ui.domLightHeight.value);
-        }
-        if (data.project.lightintensity) {
-            setProjectValues(ui.domLightIntensity, parseFloat(data.project.lightintensity), 0.5);
-            updateLightIntensity(ui.domLightIntensity.value);
+            light.updateColor(ui.domColorPickerLightColor.value);
         }
 
         // data.voxels
@@ -4085,8 +4136,7 @@ function UserInterface(scene) {
     this.domColorPickerEmissive = document.getElementById('input-material-emissive');
     this.domColorPickerLightColor = document.getElementById('input-light-color');
     this.domColorPickerVertexColor = document.getElementById('input-vertex-color');
-    this.domLightAngle = document.getElementById('input-light-angle');
-    this.domLightHeight = document.getElementById('input-light-height');
+    this.domLightLocator = document.getElementById('input-light-locator');
     this.domLightIntensity = document.getElementById('input-light-intensity');
     this.domProjectName = document.getElementById('input-project-name');
     this.domExportFormat = document.getElementById('export-format');
@@ -4141,22 +4191,25 @@ function UserInterface(scene) {
         }, false);
 
         this.domColorPickerLightColor.addEventListener('input', (ev) => {
-            updateLightColor(ev.target.value);
+            light.updateColor(ev.target.value);
+        }, false);
+
+        this.domLightLocator.addEventListener('input', (ev) => {
+            (ev.target.checked) ? uix.showSunLocator() : uix.hideSunLocator();
         }, false);
     }
 
     this.setMode = function(mode) {
         MODE = mode;
 
-        if (window.ptDeactivate)
-            window.ptDeactivate();
+        if (window.pt)
+            window.pt.deactivate();
 
         if (mode == 0) {
             if (preferences.getWebsocket()) client.ws_connect();
             scene.collisionsEnabled = false;
             scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
-            scene.lights[1].getShadowGenerator().filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM;
-            scene.lights[1].getShadowGenerator().setDarkness(0.8);
+            light.updateDarkness(0.6);
             tool.toolSelector('camera');
             toolBakery.toolSelector('xform');
             builder.setMeshVisibility(true);
@@ -4173,8 +4226,7 @@ function UserInterface(scene) {
             client.close();
             scene.collisionsEnabled = false;
             scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
-            scene.lights[1].getShadowGenerator().filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM;
-            scene.lights[1].getShadowGenerator().setDarkness(0);
+            light.updateDarkness(0);
             tool.toolSelector('camera');
             toolBakery.toolSelector('xform');
             builder.setMeshVisibility(false);
@@ -4191,8 +4243,6 @@ function UserInterface(scene) {
             client.close();
             scene.collisionsEnabled = true;
             scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value).toLinearSpace();
-            scene.lights[1].getShadowGenerator().filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
-            scene.lights[1].getShadowGenerator().setDarkness(0.5);
             tool.toolSelector('camera');
             toolBakery.toolSelector('xform');
             pipeline.init();
@@ -4200,6 +4250,7 @@ function UserInterface(scene) {
             helper.gridPlane.isVisible = false;
             helper.groundPlane.isVisible = true;
             helper.toggleAxisPlane(false);
+            uix.hideSunLocator();
             uix.showJoysticks(isMobileDevice());
             uix.unbindWorkplane();
             for (let i = 0; i < viewAxes.length; i++)
@@ -4213,7 +4264,7 @@ function UserInterface(scene) {
             camera.toggleCameraAutoRotation();
         camera.switchCamera();
 
-        updateShadowMap();
+        light.updateShadowMap();
 
         this.setInterfaceMode(mode);
     }
@@ -4224,20 +4275,20 @@ function UserInterface(scene) {
         this.currentRenderMode = mode;
         
         if (mode == 'voxel') {
-            scene.lights[1].getShadowGenerator().setDarkness(0.8);
+            light.updateDarkness(0.6);
             builder.setMeshVisibility(true);
             bakery.setBakesVisibility(false);
             this.domToolbarC_mem.children[0].classList.add("btn_select");
             this.domToolbarC_mem.children[1].classList.remove("btn_select");
         } else if (mode == 'bake') {
-            scene.lights[1].getShadowGenerator().setDarkness(0);
+            light.updateDarkness(0);
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
             this.domToolbarC_mem.children[0].classList.remove("btn_select");
             this.domToolbarC_mem.children[1].classList.add("btn_select");
         }
 
-        updateShadowMap();
+        light.updateShadowMap();
     }
 
     this.setInterfaceMode = function(mode) {
@@ -4329,6 +4380,7 @@ function UserInterface(scene) {
             this.domOrthoBtn.disabled = true;
             this.domPathtracerBtn.disabled = true;
             this.domPathtracerBtn.previousElementSibling.disabled = true;
+            this.domLightLocator.checked = false;
             (this.currentRenderMode == "voxel") ?
                 this.domToolbarC_mem.children[0].classList.add("btn_select") :
                 this.domToolbarC_mem.children[1].classList.add("btn_select");
@@ -4734,6 +4786,9 @@ function UserInterfaceAdvanced(scene) {
     this.joysticks = []; // [left, right]
     this.workplaneGizmos = [];
     this.isWorkplane = false;
+    this.sunLocator = null;
+    this.sunGizmo = null;
+    this.sunPointerDragBehavior = null;
 
     this.init = function() {
         this.advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", {}, scene);
@@ -4750,6 +4805,7 @@ function UserInterfaceAdvanced(scene) {
         this.workplaneGizmos[6] = new BABYLON.AxisDragGizmo(BABYLON.Axis.X, BABYLON.Color3.Yellow(), this.utilLayer, undefined, 1);
         this.disposeWorkplaneGizmo(); // important, startup artifact
 
+        this.initSunLocator();
         this.initJoysticks();
     }
 
@@ -4799,7 +4855,7 @@ function UserInterfaceAdvanced(scene) {
             this.gizmo.gizmos.positionGizmo.yPlaneGizmo,
             this.gizmo.gizmos.positionGizmo.zPlaneGizmo].forEach((gizmo) => {
                 gizmo.dragBehavior.onDragObservable.add(() => {
-                    updateShadowMap();
+                    light.updateShadowMap();
                 });
             });
         
@@ -4810,7 +4866,7 @@ function UserInterfaceAdvanced(scene) {
             this.gizmo.gizmos.rotationGizmo.yGizmo,
             this.gizmo.gizmos.rotationGizmo.zGizmo].forEach((gizmo) => {
                 gizmo.dragBehavior.onDragObservable.add(() => {
-                    updateShadowMap();
+                    light.updateShadowMap();
                 });
             });
 
@@ -4913,9 +4969,11 @@ function UserInterfaceAdvanced(scene) {
         this.workplaneGizmos[6].dragBehavior.onDragEndObservable.add(() => {
             this.workplaneGizmos[6].dragBehavior._enabled = true;
         });
-        const sphere = BABYLON.MeshBuilder.CreateSphere("workplane_gizmo_reset", { sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, this.workplaneGizmos[6].gizmoLayer.utilityLayerScene);
-        sphere.material = new BABYLON.StandardMaterial("", this.workplaneGizmos[6].gizmoLayer.utilityLayerScene);
-        sphere.material.emissiveColor = BABYLON.Color3.Teal();
+
+        const sphere = BABYLON.MeshBuilder.CreateSphere("workplane_reset", { sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, this.workplaneGizmos[6].gizmoLayer.utilityLayerScene);
+        sphere.renderOverlay = true;
+        sphere.overlayColor = BABYLON.Color3.Teal();
+        sphere.overlayAlpha = 1;
         sphere.doNotSerialize = true;
         sphere.convertToUnIndexedMesh();
         sphere.freezeNormals();
@@ -4936,6 +4994,45 @@ function UserInterfaceAdvanced(scene) {
     this.setWorkplaneGizmoVisibility = function(visibility) {
         for (let i = 0; i < this.workplaneGizmos.length; i++)
             this.workplaneGizmos[i]._coloredMaterial.alpha = visibility;
+    }
+
+    this.initSunLocator = function(heightStep = 5) {
+        this.sunLocator = BABYLON.MeshBuilder.CreateSphere("sunlocator", { diameter: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, this.workplaneGizmos[6].gizmoLayer.utilityLayerScene);
+        this.sunLocator.position.y = SUN_POS.y / heightStep;
+        this.sunLocator.rotation.y = SUN_ANG * Math.PI / 180;
+        this.sunLocator.isVisible = false;
+        this.sunLocator.renderOverlay = true;
+        this.sunLocator.overlayColor = BABYLON.Color3.Yellow();
+        this.sunLocator.overlayAlpha = 1;
+        this.sunLocator.doNotSerialize = true;
+        this.sunLocator.convertToUnIndexedMesh();
+        this.sunLocator.freezeNormals();
+
+        this.sunGizmo = new BABYLON.PlaneRotationGizmo(BABYLON.Axis.Y, BABYLON.Color3.FromHexString(COL_AQUA), this.utilLayer);
+        this.sunGizmo.scaleRatio = 0.7;
+        this.sunGizmo.attachedMesh = null;
+        this.sunGizmo.updateGizmoRotationToMatchAttachedMesh = true;
+        this.sunGizmo.dragBehavior.onDragObservable.add(() => {
+            light.updateAngle(uix.sunLocator.rotation.y * 180 / Math.PI);
+        });
+
+        this.sunPointerDragBehavior = new BABYLON.PointerDragBehavior({ dragAxis: new BABYLON.Vector3(0, 1, 0) });
+        this.sunPointerDragBehavior.useObjectOrientationForDragging = true;
+        this.sunPointerDragBehavior.onDragObservable.add(() => {
+            light.updateHeight(uix.sunLocator.position.y * heightStep);
+        });
+    }
+
+    this.showSunLocator = function() {
+        this.sunLocator.isVisible = true;
+        this.sunLocator.addBehavior(this.sunPointerDragBehavior);
+        this.sunGizmo.attachedMesh = this.sunLocator;
+    }
+
+    this.hideSunLocator = function() {
+        this.sunLocator.isVisible = false;
+        this.sunLocator.removeBehavior(this.sunPointerDragBehavior);
+        this.sunGizmo.attachedMesh = null;
     }
 
     this.initJoysticks = function() { // freeCameraVirtualJoystickInput.ts
@@ -5192,8 +5289,8 @@ document.addEventListener("keydown", (ev) => {
             break;
         case 'r':
             if (MODE == 0 || MODE == 1) {
-                if (window.ptToggle)
-                    window.ptToggle();
+                if (window.pt)
+                    window.pt.toggle();
             }
             break;
     }
@@ -5430,47 +5527,12 @@ function animator(target, property, from, to, fps=3, frames=2, callback=null) {
         target, property, fps, frames, from, to, 0, easingFunction, callback);
 }
 
-function updateShadowMap() {
-    scene.lights[1].getShadowGenerator().getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
-}
-
 function updateViewport(w, h, bottom, right) {
     return new BABYLON.Viewport(1 - (w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
 }
 
 function updateAxisViewViewport() {
     sceneAxisView.activeCamera.viewport = updateViewport(100, 100, 5, -5);
-}
-
-function setLightPositionByAngle(light, angle, distance) {
-    light.position.x = Math.cos(angle * Math.PI / 180) * distance;
-    light.position.z = Math.sin(angle * Math.PI / 180) * distance;
-    light.setDirectionToTarget(BABYLON.Vector3.Zero());
-}
-
-function updateLightAngle(value) {
-    setLightPositionByAngle(scene.lights[1], parseInt(value), 50);
-    updateShadowMap();
-}
-
-function updateLightHeight(value) {
-    scene.lights[1].position.y = parseInt(value);
-    scene.lights[1].setDirectionToTarget(BABYLON.Vector3.Zero());
-    updateShadowMap();
-}
-
-function updateLightIntensity(value) {
-    scene.lights[1].intensity = parseFloat(value);
-}
-
-function updateLightColor(hex) {
-    scene.lights[1].diffuse = BABYLON.Color3.FromHexString(hex);
-}
-
-function enableShadows(isEnabled) {
-    scene.getNodeByName("shadowcatcher").isVisible = isEnabled;
-    scene.lights[1].shadowEnabled = isEnabled;
-    if (MODE == 0) builder.createSPS();
 }
 
 function getMeshSize(bounds) {
@@ -5506,12 +5568,12 @@ function resetPivot(mesh) {
     mesh.refreshBoundingInfo();
 }
 
-function getAlbedoImage(mesh) {
+function textureToImage(texture) {
     return new Promise ((resolve) => {
-        mesh.material.albedoTexture.readPixels().then((pixels) => {
+        texture.readPixels().then((pixels) => {
             const c = document.createElement('canvas');
-            c.width = mesh.material.albedoTexture._cachedSize.width;
-            c.height = mesh.material.albedoTexture._cachedSize.height;
+            c.width = texture._cachedSize.width;
+            c.height = texture._cachedSize.height;
             const imgData = c.getContext('2d').getImageData(0, 0, c.width, c.height);
             const data = imgData.data;
             for (let i = 0; i < imgData.data.length; i++)
@@ -5524,7 +5586,7 @@ function getAlbedoImage(mesh) {
 
 function createScreenshot(scale = 4) {
     if (window.ptIsActive()) {
-        saveDialogImage(window.ptGetShot(), `screenshot_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
+        window.pt.shot();
         return;
     }
 

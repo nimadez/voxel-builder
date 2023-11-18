@@ -1,5 +1,3 @@
-precision mediump float;
-precision mediump int;
 precision mediump sampler2D;
 
 uniform sampler2D uBuffer;
@@ -7,7 +5,8 @@ uniform int uRenderPassId;
 
 varying vec2 vUv;
 
-vec3 ACES(const vec3 x) { // Narkowicz 2015, ACES Filmic Tone Mapping Curve
+// Narkowicz 2015, ACES Filmic Tone Mapping Curve
+vec3 ACES(const vec3 x) {
     return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
 }
 
@@ -38,5 +37,5 @@ void main()	{
         col *= vec3(1) * smoothstep(1.8, 0.5, length(vUv * 2.0 - 1.0)) * 0.5 + 0.5;
     }
     
-    gl_FragColor = vec4(col, 1.0);
+    gl_FragColor = vec4(col, data.a);
 }
