@@ -3,6 +3,5 @@ import * as voxelizer from './modules/voxelizer/app.js';
 
 window.pt = pathtracer.pt;
 window.ptIsActive = pathtracer.isActive;
-window.ptUpdateCamera = pathtracer.updateCamera;
 
 window.voxelize = voxelizer.voxelize;

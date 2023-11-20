@@ -1,3 +1,15 @@
+## 4.1.3 nightly
+- Improve sun locator
+- Improve bvh generation speed
+- PT support sun color and intensity
+- Voxelizer guess the required resolution from scale (3x faster)
+- Update the SPS core, speed up voxel generation in general
+- Code review and refactoring
+- Add option to export selected bake only
+- Remove the legacy voxelization method (bvh only)
+- Add new bakery list (you can also rename meshes)
+- in progress...
+
 ## 4.1.2 nightly
 - Babylon.js updated to 6.29.2
 - Fix lambert material
@@ -11,7 +23,6 @@
 - PT sun direction is equal to babylon.js scene
 - PT hdri is merged with babylon.js scene
 - Sort all the scene lighting functions (funcs to class)
-- in progress...
 
 ## 4.1.1
 - Fix bvh voxelizer floor issue

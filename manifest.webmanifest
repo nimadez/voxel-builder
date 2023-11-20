@@ -3,7 +3,7 @@
     "short_name": "Voxel Builder",
     "description": "Voxel-based 3D modeling application for desktop and mobile browsers",
     "start_url": "index.html",
-    "display": "fullscreen",
+    "display": "standalone",
     "scope": "/",
     "theme_color": "#2d3644",
     "background_color": "#2d3644",

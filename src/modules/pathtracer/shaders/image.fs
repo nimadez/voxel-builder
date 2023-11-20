@@ -1,5 +1,7 @@
-precision mediump sampler2D;
-
+/* 
+    Nov 2023
+    @nimadez
+*/
 uniform sampler2D uBuffer;
 uniform int uRenderPassId;
 

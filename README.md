@@ -1,10 +1,10 @@
 # Voxel Builder
 
-![banner](https://repository-images.githubusercontent.com/565157149/f979eefb-c4dc-4321-a6fd-08dc5dd02ada)
+![banner](https://repository-images.githubusercontent.com/565157149/d80544f7-112d-4f22-9db9-bc99cad462dd)
 
 **Voxel-based 3D modeling application**
 
-Version 4.1.2 Beta 2023<br>
+Version 4.1.3 Beta 2023<br>
 Babylon.js 6.29.2 ```main engine```<br>
 Three.js r158
 
@@ -18,25 +18,20 @@ Three.js r158
 - Save and load VBX [wiki](https://github.com/nimadez/voxel-builder/wiki/VBX-Format)
 - Import MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL
-- Screenshot to PNG
-- Quick save and load, undo/redo
-- Load HDR images and PBR textures
-- Support file drag and drop<br>*(VBX, VOX, OBJ, GLB, HDR, PNG, JPG, SVG)*
-- [Blender importer script](https://github.com/nimadez/voxel-builder/blob/main/scripts/blender-importer.py) for VBX files
+- See [wiki](https://github.com/nimadez/voxel-builder/wiki/project)
+
+**Voxelization**
+- 3D model voxelizer [wiki](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
+- Image voxelizer [wiki](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
 
 **Model and Paint**
-- Model generators *(terrain, cube, isometric...)*
-- 3D model voxelization [wiki](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
-- Image voxelization [wiki](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
+- Gnerators *(terrain, cube, isometric...)*
 - Interactive modeling toolsets
-- Drawing and painting in freeform and box-shape
 - Symmetric drawing and painting, symmetrize and mirror
-- Transformable workplane to draw anywhere in the space
+- See [wiki](https://github.com/nimadez/voxel-builder/wiki/model)
 
 **Mesh Bakery**
-- Bake voxel particles, optimize mesh before export
-- Clone, merge, and transform bakes
-- Setup PBR material and textures
+- Bake voxel particles to mesh [wiki](https://github.com/nimadez/voxel-builder/wiki/bakery)
 
 **Rendering**
 - Real-time GPU path tracing [wiki](https://github.com/nimadez/voxel-builder/wiki/Real-Time-GPU-Path-Tracing)
@@ -55,11 +50,9 @@ Three.js r158
 - Electron *(recommended)*
 - Google Chrome for desktop
 - Google Chrome for tablet devices
-<br><sub>* *PWA A2HS-ready (add to home screen)*</sub>
+> - PWA A2HS-ready *(add to home screen)*
 > - Touch pen or Wacom tablet recommended for best experience
-> - Install the webapp to start fullscreen in landscape orientation
-> - Voxel Builder is not optimized for small screens
-> - VB is a desktop app and its capabilities are not fully tested on mobile devices
+> - Voxel Builder is a desktop app and its capabilities are not fully tested on mobile devices
 
 ## Known Issues
 ```
@@ -132,7 +125,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [KhronosGroup glTF-Sample-Environments](https://github.com/KhronosGroup/glTF-Sample-Environments)
 - [Shadertoy](https://www.shadertoy.com/)
 
-Thank you to those who have contributed knowledge to this project:
+Thank you to those who have contributed knowledge:
 - [Allen Hastings](https://www.linkedin.com/in/allenhastings)
 - [Erich Loftis](https://github.com/erichlof)
 - [Eric Heitz](https://eheitzresearch.wordpress.com/772-2/)

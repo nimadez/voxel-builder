@@ -13,7 +13,7 @@
     Unable to extract three.js geometry groups from babylon.js mesh,
     without performance hit on bvh regeneration, the startup is unbearable.
 
-    Dev note: not every material is fine for a clean-hard-edge voxel surface,
+    Dev note: not all materials are good for hard-edge voxel surfaces,
     for example, dielectric and SSS look bad and just slow down the shader.
 
     Dev note: real-time voxel editing is possible by setting pointerEvents to none,
@@ -40,23 +40,25 @@ const MAXSAMPLES = 4096;
 const MAXWHITE = 0.86;
 const GRAY = MAXWHITE / 1.5;
 const EMISSIVE_POWER = 12.0;
-const FPS = 1000 / 60;
 const RAD2DEG_STATIC = 180 / Math.PI;
 let imageFragment = null;
 let renderFragment = null;
 let noiseTexture = null;
-let then = performance.now();
-let pingPong = 0;
-let isLoaded = false;
-let isFastMode = false;
-let lastHDR = null;
 
 
 class Pathtracer {
     constructor() {
+        this.then = performance.now();
+        this.isLoaded = false;
+        this.isProgressing = false;
+        this.isFastMode = false;
+        this.lastHDR = null;
+        this.pingPong = 0;
+
         this.container = document.getElementById('pathtracer');
         this.canvas = document.getElementById('canvas_pt');
         this.info = document.getElementById('info_pt');
+
         this.renderer = undefined;
         this.scene = undefined;
         this.camera = undefined;
@@ -74,6 +76,7 @@ class Pathtracer {
         this.voxelTexture = createVoxelTexture('#1E1E1E');
         this.nullTexture = new THREE.Texture();
         this.geom = undefined;
+        
         this.init();
     }
 
@@ -95,15 +98,15 @@ class Pathtracer {
         this.controls.maxDistance = CAM_FAR;
         this.controls.update();
         this.controls.addEventListener('start', () => {
-            if (isLoaded)
+            if (this.isLoaded)
                 this.resize(DPR_MOVE);
         });
         this.controls.addEventListener('change', () => {
-            if (isLoaded)
+            if (this.isLoaded)
                 this.resetSamples();
         });
         this.controls.addEventListener('end', () => {
-            if (isLoaded)
+            if (this.isLoaded)
                 this.resize();
         });
 
@@ -128,16 +131,16 @@ class Pathtracer {
         this.resize();
 
         // restore previous states
-        if (hdri.hdrMap.url !== lastHDR)
+        if (hdri.hdrMap.url !== this.lastHDR)
             pt.loadHDR(hdri.hdrMap.url);
-        this.updateAttributeColors(document.getElementById('input-pt-overmat').checked);
         this.updateUniformBounces(document.getElementById('input-pt-bounces').value);
         this.updateUniformRenderPassId(document.getElementById('input-pt-passes').value);
-        this.updateUniformCameraAperture(document.getElementById('input-pt-aperture').value);
-        this.updateUniformCameraFocalLength(document.getElementById('input-pt-focallength').value);
+        this.updateUniformCameraAperture(ui.domCameraAperture.value);
+        this.updateUniformCameraFocalLength(ui.domCameraFocalLength.value);
         this.updateUniformEnvPower(document.getElementById('input-pt-envpower').value);
         this.updateUniformSunLight(document.getElementById('input-pt-sunlight').checked);
         this.updateUniformSunDir(-light.getDirection().x, -light.getDirection().y, -light.getDirection().z);
+        this.updateUniformSunCol(ui.domColorPickerLightColor.value);
         this.updateUniformBackground(document.getElementById('input-pt-background').checked);
         this.updateUniformMaterialId(document.getElementById('input-pt-material').value);
         this.updateUniformMaterialEmissive(document.getElementById('input-pt-emissive').value);
@@ -156,12 +159,12 @@ class Pathtracer {
             
             uBounces: { value: 4 },
             uSamples: { value: 0 },
-            uResolution: { value: new THREE.Vector2() },
             uAperture: { value: 0.0 },
             uFocalLength: { value: 50.0 },
             uEnvPower: { value: 1.0 },
             uSunLight: { value: false },
             uSunDir: { value: new THREE.Vector3() },
+            uSunCol: { value: new THREE.Color() },
             uBackground: { value: true },
             uNoise: { value: noiseTexture },
             uCubeMap: { value: this.envTexture },
@@ -169,7 +172,7 @@ class Pathtracer {
             uMaterialId: { value: 0 },
             uEmissive: { value: new THREE.Color() },
             uRoughness: { value: 0.0 },
-            uFastMode: { value: isFastMode },
+            uFastMode: { value: this.isFastMode },
 
             cameraWorldMatrix: { value: new THREE.Matrix4() },
             invProjectionMatrix: { value: new THREE.Matrix4() },
@@ -216,16 +219,15 @@ class Pathtracer {
             });
         } else if (MODE == 1) {
             const mesh = BABYLON.Mesh.MergeMeshes(bakery.meshes, false, true);
-
             const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+
+            const uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind);
+            for (let i = 0; i < uvs.length/2; i++) // force per-face uvs
+                uvs[2 * i + 1] *= 3.0;
+
             const colors = mesh.getVerticesData(BABYLON.VertexBuffer.ColorKind);
-
-            const uvs = []; // forced per-face uvs
-            for (let i = 0; i < positions.length / 12; i++)
-                uvs.push(0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0);
-
             for (let i = 0; i < colors.length; i++)
-                colors[i] = Math.pow(colors[i], 1.0 / 2.2);
+                colors[i] = Math.pow(colors[i], 0.4545);
 
             this.createGeometryBVH({
                 type: 'BAKE',
@@ -261,10 +263,10 @@ class Pathtracer {
         }));
 
         this.uniRender['normalAttribute'].value.updateFrom(this.geom.attributes.normal);
-        this.uniRender['colorAttribute'].value.updateFrom(this.geom.attributes.color);
         this.uniRender['uvAttribute'].value.updateFrom(this.geom.attributes.uv);
+        this.updateAttributeColors(document.getElementById('input-pt-overmat').checked);
 
-        isLoaded = true;
+        this.isLoaded = true;
         this.resetSamples();
     }
 
@@ -324,11 +326,10 @@ class Pathtracer {
     }
 
     updateUniformMaterialEmissive(hex) {
-        const k = EMISSIVE_POWER * EMISSIVE_POWER;
         const col = new THREE.Color(hex);
-        col.r *= k;
-        col.g *= k;
-        col.b *= k;
+        col.r *= EMISSIVE_POWER * EMISSIVE_POWER;
+        col.g *= EMISSIVE_POWER * EMISSIVE_POWER;
+        col.b *= EMISSIVE_POWER * EMISSIVE_POWER;
         this.uniRender['uEmissive'].value = col;
         this.resetSamples();
     }
@@ -364,6 +365,16 @@ class Pathtracer {
         this.resetSamples();
     }
 
+    updateUniformSunCol(hex) {
+        if (!this.uniRender) return;
+        const col = new THREE.Color(hex);
+        col.r *= ui.domLightIntensity.value * 3;
+        col.g *= ui.domLightIntensity.value * 3;
+        col.b *= ui.domLightIntensity.value * 3;
+        this.uniRender['uSunCol'].value = col;
+        this.resetSamples();
+    }
+
     updateUniformBackground(isEnabled) {
         this.uniRender['uBackground'].value = isEnabled;
         this.resetSamples();
@@ -379,11 +390,11 @@ class Pathtracer {
 
     animate() {
         requestAnimationFrame(pt.animate);
-        if (isLoaded) {
+        if (pt.isLoaded) {
             const now = performance.now();
-            const elapsed = now - then;
-            if (elapsed > FPS && pt.samples < MAXSAMPLES) {
-                then = now - (elapsed % FPS);
+            const elapsed = now - pt.then;
+            if (pt.isProgressing && elapsed > FPS && pt.samples < MAXSAMPLES) {
+                pt.then = now - (elapsed % FPS);
 
                 // CPU AA jitter (GPU has more to do)
                 if (pt.samples == 0) {
@@ -396,26 +407,26 @@ class Pathtracer {
                     );
                 }
 
-                pt.camera.updateMatrixWorld(true);
+                pt.camera.updateMatrixWorld();
 
                 pt.uniImage['uBuffer'].value = pt.rtTexture;
                 pt.uniRender['uSamples'].value = pt.samples;
-                pt.uniRender['uBuffer'].value = pingPong ? pt.RTTB.texture : pt.RTTA.texture;
+                pt.uniRender['uBuffer'].value = pt.pingPong ? pt.RTTB.texture : pt.RTTA.texture;
                 pt.uniRender['cameraWorldMatrix'].value.copy(pt.camera.matrixWorld);
                 pt.uniRender['invProjectionMatrix'].value.copy(pt.camera.projectionMatrixInverse);
                 pt.uniRender['seed'].value = (pt.uniRender['seed'].value + 0.00001) % 2;
 
-                pt.renderer.setRenderTarget(pingPong ? pt.RTTA : pt.RTTB);
+                pt.renderer.setRenderTarget(pt.pingPong ? pt.RTTA : pt.RTTB);
                 //pt.renderer.clear();
                 pt.rtQuadB.render(pt.renderer);
 
-                pt.rtTexture = pingPong ? pt.RTTA.texture : pt.RTTB.texture;
+                pt.rtTexture = pt.pingPong ? pt.RTTA.texture : pt.RTTB.texture;
                 pt.rtQuadA.material.map = pt.rtTexture;
 
                 pt.renderer.setRenderTarget(null);
                 pt.rtQuadA.render(pt.renderer);
 
-                pingPong ^= 1;
+                pt.pingPong ^= 1;
                 pt.samples++;
 
                 ui.domProgressBar.style.width = ~~Math.abs((pt.samples/MAXSAMPLES)*100) + '%';
@@ -428,7 +439,7 @@ class Pathtracer {
     }
 
     resize(ratio = DPR) {
-        if (isFastMode) ratio = DPR_FASTMODE;
+        if (this.isFastMode) ratio = DPR_FASTMODE;
 
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -442,29 +453,29 @@ class Pathtracer {
         this.RTTA.setSize(w * dpr, h * dpr);
         this.RTTB.setSize(w * dpr, h * dpr);
 
-        this.uniRender['uResolution'].value.set(this.renderer.domElement.width, this.renderer.domElement.height);
+        //this.uniRender['uResolution'].value.set(this.renderer.domElement.width, this.renderer.domElement.height);
 
         // force update, prevent delay
-        this.rtTexture = pingPong ? this.RTTA.texture : this.RTTB.texture;
+        this.rtTexture = this.pingPong ? this.RTTA.texture : this.RTTB.texture;
         this.resetSamples();
     }
 
     loadHDR(url) {
+        if (!this.uniRender) return; // workaround for error: loading hdr before pt.init
         loadRGBE(url).then(tex => {
-            lastHDR = url;
+            this.lastHDR = url;
             if (this.envTexture) this.envTexture.dispose();
             tex.minFilter = THREE.LinearFilter;
             tex.magFilter = THREE.LinearFilter;
             tex.generateMipmaps = false;
             tex.flipY = false;
             this.envTexture = this.CRTT.fromEquirectangularTexture(this.renderer, tex).texture;
-            if (this.uniRender) // workaround for error: loading hdr before pt.init
-                this.uniRender['uCubeMap'].value = this.envTexture;
+            this.uniRender['uCubeMap'].value = this.envTexture;
             this.resetSamples();
         });
     }
 
-    shot() { // TODO: use framebuffer
+    shot() { // TODO: read framebuffer pixels to eliminate preserveDrawingBuffer
         const uri = this.renderer.domElement.toDataURL('image/png');
         saveDialogImage(uri, `shot_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
     }
@@ -472,36 +483,40 @@ class Pathtracer {
     toggle() {
         if (isMobileDevice()) {
             ui.notification("mobile is not supported, try again later!");
-            return;
         }
         if (MODE == 1 && bakery.meshes.length == 0) {
             ui.notification("no baked meshes");
             return;
         }
-        (!isLoaded) ? this.activate() : this.deactivate();
+        (!this.isLoaded) ? this.activate() : this.deactivate();
     }
 
     activate() {
-        if (isLoaded) return; // avoid overdraw
+        if (this.isLoaded) return; // avoid overdraw
 
         isRendering = false;
         ui.domPathtracerBtn.classList.add('btn_select_pt');
         if (MODE == 0)
             ui.domHover.style.display = 'none';
 
+        this.isProgressing = true;
+        this.canvas.style.pointerEvents = 'unset';
         this.create();
         this.container.style.display = 'unset';
     }
 
     deactivate() {
-        if (!isLoaded) return;
+        if (!this.isLoaded) return;
 
         scene.activeCamera.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
         scene.activeCamera.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
         
-        isLoaded = false;
+        this.isLoaded = false;
+        this.isProgressing = false;
         cancelAnimationFrame(pt.animate);
         this.container.style.display = 'none';
+        document.getElementById('btn-pt-pause').innerHTML = 'Pause';
+        document.getElementById('btn-pt-pause').classList.remove('btn_select_pt');
         
         isRendering = true;
         ui.hideInterface(false);
@@ -544,17 +559,18 @@ const pt = new Pathtracer();
 
 
 loadFile('src/modules/pathtracer/shaders/image.fs').then(data => {
-    imageFragment = data;
+    imageFragment = `
+        precision mediump samplerCube;
+        ` + data;
 });
 
 loadFile('src/modules/pathtracer/shaders/render.fs').then(data => {
-    renderFragment =  `
+    renderFragment = `
         precision highp isampler2D;
         precision highp usampler2D;
         precision mediump samplerCube;
         ${ shaderStructs }
         ${ shaderIntersectFunction }
-        #include <common>
         ` + data;
 });
 
@@ -573,8 +589,133 @@ loadTexture('assets/bluenoise256.png').then(tex => {
 // Register events
 
 
+ui.domPathtracerBtn.onclick = () => {
+    pt.toggle();
+};
+
+ui.domCameraFov.addEventListener('input', (ev) => {
+    if (pt.isLoaded) {
+        pt.camera.fov = ev.target.value * RAD2DEG_STATIC;
+        pt.camera.updateProjectionMatrix();
+        pt.resetSamples();
+    }
+}, false);
+
+ui.domCameraAperture.oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformCameraAperture(ev.target.value);
+};
+
+ui.domCameraFocalLength.oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformCameraFocalLength(ev.target.value);
+};
+
+ui.domColorPickerLightColor.addEventListener('input', (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformSunCol(ev.target.value);
+}, false);
+
+ui.domLightIntensity.addEventListener('input', () => {
+    if (pt.isLoaded)
+        pt.updateUniformSunCol(ui.domColorPickerLightColor.value);
+}, false);
+
+document.getElementById('input-pt-passes').onchange = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformRenderPassId(ev.target.value);
+};
+
+document.getElementById('input-pt-bounces').onchange = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformBounces(ev.target.value);
+};
+
+document.getElementById('input-pt-envpower').onchange = (ev) => {
+    if (pt.isLoaded) {
+        if (ev.target.value < 0.01) ev.target.value = 0.01;
+        pt.updateUniformEnvPower(ev.target.value);
+    }
+};
+
+document.getElementById('input-pt-envpower').onwheel = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformEnvPower(ev.target.value);
+};
+
+document.getElementById('input-pt-sunlight').oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformSunLight(ev.target.checked);
+};
+
+document.getElementById('input-pt-background').oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformBackground(ev.target.checked);
+};
+
+document.getElementById('input-pt-material').onchange = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformMaterialId(ev.target.value);
+};
+
+document.getElementById('input-pt-emissive').oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformMaterialEmissive(ev.target.value);
+};
+
+document.getElementById('input-pt-roughness').onchange = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformMaterialRoughness(ev.target.value);
+};
+
+document.getElementById('input-pt-usetexture').oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformTexture(ev.target.checked);
+};
+
+document.getElementById('input-pt-overmat').oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateAttributeColors(ev.target.checked);
+};
+
+document.getElementById('input-pt-ground').oninput = () => {
+    if (pt.isLoaded)
+        pt.createGeometry();
+};
+
+document.getElementById('btn-pt-pause').onclick = (ev) => {
+    if (pt.isLoaded) {
+        pt.isProgressing = !pt.isProgressing;
+        if (pt.isProgressing) {
+            ev.target.innerHTML = 'Pause';
+            ev.target.classList.remove('btn_select_pt');
+            pt.canvas.style.pointerEvents = 'unset';
+        } else {
+            ev.target.innerHTML = 'Continue';
+            ev.target.classList.add('btn_select_pt');
+            pt.canvas.style.pointerEvents = 'none';
+        }
+    }
+};
+
+document.getElementById('btn-pt-shot').onclick = () => {
+    if (pt.isLoaded)
+        pt.shot();
+};
+
+document.getElementById('btn-pt-fast').onclick = (ev) => {
+    pt.isFastMode = !pt.isFastMode;
+    (pt.isFastMode) ?
+        ev.target.classList.add('btn_select_pt') :
+        ev.target.classList.remove('btn_select_pt');
+    if (pt.isLoaded) {
+        pt.updateUniformFastMode(pt.isFastMode);
+        pt.resize();
+    }
+};
+
 pt.canvas.addEventListener('wheel', () => {
-    if (isLoaded) {
+    if (pt.isLoaded) {
         pt.resize(DPR_MOVE);
         setTimeout(() => {
             pt.resize();
@@ -582,100 +723,8 @@ pt.canvas.addEventListener('wheel', () => {
     }
 }, false);
 
-ui.domPathtracerBtn.onclick = () => {
-    pt.toggle();
-};
-
-document.getElementById('input-pt-passes').onchange = (ev) => {
-    if (isLoaded)
-        pt.updateUniformRenderPassId(ev.target.value);
-};
-
-document.getElementById('input-pt-bounces').onchange = (ev) => {
-    if (isLoaded)
-        pt.updateUniformBounces(ev.target.value);
-};
-
-document.getElementById('input-pt-envpower').onchange = (ev) => {
-    if (isLoaded) {
-        if (ev.target.value < 0.01) ev.target.value = 0.01;
-        pt.updateUniformEnvPower(ev.target.value);
-    }
-};
-
-document.getElementById('input-pt-envpower').onwheel = (ev) => {
-    if (isLoaded)
-        pt.updateUniformEnvPower(ev.target.value);
-};
-
-document.getElementById('input-pt-sunlight').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformSunLight(ev.target.checked);
-};
-
-document.getElementById('input-pt-background').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformBackground(ev.target.checked);
-};
-
-document.getElementById('input-pt-aperture').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformCameraAperture(ev.target.value);
-};
-
-document.getElementById('input-pt-focallength').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformCameraFocalLength(ev.target.value);
-};
-
-document.getElementById('input-pt-material').onchange = (ev) => {
-    if (isLoaded)
-        pt.updateUniformMaterialId(ev.target.value);
-};
-
-document.getElementById('input-pt-emissive').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformMaterialEmissive(ev.target.value);
-};
-
-document.getElementById('input-pt-roughness').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformMaterialRoughness(ev.target.value);
-};
-
-document.getElementById('input-pt-usetexture').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateUniformTexture(ev.target.checked);
-};
-
-document.getElementById('input-pt-overmat').oninput = (ev) => {
-    if (isLoaded)
-        pt.updateAttributeColors(ev.target.checked);
-};
-
-document.getElementById('input-pt-ground').oninput = () => {
-    if (isLoaded)
-        pt.createGeometry();
-};
-
-document.getElementById('btn-pt-shot').onclick = () => {
-    if (isLoaded)
-        pt.shot();
-};
-
-document.getElementById('btn-pt-fast').onclick = (ev) => {
-    isFastMode = !isFastMode;
-    (isFastMode) ?
-        ev.target.classList.add('btn_select_pt') :
-        ev.target.classList.remove('btn_select_pt');
-    if (isLoaded) {
-        pt.updateUniformFastMode(isFastMode);
-        pt.resize();
-    }
-};
-
 window.addEventListener('resize', () => {
-    if (isLoaded)
+    if (pt.isLoaded)
         pt.resize();
 }, false);
 
@@ -743,13 +792,5 @@ export {
 }
 
 export function isActive() {
-    return pt.renderer && isLoaded;
-}
-
-export function updateCamera(fov) {
-    if (isLoaded) {
-        pt.camera.fov = fov * RAD2DEG_STATIC;
-        pt.camera.updateProjectionMatrix();
-        pt.resetSamples();
-    }
+    return pt.renderer && pt.isLoaded && pt.isProgressing;
 }

@@ -62,10 +62,9 @@ const COL_AXIS_Z = '#2F81DF';
 const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
 const MAXAMOUNT = 64000;
-const FPS_TOOLMOVE = 1000 / 60;
+const FPS = 1000 / 60;
+const FPS_TOOLMOVE = 1000 / 30;
 const GRAVITY = (-9.81 / 60) * 4;
-const SUN_POS = new BABYLON.Vector3(10, 80, 10);
-const SUN_ANG = 120;
 const viewAxes = [];
 
 let isRendering = true;
@@ -183,13 +182,13 @@ function createScene(engine) {
     scene.gravity = new BABYLON.Vector3(0, GRAVITY, 0);
     scene.collisionsEnabled = false; // overrided on setMode()
     scene.useRightHandedSystem = true;
-    scene.imageProcessingConfiguration.toneMappingEnabled = true;
-    scene.imageProcessingConfiguration.toneMappingEnabled = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+    //scene.imageProcessingConfiguration.toneMappingEnabled = true;
+    //scene.imageProcessingConfiguration.toneMappingEnabled = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
 
     const ambient = new BABYLON.HemisphericLight("ambient", new BABYLON.Vector3(0, 1, 0), scene);
     ambient.diffuse = new BABYLON.Color3(0.5, 0.5, 0.5);
-    ambient.specular = new BABYLON.Color3(0.5, 0.5, 0.5);
-    ambient.groundColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    ambient.specular = new BABYLON.Color3(0.2, 0.2, 0.2);
+    ambient.groundColor = new BABYLON.Color3(0.1, 0.1, 0.1);
     ambient.intensity = 0.5;
 
     light = new Light(scene);
@@ -402,8 +401,7 @@ function Camera() {
             scene.activeCamera = this.camera2;
             this.camera2.attachControl(canvas, true);
         }
-        ui.domCamFov.value = scene.activeCamera.fov;
-        ui.domCamFov.previousElementSibling.value = scene.activeCamera.fov;
+        ui.domCameraFov.value = scene.activeCamera.fov;
     }
 
     this.frame = function(scale = 35) {
@@ -517,11 +515,7 @@ function Camera() {
     this.setFov = function(value) {
         const fov = parseFloat(value);
         scene.activeCamera.fov = fov;
-        if (MODE == 0) {
-            if (window.ptUpdateCamera) window.ptUpdateCamera(fov);
-        } else if (MODE == 1) {
-            if (window.ptUpdateCamera) window.ptUpdateCamera(fov);
-        } else if (MODE == 2) {
+        if (MODE == 2) {
             ui.domReticle.children[2].style.width  = fov * 100 + 'px';
             ui.domReticle.children[2].style.height = fov * 100 + 'px';
             ui.domReticle.children[2].style.marginLeft = 49-(fov * 100)/2 + 'px';
@@ -576,27 +570,29 @@ function Camera() {
 
 
 function Light(scene) {
+    this.SUN_POS = new BABYLON.Vector3(10, 100, 10);
+    this.SUN_ANG = 45; // more voxels are visible with default lighting at 45 deg
     this.directional = null;
 
     this.init = function() {
         this.directional = new BABYLON.DirectionalLight("directional", new BABYLON.Vector3(0, -1, 0), scene);
-        this.directional.position.y = SUN_POS.y; // overrided
-        setLightPositionByAngle(this.directional, SUN_ANG);
+        this.directional.position.y = this.SUN_POS.y; // overrided
+        setLightPositionByAngle(this.SUN_ANG);
         this.directional.autoUpdateExtends = true; // to REFRESHRATE_RENDER_ONCE
-        this.directional.diffuse = BABYLON.Color3.FromHexString('#BBB1A0');
-        this.directional.intensity = 0.6;
+        this.directional.diffuse = BABYLON.Color3.FromHexString(document.getElementById('input-light-color').value);
+        this.directional.intensity = document.getElementById('input-light-intensity').value;
         this.directional.shadowMaxZ = 2500;
         this.directional.shadowMinZ = -2500;
     
         // shadows updated manually on mesh changes to save performance
         const shadowGen = new BABYLON.ShadowGenerator(512, this.directional);
         shadowGen.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
-        shadowGen.filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM; //overrided
-        shadowGen.useExponentialShadowMap = true; //def: true
+        shadowGen.filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM;
+        shadowGen.useExponentialShadowMap = true; // def: true
         shadowGen.usePercentageCloserFiltering = true; // webgl2 only, fallback -> usePoissonSampling
         shadowGen.forceBackFacesOnly = false;
-        shadowGen.bias = 0.00005; //def: 0.00005
-        shadowGen.setDarkness(0); //overrided in setMode() and setRenderMode()
+        shadowGen.bias = 0.00005; // def: 0.00005
+        shadowGen.setDarkness(0); // overrided in setMode() and setRenderMode()
     }
 
     this.updateShadowMap = function() {
@@ -604,7 +600,7 @@ function Light(scene) {
     }
     
     this.updateAngle = function(angle) {
-        setLightPositionByAngle(this.directional, angle);
+        setLightPositionByAngle(angle);
         this.updateShadowMap();
     }
     
@@ -640,10 +636,10 @@ function Light(scene) {
         this.directional.getShadowGenerator().addShadowCaster(mesh);
     }
 
-    function setLightPositionByAngle(light, angle, dist = 50) {
-        light.position.x = Math.cos(angle * Math.PI / 180) * dist;
-        light.position.z = Math.sin(angle * Math.PI / 180) * dist;
-        light.setDirectionToTarget(BABYLON.Vector3.Zero());
+    function setLightPositionByAngle(angle, dist = 50) { // SUN_POS.y/2
+        scene.lights[1].position.x = Math.cos(angle * Math.PI / 180) * dist;
+        scene.lights[1].position.z = Math.sin(angle * Math.PI / 180) * dist;
+        scene.lights[1].setDirectionToTarget(BABYLON.Vector3.Zero());
     }
 
     this.init();
@@ -907,10 +903,6 @@ function Material(scene) {
         this.createGhostMaterial();
     }
 
-    this.update = function() {
-        this.createPBRMaterial(ui.domBakeryBackFace.checked);
-    }
-
     this.createCelMaterial = function() {
         if (this.mat_cel) {
             this.mat_cel.dispose();
@@ -918,7 +910,7 @@ function Material(scene) {
         }
         const mat = new BABYLON.StandardMaterial("CEL", scene);
         mat.diffuseColor = new BABYLON.Color3(1, 1, 1);
-        mat.specularColor = new BABYLON.Color3(0, 0, 0);
+        mat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
         mat.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3);
         mat.emissiveTexture = this.tex_cel;
         mat.opacityTexture = this.tex_cel;
@@ -974,7 +966,7 @@ function Material(scene) {
         mat.minorUnitVisibility = 0.3;
         mat.mainColor = new BABYLON.Color3(0, 1, 1);
         mat.lineColor = new BABYLON.Color3(0, 1, 1);
-        mat.opacity = 0.3;
+        mat.opacity = 0.5;
         mat.backFaceCulling = false;
         mat.freeze();
         this.mat_workplane = mat;
@@ -1060,13 +1052,13 @@ function Material(scene) {
     this.setPBRTexture = function(idx = 3) {
         this.texId = idx;
         this.tex_pbr = this.textures[idx];
+        this.createPBRMaterial(ui.domBakeryBackFace.checked);
     }
 
     this.addTexture = function(data) {
         this.textures.push(this.createTexture('texpbr_user', data));
         const idx = this.textures.length - 1;
         this.setPBRTexture(idx);
-        this.update();
         const li = document.createElement("li");
         li.classList.add("img");
         li.innerHTML = `<img data-bind="${ idx }" src="${ data }">`;
@@ -1092,7 +1084,6 @@ function Material(scene) {
             }
         }
         this.setPBRTexture();
-        this.update();
     }
 
     this.init();
@@ -1112,7 +1103,6 @@ function Builder(scene) {
     this.voxels = [];
     this.voxel = null;
     this.SPS = null;
-    this.isOnionSkin = false;
 
     this.init = function() {
         this.voxel = BABYLON.MeshBuilder.CreateBox("voxel", { sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
@@ -1142,23 +1132,22 @@ function Builder(scene) {
         this.SPS.buildMesh();
         this.SPS.mesh.material = material.mat_cel;
         this.SPS.mesh.receiveShadows = true;
-        this.SPS.mesh.freezeWorldMatrix();
-        this.SPS.mesh.freezeNormals();
+        //this.SPS.mesh.freezeWorldMatrix();
+        //this.SPS.mesh.freezeNormals();
 
         this.SPS.initParticles();
-        this.SPS.setParticles();       // update SPS mesh and draw it
-        this.SPS.refreshVisibleSize(); // update BBox for picking and shadows
-        this.SPS.computeBoundingBox = false;
-        this.SPS.computeParticleColor = false;
-        this.SPS.computeParticleRotation = false;
-        this.SPS.computeParticleTexture = false;
-        this.SPS.computeParticleVertex = false;
+        //this.SPS.setParticles();       // update SPS mesh and draw it
+        //this.SPS.refreshVisibleSize(); // update BBox for picking and shadows
+        //this.SPS.computeBoundingBox = false;
+        //this.SPS.computeParticleColor = false;
+        //this.SPS.computeParticleRotation = false;
+        //this.SPS.computeParticleTexture = false;
+        //this.SPS.computeParticleVertex = false;
 
         light.addMesh(this.SPS.mesh);
         light.updateShadowMap();
-        
-        this.setOnionSkin();
-        
+        palette.create();
+
         if (symmetry.axis !== '')
             helper.setSymmPivot();
 
@@ -1176,11 +1165,9 @@ function Builder(scene) {
     }
 
     this.remove = function(index) {
-        if (builder.voxels.length > 1) { // 1 voxel minimum, useless but keep it
-            index = this.voxels.indexOf(this.voxels[index]);
-            if (index > -1)
-                this.voxels.splice(index, 1);
-        }
+        index = this.voxels.indexOf(this.voxels[index]);
+        if (index > -1)
+            this.voxels.splice(index, 1);
     }
 
     this.removeByPosition = function(pos) {
@@ -1246,7 +1233,6 @@ function Builder(scene) {
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].color = hex;
         this.createSPS();
-        palette.create();
         memory.record();
     }
 
@@ -1264,22 +1250,12 @@ function Builder(scene) {
         for (let i = 0; i < this.voxels.length; i++)
             this.setVoxelVisible(i, isVisible);
         this.createSPS();
-        palette.create();
         memory.record();
         light.updateShadowMap();
     }
 
     this.setMeshVisibility = function(isVisible) {
         this.SPS.mesh.isVisible = isVisible;
-    }
-
-    this.setOnionSkin = function() {
-        (this.isOnionSkin) ? this.SPS.mesh.visibility = 0.5 : this.SPS.mesh.visibility = 1;
-    }
-
-    this.toggleOnionSkin = function() {
-        this.isOnionSkin = !this.isOnionSkin; 
-        this.setOnionSkin();
     }
 
     this.deleteHidden = function() {
@@ -1293,7 +1269,6 @@ function Builder(scene) {
             this.voxels.splice(this.voxels.indexOf(hiddens[i]), 1);
         }
         this.createSPS();
-        palette.create();
         if (this.voxels.length !== len)
             memory.record(); // record on changes
     }
@@ -1348,7 +1323,6 @@ function Builder(scene) {
                 this.voxels.splice(this.voxels.indexOf(toDelete[i]), 1);
             }
             this.createSPS();
-            palette.create();
             ui.notification(`${ reduced - this.voxels.length } voxels removed`);
             engine.hideLoadingUI();
         }, 100);
@@ -1383,7 +1357,6 @@ function Builder(scene) {
         }
         this.voxels = newData;
         this.createSPS();
-        palette.create();
         helper.setGrid();
     }
 
@@ -1397,13 +1370,12 @@ function Builder(scene) {
         if (isDupCheck)
             this.removeDuplicates();
         this.createSPS();
-        palette.create();
         if (isNormalize)
             this.normalizeVoxelPositions(false);
         helper.setGrid();
         helper.resetWorkplane();
         uix.unbindWorkplane();
-        uix.isWorkplane = false;
+        uix.isWorkplane = false; // important, to keep it active
     }
 
     this.init();
@@ -1418,15 +1390,13 @@ function Palette() {
     const W = 25;
     const H = 25;
     const pad = 2;
-    let ctx = null;
+    const ctx = canvasPalette.getContext('2d', { willReadFrequently: true });
     this.uniqueColors = [];
 
     this.init = function() {
         canvasPalette.width = canvasPalette.clientWidth;
         canvasPalette.height = canvasPalette.clientHeight;
-        
-        ctx = canvasPalette.getContext('2d', { willReadFrequently: true });
-        
+                
         canvasPalette.addEventListener("pointerdown", (ev) => {
             const hex = getCanvasColor(ctx, ev.offsetX, ev.offsetY);
             if (palette.uniqueColors.includes(hex)) {
@@ -1438,20 +1408,18 @@ function Palette() {
         canvasPalette.addEventListener("dblclick", (ev) => {
             const hex = getCanvasColor(ctx, ev.offsetX, ev.offsetY);
             if (palette.uniqueColors.includes(hex)) {
-                if (palette.isColorVisible(hex)) {
-                    palette.setColorVisible(hex, false);
-                } else {
-                    palette.setColorVisible(hex, true);
-                }
+                palette.setColorVisible(hex, !palette.isColorVisible(hex));
                 builder.createSPS();
-                palette.create();
                 memory.record();
             }
         }, false);
     }
 
     this.create = function() {   // generate color palette
-        ui.domPalette.style.width = 8 + ((W + pad) * parseInt(preferences.getPaletteSize())) + "px";
+        const wPad = W + pad;
+        const wPadSize = wPad * parseInt(preferences.getPaletteSize());
+
+        ui.domPalette.style.width = 8 + wPadSize + "px";
         canvasPalette.width = canvasPalette.clientWidth;
         canvasPalette.height = canvasPalette.clientHeight;
 
@@ -1462,8 +1430,8 @@ function Palette() {
             if (this.uniqueColors.indexOf(builder.voxels[i].color) == -1) {
                 this.addColor(col + pad, row, builder.voxels[i].color);
                 this.uniqueColors.push(builder.voxels[i].color);
-                col += W + pad;
-                if (col >= (W + pad) * parseInt(preferences.getPaletteSize())) {
+                col += wPad;
+                if (col >= wPadSize) {
                     col = 0;
                     row += H + pad;
                 }
@@ -1478,11 +1446,9 @@ function Palette() {
     }
     
     this.addColor = function(x, y, hex) {
-        if (this.isColorVisible(hex)) { // respect the stored visibility state
-            ctx.strokeStyle = 'transparent';
-        } else {
+        ctx.strokeStyle = 'transparent';
+        if (!this.isColorVisible(hex)) // respect the stored visibility state
             ctx.strokeStyle = 'orange';
-        }
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, W, H);
         ctx.fillStyle = hex;
@@ -1624,7 +1590,7 @@ function Helper(scene, sceneAxisView) {
         this.workPlane.visibility = 0.1;
         this.workPlane.renderOverlay = true;
         this.workPlane.overlayColor = BABYLON.Color3.FromHexString(COL_AQUA);
-        this.workPlane.overlayAlpha = 0.06;
+        this.workPlane.overlayAlpha = 0.05;
         this.workPlane.doNotSerialize = true;
         this.workPlane.convertToUnIndexedMesh();
         this.workPlane.freezeNormals();
@@ -1688,33 +1654,23 @@ function Helper(scene, sceneAxisView) {
         this.symmPivot.isVisible = isVisible;
     }
 
-    this.setOverlayPlane = function(pos, normAxis, hex = null) {
+    this.setOverlayPlane = function(pos, normAxis, hex = COL_ORANGE) {
         this.overlayPlane.isVisible = true;
         this.overlayPlane.position = pos;
         this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
             BABYLON.Vector3.Cross(BABYLON.Axis.Z, normAxis),         // axis
             Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z)) // angle
         );
-        if (hex) {
-            this.overlayPlane.overlayColor = BABYLON.Color3.FromHexString(hex);
-            this.overlayPlane.edgesColor = BABYLON.Color4.FromHexString(hex + 'FF');
-        } else {
-            this.overlayPlane.overlayColor = BABYLON.Color3.FromHexString(COL_ORANGE);
-            this.overlayPlane.edgesColor = BABYLON.Color4.FromHexString(COL_ORANGE + 'FF');
-        }
+        this.overlayPlane.overlayColor = BABYLON.Color3.FromHexString(hex);
+        this.overlayPlane.edgesColor = BABYLON.Color4.FromHexString(hex + 'FF');
         this.overlayPlane.edgesWidth = scene.activeCamera.radius/5;
     }
 
-    this.setOverlayCube = function(pos, hex = null) {
+    this.setOverlayCube = function(pos, hex = COL_ORANGE) {
         this.overlayCube.isVisible = true;
         this.overlayCube.position = pos;
-        if (hex) {
-            this.overlayCube.overlayColor = BABYLON.Color3.FromHexString(hex);
-            this.overlayCube.edgesColor = BABYLON.Color4.FromHexString(hex + 'FF');
-        } else {
-            this.overlayCube.overlayColor = BABYLON.Color3.FromHexString(COL_ORANGE);
-            this.overlayCube.edgesColor = BABYLON.Color4.FromHexString(COL_ORANGE + 'FF');
-        }
+        this.overlayCube.overlayColor = BABYLON.Color3.FromHexString(hex);
+        this.overlayCube.edgesColor = BABYLON.Color4.FromHexString(hex + 'FF');
         this.overlayCube.edgesWidth = scene.activeCamera.radius/5;
     }
 
@@ -1781,6 +1737,7 @@ function Tool(scene) {
     this.pick = null;
     let startPos = null;
     let selVoxels = [];
+    let isWP = false;
 
     this.init = function() {
         this.toolSelector(this.name); // startup tool
@@ -2018,11 +1975,13 @@ function Tool(scene) {
         const index = builder.SPS.pickedParticles[pick.faceId].idx;
         const norm = pick.getNormal(true);
         let pos = builder.SPS.particles[index].position;
+        isWP = false;
 
         if (pick.pickedMesh == helper.workPlane) {
             if (!workplaneWhiteList.includes(this.name))
                 return;
             pos = this.pickWorkplane(pick, norm);
+            isWP = true;
         }
 
         switch (this.name) {
@@ -2032,9 +1991,15 @@ function Tool(scene) {
                     this.addSymmetry(pos.add(norm));
                 break;
             case 'remove':
-                this.remove(pos);
-                if (symmetry.axis !== '')
-                    this.removeSymmetry(pos);
+                if (!isWP) {
+                    this.remove(pos);
+                    if (symmetry.axis !== '')
+                        this.removeSymmetry(pos);
+                } else {
+                    this.remove(pos.add(norm));
+                    if (symmetry.axis !== '')
+                        this.removeSymmetry(pos.add(norm));
+                }
                 break;
             case 'pull':
                 this.pull(pos, pos.add(norm), index);
@@ -2095,11 +2060,13 @@ function Tool(scene) {
         const index = builder.SPS.pickedParticles[pick.faceId].idx;
         const norm = pick.getNormal(true);
         let pos = builder.SPS.particles[index].position;
+        isWP = false;
 
         if (pick.pickedMesh == helper.workPlane) {
             if (!workplaneWhiteList.includes(this.name))
                 return;
             pos = this.pickWorkplane(pick, norm);
+            isWP = true;
         }
 
         switch (this.name) {
@@ -2112,7 +2079,7 @@ function Tool(scene) {
                 }
                 break;
             case 'remove':
-                if (pick.pickedMesh !== helper.workPlane) {
+                if (!isWP) {
                     helper.setOverlayCube(pos, COL_DELETE);
                     if (this.isMouseDown && this.pauseCameraControls()) {
                         this.remove(pos);
@@ -2171,7 +2138,7 @@ function Tool(scene) {
                     this.box(startPos, pos.add(norm), true, currentColor);
                 break;
             case 'boxrem':
-                if (pick.pickedMesh !== helper.workPlane) {
+                if (!isWP) {
                     helper.setOverlayCube(pos, COL_DELETE);
                     if (startPos && this.isMouseDown && this.pauseCameraControls())
                         this.box(startPos, pos, false, COL_DELETE);
@@ -2187,12 +2154,12 @@ function Tool(scene) {
                     this.box(startPos, pos, false, currentColor);
                 break;
             case 'boxhide':
-                if (pick.pickedMesh !== helper.workPlane) {
+                if (!isWP) {
                     helper.setOverlayCube(pos);
                     if (startPos && this.isMouseDown && this.pauseCameraControls())
                         this.box(startPos, pos, false, COL_HIDE);
                 } else {
-                    helper.setOverlayCube(pos);
+                    helper.setOverlayCube(pos.add(norm));
                     if (startPos && this.isMouseDown && this.pauseCameraControls())
                         this.box(startPos.add(norm), pos.add(norm), false, COL_HIDE);
                 }
@@ -2213,7 +2180,6 @@ function Tool(scene) {
                     for (let i = 0; i < this.selected.length; i++)
                         builder.addNoDup(this.selected[i], currentColor, true);
                     builder.createSPS();
-                    palette.create();
                     memory.record();
                 }
                 break;
@@ -2222,38 +2188,31 @@ function Tool(scene) {
                     for (let i = 0; i < this.selected.length; i++)
                         builder.removeByPosition(this.selected[i]);
                     builder.createSPS();
-                    palette.create();
                     memory.record();
                 }
                 break;
             case 'pull':
                 builder.createSPS();
-                palette.create();
                 memory.record();
                 break;
             case 'pullcolor':
                 builder.createSPS();
-                palette.create();
                 memory.record();
                 break;
             case 'paint':
                 builder.createSPS();
-                palette.create();
                 memory.record();
                 break;
             case 'bucket':
                 builder.createSPS();
-                palette.create();
                 memory.record();
                 break;
             case 'hidecolor':
                 builder.createSPS();
-                palette.create();
                 memory.record();
                 break;
             case 'isolatecolor':
                 builder.createSPS();
-                palette.create();
                 memory.record();
                 break;
             case 'bakecolor':
@@ -2266,7 +2225,6 @@ function Tool(scene) {
                             builder.addNoDup(symmetry.invertPos(this.selected[i]), currentColor, true);
                     }
                     builder.createSPS();
-                    palette.create();
                     memory.record();
                 }
                 break;
@@ -2278,7 +2236,6 @@ function Tool(scene) {
                             builder.removeByPosition(symmetry.invertPos(this.selected[i]));
                     }
                     builder.createSPS();
-                    palette.create();
                     memory.record();
                 }
                 break;
@@ -2296,7 +2253,6 @@ function Tool(scene) {
                         }
                     }
                     builder.createSPS();
-                    palette.create();
                     memory.record();
                 }
                 break;
@@ -2324,7 +2280,6 @@ function Tool(scene) {
                     for (let i = 0; i < this.selected.length; i++)
                         builder.addNoDup(this.selected[i], currentColor, true);
                     builder.createSPS();
-                    palette.create();
                     memory.record();
                 }
                 break;
@@ -2422,14 +2377,14 @@ function ToolBakery(scene) {
         });
 
         if (!this.pick.hit) {
-            bakery.clearSelected();
+            bakery.deselectMesh();
             uix.unbindTransformGizmo();
             return;
         }
 
         switch (this.name) {
             case 'xform': // bind transform gizmo to baked meshes
-                bakery.clearSelected();
+                bakery.deselectMesh();
                 uix.bindTransformGizmo([this.pick.pickedMesh]);
                 break;
             case 'merge': // merge by select and apply
@@ -2486,7 +2441,7 @@ function ToolBakery(scene) {
     }
 
     this.onGizmoAttached = function(mesh) {
-        bakery.clearSelected(); // on user select
+        bakery.deselectMesh(); // on user select
         bakery.selectMesh(mesh);
         bakery.getMaterial();
     }
@@ -2503,7 +2458,7 @@ function ToolBakery(scene) {
         const elem = document.getElementsByClassName('tool_' + this.name)[0];
         if (elem) elem.classList.add("tool_bakery_selector");
 
-        bakery.clearSelected();
+        bakery.deselectMesh();
         uix.unbindTransformGizmo();
     }
 }
@@ -2577,7 +2532,6 @@ function Symmetry() {
             this.mirrorVoxels();
         }
         builder.createSPS();
-        palette.create();
         memory.record();
     }
 
@@ -2589,7 +2543,6 @@ function Symmetry() {
         builder.setVoxelsVisibility(true);
         this.invertVoxels();
         builder.createSPS();
-        palette.create();
         memory.record();
     }
 
@@ -2601,7 +2554,6 @@ function Symmetry() {
         builder.setVoxelsVisibility(true);
         this.deleteHalf(side);
         builder.createSPS();
-        palette.create();
         memory.record();
     }
 
@@ -2679,32 +2631,19 @@ function Symmetry() {
 
 function Voxelizer(scene) {
     this.voxelize = function(mesh) {
-        const useBVH = document.getElementById('input-voxelizer-usebvh').checked;
         const scale = parseInt(document.getElementById('input-voxelizer-scale').value);
-        const density = parseInt(document.getElementById('input-voxelizer-density').value);
-        const bvhRes = parseInt(document.getElementById('input-voxelizer-bvhres').value);
         
         normalizeMesh(mesh, scale);
 
-        let data = [];
-        if (useBVH) {
-            // Use three-mesh-bvh (faster/accurate)
-            data = window.voxelize(
-                mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
-                mesh.getIndices(),
-                bvhRes, scale, currentColor);
-        } else {
-            // Use random points per surface area
-            const points = getRandomPointsOnMeshSurface(mesh, density);
-            for (let i = 0; i < points.length; i++)
-                data.push({ position: points[i], color: currentColor, visible: true });
-        }
+        const data = window.voxelize(
+            mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
+            mesh.getIndices(),
+            scale, currentColor);
 
-        builder.loadData(data, false, true);
+        builder.loadData(data, false, false);
         memory.clear();
         symmetry.resetAxis();
         camera.frame();
-        data = null;
     }
 
     this.voxelize2D = function(imgData) {
@@ -2803,17 +2742,15 @@ function Voxelizer(scene) {
             });
     }
 
-    this.loadUrlImage = function(url) {
+    this.loadUrl = function(url) {
         if (url == "") return;
         engine.displayLoadingUI();
-        fetch(url).then(async res => {
+        fetch(url).then(res => {
             if (res.status == 200) {
-                const data = await res.blob();
-                if (data.type &&
-                    (data.type == 'image/png'  ||
-                     data.type == 'image/jpeg' ||
-                     data.type == 'image/svg+xml')) {
-                        voxelizer.voxelize2D(url);
+                if (url.toLowerCase().includes('.obj') || url.endsWith('.obj')) {
+                    voxelizer.importMeshOBJ(url);
+                } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
+                    voxelizer.importMeshGLB(url);
                 } else {
                     ui.notification("unsupported file format");
                     engine.hideLoadingUI();
@@ -2828,15 +2765,17 @@ function Voxelizer(scene) {
         });
     }
 
-    this.loadUrl = function(url) {
+    this.loadUrlImage = function(url) {
         if (url == "") return;
         engine.displayLoadingUI();
-        fetch(url).then(res => {
+        fetch(url).then(async res => {
             if (res.status == 200) {
-                if (url.toLowerCase().includes('.obj') || url.endsWith('.obj')) {
-                    voxelizer.importMeshOBJ(url);
-                } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
-                    voxelizer.importMeshGLB(url);
+                const data = await res.blob();
+                if (data.type &&
+                    (data.type == 'image/png'  ||
+                     data.type == 'image/jpeg' ||
+                     data.type == 'image/svg+xml')) {
+                        voxelizer.voxelize2D(url);
                 } else {
                     ui.notification("unsupported file format");
                     engine.hideLoadingUI();
@@ -3047,7 +2986,6 @@ function Generator() {
         }
 
         builder.createSPS();
-        palette.create();
         memory.record();
     }
 }
@@ -3069,18 +3007,27 @@ function Bakery(scene) {
             return bakery.meshes.includes(node);
         }
     };
+
+    this.exportOptionsSelected = {
+        shouldExportNode: (node) => {
+            if (ui.domExportSelectedBake.checked && bakery.selected)
+                return bakery.selected === node;
+            return false;
+        }
+    };
     
     this.bakeToMesh = function(isTestColor, voxels = builder.voxels) {
-        const baked = this.reconstructSPS('bake_new', isTestColor, voxels);
+        const baked = this.reconstructSPS('_bake', isTestColor, voxels);
         resetPivot(baked);
 
-        baked.material = material.mat_pbr.clone('bake_new');
+        baked.material = material.mat_pbr.clone('_bake');
 
         baked.checkCollisions = true;
         baked.receiveShadows = true;
         light.addMesh(baked);
 
         this.meshes.push(baked);
+        this.createBakeList();
     }
 
     this.newBake = function(voxels = null) {
@@ -3088,7 +3035,6 @@ function Bakery(scene) {
         setTimeout(() => {
             if (MODE !== 1) ui.setMode(1);
             material.setPBRTexture();
-            material.update();
 
             (voxels) ? this.bakeToMesh(true, voxels) : this.bakeToMesh(true);
 
@@ -3106,7 +3052,6 @@ function Bakery(scene) {
         setTimeout(() => {
             if (MODE !== 1) ui.setMode(1);
             material.setPBRTexture();
-            material.update();
 
             const voxels = [];
             for (let i = 0; i < builder.voxels.length; i++) {
@@ -3130,7 +3075,6 @@ function Bakery(scene) {
         setTimeout(() => {
             if (MODE !== 1) ui.setMode(1);
             material.setPBRTexture();
-            material.update();
             this.clearBakes();
 
             this.bakeToMesh(true);
@@ -3147,7 +3091,6 @@ function Bakery(scene) {
         setTimeout(() => {
             if (MODE !== 1) ui.setMode(1);
             material.setPBRTexture();
-            material.update();
             this.clearBakes();
 
             for (let i = 0; i < palette.uniqueColors.length; i++)
@@ -3161,9 +3104,9 @@ function Bakery(scene) {
 
     this.cloneSelected = function() {
         if (this.selected) {
-            const clone = this.selected.clone('bake_clone');
+            const clone = this.selected.clone('_clone');
             clone.makeGeometryUnique();
-            clone.material = this.selected.material.clone('bake_clone');
+            clone.material = this.selected.material.clone('_clone');
 
             clone.checkCollisions = true;
             clone.receiveShadows = true;
@@ -3175,6 +3118,8 @@ function Bakery(scene) {
             this.highlightMesh(clone);
 
             this.meshes.push(clone);
+            this.createBakeList();
+            this.bakeListSelect(clone);
         } else {
             ui.notification('select a bake');
         }
@@ -3183,7 +3128,7 @@ function Bakery(scene) {
     this.mergeSelected = function(bakes) {
         const mesh = BABYLON.Mesh.MergeMeshes(bakes, true, true);
         resetPivot(mesh);
-        mesh.name = 'bake_merged';
+        mesh.name = '_merged';
 
         for (let i = 0; i < bakes.length; i++) {
             this.meshes.splice(this.meshes.indexOf(bakes[i]), 1);
@@ -3196,8 +3141,7 @@ function Bakery(scene) {
         }
 
         material.setPBRTexture();
-        material.update();
-        mesh.material = material.mat_pbr.clone('bake_merged');
+        mesh.material = material.mat_pbr.clone('_merged');
 
         mesh.checkCollisions = true;
         mesh.receiveShadows = true;
@@ -3208,6 +3152,7 @@ function Bakery(scene) {
         uix.gizmo.attachToMesh(mesh);
         
         bakery.meshes.push(mesh);
+        bakery.createBakeList();
     }
 
     this.deleteSelected = function() {
@@ -3218,19 +3163,12 @@ function Bakery(scene) {
             this.selected.material.dispose();
             this.selected.dispose();
             this.selected = null;
+            this.createBakeList();
             uix.unbindTransformGizmo();
             light.updateShadowMap();
         } else {
             ui.notification('select a bake');
         }
-    }
-
-    this.selectMesh = function(mesh) {
-        this.selected = mesh;
-        this.selected.renderOutline = true;
-        this.selected.outlineWidth = scene.activeCamera.radius/600;
-        this.selected.outlineColor = BABYLON.Color3.FromHexString(COL_ORANGE);
-        this.lastSelected = mesh;
     }
 
     this.highlightMesh = function(mesh) {
@@ -3239,13 +3177,23 @@ function Bakery(scene) {
         mesh.overlayColor = BABYLON.Color3.FromHexString(COL_ORANGE);
     }
 
-    this.clearSelected = function() {
+    this.selectMesh = function(mesh) {
+        this.selected = mesh;
+        this.selected.renderOutline = true;
+        this.selected.outlineWidth = scene.activeCamera.radius/600;
+        this.selected.outlineColor = BABYLON.Color3.FromHexString(COL_ORANGE);
+        this.lastSelected = mesh;
+        this.bakeListSelect(mesh);
+    }
+
+    this.deselectMesh = function() {
         if (this.selected)
             this.selected = null;
         for (let i = 0; i < this.meshes.length; i++) {
             this.meshes[i].renderOutline = false;
             this.meshes[i].renderOverlay = false;
         }
+        this.bakeListDeselect();
     }
 
     this.setBakesVisibility = function(isVisible) {
@@ -3268,6 +3216,7 @@ function Bakery(scene) {
             scene.blockfreeActiveMeshesAndRenderingGroups = false;
             this.meshes = [];
             this.selected = null;
+            this.createBakeList();
             uix.unbindTransformGizmo();
             light.updateShadowMap();
         }
@@ -3392,6 +3341,58 @@ function Bakery(scene) {
         }
     }
 
+    this.createBakeList = function() {
+        ui.domBakeList.innerHTML = "";
+        for (let i = 0; i < bakery.meshes.length; i++) {
+            const item = document.createElement('div');
+            const btn = document.createElement('button');
+            btn.innerHTML = bakery.meshes[i].name;
+            btn.spellcheck = false;
+            btn.onclick = () => {
+                bakery.deselectMesh();
+                bakery.selectMesh(bakery.meshes[i]);
+                uix.bindTransformGizmo(this.meshes[i]);
+                uix.gizmo.attachToMesh(this.meshes[i]);
+            };
+            btn.onkeyup = () => {
+                bakery.meshes[i].name = btn.innerHTML;
+            };
+            btn.onpaste = (ev) => {
+                ev.preventDefault();
+                btn.innerHTML = ev.clipboardData.getData('Text');
+                bakery.meshes[i].name = btn.innerHTML;
+            };
+            btn.ondblclick = () => {
+                btn.contentEditable = true;
+                btn.classList.add('ignorekeys');
+            };
+            btn.onblur = () => {
+                btn.contentEditable = false;
+                btn.classList.remove('ignorekeys');
+            };
+            item.appendChild(btn);
+            ui.domBakeList.appendChild(item);
+        }
+    }
+
+    this.bakeListSelect = function(mesh) {
+        let idx = -1;
+        for (let i = 0; i < bakery.meshes.length; i++)
+            if (bakery.meshes[i] === mesh)
+                idx = i;
+        
+        if (ui.domBakeList.children[idx]) {
+            for (const i of ui.domBakeList.children)
+                i.firstChild.classList.remove("bakery_select");
+            ui.domBakeList.children[idx].firstChild.classList.add('bakery_select');
+        }
+    }
+
+    this.bakeListDeselect = function() {
+        for (const i of ui.domBakeList.children)
+            i.firstChild.classList.remove("bakery_select");
+    }
+
     this.loadBakes = function(url, isLoadBakery, isInsideBakery = false) {
         engine.displayLoadingUI();
         BABYLON.SceneLoader.LoadAssetContainerAsync("", url, scene, null, '.glb')
@@ -3399,8 +3400,8 @@ function Bakery(scene) {
                 let count = 0;
                 for (let i = 0; i < container.meshes.length; i++) {
                     if (container.meshes[i].name !== '__root__') {
-                        const baked = container.meshes[i].clone('bake_' + i);
-                        bakery.normalizeMeshGLTF(baked, container.meshes[i].material.clone('bake_' + i));
+                        const baked = container.meshes[i].clone(container.meshes[i].name);
+                        bakery.normalizeMeshGLTF(baked, container.meshes[i].material.clone(container.meshes[i].name));
                         bakery.meshes.push(baked);
                         count += 1;
                     }
@@ -3413,6 +3414,7 @@ function Bakery(scene) {
                     if (!isInsideBakery)
                         (isLoadBakery) ? ui.setMode(1) : ui.setMode(0);
                     bakery.updateReflectionTextures();
+                    bakery.createBakeList();
                     light.updateShadowMap();
                 }
                 engine.hideLoadingUI();
@@ -3703,6 +3705,27 @@ function Memory() {
 
 
 function Project(scene) {
+    const json = {
+        version: "Voxel Builder 4.1.3",
+        project: {
+            name: "name",
+            bgcolor: "#FFFFFF",
+            lightcolor: "#FFFFFF"
+        },
+        data: {
+            voxels: "",
+            bakes: ""
+        }
+    };
+
+    function fillJsonData(voxels, bakes) {
+        json.project.name = ui.domProjectName.value;
+        json.project.bgcolor = ui.domColorPickerBackground.value.toUpperCase();
+        json.project.lightcolor = ui.domColorPickerLightColor.value.toUpperCase();
+        json.data.voxels = voxels;
+        json.data.bakes = bakes;
+    }
+
     this.init = function() {
         builder.loadData([{ // fill null data
             position: BABYLON.Vector3.Zero(),
@@ -3730,8 +3753,8 @@ function Project(scene) {
         symmetry.resetAxis();
         bakery.clearBakes();
         ui.setMode(0);
-        palette.create();
         camera.frame();
+        palette.create(); // important
         ui.domProjectName.value = 'untitled';
     }
 
@@ -3739,24 +3762,13 @@ function Project(scene) {
         let data = '';
         for (let i = 0; i < builder.voxels.length; i++) {
             data += builder.voxels[i].position.x + ',' +
-                         builder.voxels[i].position.y + ',' +
-                         builder.voxels[i].position.z + ',' +
-                         builder.voxels[i].color + ',' +
-                         builder.voxels[i].visible + ';';
+                    builder.voxels[i].position.y + ',' +
+                    builder.voxels[i].position.z + ',' +
+                    builder.voxels[i].color + ',' +
+                    builder.voxels[i].visible + ';';
         }
 
-        const json = {
-            version: "Voxel Builder 4.1.2",
-            project: {
-                name: ui.domProjectName.value,
-                bgcolor: ui.domColorPickerBackground.value.toUpperCase(),
-                lightcolor: ui.domColorPickerLightColor.value.toUpperCase()
-            },
-            data: {
-                voxels: data,
-                bakes: ""
-            }
-        };
+        fillJsonData(data, "");
 
         if (bakery.meshes.length > 0) {
             BABYLON.GLTF2Export.GLBAsync(scene, ui.domProjectName.value, bakery.exportOptions).then((glb) => {
@@ -3872,7 +3884,7 @@ function Project(scene) {
         chunk = null;
     }
 
-    this.import = function(data) {
+    this.importBakes = function(data) {
         try {
             data = JSON.parse(data);
             if (data.data.bakes) {
@@ -3901,6 +3913,7 @@ function Project(scene) {
         }
         engine.displayLoadingUI();
         builder.SPS.mesh.material = material.createExportMaterial();
+        
         switch (ui.domExportFormat.value) {
             case 'glb':
                 BABYLON.GLTF2Export.GLBAsync(scene, ui.domProjectName.value, options).then((glb) => {
@@ -3924,7 +3937,6 @@ function Project(scene) {
                 ], { type: "octet/stream" }), ui.domProjectName.value + '.obj');
                 builder.SPS.mesh.material.dispose();
                 builder.SPS.mesh.material = material.mat_cel;
-                engine.hideLoadingUI();
                 break;
             case 'stl':
                 const mesh = builder.SPS.mesh.clone();
@@ -3937,10 +3949,11 @@ function Project(scene) {
                 //node.dispose();
                 builder.SPS.mesh.material.dispose();
                 builder.SPS.mesh.material = material.mat_cel;
-                builder.createSPS();
-                engine.hideLoadingUI();
+                //builder.createSPS();
                 break;
         }
+
+        engine.hideLoadingUI();
     }
 
     this.exportBakes = function() {
@@ -3949,37 +3962,51 @@ function Project(scene) {
             return;
         }
         engine.displayLoadingUI();
+
+        let exports;
+
+        exports = bakery.exportOptions;
+        if (ui.domExportSelectedBake.checked && bakery.selected)
+            exports = bakery.exportOptionsSelected;
+
+        if (ui.domExportFormat.value == 'obj' || ui.domExportFormat.value == 'stl') {
+            if (ui.domExportSelectedBake.checked && bakery.selected) {
+                exports = [ bakery.selected ];
+            } else {
+                exports = bakery.meshes;
+            }
+        }
+
         switch (ui.domExportFormat.value) {
             case 'glb':
-                BABYLON.GLTF2Export.GLBAsync(scene, ui.domProjectName.value, bakery.exportOptions).then((glb) => {
+                BABYLON.GLTF2Export.GLBAsync(scene, ui.domProjectName.value, exports).then((glb) => {
                     glb.downloadFiles();
                     engine.hideLoadingUI();
                 });
                 break;
             case 'gltf':
-                BABYLON.GLTF2Export.GLTFAsync(scene, ui.domProjectName.value, bakery.exportOptions).then((gltf) => {
+                BABYLON.GLTF2Export.GLTFAsync(scene, ui.domProjectName.value, exports).then((gltf) => {
                     gltf.downloadFiles();
                     engine.hideLoadingUI();
                 });
                 break;
             case 'obj':
                 downloadBlob(new Blob([
-                    BABYLON.OBJExport.OBJ(bakery.meshes, false, 'material', true)
+                    BABYLON.OBJExport.OBJ(exports, false, 'material', true)
                 ], { type: "octet/stream" }), ui.domProjectName.value + '.obj');
-                engine.hideLoadingUI();
                 break;
             case 'stl':
-                const mesh = BABYLON.Mesh.MergeMeshes(bakery.meshes, false, true);
-                const node = new BABYLON.TransformNode();
-                mesh.setParent(node);
-                node.rotation.x = Math.PI / 2;
-                node.scaling.z = -1;
-                BABYLON.STLExport.CreateSTL([ mesh ], true, ui.domProjectName.value, false, false, false);
-                mesh.dispose();
-                node.dispose();
-                engine.hideLoadingUI();
+                //const mesh = BABYLON.Mesh.MergeMeshes(bakery.meshes, false, true);
+                //const node = new BABYLON.TransformNode();
+                //mesh.setParent(node);
+                //node.rotation.x = Math.PI / 2;
+                //node.scaling.z = -1;
+                BABYLON.STLExport.CreateSTL(exports, true, ui.domProjectName.value, false, false, false);
+                //mesh.dispose();
+                //node.dispose();
                 break;
         }
+        engine.hideLoadingUI();
     }
 
     this.loadFromUrl = function(url) {
@@ -4101,8 +4128,10 @@ function UserInterface(scene) {
     this.domSymmAxis2 = document.getElementById('btn-helper-symmetry');
     this.domSymmCenter = document.getElementById('input-symm-center');
     this.domWorkplaneBtn = document.getElementById('btn-helper-workplane');
+    this.domColorBucketBtn = document.getElementById('colorbucket');
     this.domPalette = document.getElementById('palette');
     this.domPaletteColors = document.getElementById('palette-colors');
+    this.domBakeList = document.getElementById('bakelist');
     this.domHover = document.getElementById('hover');
     this.domMarquee = document.getElementById("marquee");
     this.domBoxToolHeight = document.getElementById('input-boxtool-height');
@@ -4118,7 +4147,9 @@ function UserInterface(scene) {
     this.domPipelineChromatic = document.getElementById('input-pipeline-chromatic');
     this.domHdriToggle = document.getElementById('input-hdri-toggle');
     this.domHdriBlur = document.getElementById('input-hdri-blur');
-    this.domCamFov = document.getElementById('input-camera-fov');
+    this.domCameraFov = document.getElementById('input-camera-fov');
+    this.domCameraAperture = document.getElementById('input-camera-aperture');
+    this.domCameraFocalLength = document.getElementById('input-camera-focal');
     this.domBakeryPerFaceUvs = document.getElementById('input-bakery-uvs');
     this.domBakeryBackFace = document.getElementById('input-bakery-backface');
     this.domAutoRotation = document.getElementById('input-autorotate');
@@ -4139,7 +4170,8 @@ function UserInterface(scene) {
     this.domLightLocator = document.getElementById('input-light-locator');
     this.domLightIntensity = document.getElementById('input-light-intensity');
     this.domProjectName = document.getElementById('input-project-name');
-    this.domExportFormat = document.getElementById('export-format');
+    this.domExportFormat = document.getElementById('input-export-format');
+    this.domExportSelectedBake = document.getElementById('input-export-selbake');
     this.domAxisViewHitbox = document.getElementById('axisview-hitbox');
     this.domOrthoBtn = document.getElementById('btn-ortho');
     this.domSandboxControls = document.getElementById('sandbox_controls');
@@ -4197,6 +4229,13 @@ function UserInterface(scene) {
         this.domLightLocator.addEventListener('input', (ev) => {
             (ev.target.checked) ? uix.showSunLocator() : uix.hideSunLocator();
         }, false);
+
+        document.getElementById('btn-light-defaultsun').onclick = () => {
+            ui.domColorPickerLightColor.value = '#EDD59E';
+            light.updateColor('#EDD59E');
+            if (window.ptIsActive)
+                window.pt.updateUniformSunCol('#EDD59E');
+        };
     }
 
     this.setMode = function(mode) {
@@ -4231,6 +4270,7 @@ function UserInterface(scene) {
             toolBakery.toolSelector('xform');
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
+            bakery.createBakeList();
             pipeline.dispose();
             helper.gridPlane.isVisible = true;
             helper.groundPlane.isVisible = false;
@@ -4300,12 +4340,14 @@ function UserInterface(scene) {
         this.domToolbarC_mem.children[0].classList.remove("btn_select");
         this.domToolbarC_mem.children[1].classList.remove("btn_select");
         this.domPalette.style.display = 'none';
+        this.domBakeList.style.display = 'none';
         this.domHover.style.display = 'unset';
         this.domColorPicker.style.display = 'none';
         this.domSandboxControls.style.display = 'none';
         this.domReticle.style.display = 'none';
         this.domAxisViewHitbox.style.display = 'none';
         this.domWorkplaneBtn.style.display = 'none';
+        this.domColorBucketBtn.style.display = 'none';
         this.domAutoRotation.disabled = false;
         this.domOrthoBtn.disabled = false;
         this.domMenuInScreen.style.display = 'none';
@@ -4333,9 +4375,11 @@ function UserInterface(scene) {
             this.domPathtracerBtn.disabled = false;
             this.domPathtracerBtn.previousElementSibling.disabled = false;
             this.domWorkplaneBtn.style.display = 'unset';
+            this.domColorBucketBtn.style.display = 'unset';
             uix.colorPicker.isVisible = true;
             document.getElementsByClassName('tool_bakecolor')[0].disabled = false;
         } else if (mode == 1) {
+            this.domBakeList.style.display = 'unset';
             this.domHover.style.display = 'none';
             this.domToolbarR.children[2].style.display = 'none'; // GENERATOR
             this.domToolbarR.children[3].style.display = 'none'; // VOXELIZER
@@ -4677,6 +4721,7 @@ function UserInterface(scene) {
             this.domToolbarR.style.display = 'none';
             this.domHover.style.display = 'none';
             this.domPalette.style.display = 'none';
+            this.domBakeList.style.display = 'none';
             this.domColorPicker.style.display = 'none';
             this.domMenuInScreen.style.display = 'none';
             this.domReticle.style.display = 'none';
@@ -4693,8 +4738,12 @@ function UserInterface(scene) {
                 this.domMenuInScreen.style.display = 'unset';
                 palette.create();
             }
-            if (MODE == 2)
+            if (MODE == 1) {
+                this.domBakeList.style.display = 'unset';
+            }
+            if (MODE == 2) {
                 this.domReticle.style.display = 'grid';
+            }
             this.domInfoParent.style.display = 'unset';
         }
     }
@@ -4786,9 +4835,9 @@ function UserInterfaceAdvanced(scene) {
     this.joysticks = []; // [left, right]
     this.workplaneGizmos = [];
     this.isWorkplane = false;
-    this.sunLocator = null;
-    this.sunGizmo = null;
-    this.sunPointerDragBehavior = null;
+    this.sunNode = null;
+    this.sunGizmoUp = null;
+    this.sunGizmoNews = null;
 
     this.init = function() {
         this.advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", {}, scene);
@@ -4996,43 +5045,40 @@ function UserInterfaceAdvanced(scene) {
             this.workplaneGizmos[i]._coloredMaterial.alpha = visibility;
     }
 
-    this.initSunLocator = function(heightStep = 5) {
-        this.sunLocator = BABYLON.MeshBuilder.CreateSphere("sunlocator", { diameter: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, this.workplaneGizmos[6].gizmoLayer.utilityLayerScene);
-        this.sunLocator.position.y = SUN_POS.y / heightStep;
-        this.sunLocator.rotation.y = SUN_ANG * Math.PI / 180;
-        this.sunLocator.isVisible = false;
-        this.sunLocator.renderOverlay = true;
-        this.sunLocator.overlayColor = BABYLON.Color3.Yellow();
-        this.sunLocator.overlayAlpha = 1;
-        this.sunLocator.doNotSerialize = true;
-        this.sunLocator.convertToUnIndexedMesh();
-        this.sunLocator.freezeNormals();
+    this.initSunLocator = function() {
+        this.sunNode = new BABYLON.TransformNode();
+        this.sunNode.rotation.x = PIH;
+        this.sunNode.rotation.y = light.SUN_ANG * Math.PI / 180;
+        this.sunNode.isVisible = false;
+        this.sunNode.doNotSerialize = true;
 
-        this.sunGizmo = new BABYLON.PlaneRotationGizmo(BABYLON.Axis.Y, BABYLON.Color3.FromHexString(COL_AQUA), this.utilLayer);
-        this.sunGizmo.scaleRatio = 0.7;
-        this.sunGizmo.attachedMesh = null;
-        this.sunGizmo.updateGizmoRotationToMatchAttachedMesh = true;
-        this.sunGizmo.dragBehavior.onDragObservable.add(() => {
-            light.updateAngle(uix.sunLocator.rotation.y * 180 / Math.PI);
+        this.sunGizmoUp = new BABYLON.AxisScaleGizmo(BABYLON.Axis.Y, BABYLON.Color3.FromHexString(COL_AQUA), this.utilLayer, undefined, 2);
+        this.sunGizmoUp.scaleRatio = 0.7;
+        this.sunGizmoUp.sensitivity = 5.0;
+        this.sunGizmoUp.attachedMesh = null;
+        this.sunGizmoUp.uniformScaling = true;
+        this.sunGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
+        this.sunGizmoUp.dragBehavior.onDragObservable.add(() => {
+            light.updateHeight(light.SUN_POS.y / uix.sunNode.scaling.x);
         });
 
-        this.sunPointerDragBehavior = new BABYLON.PointerDragBehavior({ dragAxis: new BABYLON.Vector3(0, 1, 0) });
-        this.sunPointerDragBehavior.useObjectOrientationForDragging = true;
-        this.sunPointerDragBehavior.onDragObservable.add(() => {
-            light.updateHeight(uix.sunLocator.position.y * heightStep);
+        this.sunGizmoNews = new BABYLON.PlaneRotationGizmo(BABYLON.Axis.Y, BABYLON.Color3.FromHexString(COL_AQUA), this.utilLayer);
+        this.sunGizmoNews.scaleRatio = 1;
+        this.sunGizmoNews.attachedMesh = null;
+        this.sunGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
+        this.sunGizmoNews.dragBehavior.onDragObservable.add(() => {
+            light.updateAngle(uix.sunNode.rotation.y * 180 / Math.PI);
         });
     }
 
     this.showSunLocator = function() {
-        this.sunLocator.isVisible = true;
-        this.sunLocator.addBehavior(this.sunPointerDragBehavior);
-        this.sunGizmo.attachedMesh = this.sunLocator;
+        this.sunGizmoUp.attachedMesh = this.sunNode;
+        this.sunGizmoNews.attachedMesh = this.sunNode;
     }
 
     this.hideSunLocator = function() {
-        this.sunLocator.isVisible = false;
-        this.sunLocator.removeBehavior(this.sunPointerDragBehavior);
-        this.sunGizmo.attachedMesh = null;
+        this.sunGizmoUp.attachedMesh = null;
+        this.sunGizmoNews.attachedMesh = null;
     }
 
     this.initJoysticks = function() { // freeCameraVirtualJoystickInput.ts
@@ -5217,7 +5263,7 @@ function Preferences() {
 scene.onPointerObservable.add((pInfo) => {
     switch (pInfo.type) {
         case BABYLON.PointerEventTypes.POINTERDOWN:
-            scene.stopAnimation(camera.camera0); // stop animator()
+            scene.stopAnimation(camera.camera0); // stop camera animator()
             if (MODE == 0) tool.handleToolDown();
             else if (MODE == 1) toolBakery.onToolDown();
             break;
@@ -5323,8 +5369,8 @@ function fileHandler(file) {
     const reader = new FileReader();
     reader.onload = () => {
         if (ext === 'vbx') project.load(reader.result);
-        if (ext === 'obj') voxelizer.importMeshOBJ(url);
-        if (ext === 'glb') voxelizer.importMeshGLB(url);
+        if (ext === 'obj') if (MODE == 0) voxelizer.importMeshOBJ(url);
+        if (ext === 'glb') if (MODE == 0) voxelizer.importMeshGLB(url);
         if (ext === 'vox') project.loadMagicaVoxel(reader.result);
         if (ext === 'hdr') hdri.loadHDR(url);
         if (MODE == 0) {
@@ -5348,7 +5394,7 @@ function fileHandlerNoDrop(file) {
     const url = URL.createObjectURL(file);
     const reader = new FileReader();
     reader.onload = () => {
-        if (ext === 'vbx') project.import(reader.result);
+        if (ext === 'vbx') project.importBakes(reader.result);
         URL.revokeObjectURL(url);
     }
     if (ext === 'vbx') {
@@ -5793,68 +5839,4 @@ function randomRangeInt(min, max) {
 
 function parseBool(val) {
     return val === true || val === "true";
-}
-
-// source: https://doc.babylonjs.com/toolsAndResources/utilities/SurfaceMeshPoints
-// edited for voxel builder
-function getRandomPointsOnMeshSurface(mesh, pointDensity) {
-    let positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
-    let indices = mesh.getIndices();
-    const vertex0 = BABYLON.Vector3.Zero();
-    const vertex1 = BABYLON.Vector3.Zero();
-    const vertex2 = BABYLON.Vector3.Zero();
-    const vec0 = BABYLON.Vector3.Zero();
-    const vec1 = BABYLON.Vector3.Zero();
-    const vec2 = BABYLON.Vector3.Zero();
-    let id0, id1, id2;
-    let v0X, v0Y, v0Z;
-    let v1X, v1Y, v1Z;
-    let v2X, v2Y, v2Z;
-    let a, b, c, p;
-    let area = 0;
-    let nbPoints = 0;
-    let lamda = 0;  
-    let mu = 0;
-    let facetPoint = null;
-    let points = [];
-    for (let index = 0; index < indices.length / 3; index++) {                
-        id0 = indices[3 * index];
-        id1 = indices[3 * index + 1]; 
-        id2 = indices[3 * index + 2];        
-        v0X = positions[3 * id0];
-        v0Y = positions[3 * id0 + 1];
-        v0Z = positions[3 * id0 + 2];
-        v1X = positions[3 * id1];
-        v1Y = positions[3 * id1 + 1];
-        v1Z = positions[3 * id1 + 2];
-        v2X = positions[3 * id2];
-        v2Y = positions[3 * id2 + 1];
-        v2Z = positions[3 * id2 + 2];
-        vertex0.set(v0X, v0Y, v0Z);
-        vertex1.set(v1X, v1Y, v1Z);
-        vertex2.set(v2X, v2Y, v2Z);
-        vertex1.subtractToRef(vertex0, vec0);
-        vertex2.subtractToRef(vertex1, vec1);
-        vertex2.subtractToRef(vertex0, vec2);
-        a = vec0.length();
-        b = vec1.length();
-        c = vec2.length();
-        p = (a + b + c) / 2;        
-        area = Math.sqrt(p * (p - a) * (p - b) * (p - c));
-        nbPoints = Math.round(pointDensity * area);
-        for (let i = 0; i < nbPoints; i++) {
-            lamda = BABYLON.Scalar.RandomRange(0, 1);
-            mu = BABYLON.Scalar.RandomRange(0, 1);
-            facetPoint = vertex0.add(vec0.scale(lamda)).add(vec1.scale(lamda * mu)).floor();
-            if (points.findIndex(i =>
-                i.x == facetPoint.x &&
-                i.y == facetPoint.y &&
-                i.z == facetPoint.z) == -1) {
-                    points.push(facetPoint);
-                }
-        }   
-    }
-    positions = null;
-    indices = null;
-    return points;
 }

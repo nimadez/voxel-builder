@@ -3,15 +3,15 @@
     @nimadez
 */
 #define MAXSAMPLES 4096
-#define RAY_OFFSET 1e-5
+#define RAYOFFSET 1e-5
+#define EPSILON 1e-6
+#define PI2 6.28318530718
 #define PIDF 0.31830988618 // (1.0 / PI)
-#define sunCol vec3(2.7, 2.4, 1.2) // 3.0 * vec3(0.9, 0.8, 0.4)
 
 uniform sampler2D uBuffer;
 uniform int uRenderPassId;
 uniform int uBounces;
 uniform int uSamples;
-uniform vec2 uResolution;
 uniform float uAperture;
 uniform float uFocalLength;
 uniform sampler2D uNoise;
@@ -20,6 +20,7 @@ uniform sampler2D uTexture;
 uniform float uEnvPower;
 uniform bool uSunLight;
 uniform vec3 uSunDir;
+uniform vec3 uSunCol;
 uniform bool uBackground;
 uniform int uMaterialId;
 uniform vec3 uEmissive;
@@ -119,12 +120,12 @@ void adaptCamera(mat4 mat) {
 vec3 stepRayOrigin(vec3 point, vec3 offset) {
     vec3 absPoint = abs(point);
     float maxPoint = max(absPoint.x, max(absPoint.y, absPoint.z));
-    return point + offset * (maxPoint + 1.0) * RAY_OFFSET;
+    return point + offset * (maxPoint + 1.0) * RAYOFFSET;
 }
 
 vec4 pathtrace(Ray ray, float seed) {
-    vec3 acc = vec3(0); // accumulation
-    vec3 att = vec3(1); // attenuation
+    vec3 acc = vec3(0);
+    vec3 att = vec3(1);
 
     HitResult hit;
 
@@ -133,7 +134,7 @@ vec4 pathtrace(Ray ray, float seed) {
     vec2 uv;
     //uint materialIndex;
 
-    float depth = -1.0;
+    float depth;
 
     for (int b = 0; b < uBounces; b++) {
 
@@ -153,6 +154,7 @@ vec4 pathtrace(Ray ray, float seed) {
 
             if (ray.len >= cam.farPlane) {
                 acc = background(ray.dir);
+                depth = -1.0;
                 break;
             }
 
@@ -166,8 +168,8 @@ vec4 pathtrace(Ray ray, float seed) {
                 break;
             }
 
-            if (b == 0) {
-                if (uRenderPassId > 0) {
+            if (uRenderPassId > 0) {
+                if (b == 0) {
                     // -1:none 0:postfx (ignore the calc)
                     if (uRenderPassId == 1) { // mask
                         return vec4(1);
@@ -185,19 +187,21 @@ vec4 pathtrace(Ray ray, float seed) {
             ray.org = stepRayOrigin(hit.point, hit.faceNormal);
             color += texture2D(uTexture, uv).rgb;
 
-            if (uSunLight && b == 0) {
-                float diffuse = max(0.0, dot(uSunDir, normalize(normal)));
-                float shadow = 1.0;
-                if (bvhIntersectFirstHit(bvh, ray.org, uSunDir, hit.faceIndices, hit.faceNormal, hit.barycoord, hit.side, hit.dist))
-                    shadow = 0.0;
-                att *= color;
-                acc += att * sunCol * diffuse * shadow;
+            if (uSunLight) {
+                if (b == 0) {
+                    float diffuse = max(0.0, dot(uSunDir, normalize(normal)));
+                    float shadow = 1.0;
+                    if (bvhIntersectFirstHit(bvh, ray.org, uSunDir, hit.faceIndices, hit.faceNormal, hit.barycoord, hit.side, hit.dist))
+                        shadow = 0.0;
+                    att *= color;
+                    acc += att * uSunCol * diffuse * shadow;
+                }
             }
 
             float cseed = seed + 63.2981*float(b);
 
             if (uMaterialId == 1) {
-                // ideal lambert
+                // not ideal lambert
                 ray.dir = cosineDirection(normalize(normal), cseed);
                 float pdf = dot(ray.dir, normal) * PIDF;
                 att *= pdf * color;
@@ -229,12 +233,9 @@ vec4 pathtrace(Ray ray, float seed) {
 
 void main() {
     float noise = seed+blueNoise();
-    Ray ray;
-
-    //vec2 ofAA = vec2(seed1, seed2) - 0.5; // using CPU for AA jitter
-    //vec2 ndc = 2.0 * (gl_FragCoord.xy+ofAA)/uResolution.xy - vec2(1);
     vec2 ndc = 2.0 * vUv - vec2(1);
-
+    
+    Ray ray;
     ndcToCameraRay(ndc, cameraWorldMatrix, invProjectionMatrix, ray.org, ray.dir);
     adaptCamera(cameraWorldMatrix);
 
