@@ -14,7 +14,7 @@
     <meta name="twitter:creator" content="@nimadez">
     <meta name="twitter:title" content="Voxel Builder">
     <meta name="twitter:description" content="Voxel-based 3D modeling application for desktop and mobile browsers">
-    <meta name="twitter:image" content="https://repository-images.githubusercontent.com/565157149/d80544f7-112d-4f22-9db9-bc99cad462dd">
+    <meta name="twitter:image" content="https://repository-images.githubusercontent.com/565157149/c2f6095e-d792-4085-94aa-da5bead7c06a">
     <meta name="theme-color" content="#2d3644">
     <title>Voxel Builder</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAiJJREFUWEdjZBhgwDjA9jMMTgfkNm38zsjAwIEROv8Z2ifV+1cRCrW8po3/samZVOeP4WEMAVyaYQYyMjL6Tqz124LLEYT0ozsCpwPqpCIx7Gh6thwshs0nIPG8po0ZDAwM09NE2hgk2C6j6MelF9MBjRvWMDAyBheKlzLwMj8hyhCYIpjvSXE81kSIy6CXv7UZZr6uYfjPwFA7uc6/BT2IcOnDF3IkOQBkIS7Dchs3RjMyMiyJFZrIoMhxguiQw+qAjJbN0mz//j3R4rjCECLUSpRh5AQ/yGCc5QAuA3/942XoeDGLgYHh/9pJdQEhhOKfUMIl2QHYoiG/ZaPd/38MB4ME5jDocO0lKsTg2RpfoUJsoiI3+PFGATRfg0s0XNnqP8P/h5PrAhSIdSg2z+KtC4jxGcM/Zl0Gpr+XPfhWMpjxbCAp+AmGAL5QgCUumI3oofTxjzzDxFcdDP///185uT4gAldUE6wNiQoFLNFEKPUTlQiJSQcgNbY82xkc+RaRHPxERQEx0YAe/Cvf1jPc/KnB8O0Hg8ScNv+X+HIawSggJhTQHUBs8JMQAps2MTD89y0WL2TgZn6B4qFtH3IYvASmkBX8RDuAUCgg206K74eWA3KaNyky/f9/T4/zAkOAYCfOdEWzECAmGki1nKQoGBQOIOQImocAsgNwJQJcLWay6wJsGnG1/f/9YlSa0uJ3H1/Jhy5HVElIioGkqh11AACQYjUw+9rFtwAAAABJRU5ErkJggg==">
@@ -43,7 +43,7 @@
             --input-color: #96a2b8;
             --label: #727f92;
             --cat-bg: #202530AA;
-            --cat-color: #6c778a;
+            --cat-color: #606d83;
             --menu-bg: #2a2f3aEA;
         }
         * { margin: 0; padding: 0; outline: none; }
@@ -92,7 +92,7 @@
         .menu_R li div.flex { display: flex; }
         .menu_R li div.flex button { width: 50%; }
         .menu_R button { width: 100%; font-size: 11px; padding: 4px 0 4px 0; border-radius: 2px; }
-        .menu_R .category { color: var(--cat-color); background: var(--cat-bg); font-size: 9px; font-weight: bold; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 2px 0 2px 0; border-radius: 3px; }
+        .menu_R .category { color: var(--cat-color); background: var(--cat-bg); font-size: 9px; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 2px 0 2px 0; border-radius: 3px; }
         .menu_R .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_R :first-child { cursor: pointer; }
         .menu_R :first-child span { color: var(--btn-color); letter-spacing: 0.08em; font-size: 9px; vertical-align: -3px; }
@@ -104,7 +104,7 @@
         .menu_L li div.flex { display: flex; }
         .menu_L li div.flex button { width: 50%; }
         .menu_L button { width: 100%; font-size: 11px; padding: 4px 0 4px 0; border-radius: 2px; }
-        .menu_L .category { color: var(--cat-color); background: var(--cat-bg); font-size: 9px; font-weight: bold; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 2px 0 2px 0; border-radius: 3px; }
+        .menu_L .category { color: var(--cat-color); background: var(--cat-bg); font-size: 9px; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 2px 0 2px 0; border-radius: 3px; }
         .menu_L .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_L :first-child { cursor: pointer; }
         .menu_L :first-child span { color: var(--btn-color); letter-spacing: 0.08em; font-size: 9px; vertical-align: -3px; }
@@ -150,27 +150,28 @@
         #hover li.hover_disabled { opacity: 0; pointer-events: none; }
         #pathtracer { z-index: 10; display: none; width: 100%; height: 100%; position: fixed; }
         #palette { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 130px; bottom: 135px; overflow-y: scroll; overflow-x: hidden; }
-        #bakelist { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 130px; bottom: 2px; overflow-y: scroll; overflow-x: hidden; }
-        #bakelist button { background: #4C5468CC; width: 59px; font-size: 10px; padding: 3px; margin-bottom: 1px; border: none; }
-        #bakelist button:hover { background: var(--btn-bg); color: orange; }
-        #bakelist button.bakery_select { background: var(--btn-bg); color: orange; }
+        #bakerylist { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 130px; bottom: 2px; overflow-y: scroll; overflow-x: hidden; }
+        #bakerylist .item_name { background: #454d61cc; width: 53px; font-size: 10px; padding: 2px; margin-bottom: 1px; border: 1px solid #161a2040; border-radius: 3px; text-align: center; }
+        #bakerylist .item_name:hover { background: var(--btn-bg); color: orange; }
+        #bakerylist .item_name.bakery_select { background: var(--btn-bg); color: orange; }
         #colorpicker { z-index: 500; position: absolute; width: 30px; left: 4px; bottom: 98px; }
         #colorpicker :first-child { height: 30px; }
-        #colorbucket { z-index: 9; padding: 3px; color: var(--btn-color); background: none; border: none; left: 35px; bottom: 106px; position: absolute; cursor: pointer; }
+        #colorbucket { z-index: 9; padding: 3px; color: var(--btn-color); background: none; border: none; left: 37px; bottom: 108px; position: absolute; cursor: pointer; }
         #colorbucket:hover { color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: absolute; }
         #menu-about .about { font-size: 11px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 5px 5px 3px 5px; cursor: help; }
         #menu-about .about h1 { font-size: 11px; font-weight: normal; color: #98a1ac; letter-spacing: 1px; cursor: help; }
         #menu-texture li.img { display: inline-block; }
         #menu-texture li :hover { border-color: orange; }
-        #menu-texture img { object-fit: fill; border: solid 1px #6b798d; width: 30px; height: 30px; margin: -2px 2px 3px 2px; cursor: pointer; }
+        #menu-texture img { object-fit: fill; border: solid 1px #6b798d; width: 21px; height: 21px; margin: -2px 2px 3px 2px; cursor: pointer; }
         #menu-storage img { object-fit: fill; background: #30394790; border: dotted 1px #1e1f24; width: 105px; height: 60px; margin-left: 1px; cursor: pointer; }
         #menu-storage li div button { font-size: 10px; letter-spacing: 0.05em; width: 54px; padding: 4px 0 4px 0; }
         #btn-symm-axis { color: orange; font-size: 12px; }
         #btn-symm-axis:hover { background: var(--input-bg); }
-        #menu_inscreen { z-index: 9; display: unset; background: #30394740; width: 30px; right: 0; bottom: 95px; position: absolute; text-align: center; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+        #menu_inscreen_right { z-index: 9; display: unset; background: #30394740; width: 30px; right: 0; bottom: 95px; position: absolute; text-align: center; border-top-left-radius: 5px; border-bottom-left-radius: 5px; }
+        #menu_inscreen_bottom { z-index: 9; display: unset; background: #30394740; height: 30px; left: 50%; bottom: 20px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 5px; }
         #btn-helper-symmetry { padding: 5px; font-size: 17px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
-        #btn-helper-workplane { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; left: 50%; bottom: 30px; transform: translateX(-50%); position: absolute; }
+        #btn-helper-workplane { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
         #btn-helper-workplane i { font-size: 18px; color: aqua; opacity: 0.8; }
         #sandbox_controls { display: none; }
         #sandbox_controls .sandbox-gravity { z-index: 1000; font-size: 40px; width: 48px; border: solid 1px #cccccc20; color: #cccccc50; padding: 5px; left: 10px; bottom: 10px; border-radius: 50%; position: absolute; text-align: center; }
@@ -184,7 +185,6 @@
         #axisview-hitbox { z-index: 500; display: none; width: 40px; height: 40px; position: absolute; right: 30px; bottom: 30px; }
         #info { z-index: 9; background: #2c313a60; color: #97a5b880; font-size: 9px; position: absolute; padding: 2px; width: auto; bottom: 0; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: #97a5b8; letter-spacing: 0.05em; }
-        #info_ws { z-index: 9; display: none; background: #2c313a60; color: #97a5b8AA; font-size: 11px; position: absolute; padding: 2px; width: auto; bottom: 16px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info_pt { z-index: 100; background: #2c313a60; color: #97a5b880; font-size: 9px; position: absolute; padding: 2px 2px 3px 2px; width: 100%; bottom: 0; text-align: center; pointer-events: none; }
         #info_pt span { color: #97a5b8; letter-spacing: 0.05em; }
         #progressbar { z-index: 1500; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 1px; bottom: 0; position: fixed; }
@@ -193,7 +193,7 @@
         #confirm button { width: 48%; font-size: 12px; text-transform: uppercase; }
         #confirmblocker { z-index: 2400; display: none; opacity: 0.5; background: #181b22; position: absolute; width: 100%; height: 100%; }
         #notifier { z-index: 2000; display: none; background: #2a2f3aF1; color: aqua; border: solid 1px #222; box-shadow: 0 0 3px #21262e99; font-size: 10px; position: absolute; width: fit-content; left: 50%; top: 50%; margin-left: -200px; transform: translateY(-50%); padding: 2px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
-        #loadingscreen { z-index: 5000; opacity: 0.8; transition: opacity 1s ease-out; background: #181b22; position: absolute; width: 100%; height: 100%; }
+        #loadingscreen { z-index: 5000; opacity: 0.85; transition: opacity 1s ease-out; background: #181b22; position: absolute; width: 100%; height: 100%; }
         #loadingscreen .logo { transform-style: preserve-3d; animation: bouncing 2s infinite; width: 30px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -30px; }
         #loadingscreen .progress { color: slategray; font-size: 10px; font-weight: bold; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 40px; text-align: center; }
         #loadingscreen .version { color: slategray; font-size: 10px; letter-spacing: 0.1em; width: 200px; height: 20px; position: absolute; left: 50%; bottom: 10%; margin-left: -100px; text-align: center; }
@@ -293,7 +293,7 @@
                 <option value="samples/test_symmetry2.vbx">Symm Even</option>
                 <option value="samples/test_voxelizer_2d.vbx">Voxelizer 2D</option>
                 <option value="samples/test_pixelmonk.vbx">Pixel Monk 2D</option>
-                <option value="samples/test_texture.vbx">Texture (old startup)</option>
+                <option value="samples/startup_legacy.vbx">Startup (legacy)</option>
             </select>
             <select onchange="project.loadFromUrl(this.options[this.selectedIndex].value)">
                 <option value="">MagicaVoxel</option>
@@ -307,7 +307,7 @@
         <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/apps/asset-viewer', '_blank').focus();">Asset Viewer</button></li>
         <li class="spacer"></li>
         <li class="about">
-            4.1.3 Beta 2023
+            4.1.4 Beta 2023
             <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub Repository</a>
             <br>Developer
             <br>&#8627; <a href="https://nimadez.github.io/">Nima Dezfuli</a>
@@ -360,9 +360,9 @@
         <li onclick="ui.toggleMenuGenerator()"><i class="material-icons">exit_to_app</i> <span>GENERATOR</span></li>
         <li class="category">SHAPES</li>
         <li>
-            <div class="row">&nbsp;<label>X</label>&nbsp;&nbsp;<input id="input-grid-x" type="number" class="ignorekeys" value="10" min="4" max="100"></div>
-            <div class="row">&nbsp;<label>Y</label>&nbsp;&nbsp;<input id="input-grid-y" type="number" class="ignorekeys" value="10" min="1" max="100"></div>
-            <div class="row">&nbsp;<label>Z</label>&nbsp;&nbsp;<input id="input-grid-z" type="number" class="ignorekeys" value="10" min="4" max="100"></div>
+            <div class="row">&nbsp;<label>X</label>&nbsp;&nbsp;<input id="input-grid-x" type="number" class="ignorekeys" value="10" min="4" max="100" oninput="evenNumberIndicatorInt(this)"></div>
+            <div class="row">&nbsp;<label>Y</label>&nbsp;&nbsp;<input id="input-grid-y" type="number" class="ignorekeys" value="10" min="1" max="100" oninput="evenNumberIndicatorInt(this)"></div>
+            <div class="row">&nbsp;<label>Z</label>&nbsp;&nbsp;<input id="input-grid-z" type="number" class="ignorekeys" value="10" min="4" max="100" oninput="evenNumberIndicatorInt(this)"></div>
             <input type="checkbox" id="input-grid-fill" checked> <label for="input-grid-fill">Fill Box</label>
             <div class="flex">
                 <button onclick="generator.createBox()">Box</button>
@@ -375,14 +375,14 @@
         </li>
         <li class="category">ISOMETRIC</li>
         <li>
-            <div class="row">&nbsp;<label>Y</label>&nbsp;&nbsp;<input id="input-isometric-size" type="number" class="ignorekeys" value="20" min="2" max="100"></div>
+            <div class="row">&nbsp;<label>Y</label>&nbsp;&nbsp;<input id="input-isometric-size" type="number" class="ignorekeys" value="20" min="2" max="100" oninput="evenNumberIndicatorInt(this)"></div>
             <button onclick="generator.createIsometric()">Isometric</button>
         </li>
         <li class="category">TERRAIN</li>
         <li>
-            <div class="row">&nbsp;<label>X</label>&nbsp;&nbsp;<input id="input-terrain-x" type="number" class="ignorekeys" value="50" min="3" max="200"></div>
-            <div class="row">&nbsp;<label>Y</label>&nbsp;&nbsp;<input id="input-terrain-y" type="number" class="ignorekeys" value="10" min="1" max="50"></div>
-            <div class="row">&nbsp;<label>Z</label>&nbsp;&nbsp;<input id="input-terrain-z" type="number" class="ignorekeys" value="50" min="3" max="200"></div>
+            <div class="row">&nbsp;<label>X</label>&nbsp;&nbsp;<input id="input-terrain-x" type="number" class="ignorekeys" value="50" min="3" max="200" oninput="evenNumberIndicatorInt(this)"></div>
+            <div class="row">&nbsp;<label>Y</label>&nbsp;&nbsp;<input id="input-terrain-y" type="number" class="ignorekeys" value="10" min="1" max="50" oninput="evenNumberIndicatorInt(this)"></div>
+            <div class="row">&nbsp;<label>Z</label>&nbsp;&nbsp;<input id="input-terrain-z" type="number" class="ignorekeys" value="50" min="3" max="200" oninput="evenNumberIndicatorInt(this)"></div>
             <input type="checkbox" id="input-terrain-grad" checked> <label for="input-terrain-grad">Height Gradient</label>
             <button onclick="generator.createTerrain()">Terrain</button>
         </li>
@@ -390,21 +390,23 @@
     <ul class="menu_R" id="menu-voxelizer">
         <li onclick="ui.toggleMenuVoxelizer()"><i class="material-icons">exit_to_app</i> <span>VOXELIZER</span></li>
         <li class="category">3D MODELS</li>
-        <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
-        <li>
-            <button onclick="voxelizer.loadUrl(this.nextElementSibling.value)">Upload URL</button>
-            <input type="url" class="ignorekeys" value="" placeholder="Enter URL" title="GLB OBJ" spellcheck="false">
-        </li>
         <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="60" min="1" max="1000"></li>
-        <li class="category">IMAGES</li>
-        <li><button onclick="document.getElementById('openfile_voxelizer_img').click()">Upload Image</button></li>
-        <li><button onclick="voxelizer.pasteBase64Image()">Paste Base64</button></li>
-        <li>
-            <button onclick="voxelizer.loadUrlImage(this.nextElementSibling.value)">Upload URL</button>
-            <input type="url" class="ignorekeys" value="" placeholder="Enter URL" title="PNG JPG SVG" spellcheck="false">
+        <li class="spacer"></li>
+        <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
+        <li class="row">
+            <input type="url" class="ignorekeys" style="min-width: 70%" value="" placeholder="https://" title="GLB OBJ" spellcheck="false">
+            <button onclick="voxelizer.loadUrl(this.previousElementSibling.value)"> > </button>
         </li>
+        <li class="category">IMAGES</li>
         <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" max="20" step="0.1"></li>
         <li><input type="checkbox" id="input-voxelizer-zup" checked> <label for="input-voxelizer-zup">Z-Up</label></li>
+        <li class="spacer"></li>
+        <li><button onclick="document.getElementById('openfile_voxelizer_img').click()">Upload Image</button></li>
+        <li><button onclick="voxelizer.pasteBase64Image()">Paste Base64</button></li>
+        <li class="row">
+            <input type="url" class="ignorekeys" style="min-width: 70%" value="" placeholder="https://" title="PNG JPG SVG" spellcheck="false">
+            <button onclick="voxelizer.loadUrlImage(this.previousElementSibling.value)"> > </button>
+        </li>
     </ul>
     <ul class="menu_R" id="menu-symmetry">
         <li onclick="ui.toggleMenuSymmetry()"><i class="material-icons">exit_to_app</i> <span>SYMMETRY</span></li>
@@ -416,14 +418,14 @@
         <li class="category">MIRROR</li>
         <li onclick="symmetry.mirrorVoxelPositions()"><button>Mirror</button></li>
         <li class="category">DELETE HALF</li>
-        <li onclick="symmetry.deleteHalfVoxels(-1)"><button>Pos (+) Half</button></li>
-        <li onclick="symmetry.deleteHalfVoxels(1)"><button>Neg (-) Half</button></li>
+        <li onclick="symmetry.deleteHalfVoxels(-1)"><button>Positive Half</button></li>
+        <li onclick="symmetry.deleteHalfVoxels(1)"><button>Negative Half</button></li>
         <li class="category">PIVOT CENTER</li>
         <li><input type="checkbox" id="input-symm-center" onclick="helper.setSymmPivot()"> <label for="input-symm-center">World Center</label></li>
     </ul>
     <ul class="menu_R" id="menu-model">
         <li onclick="ui.toggleMenuModel()"><i class="material-icons">exit_to_app</i> <span>MODELING</span></li>
-        <li class="category">DRAWING</li>
+        <li class="category">FREEFORM</li>
         <li><button onclick="tool.toolSelector('add')" class="tool_add">Add</button></li>
         <li><button onclick="tool.toolSelector('remove')" class="tool_remove">Remove</button></li>
         <li class="category">BOX SHAPE</li>
@@ -438,8 +440,9 @@
     </ul>
     <ul class="menu_R" id="menu-paint">
         <li onclick="ui.toggleMenuPaint()"><i class="material-icons">exit_to_app</i> <span>PAINTING</span></li>
-        <li class="category">PAINT COLOR</li>
+        <li class="category">FREEFORM</li>
         <li><button onclick="tool.toolSelector('paint')" class="tool_paint">Paint</button></li>
+        <li class="category">BOX SHAPE</li>
         <li><button onclick="tool.toolSelector('boxpaint')" class="tool_boxpaint">Box Paint</button></li>
         <li class="category">FILL COLOR</li>
         <li><button onclick="tool.toolSelector('bucket')" class="tool_bucket">Bucket</button></li>
@@ -465,9 +468,8 @@
         <li><button onclick="bakery.bakeAll()">Bake All</button></li>
         <li><button onclick="bakery.bakeAllColors()">Bake<br>Color Groups</button></li>
         <li class="category">OPTIONS<li>
-        <li><input type="checkbox" id="input-bakery-uvs"> <label for="input-bakery-uvs">Per-Face UVs</label></li>
-        <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Cull</label></li>
-        <li class="category">CLEAR</li>
+        <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
+        <li class="spacer"></li>
         <li><button onclick="bakery.clearBakes(true)">Clear All Bakes</button></li>
     </ul>
     <ul class="menu_R" id="menu-meshes">
@@ -478,9 +480,13 @@
         <li><button class="tool_merge" onclick="toolBakery.toolSelector('merge')">Pick</button></li>
         <li><button onclick="toolBakery.mergeBakes()">Merge Selected</button></li>
         <li><button onclick="toolBakery.cancelTools()">Cancel</button></li>
+        <li class="spacer"></li>
+        <li><button onclick="bakery.mergeAll()">Merge All</button></li>
         <li class="category">VERTEX COLORS<li>
         <li><input type="color" id="input-vertex-color" value="#899AAE"></li>
-        <li class="category">CLEAR</li>
+        <li class="category">VOXELIZATION<li>
+        <li><button onclick="voxelizer.voxelizeBake()">Unbake</button></li>
+        <li class="category">DELETE</li>
         <li title="DEL"><button onclick="bakery.deleteSelected()">Delete Selected</button></li>
     </ul>
     <ul class="menu_L" id="menu-pathtracer">
@@ -510,8 +516,8 @@
             <button id="btn-pt-pause">Pause</button>
         </li>
         <li class="category">ENVIRONMENT</li>
-        <li class="row"><label style="min-width: 53%">IBL Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="4" min="0.01" max="20" step="0.05"></li>
-        <li><input id="input-pt-sunlight" type="checkbox"></input> <label for="input-pt-sunlight">Sun Light</label></li>
+        <li class="row"><label style="min-width: 53%">IBL Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="4.5" min="0.01" max="20" step="0.05"></li>
+        <li><input id="input-pt-directlight" type="checkbox"></input> <label for="input-pt-directlight">Direct Light</label></li>
         <li><input id="input-pt-background" type="checkbox" checked></input> <label for="input-pt-background">Background</label></li>
         <li class="category">MATERIAL</li>
         <li>
@@ -531,8 +537,8 @@
     <ul class="menu_L" id="menu-camera">
         <li onclick="ui.toggleMenuCamera()"><i class="material-icons">exit_to_app</i> <span>CAMERA</span></li>
         <li class="category">VIEW</li>
-        <li><button onclick="camera.frame()">Frame Camera</button></li>
         <li><button id="btn-ortho" onclick="camera.switchOrtho()">Perspective</button></li>
+        <li><button onclick="camera.frame()">Frame</button></li>
         <li class="category">SETTINGS</li>
         <li class="row"><label style="min-width: 50%">FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.7" min="0.1" max="1" step="0.01" oninput="camera.setFov(this.value)"></li>
         <li class="row"><label style="min-width: 50%">Aperture</label> <input type="number" id="input-camera-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>
@@ -561,14 +567,14 @@
         </li>
         <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
         <li><button onclick="hdri.unloadHDR(true)">Unload</button></li>
-        <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display HDRI</label></li>
+        <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display</label></li>
         <li><input type="range" id="input-hdri-blur" value="0" min="0" max="1" step="0.01" oninput="hdri.setBlurAmount(this.value)"></li>
         <li class="category">DIRECT LIGHT</li>
         <li class="row">
             <button id="btn-light-defaultsun" style="padding: 2px">SUN</button>
             <input type="color" id="input-light-color" value="#DCDCDC" style="width: 150%">
         </li>
-        <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.6" min="0" max="1" step="0.01" oninput="light.updateIntensity(this.value)"></li>
+        <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.6" min="0" max="2" step="0.01" oninput="light.updateIntensity(this.value)"></li>
         <li><input type="checkbox" id="input-light-locator"> <label for="input-light-locator">Light Locator</label></li>
         <li><input type="checkbox" id="input-light-shadows" onclick="light.enableShadows(this.checked)" checked> <label for="input-light-shadows">Shadows</label></li>
     </ul>
@@ -598,14 +604,14 @@
                 <button onclick="material.setPBRTexture(1); bakery.replaceTexture()">Outline</button>
             </div> <div class="flex">
                 <button onclick="material.setPBRTexture(2); bakery.replaceTexture()">Grid</button>
-                <button onclick="material.setPBRTexture(3); bakery.replaceTexture()">Check</button>
+                <button onclick="material.setPBRTexture(3); bakery.replaceTexture()">Checker</button>
             </div>
         </li>
         <li class="category">IMPORT</li>
         <li><button onclick="document.getElementById('openfile_tex').click()">Add Texture</button></li>
         <li class="spacer" style="height:8px"></li>
         <li id="texturepresets"></li>
-        <li ondrop="material.deleteTexture(event)" ondragover="event.preventDefault()"><div class="dropzone">DROP HERE TO DELETE</div></li>
+        <li ondrop="material.deleteTexture(event)" ondragover="event.preventDefault()"><div class="dropzone">DROP TO DELETE</div></li>
         <li class="category">REPLICATE</li>
         <li><button onclick="bakery.replaceTextureAll()">Apply To All</button>
     </ul>
@@ -639,7 +645,7 @@
         <li onclick="ui.toggleMenuGroups()"><i class="material-icons">exit_to_app</i> <span>COLOR GROUPS</span></li>
         <li class="category">HIDE</li>
         <li><button onclick="tool.toolSelector('isolatecolor')" class="tool_isolatecolor">Isolate Color</button></li>
-        <li><button onclick="tool.toolSelector('hidecolor')" class="tool_hidecolor">Hide Color</button></li>
+        <li><button onclick="tool.toolSelector('hidecolor')" class="tool_hidecolor">Hide By Color</button></li>
         <li><button onclick="tool.toolSelector('boxhide')" class="tool_boxhide">Box Hide</button></li>
         <li class="category">UNHIDE</li>
         <li><button onclick="builder.setVoxelsVisibilityAndUpdate(true)">Unhide All</button>
@@ -651,20 +657,22 @@
         <li class="tool_camera" onclick="tool.toolSelector('camera')" onpointerdown="ui.dragElement(this)"><i class="material-icons">control_camera</i></li>
         <li class="tool_boxpaint" onclick="tool.toolSelector('boxpaint')"><i class="material-icons">imagesearch_roller</i></li>
         <li class="tool_boxadd" onclick="tool.toolSelector('boxadd')"><i class="material-icons">add</i></li>
-        <li class="tool_eyedrop" onclick="tool.toolSelector('eyedrop')"><i class="material-icons">colorize</i></li>
+        <li class="tool_boxrem" onclick="tool.toolSelector('boxrem')"><i class="material-icons">remove</i></li>
         <li class="tool_bucket hover_disabled" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></li>
         <li class="tool_remove hover_disabled" onclick="tool.toolSelector('remove')"><i class="material-icons">clear</i></li>
         <li class="tool_paint hover_disabled" onclick="tool.toolSelector('paint')"><i class="material-icons">brush</i></li>
         <li class="tool_add hover_disabled" onclick="tool.toolSelector('add')"><i class="material-icons">create</i></li>
-        <li class="tool_boxrem" onclick="tool.toolSelector('boxrem')"><i class="material-icons">remove</i></li>
+        <li class="tool_eyedrop" onclick="tool.toolSelector('eyedrop')"><i class="material-icons">colorize</i></li>
     </ul>
-    <ul id="menu_inscreen">
+    <ul id="menu_inscreen_right">
         <li id="btn-helper-symmetry" title="Symmetry" onclick="symmetry.switchAxis()">S</li>
+    </ul>
+    <ul id="menu_inscreen_bottom">
+        <div id="btn-helper-workplane" title="Workplane" onclick="helper.toggleWorkplane()"><i class="material-icons">border_inner</i></div>
     </ul>
     <div id="colorpicker"><input type="color" id="input-color" value="#95A0AC"></div>
     <div id="colorbucket" title="Color Bucket Tool" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></div>
     <div id="axisview-hitbox" onclick="camera.frame()"></div>
-    <div id="btn-helper-workplane" title="Workplane" onclick="helper.toggleWorkplane()"><i class="material-icons">border_inner</i></div>
     <!-- dynamic -->
     <div id="pathtracer">
         <canvas id="canvas_pt"></canvas>
@@ -677,15 +685,14 @@
     </div>
     <div id="marquee"></div>
     <div id="palette"><canvas id="canvas_palette"></canvas></div>
-    <div id="bakelist"></div>
+    <div id="bakerylist"></div>
     <div id="reticle"><i class="material-icons">add</i><span></span><span></span></div>
-    <div id="info_ws">Disconnected</div>
     <div id="info"><span>0</span> FPS | <span>0</span> | <span>0</span></div>
     <div id="progressbar"></div>
     <div id="loadingscreen">
         <div class="logo"><div class="cube"><div class="cube-faces"><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div><div class="cube-face shadow"></div></div></div></div>
-        <div class="progress">- PLEASE WAIT -</div>
-        <div class="version">4.1.3 BETA 2023</div>
+        <div class="progress">PLEASE WAIT</div>
+        <div class="version">4.1.4 BETA 2023</div>
     </div>
     <div id="confirm"><span>title here</span> <button>Cancel</button> <button>Ok</button></div>
     <div id="confirmblocker"></div>

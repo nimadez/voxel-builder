@@ -18,9 +18,9 @@ uniform sampler2D uNoise;
 uniform samplerCube uCubeMap;
 uniform sampler2D uTexture;
 uniform float uEnvPower;
-uniform bool uSunLight;
-uniform vec3 uSunDir;
-uniform vec3 uSunCol;
+uniform bool uDirectLight;
+uniform vec3 uLightDir;
+uniform vec3 uLightCol;
 uniform bool uBackground;
 uniform int uMaterialId;
 uniform vec3 uEmissive;
@@ -187,14 +187,14 @@ vec4 pathtrace(Ray ray, float seed) {
             ray.org = stepRayOrigin(hit.point, hit.faceNormal);
             color += texture2D(uTexture, uv).rgb;
 
-            if (uSunLight) {
+            if (uDirectLight) {
                 if (b == 0) {
-                    float diffuse = max(0.0, dot(uSunDir, normalize(normal)));
+                    float diffuse = max(0.0, dot(uLightDir, normal));
                     float shadow = 1.0;
-                    if (bvhIntersectFirstHit(bvh, ray.org, uSunDir, hit.faceIndices, hit.faceNormal, hit.barycoord, hit.side, hit.dist))
+                    if (bvhIntersectFirstHit(bvh, ray.org, uLightDir, hit.faceIndices, hit.faceNormal, hit.barycoord, hit.side, hit.dist))
                         shadow = 0.0;
                     att *= color;
-                    acc += att * uSunCol * diffuse * shadow;
+                    acc += att * uLightCol * diffuse * shadow;
                 }
             }
 
@@ -206,7 +206,7 @@ vec4 pathtrace(Ray ray, float seed) {
                 float pdf = dot(ray.dir, normal) * PIDF;
                 att *= pdf * color;
             } else if (uMaterialId == 2) {
-                // ideal metallic
+                // not ideal metallic
                 ray.dir = normalize(reflect(ray.dir, normal)) + uniformVector(cseed) * uRoughness;
                 att *= color;
             } else if (uMaterialId == 3) {

@@ -5,3 +5,4 @@ window.pt = pathtracer.pt;
 window.ptIsActive = pathtracer.isActive;
 
 window.voxelize = voxelizer.voxelize;
+window.voxelizeInner = voxelizer.voxelizeInner;

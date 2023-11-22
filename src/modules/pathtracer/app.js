@@ -13,9 +13,6 @@
     Unable to extract three.js geometry groups from babylon.js mesh,
     without performance hit on bvh regeneration, the startup is unbearable.
 
-    Dev note: not all materials are good for hard-edge voxel surfaces,
-    for example, dielectric and SSS look bad and just slow down the shader.
-
     Dev note: real-time voxel editing is possible by setting pointerEvents to none,
     but it uses more hardware resources because we have to keep both engines running.
 */
@@ -138,9 +135,9 @@ class Pathtracer {
         this.updateUniformCameraAperture(ui.domCameraAperture.value);
         this.updateUniformCameraFocalLength(ui.domCameraFocalLength.value);
         this.updateUniformEnvPower(document.getElementById('input-pt-envpower').value);
-        this.updateUniformSunLight(document.getElementById('input-pt-sunlight').checked);
-        this.updateUniformSunDir(-light.getDirection().x, -light.getDirection().y, -light.getDirection().z);
-        this.updateUniformSunCol(ui.domColorPickerLightColor.value);
+        this.updateUniformDirectLight(document.getElementById('input-pt-directlight').checked);
+        this.updateUniformLightDir(-light.getDirection().x, -light.getDirection().y, -light.getDirection().z);
+        this.updateUniformLightCol(ui.domColorPickerLightColor.value);
         this.updateUniformBackground(document.getElementById('input-pt-background').checked);
         this.updateUniformMaterialId(document.getElementById('input-pt-material').value);
         this.updateUniformMaterialEmissive(document.getElementById('input-pt-emissive').value);
@@ -162,9 +159,9 @@ class Pathtracer {
             uAperture: { value: 0.0 },
             uFocalLength: { value: 50.0 },
             uEnvPower: { value: 1.0 },
-            uSunLight: { value: false },
-            uSunDir: { value: new THREE.Vector3() },
-            uSunCol: { value: new THREE.Color() },
+            uDirectLight: { value: false },
+            uLightDir: { value: new THREE.Vector3() },
+            uLightCol: { value: new THREE.Color() },
             uBackground: { value: true },
             uNoise: { value: noiseTexture },
             uCubeMap: { value: this.envTexture },
@@ -221,9 +218,9 @@ class Pathtracer {
             const mesh = BABYLON.Mesh.MergeMeshes(bakery.meshes, false, true);
             const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
 
-            const uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind);
-            for (let i = 0; i < uvs.length/2; i++) // force per-face uvs
-                uvs[2 * i + 1] *= 3.0;
+            //const uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind);
+            //for (let i = 0; i < uvs.length/2; i++) // force per-face uvs
+            //    uvs[2 * i + 1] *= 3.0;
 
             const colors = mesh.getVerticesData(BABYLON.VertexBuffer.ColorKind);
             for (let i = 0; i < colors.length; i++)
@@ -233,7 +230,7 @@ class Pathtracer {
                 type: 'BAKE',
                 position: new Float32Array(positions),
                 //normal: new Float32Array(mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind)),
-                uv: new Float32Array(uvs),
+                uv: new Float32Array(mesh.getVerticesData(BABYLON.VertexBuffer.UVKind)),
                 color: new Float32Array(colors),
                 indices: new Uint32Array(mesh.getIndices())
             });
@@ -355,23 +352,23 @@ class Pathtracer {
         this.resetSamples();
     }
 
-    updateUniformSunLight(isEnabled) {
-        this.uniRender['uSunLight'].value = isEnabled;
+    updateUniformDirectLight(isEnabled) {
+        this.uniRender['uDirectLight'].value = isEnabled;
         this.resetSamples();
     }
 
-    updateUniformSunDir(x, y, z) {
-        this.uniRender['uSunDir'].value = new THREE.Vector3(x, y, z).normalize();
+    updateUniformLightDir(x, y, z) {
+        this.uniRender['uLightDir'].value = new THREE.Vector3(x, y, z).normalize();
         this.resetSamples();
     }
 
-    updateUniformSunCol(hex) {
+    updateUniformLightCol(hex) {
         if (!this.uniRender) return;
         const col = new THREE.Color(hex);
-        col.r *= ui.domLightIntensity.value * 3;
-        col.g *= ui.domLightIntensity.value * 3;
-        col.b *= ui.domLightIntensity.value * 3;
-        this.uniRender['uSunCol'].value = col;
+        col.r *= ui.domLightIntensity.value * 5;
+        col.g *= ui.domLightIntensity.value * 5;
+        col.b *= ui.domLightIntensity.value * 5;
+        this.uniRender['uLightCol'].value = col;
         this.resetSamples();
     }
 
@@ -481,9 +478,6 @@ class Pathtracer {
     }
 
     toggle() {
-        if (isMobileDevice()) {
-            ui.notification("mobile is not supported, try again later!");
-        }
         if (MODE == 1 && bakery.meshes.length == 0) {
             ui.notification("no baked meshes");
             return;
@@ -493,6 +487,9 @@ class Pathtracer {
 
     activate() {
         if (this.isLoaded) return; // avoid overdraw
+
+        if (isMobileDevice())
+            ui.notification("mobile is not supported, try again later!");
 
         isRendering = false;
         ui.domPathtracerBtn.classList.add('btn_select_pt');
@@ -613,12 +610,12 @@ ui.domCameraFocalLength.oninput = (ev) => {
 
 ui.domColorPickerLightColor.addEventListener('input', (ev) => {
     if (pt.isLoaded)
-        pt.updateUniformSunCol(ev.target.value);
+        pt.updateUniformLightCol(ev.target.value);
 }, false);
 
 ui.domLightIntensity.addEventListener('input', () => {
     if (pt.isLoaded)
-        pt.updateUniformSunCol(ui.domColorPickerLightColor.value);
+        pt.updateUniformLightCol(ui.domColorPickerLightColor.value);
 }, false);
 
 document.getElementById('input-pt-passes').onchange = (ev) => {
@@ -633,7 +630,7 @@ document.getElementById('input-pt-bounces').onchange = (ev) => {
 
 document.getElementById('input-pt-envpower').onchange = (ev) => {
     if (pt.isLoaded) {
-        if (ev.target.value < 0.01) ev.target.value = 0.01;
+        if (ev.target.value < 1) ev.target.value = 1;
         pt.updateUniformEnvPower(ev.target.value);
     }
 };
@@ -643,9 +640,9 @@ document.getElementById('input-pt-envpower').onwheel = (ev) => {
         pt.updateUniformEnvPower(ev.target.value);
 };
 
-document.getElementById('input-pt-sunlight').oninput = (ev) => {
+document.getElementById('input-pt-directlight').oninput = (ev) => {
     if (pt.isLoaded)
-        pt.updateUniformSunLight(ev.target.checked);
+        pt.updateUniformDirectLight(ev.target.checked);
 };
 
 document.getElementById('input-pt-background').oninput = (ev) => {

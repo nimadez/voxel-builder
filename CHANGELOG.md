@@ -1,4 +1,12 @@
-## 4.1.3 nightly
+## 4.1.4 nightly
+- Clean up the code for all the tools
+- Improve bakery list
+- New "alt key", speed drawing and painting!
+- New bake to voxels, 100% accurate!
+- Eliminated 1:3 uvs
+- in progress...
+
+## 4.1.3
 - Improve sun locator
 - Improve bvh generation speed
 - PT support sun color and intensity
@@ -8,7 +16,6 @@
 - Add option to export selected bake only
 - Remove the legacy voxelization method (bvh only)
 - Add new bakery list (you can also rename meshes)
-- in progress...
 
 ## 4.1.2 nightly
 - Babylon.js updated to 6.29.2

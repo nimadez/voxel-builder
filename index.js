@@ -36,6 +36,8 @@ function createWindow() {
     mainWindow.on('blur', unregister);
     mainWindow.on('beforeunload', unregister);
     mainWindow.on('closed', () => {});
+
+    mainWindow.removeMenu();
 }
 
 app.whenReady().then(() => {
