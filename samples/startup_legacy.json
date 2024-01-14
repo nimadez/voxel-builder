@@ -1,0 +1,13 @@
+{
+    "version": "Voxel Builder 4.2.4",
+    "project": {
+        "name": "startup_legacy",
+        "voxels": 30,
+        "meshes": 0
+    },
+    "scene": {},
+    "data": {
+        "voxels": "1,0,1,#4D7FBA,true;1,0,2,#00EFFF,true;1,0,3,#4D7FBA,true;1,1,1,#4D7FBA,true;1,1,3,#4D7FBA,true;1,2,1,#C86BB3,true;2,0,1,#00EFFF,true;2,0,2,#00EFFF,true;2,0,3,#00EFFF,true;3,0,1,#4D7FBA,true;3,0,2,#00EFFF,true;3,0,3,#4D7FBA,true;3,1,1,#4D7FBA,true;3,1,3,#4D7FBA,true;3,2,1,#C86BB3,true;3,2,3,#C86BB3,true;1,0,4,#4D7FBA,true;2,0,4,#2CDE93,true;3,0,4,#4D7FBA,true;4,0,3,#4D7FBA,true;4,0,2,#2CDE93,true;4,0,1,#4D7FBA,true;3,0,0,#4D7FBA,true;2,0,0,#2CDE93,true;1,0,0,#4D7FBA,true;0,0,1,#4D7FBA,true;0,0,2,#2CDE93,true;0,0,3,#4D7FBA,true;1,2,3,#C86BB3,true;2,3,2,#FF9800,true;",
+        "meshes": ""
+    }
+}
