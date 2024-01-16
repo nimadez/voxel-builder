@@ -30,7 +30,9 @@ onmessage = (ev) => {
                 idx[4] = ev.data.data[1][`${pos._x}_${pos._y}_${pos._z + 1}`];
                 idx[5] = ev.data.data[1][`${pos._x}_${pos._y}_${pos._z - 1}`];
                 if (idx[0] > -1 && idx[1] > -1 && idx[2] > -1 && idx[3] > -1 && idx[4] > -1 && idx[5] > -1)
-                    arr.push(pos);
+                    continue;
+                else
+                    arr.push(ev.data.data[0][i]);
             }
             postMessage(arr);
             arr = [];

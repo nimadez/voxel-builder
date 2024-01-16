@@ -6,7 +6,7 @@
 #define RAYOFFSET 1e-5
 #define EPSILON 1e-6
 #define PI2 6.28318530718
-#define PIDF 0.31830988618 // (1.0 / PI)
+#define PIDF 0.31830988618 // 1.0/PI
 
 uniform sampler2D uBuffer;
 uniform int uRenderPassId;
@@ -25,7 +25,6 @@ uniform int uMaterialId;
 uniform vec3 uEmissive;
 uniform float uRoughness;
 uniform float uGrid;
-uniform bool uFastMode;
 
 uniform BVH bvh;
 uniform sampler2D normalAttribute;
@@ -96,8 +95,6 @@ void adaptCamera(mat4 mat) {
     cam.up      = vec3(mat[1][0], mat[1][1], mat[1][2]);
     cam.forward = vec3(mat[2][0], mat[2][1], mat[2][2]);
     cam.origin  = vec3(mat[3][0], mat[3][1], mat[3][2]);
-    //cam.target  = normalize(cam.origin - cam.forward);
-    //cam.fov     = 2.0 * atan(invProjectionMatrix[1][1]) * 180.0 / PI;
     cam.aperture = uAperture;
     cam.focalLength = uFocalLength;
 }
@@ -177,7 +174,7 @@ vec4 pathtrace(vec3 ro, vec3 rd, float seed) {
 
             color = pow(color, vec3(0.4545));
 
-            if (uGrid > 0.0 && b == 0) {
+            if (b == 0 && uGrid > 0.0) {
                 vec2 grid = abs(fract(uv - 0.5) - 0.5) / rayLen*cam.farPlane;
                 line = 1.0 - min(min(grid.x, grid.y), 1.0);
                 color = mix(color, vec3(0), line * uGrid);
@@ -195,8 +192,6 @@ vec4 pathtrace(vec3 ro, vec3 rd, float seed) {
                 // ideal metallic
                 rd = normalize(reflect(rd, normal)) + uniformVector(cseed) * uRoughness;
                 att *= color;
-            } else if (uMaterialId == 3) {
-                // TODO
             }
         }
 

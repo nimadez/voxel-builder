@@ -71,7 +71,7 @@ const COL_RED = '#FF0000';
 const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
 const FPS = 1000 / 60;
-const FPS_TOOLMOVE = 1000 / 40;
+const FPS_TOOLMOVE = 1000 / 50;
 
 const MAXAMOUNT = 512000;
 const MAXAMOUNTBOX = 128000;
@@ -92,6 +92,17 @@ const viewAxes = [];
 
 const canvas = document.getElementById('canvas_render');
 const canvasPalette = document.getElementById('canvas_palette');
+
+const workplaneWhiteList = [
+    'add',
+    'box_add', 'box_rem', 'box_paint',
+    'transform_box', 'transform_rect',
+    'rect_add', 'rect_remove', 'rect_paint'
+];
+
+const bvhWhiteList = [
+    'rect_add'
+];
 
 
 // -------------------------------------------------------
@@ -150,16 +161,11 @@ const client = new WebsocketClient();
 // startup
 scene.executeOnceBeforeRender(() => {
     preferences.init();
-}, 0);
+});
 
 scene.executeWhenReady(() => {
     preferences.finish();
-    (preferences.getStartup()) ?
-        project.loadFromUrl('user/startup.json') :
-        project.newProject(false, '#618ABD');
-    ui.hideInterface(false);
-    engine.hideLoadingUI();
-}, 100);
+});
 
 
 // -------------------------------------------------------
@@ -422,7 +428,7 @@ function Camera() {
                 if (bakery.selected) { // zoom to selected mesh
                     this.setFramingBehavior(this.camera1, bakery.selected);
                 } else {
-                    this.setFramingBehavior(this.camera1, bakery.meshes[0]);
+                    this.setFramingBehavior(this.camera1, builder.mesh);
                 }
             } else {
                 this.setFramingBehavior(this.camera1, builder.mesh);
@@ -452,18 +458,32 @@ function Camera() {
     this.toggleCameraAutoRotation = function() {
         scene.activeCamera.useAutoRotationBehavior = !scene.activeCamera.useAutoRotationBehavior;
         if (scene.activeCamera.useAutoRotationBehavior) {
-            scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1; //-0.1 CCW
+            (ui.domAutoRotationCCW.checked) ?
+                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = -0.1 : // CCW
+                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1;   // CW
             scene.activeCamera.autoRotationBehavior.idleRotationWaitTime = 1;
             scene.activeCamera.autoRotationBehavior.idleRotationSpinupTime = 1;
         }
         ui.domAutoRotation.checked = scene.activeCamera.useAutoRotationBehavior;
     }
 
+    this.updateCameraAutoRotation = function() {
+        if (scene.activeCamera.useAutoRotationBehavior) {
+            (ui.domAutoRotationCCW.checked) ?
+                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = -0.1 :
+                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1;
+        }
+    }
+
     this.switchOrtho = function() {
         if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA) {
             this.setView('persp');
+            if (MODE == 0)
+                ui.domInScreenOrtho.innerHTML = 'P';
         } else {
             this.setView('ortho');
+            if (MODE == 0)
+                ui.domInScreenOrtho.innerHTML = 'O';
         }
     }
 
@@ -1013,11 +1033,14 @@ function Material(scene) {
 // voxel = {
 //    position: Vector3,
 //    color: #HEXHEX (UPPERCASE/no alpha)
-//    visible: bool
+//    visible: bool,
+//    idx: int (read-only)
 // }
 
 
 function Builder(scene) {
+    this.isWorking = false;
+
     this.voxels = [];
     this.mesh = null;
 
@@ -1064,12 +1087,24 @@ function Builder(scene) {
         if (this.voxels.length == 0)
             generator.newBox(1, currentColor);
 
+        this.isWorking = true;
         this.createThinInstances(this.voxels);
-        builder.fillArrayBuffers();
 
-        renderPickTarget.renderList.splice(0, 1);
-        renderPickTarget.renderList.push(this.mesh);
+        renderPickTarget.renderList = [ this.mesh ];
         renderPickTarget.setMaterialForRendering(this.mesh, material.mat_white);
+
+        if (preferences.getBvhPicking()) {
+            setTimeout(() => { // TODO: this causes a delay,
+                window.rc.create(); // but we couldn't use a web worker
+                builder.isWorking = false;
+            });
+        } else {
+            setTimeout(() => {
+                if (bvhWhiteList.includes(tool.name))
+                    window.rc.create();
+                builder.isWorking = false;
+            });
+        }
 
         light.addMesh(this.mesh);
         light.updateShadowMap();
@@ -1078,13 +1113,10 @@ function Builder(scene) {
             palette.create();
             helper.setGrid();
             helper.setSymmPivot();
-            
-            if (window.rc)
-                window.rc.createFaster();
 
             if (preferences.getWebsocket())
                 client.ws_send(this.voxels);
-        }, 100);
+        }, 10);
     }
 
     this.createThinInstances = function(voxels) {
@@ -1133,15 +1165,13 @@ function Builder(scene) {
         this.bufferMatrix = [];
     }
 
-    this.fillArrayBuffers = function() {
+    this.fillArrayBuffers = function() { // for raycaster, pathtracer and export
         this.positions = new Float32Array(this.vPositions.length * this.voxels.length);
-        this.normals = new Float32Array(this.vNormals.length * this.voxels.length);
         this.uvs = new Float32Array(this.vUvs.length * this.voxels.length);
         this.colors = new Float32Array(this.vUvs.length * 2 * this.voxels.length);
         this.indices = new Uint32Array(this.vIndices.length * this.voxels.length);
 
         const lenC = this.vUvs.length * 2;
-        const lenI = this.vPositions.length / 3;
         const p = new BABYLON.Vector3();
         let v = 0;
 
@@ -1169,6 +1199,7 @@ function Builder(scene) {
                 this.colors[i * lenC + v * 2 + 3] = 1;
             }
 
+            const lenI = this.vPositions.length / 3;
             const len = i * this.vIndices.length;
             for (v = 0; v < this.vIndices.length; v++) {
                 this.indices[len + v] = this.vIndices[v] + i * lenI;
@@ -1177,6 +1208,8 @@ function Builder(scene) {
     }
 
     this.createMesh = function() { // for export only
+        this.fillArrayBuffers();
+        this.normals = new Float32Array(this.vNormals.length * this.voxels.length);
         BABYLON.VertexData.ComputeNormals(this.positions, this.indices, this.normals);
 
         const mesh = new BABYLON.Mesh('mesh', scene);
@@ -1248,6 +1281,13 @@ function Builder(scene) {
         return this.voxels.filter(i => i.visible === isVisible);
     }
 
+    this.findIndexByPosition = function(pos) { // no dup
+        return this.voxels.findIndex(i =>
+            i.position.x == pos.x &&
+            i.position.y == pos.y &&
+            i.position.z == pos.z);
+    }
+
     this.findIndexByColor = function(hex) { // no dup
         return this.voxels.findIndex(i => i.color === hex);
     }
@@ -1258,6 +1298,11 @@ function Builder(scene) {
 
     this.addArray = function(arr) {
         this.voxels = this.voxels.concat(arr);
+    }
+
+    this.addNoDup = function(pos, hex, visible) {
+        if (this.findIndexByPosition(pos) == -1)
+            this.voxels.push({ position: pos, color: hex, visible: visible });
     }
 
     this.remove = function(voxel) {
@@ -1339,9 +1384,13 @@ function Builder(scene) {
         if (!await ui.showConfirm('reducing voxels, continue?')) return;
         const last = this.voxels.length;
 
-        window.work.start('findInnerVoxels', [ this.voxels, this.positionsMap ], (data) => {
-            for (let i = 0; i < data.length; i++)
-                this.removeByPosition(new BABYLON.Vector3(data[i]._x, data[i]._y, data[i]._z));
+        window.worker.start('findInnerVoxels', [ this.voxels, this.positionsMap ], (data) => {
+            this.voxels = [];
+            for (let i = 0; i < data.length; i++) {
+                this.add(new BABYLON.Vector3(
+                    data[i].position._x, data[i].position._y, data[i].position._z),
+                    data[i].color, true);
+            }
             this.create();
             this.update();
             ui.notification(`${ last - this.voxels.length } voxels removed`);
@@ -1351,7 +1400,7 @@ function Builder(scene) {
     this.removeDuplicates = function() {
         const last = this.voxels.length;
         
-        window.work.start('findDuplicates', [ this.voxels, this.positionsMap ], (data) => {
+        window.worker.start('findDuplicates', [ this.voxels, this.positionsMap ], (data) => {
             this.voxels = [];
             for (let i = 0; i < data.length; i++) {
                 this.add(new BABYLON.Vector3(
@@ -1487,6 +1536,7 @@ function Builder(scene) {
 function Ghosts(scene) {
     this.voxel = null;
     this.thin = null;
+    this.sps = null;
     this.cloud = null;
     let bufferMatrix = [];
     let bufferColors = [];
@@ -1548,6 +1598,34 @@ function Ghosts(scene) {
 
         this.thin = this.voxel.clone();
         this.thin.isVisible = false;
+    }
+
+    this.createSPS = function(voxels = builder.voxels) {
+        if (voxels.length == 0) return;
+
+        if (this.sps)
+            this.sps.dispose();
+        
+        this.sps = new BABYLON.SolidParticleSystem('ghostsps', scene, { isPickable: true, updatable: false, expandable: false, boundingSphereOnly: true });
+        this.sps.computeBoundingBox = false;
+
+        this.sps.addShape(this.voxel, voxels.length, { positionFunction: (particle, i, s) => {
+            particle.position.copyFrom(voxels[i].position);
+            particle.color = BABYLON.Color4.FromHexString(voxels[i].color);
+            if (!voxels[i].visible) particle.scaling.set(0,0,0);
+        }});
+
+        this.sps.initParticles();
+        this.sps.buildMesh();
+        this.sps.mesh.isPickable = true;
+        this.sps.mesh.doNotSerialize = true;
+        this.sps.mesh.freezeNormals();
+    }
+
+    this.disposeSPS = function() {
+        if (this.sps)
+            this.sps.dispose();
+        this.sps = null;
     }
 
     this.createPointCloud = function(voxels = builder.voxels) {
@@ -1797,7 +1875,7 @@ function Palette() {
         }).observe(canvasPalette);
     }
 
-    this.create = function() { // it's fast, I have tested this function in a webworker,
+    this.create = function() { // dev note: I have tested this function in a webworker,
         const wPad = W + pad;  // no performance difference, it causes a refresh delay.
         const wPadSize = wPad * parseInt(preferences.getPaletteSize());
 
@@ -1869,7 +1947,7 @@ function Helper(scene, sceneAxisView) {
     this.overlayCube = BABYLON.MeshBuilder.CreateBox("overlaycube", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
     this.boxShape = BABYLON.MeshBuilder.CreateBox("boxShape", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
     this.boxShapeSymm = BABYLON.MeshBuilder.CreateBox("boxShapeSymm", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
-    this.magnet = BABYLON.MeshBuilder.CreateBox("magnet", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
+    this.magnet = BABYLON.MeshBuilder.CreateBox("magnet", { size: 1.1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
     this.symmPivot = undefined;
     this.isWorkplaneActive = false;
     this.isFloorPlaneActive = false;
@@ -1975,7 +2053,7 @@ function Helper(scene, sceneAxisView) {
         this.boxShapeSymm.freezeNormals();
 
         this.magnet.isVisible = true;
-        this.magnet.isPickable = false;
+        this.magnet.isPickable = true;
         this.magnet.layerMask = 0x00000000;
         this.magnet.doNotSerialize = true;
         this.magnet.convertToUnIndexedMesh();
@@ -2170,26 +2248,21 @@ function Tool(scene) {
     let tmp = [];
     const VEC3_2 = new BABYLON.Vector3(2, 2, 2);
 
-    const workplaneWhiteList = [
-        'add',
-        'box_add', 'box_rem', 'box_paint',
-        'transform_box', 'transform_rect',
-        'rect_add', 'rect_remove', 'rect_paint'
-    ];
-
     this.init = function() {
         this.toolSelector(this.name);
     }
 
     this.add = function(pos) {
-        this.selected.push(pos);
+        builder.addNoDup(pos, currentColor, true);
         ghost.addThin(pos, currentColor);
 
         if (isSymmetry) {
             pos = symmetry.invertPos(pos);
-            this.selected.push(pos);
+            builder.addNoDup(pos, currentColor, true);
             ghost.addThin(pos, currentColor);
         }
+
+        this.selected.push('');
     }
 
     this.addNoHelper = function(pos) {
@@ -2243,9 +2316,8 @@ function Tool(scene) {
     }
 
     this.boxShape = function(start, end, color) {
-        // warning: raw calculations
-        // I actually wrote this as a pseudo code in 5 minutes,
-        // But it works perfectly fine, so we didn't change it!
+        // dev note: I actually wrote this as a pseudo code,
+        // but it works fine, so we didn't change it
         if (end.x <= start.x && end.y <= start.y && end.z <= start.z) {
             sX = end.x;      eX = start.x;
             sY = end.y;      eY = start.y;
@@ -2574,8 +2646,6 @@ function Tool(scene) {
         switch (this.name) {
             case 'add':
                 if (this.selected.length > 0) {
-                    tmp = builder.createArrayFromNewPositions(this.selected, currentColor, isSymmetry);
-                    builder.addArray(tmp);
                     builder.create();
                     builder.update();
                 }
@@ -2662,23 +2732,22 @@ function Tool(scene) {
 
     this.handleToolDown = function(pickInfo) {
         this.isMouseDown = true;
-        if (this.name !== 'camera' && !camera.isCameraChange()) {
+        if (this.name !== 'camera' && !camera.isCameraChange() && !builder.isWorking) {
+            scene.activeCamera.attachControl(canvas, true);
             this.setPickInfo(pickInfo, (p) => {
                 scene.stopAnimation(camera.camera0);
-                camera.camera0.detachControl(canvas);
-
+                scene.activeCamera.detachControl(canvas);
                 tool.onToolDown(p);
             });
         }
     }
 
     this.handleToolMove = function(pickInfo) {
-        if (this.name !== 'camera' && !camera.isCameraChange()) {
+        if (this.name !== 'camera' && !camera.isCameraChange() && !builder.isWorking) {
             now = performance.now();
             elapsed = now - then;
             if (elapsed > FPS_TOOLMOVE) {
                 then = now - (elapsed % FPS_TOOLMOVE);
-
                 this.setPickInfo(pickInfo, (p) => {
                     tool.onToolMove(p);
                 });
@@ -2690,7 +2759,6 @@ function Tool(scene) {
         this.isMouseDown = false;
         if (this.name !== 'camera') {
             tool.onToolUp();
-            scene.activeCamera.attachControl(canvas, true);
 
             this.selected = [];
             sX = 0; sY = 0; sZ = 0;
@@ -2701,7 +2769,7 @@ function Tool(scene) {
 
             ghost.disposeThin();
             helper.clearBoxShape();
-            setTimeout(() => { // a little hack to prevent last ghost/overlay in touchscreen
+            setTimeout(() => { // a little hack to prevent last overlay in touchscreen
                 helper.clearOverlays();
             }, 10);
 
@@ -2717,27 +2785,74 @@ function Tool(scene) {
         return null;
     };
 
-    let res = null;
+    const predicateMagnet = function(mesh) {
+        return mesh == helper.magnet;
+    };
+
+    const directions = [
+        new BABYLON.Vector3(1, 0, 0),
+        new BABYLON.Vector3(-1, 0, 0),
+        new BABYLON.Vector3(0, 1, 0),
+        new BABYLON.Vector3(0, -1, 0),
+        new BABYLON.Vector3(0, 0, 1),
+        new BABYLON.Vector3(0, 0, -1)
+    ];
+
+    let norms = [];
+    function normalProbe(p) { // find picking-normal
+        norms = [];           // to eliminate the bvh-generation lag
+
+        for (let i = 0; i < directions.length; i++) { // omni normal-finder
+            if (!builder.getIndexAtPosition(p.add(directions[i])))
+                norms.push(directions[i]);
+        }
+
+        if (norms.length > 0) {
+            if (norms.length == 1) { // surface
+                return norms[0];
+            } else { // edge, TODO: trading accuracy is not necessary
+                helper.magnet.position = p; // magnetic normal-finder
+                const pick = scene.pick(scene.pointerX, scene.pointerY, predicateMagnet);
+                if (pick && pick.hit)
+                    return pick.getNormal(true);
+            }
+        }
+        return null;
+    }
+
     this.setPickInfo = function(pick, onHit) {
         const index = builder.getIndexAtPointer();
         if (index > -1) {
-            res = window.rc.raycastFace(
-                pick.ray.origin.x,
-                pick.ray.origin.y,
-                pick.ray.origin.z,
-                pick.ray.direction.x,
-                pick.ray.direction.y,
-                pick.ray.direction.z
-            );
-            if (res) {
-                pick.INDEX = index;
-                pick.NORMAL = new BABYLON.Vector3(res.x, res.y, res.z).negate();
-                pick.ISWORKPLANE = false;
-                onHit(pick);
-            } else {
-                helper.clearOverlays();
+            if (preferences.getBvhPicking()) { // accurate but also introduce lag
+                const res = window.rc.raycast(
+                    pick.ray.origin.x,
+                    pick.ray.origin.y,
+                    pick.ray.origin.z,
+                    pick.ray.direction.x,
+                    pick.ray.direction.y,
+                    pick.ray.direction.z);
+                if (res) {
+                    pick.INDEX = index;
+                    pick.NORMAL = new BABYLON.Vector3(-res.face.normal.x, -res.face.normal.y, -res.face.normal.z);
+                    pick.ISWORKPLANE = false;
+                    onHit(pick);
+                } else {
+                    helper.clearOverlays();
+                }
+            } else { // less accurate but lag-free
+                const norm = normalProbe(builder.voxels[index].position);
+                if (norm) {
+                    pick.INDEX = index;
+                    pick.NORMAL = norm;
+                    pick.ISWORKPLANE = false;
+                    onHit(pick);
+                } else {
+                    helper.clearOverlays();
+                }
             }
         } else {
+            helper.clearOverlays();
+            
             pick = scene.pick(scene.pointerX, scene.pointerY, predicateWorkplane);
             if (pick && pick.hit) {
                 pick.INDEX = pick.faceId;
@@ -2763,13 +2878,11 @@ function Tool(scene) {
         for (let i = 0; i < elem.length; i++)
             elem[i].classList.add("tool_selector");
 
+        scene.activeCamera.attachControl(canvas, true);
         helper.clearOverlays();
 
         if (finishTransforms)
             xformer.apply();
-
-        if (MODE == 0 && window.rc && !window.rc.geom)
-            window.rc.createFaster();
     }
 
     this.init();
@@ -2794,31 +2907,31 @@ function Symmetry() {
             ui.domSymmAxisX.style.color = COL_AXIS_X;
             ui.domSymmAxisY.style.color = '#98a1ac';
             ui.domSymmAxisZ.style.color = '#98a1ac';
-            ui.domSymmAxis2.innerHTML = 'X';
-            ui.domSymmAxis2.style.color = COL_AXIS_X;
+            ui.domInScreenSymmAxis.innerHTML = 'X';
+            ui.domInScreenSymmAxis.style.color = COL_AXIS_X;
         } else if (axis == BABYLON.Axis.Y) {
             helper.setAxisPlane(BABYLON.Axis.Y, BABYLON.Vector3.Zero());
             ui.domSymmAxisS.style.color = '#98a1ac';
             ui.domSymmAxisX.style.color = '#98a1ac';
             ui.domSymmAxisY.style.color = COL_AXIS_Y;
             ui.domSymmAxisZ.style.color = '#98a1ac';
-            ui.domSymmAxis2.innerHTML = 'Y';
-            ui.domSymmAxis2.style.color = COL_AXIS_Y;
+            ui.domInScreenSymmAxis.innerHTML = 'Y';
+            ui.domInScreenSymmAxis.style.color = COL_AXIS_Y;
         } else if (axis == BABYLON.Axis.Z) {
             helper.setAxisPlane(BABYLON.Axis.Z, BABYLON.Vector3.Zero());
             ui.domSymmAxisS.style.color = '#98a1ac';
             ui.domSymmAxisX.style.color = '#98a1ac';
             ui.domSymmAxisY.style.color = '#98a1ac';
             ui.domSymmAxisZ.style.color = COL_AXIS_Z;
-            ui.domSymmAxis2.innerHTML = 'Z';
-            ui.domSymmAxis2.style.color = COL_AXIS_Z;
+            ui.domInScreenSymmAxis.innerHTML = 'Z';
+            ui.domInScreenSymmAxis.style.color = COL_AXIS_Z;
         } else {
             ui.domSymmAxisS.style.color = '#98a1ac';
             ui.domSymmAxisX.style.color = '#98a1ac';
             ui.domSymmAxisY.style.color = '#98a1ac';
             ui.domSymmAxisZ.style.color = '#98a1ac';
-            ui.domSymmAxis2.innerHTML = 'S';
-            ui.domSymmAxis2.style.color = COL_AQUA + 'AA';
+            ui.domInScreenSymmAxis.innerHTML = 'S';
+            ui.domInScreenSymmAxis.style.color = COL_AQUA + 'AA';
         }
     }
 
@@ -3398,7 +3511,7 @@ function Bakery(scene) {
     };
     
     this.bakeToMesh = function(voxels = builder.voxels) {
-        const baked = window.bake('_bake', voxels);
+        const baked = window.baker('_bake', voxels);
 
         resetPivot(baked);
 
@@ -3830,7 +3943,7 @@ function Snapshot(scene) {
             return;
         }
         builder.setData(data);
-        memory.clear();
+        clearScene();
     }
 
     this.setStorageBakes = function() {
@@ -3962,7 +4075,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.2.7",
+            version: "Voxel Builder 4.2.8",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4152,15 +4265,16 @@ function Project(scene) {
         engine.hideLoadingUI();
     }
 
-    this.loadFromUrl = function(url) {
+    this.loadFromUrl = function(url, callback = undefined) {
         if (url == '') return; // ignore first preset option
         loadUrl(url, (data) => {
             project.load(data);
+            if (callback) callback();
         });
     }
 
     this.loadMagicaVoxel = function(buffer) {
-        window.work.start('parseMagicaVoxel', buffer, (data) => {
+        window.worker.start('parseMagicaVoxel', buffer, (data) => {
             const voxels = [];
             for (let i = 0; i < data.length; i++) {
                 voxels.push({ 
@@ -4218,18 +4332,19 @@ function UserInterface(scene) {
     this.domToolbarC_mem = document.getElementById('toolbar_C_mem');
     this.domModes = document.querySelectorAll('#toolbar_C li.mode');
     this.domMenus = document.getElementById('menus');
-    this.domMenuInScreenRight = document.getElementById('menu_inscreen_right');
-    this.domMenuInScreenBottom = document.getElementById('menu_inscreen_bottom');
+    this.domMenuInScreenRight = document.getElementById('menu-inscreen-right');
+    this.domMenuInScreenBottom = document.getElementById('menu-inscreen-bottom');
+    this.domInScreenSymmAxis = document.getElementById('btn-inscreen-symmetry');
+    this.domInScreenOrtho = document.getElementById('btn-inscreen-ortho');
+    this.domInScreenFloorPlane = document.getElementById('btn-inscreen-floorplane');
+    this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
+    this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
+    this.domInScreenBucket = document.getElementById('btn-inscreen-bucket');
     this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
     this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
     this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
     this.domSymmAxisZ = document.getElementById('btn-symm-axis-z');
-    this.domSymmAxis2 = document.getElementById('btn-helper-symmetry');
     this.domSymmCenter = document.getElementById('input-symm-center');
-    this.domInScreenFloorPlane = document.getElementById('btn-inscreen-floorplane');
-    this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
-    this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
-    this.domColorBucketBtn = document.getElementById('colorbucket');
     this.domPalette = document.getElementById('palette');
     this.domPaletteColors = document.getElementById('palette-colors');
     this.domBakeryList = document.getElementById('bakerylist');
@@ -4245,6 +4360,7 @@ function UserInterface(scene) {
     this.domTransformClone = document.getElementById('input-transform-clone');
     this.domBakeryBackFace = document.getElementById('input-bakery-backface');
     this.domAutoRotation = document.getElementById('input-autorotate');
+    this.domAutoRotationCCW = document.getElementById('input-autorotate-ccw');
     this.domTexturePresets = document.getElementById('texturepresets');
     this.domRoughness = document.getElementById('input-material-roughness');
     this.domRoughnessRange = document.getElementById('input-material-roughness-range');
@@ -4283,13 +4399,16 @@ function UserInterface(scene) {
     this.init = function() {
         this.domMenus.addEventListener('pointerdown', (ev) => {
             if (MODE == 0) { // prevent premature usage!
-                if (ev.target !== canvas && ev.target !== this.domHover)
+                if (ev.target !== canvas && ev.target !== this.domHover) {
                     (xformer.isActive) ? xformer.apply() : xformer.cancel();
+                    helper.clearOverlays();
+                }
             }
         }, false);
 
         this.domHover.addEventListener('pointerdown', () => {
             xformer.apply();
+            helper.clearOverlays();
         }, false);
 
         this.domColorPicker.addEventListener('input', (ev) => {
@@ -4366,13 +4485,13 @@ function UserInterface(scene) {
         } else if (mode == 2) {
             client.ws_close();
             scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
-            tool.toolSelector('camera');
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
             bakery.createBakeryList();
             helper.displayFloorPlane(true);
             helper.displayWorkplane(false);
             helper.toggleAxisPlane(false);
+            helper.clearOverlays();
             helper.gridPlane.isVisible = false;
             light.updateShadowMap();
             uix.hideLightLocator();
@@ -4401,7 +4520,7 @@ function UserInterface(scene) {
         this.domBakeryList.style.display = 'none';
         this.domHover.style.display = 'unset';
         this.domColorPicker.style.display = 'none';
-        this.domColorBucketBtn.style.display = 'none';
+        this.domInScreenBucket.style.display = 'none';
         this.domMenuInScreenRight.style.display = 'none';
         this.domMenuInScreenBottom.style.display = 'none';
         this.domMaterialSwitch.style.display = 'none';
@@ -4420,7 +4539,7 @@ function UserInterface(scene) {
             this.domToolbarL.children[4].style.display = 'none'; // TEXTURE
             this.domMenuInScreenRight.style.display = 'unset';
             this.domMenuInScreenBottom.style.display = 'flex';
-            this.domColorBucketBtn.style.display = 'unset';
+            this.domInScreenBucket.style.display = 'unset';
             this.domMaterialSwitch.style.display = 'unset';
             this.domLightLocator.disabled = false;
             uix.colorPicker.isVisible = true;
@@ -4628,7 +4747,7 @@ function UserInterface(scene) {
             this.domPalette.style.display = 'none';
             this.domBakeryList.style.display = 'none';
             this.domColorPicker.style.display = 'none';
-            this.domColorBucketBtn.style.display = 'none';
+            this.domInScreenBucket.style.display = 'none';
             this.domMaterialSwitch.style.display = 'none';
             this.domMenuInScreenRight.style.display = 'none';
             this.domMenuInScreenBottom.style.display = 'none';
@@ -4639,7 +4758,7 @@ function UserInterface(scene) {
                 this.domHover.style.display = 'unset';
                 this.domPalette.style.display = 'unset';
                 this.domColorPicker.style.display = 'unset';
-                this.domColorBucketBtn.style.display = 'unset';
+                this.domInScreenBucket.style.display = 'unset';
                 this.domMaterialSwitch.style.display = 'unset';
                 this.domMenuInScreenRight.style.display = 'unset';
                 this.domMenuInScreenBottom.style.display = 'flex';
@@ -4936,6 +5055,7 @@ function Preferences() {
     const KEY_WEBSOCKET = "pref_websocket";
     const KEY_WEBSOCKET_URL = "pref_websocket_url";
     const KEY_PALETTE_SIZE = "pref_palette_size";
+    const KEY_BVHPICKING = "pref_bvhpicking";
     const KEY_POINTCLOUD = "pref_pointcloud";
 
     this.init = function() {
@@ -4944,15 +5064,19 @@ function Preferences() {
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8011";
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
+        document.getElementById(KEY_BVHPICKING).checked = true;
         document.getElementById(KEY_POINTCLOUD).checked = true;
 
         initPrefCheck(KEY_STARTUP);
         initPrefCheck(KEY_NOHOVER);
         initPrefCheck(KEY_WEBSOCKET, (chk) => {
-            (chk) ? client.ws_connect() : client.ws_close();
+            (chk && MODE == 0) ? client.ws_connect() : client.ws_close();
         });
         initPref(KEY_WEBSOCKET_URL);
         initPref(KEY_PALETTE_SIZE);
+        initPrefCheck(KEY_BVHPICKING, (chk) => {
+            if (chk && MODE == 0) window.rc.create();
+        });
         initPrefCheck(KEY_POINTCLOUD, (chk) => {
             (chk && MODE == 2) ? ghost.createPointCloud() : ghost.disposePointCloud();
         });
@@ -4964,11 +5088,33 @@ function Preferences() {
             ui.toggleHover(!this.getNoHover());
         }, 100);
 
+        const scriptModules = document.createElement('script');
+        scriptModules.type = 'module';
+        scriptModules.src = 'src/modules.js';
+        document.body.appendChild(scriptModules);
+
         // inject the user modules entry point
         const scriptUserModules = document.createElement('script');
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
+
+        const interval = setInterval(() => {
+            if (window.rc) {
+                if (this.getStartup()) {
+                    project.loadFromUrl('user/startup.json', () => {
+                        window.rc.create();
+                    });
+                } else {
+                    project.newProject(false, '#618ABD');
+                    window.rc.create();
+                }
+                ui.hideInterface(false);
+                engine.hideLoadingUI();
+                console.log('initialized.');
+                clearInterval(interval);
+            }
+        }, 500);
     }
 
     this.setStartup = function(isEnabled) {
@@ -4999,6 +5145,14 @@ function Preferences() {
 
     this.getPaletteSize = function() {
         return document.getElementById(KEY_PALETTE_SIZE).value;
+    }
+
+    this.setBvhPicking = function(isEnabled) {
+        localStorage.setItem(KEY_BVHPICKING, isEnabled);
+    }
+
+    this.getBvhPicking = function() {
+        return document.getElementById(KEY_BVHPICKING).checked;
     }
 
     this.setPointCloud = function(isEnabled) {
@@ -5049,7 +5203,7 @@ scene.onPointerObservable.add((pInfo) => {
             if (MODE == 0) tool.handleToolUp();
             break;
         case BABYLON.PointerEventTypes.POINTERWHEEL:
-            scene.stopAnimation(camera.camera0);
+            scene.activeCamera.attachControl(canvas, true);
             break;
     }
 });
@@ -5290,7 +5444,7 @@ function clearScene() {
     symmetry.resetAxis();
     setTimeout(() => {
         camera.frame();
-    }, 100);
+    }, 10);
 }
 
 function clearSceneAndReset() {
@@ -5323,7 +5477,7 @@ function CustomLoadingScreen() {
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-function animator(target, property, from, to, fps=3, frames=2, callback=null) {
+function animator(target, property, from, to, fps=2, frames=1, callback=null) {
     BABYLON.Animation.CreateAndStartAnimation('animator',
         target, property, fps, frames, from, to, 
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,

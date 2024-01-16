@@ -4,7 +4,7 @@
 
 **Voxel-based 3D modeling application**
 
-Version 4.2.7 Beta
+```Version 4.2.8 Beta```
 
 [Try Now](https://nimadez.github.io/voxel-builder)<br>
 [Download](https://github.com/nimadez/voxel-builder/releases/tag/installer)<br>
@@ -12,7 +12,9 @@ Version 4.2.7 Beta
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
 [FAQ](https://github.com/nimadez/voxel-builder#faq)
 
-> The online version does not have maximum functionality, be sure to [download](https://github.com/nimadez/voxel-builder/releases/tag/installer) the Electron package.
+> - We have successfully upgraded to thin-instances and returned to the stable channel as of version 4.2.8
+> - three-mesh-bvh has been updated to 0.7.0 and the pathtracer issue on Chrome for Android devices has been resolved.
+> - The online version does not have maximum functionality, be sure to [download](https://github.com/nimadez/voxel-builder/releases/tag/installer) the Electron package.
 
 ## Features
 
@@ -38,7 +40,7 @@ Version 4.2.7 Beta
 
 **Export Meshes**
 - Bake voxels to mesh [wiki](https://github.com/nimadez/voxel-builder/wiki/export)
-- Unbake meshes to voxels
+- Unbake mesh to voxels
 
 **Extensibility**
 - ES modules [wiki](https://github.com/nimadez/voxel-builder/wiki/Modules)
@@ -63,6 +65,8 @@ Version 4.2.7 Beta
 :: Higher than 512K is not recommended
 * If you don't manipulate a lot of voxels, you can render up to 512K+
 * Electron is recommended for working with a large number of voxels
+* For lag-free experience, turn off BVH Picking after 128K
+* You cannot turn off BVH Picking when the Rect-Add tool is active
 
 Higher values can have the following problems:
 - Unable to quick-save baked meshes (DOMException: exceeded the quota)
@@ -77,7 +81,6 @@ Multiple meshes need to have the same properties,
 or they won't merge, the only solution is to merge meshes
 before exporting to GLB.
 
-:: Real-time renderer is not supported on mobile devices
 :: Real-time renderer does not support multi-material
 Postponed to future
 ```
@@ -91,10 +94,10 @@ Postponed to future
 4- Mesh > Clean Up > Merge by Distance
 
 :: How to run Blender importer script?
-1- Save project to VBX file
+1- Save project to JSON
 2- Open Blender and go to "Scripting" tab
 3- Click "Open" and select "blender-importer.py"
-4- Run the script and select a VBX file
+4- Run the script and select a JSON file
 ```
 
 ## History

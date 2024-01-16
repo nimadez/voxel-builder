@@ -5,7 +5,6 @@
     Three.js entry point
 */
 import * as THREE from 'three';
-
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
 import { FullScreenQuad } from '../../libs/addons/Pass.js';
 import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
@@ -19,7 +18,7 @@ import {
     FloatVertexAttributeTexture, //UIntVertexAttributeTexture,
     shaderStructs, shaderIntersectFunction, //shaderDistanceFunction,
     //CENTER, SAH
-} from '../../libs/three-mesh-bvh.module.js'; // 0.6.8
+} from '../../libs/three-mesh-bvh.module.js';
 
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -33,7 +32,6 @@ export {
     mergeGeometries,
     RGBELoader,
     SimplexNoise,
-
     MeshBVHUniformStruct,
     FloatVertexAttributeTexture,
     shaderStructs, shaderIntersectFunction

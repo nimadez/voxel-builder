@@ -11,8 +11,8 @@ import { pt } from './modules/pathtracer/pathtracer.js';
 import { rc, voxelizeMesh, voxelizeBake } from './modules/raycaster/raycaster.js';
 import { SimplexNoise } from './modules/three.js';
 
-window.work = worker;
-window.bake = baker;
+window.worker = worker;
+window.baker = baker;
 window.pt = pt;
 window.rc = rc;
 window.voxelizeMesh = voxelizeMesh;

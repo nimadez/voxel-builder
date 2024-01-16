@@ -35,7 +35,7 @@ void main()	{
         col *= 1.0 - grain;
 
         // vignette
-        col *= vec3(1) * smoothstep(1.8, 0.5, length(vUv * 2.0 - 1.0)) * 0.5 + 0.5;
+        col *= vec3(1) * smoothstep(2.0, 0.5, length(vUv * 2.0 - 1.0)) * 0.5 + 0.5;
     }
     
     gl_FragColor = vec4(col, data.a);

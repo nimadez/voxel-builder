@@ -63,22 +63,6 @@ class WebWorker {
             };
         });
     }
-
-    async inlineAsync(content) {
-        return new Promise((resolve, reject) => {
-            const w = new Worker(`data:text/javascript,
-                onmessage = (ev) => { postMessage(${ content }) }`);
-
-            w.onmessage = (ev) => {
-                resolve(ev.data);
-            };
-
-            w.onerror = (err) => {
-                reject(err);
-                console.log(err);
-            };
-        });
-    }
 }
 
 export const worker = new WebWorker();

@@ -164,6 +164,183 @@ function hasGroupGaps( geometry ) {
 
 }
 
+// computes the union of the bounds of all of the given triangles and puts the resulting box in "target".
+// A bounding box is computed for the centroids of the triangles, as well, and placed in "centroidTarget".
+// These are computed together to avoid redundant accesses to bounds array.
+function getBounds( triangleBounds, offset, count, target, centroidTarget ) {
+
+	let minx = Infinity;
+	let miny = Infinity;
+	let minz = Infinity;
+	let maxx = - Infinity;
+	let maxy = - Infinity;
+	let maxz = - Infinity;
+
+	let cminx = Infinity;
+	let cminy = Infinity;
+	let cminz = Infinity;
+	let cmaxx = - Infinity;
+	let cmaxy = - Infinity;
+	let cmaxz = - Infinity;
+
+	for ( let i = offset * 6, end = ( offset + count ) * 6; i < end; i += 6 ) {
+
+		const cx = triangleBounds[ i + 0 ];
+		const hx = triangleBounds[ i + 1 ];
+		const lx = cx - hx;
+		const rx = cx + hx;
+		if ( lx < minx ) minx = lx;
+		if ( rx > maxx ) maxx = rx;
+		if ( cx < cminx ) cminx = cx;
+		if ( cx > cmaxx ) cmaxx = cx;
+
+		const cy = triangleBounds[ i + 2 ];
+		const hy = triangleBounds[ i + 3 ];
+		const ly = cy - hy;
+		const ry = cy + hy;
+		if ( ly < miny ) miny = ly;
+		if ( ry > maxy ) maxy = ry;
+		if ( cy < cminy ) cminy = cy;
+		if ( cy > cmaxy ) cmaxy = cy;
+
+		const cz = triangleBounds[ i + 4 ];
+		const hz = triangleBounds[ i + 5 ];
+		const lz = cz - hz;
+		const rz = cz + hz;
+		if ( lz < minz ) minz = lz;
+		if ( rz > maxz ) maxz = rz;
+		if ( cz < cminz ) cminz = cz;
+		if ( cz > cmaxz ) cmaxz = cz;
+
+	}
+
+	target[ 0 ] = minx;
+	target[ 1 ] = miny;
+	target[ 2 ] = minz;
+
+	target[ 3 ] = maxx;
+	target[ 4 ] = maxy;
+	target[ 5 ] = maxz;
+
+	centroidTarget[ 0 ] = cminx;
+	centroidTarget[ 1 ] = cminy;
+	centroidTarget[ 2 ] = cminz;
+
+	centroidTarget[ 3 ] = cmaxx;
+	centroidTarget[ 4 ] = cmaxy;
+	centroidTarget[ 5 ] = cmaxz;
+
+}
+
+// precomputes the bounding box for each triangle; required for quickly calculating tree splits.
+// result is an array of size tris.length * 6 where triangle i maps to a
+// [x_center, x_delta, y_center, y_delta, z_center, z_delta] tuple starting at index i * 6,
+// representing the center and half-extent in each dimension of triangle i
+function computeTriangleBounds( geo, target = null, offset = null, count = null ) {
+
+	const posAttr = geo.attributes.position;
+	const index = geo.index ? geo.index.array : null;
+	const triCount = getTriCount( geo );
+	const normalized = posAttr.normalized;
+	let triangleBounds;
+	if ( target === null ) {
+
+		triangleBounds = new Float32Array( triCount * 6 * 4 );
+		offset = 0;
+		count = triCount;
+
+	} else {
+
+		triangleBounds = target;
+		offset = offset || 0;
+		count = count || triCount;
+
+	}
+
+	// used for non-normalized positions
+	const posArr = posAttr.array;
+
+	// support for an interleaved position buffer
+	const bufferOffset = posAttr.offset || 0;
+	let stride = 3;
+	if ( posAttr.isInterleavedBufferAttribute ) {
+
+		stride = posAttr.data.stride;
+
+	}
+
+	// used for normalized positions
+	const getters = [ 'getX', 'getY', 'getZ' ];
+
+	for ( let tri = offset; tri < offset + count; tri ++ ) {
+
+		const tri3 = tri * 3;
+		const tri6 = tri * 6;
+
+		let ai = tri3 + 0;
+		let bi = tri3 + 1;
+		let ci = tri3 + 2;
+
+		if ( index ) {
+
+			ai = index[ ai ];
+			bi = index[ bi ];
+			ci = index[ ci ];
+
+		}
+
+		// we add the stride and offset here since we access the array directly
+		// below for the sake of performance
+		if ( ! normalized ) {
+
+			ai = ai * stride + bufferOffset;
+			bi = bi * stride + bufferOffset;
+			ci = ci * stride + bufferOffset;
+
+		}
+
+		for ( let el = 0; el < 3; el ++ ) {
+
+			let a, b, c;
+
+			if ( normalized ) {
+
+				a = posAttr[ getters[ el ] ]( ai );
+				b = posAttr[ getters[ el ] ]( bi );
+				c = posAttr[ getters[ el ] ]( ci );
+
+			} else {
+
+				a = posArr[ ai + el ];
+				b = posArr[ bi + el ];
+				c = posArr[ ci + el ];
+
+			}
+
+			let min = a;
+			if ( b < min ) min = b;
+			if ( c < min ) min = c;
+
+			let max = a;
+			if ( b > max ) max = b;
+			if ( c > max ) max = c;
+
+			// Increase the bounds size by float32 epsilon to avoid precision errors when
+			// converting to 32 bit float. Scale the epsilon by the size of the numbers being
+			// worked with.
+			const halfExtents = ( max - min ) / 2;
+			const el2 = el * 2;
+			triangleBounds[ tri6 + el2 + 0 ] = min + halfExtents;
+			triangleBounds[ tri6 + el2 + 1 ] = halfExtents + ( Math.abs( min ) + halfExtents ) * FLOAT32_EPSILON;
+
+		}
+
+	}
+
+	return triangleBounds;
+
+}
+
 function arrayToBox( nodeIndex32, array, target ) {
 
 	target.min.x = array[ nodeIndex32 ];
@@ -270,218 +447,6 @@ function computeSurfaceArea( bounds ) {
 	const d2 = bounds[ 5 ] - bounds[ 2 ];
 
 	return 2 * ( d0 * d1 + d1 * d2 + d2 * d0 );
-
-}
-
-// computes the union of the bounds of all of the given triangles and puts the resulting box in target. If
-// centroidTarget is provided then a bounding box is computed for the centroids of the triangles, as well.
-// These are computed together to avoid redundant accesses to bounds array.
-function getBounds( triangleBounds, offset, count, target, centroidTarget = null ) {
-
-	let minx = Infinity;
-	let miny = Infinity;
-	let minz = Infinity;
-	let maxx = - Infinity;
-	let maxy = - Infinity;
-	let maxz = - Infinity;
-
-	let cminx = Infinity;
-	let cminy = Infinity;
-	let cminz = Infinity;
-	let cmaxx = - Infinity;
-	let cmaxy = - Infinity;
-	let cmaxz = - Infinity;
-
-	const includeCentroid = centroidTarget !== null;
-	for ( let i = offset * 6, end = ( offset + count ) * 6; i < end; i += 6 ) {
-
-		const cx = triangleBounds[ i + 0 ];
-		const hx = triangleBounds[ i + 1 ];
-		const lx = cx - hx;
-		const rx = cx + hx;
-		if ( lx < minx ) minx = lx;
-		if ( rx > maxx ) maxx = rx;
-		if ( includeCentroid && cx < cminx ) cminx = cx;
-		if ( includeCentroid && cx > cmaxx ) cmaxx = cx;
-
-		const cy = triangleBounds[ i + 2 ];
-		const hy = triangleBounds[ i + 3 ];
-		const ly = cy - hy;
-		const ry = cy + hy;
-		if ( ly < miny ) miny = ly;
-		if ( ry > maxy ) maxy = ry;
-		if ( includeCentroid && cy < cminy ) cminy = cy;
-		if ( includeCentroid && cy > cmaxy ) cmaxy = cy;
-
-		const cz = triangleBounds[ i + 4 ];
-		const hz = triangleBounds[ i + 5 ];
-		const lz = cz - hz;
-		const rz = cz + hz;
-		if ( lz < minz ) minz = lz;
-		if ( rz > maxz ) maxz = rz;
-		if ( includeCentroid && cz < cminz ) cminz = cz;
-		if ( includeCentroid && cz > cmaxz ) cmaxz = cz;
-
-	}
-
-	target[ 0 ] = minx;
-	target[ 1 ] = miny;
-	target[ 2 ] = minz;
-
-	target[ 3 ] = maxx;
-	target[ 4 ] = maxy;
-	target[ 5 ] = maxz;
-
-	if ( includeCentroid ) {
-
-		centroidTarget[ 0 ] = cminx;
-		centroidTarget[ 1 ] = cminy;
-		centroidTarget[ 2 ] = cminz;
-
-		centroidTarget[ 3 ] = cmaxx;
-		centroidTarget[ 4 ] = cmaxy;
-		centroidTarget[ 5 ] = cmaxz;
-
-	}
-
-}
-
-// A stand alone function for retrieving the centroid bounds.
-function getCentroidBounds( triangleBounds, offset, count, centroidTarget ) {
-
-	let cminx = Infinity;
-	let cminy = Infinity;
-	let cminz = Infinity;
-	let cmaxx = - Infinity;
-	let cmaxy = - Infinity;
-	let cmaxz = - Infinity;
-
-	for ( let i = offset * 6, end = ( offset + count ) * 6; i < end; i += 6 ) {
-
-		const cx = triangleBounds[ i + 0 ];
-		if ( cx < cminx ) cminx = cx;
-		if ( cx > cmaxx ) cmaxx = cx;
-
-		const cy = triangleBounds[ i + 2 ];
-		if ( cy < cminy ) cminy = cy;
-		if ( cy > cmaxy ) cmaxy = cy;
-
-		const cz = triangleBounds[ i + 4 ];
-		if ( cz < cminz ) cminz = cz;
-		if ( cz > cmaxz ) cmaxz = cz;
-
-	}
-
-	centroidTarget[ 0 ] = cminx;
-	centroidTarget[ 1 ] = cminy;
-	centroidTarget[ 2 ] = cminz;
-
-	centroidTarget[ 3 ] = cmaxx;
-	centroidTarget[ 4 ] = cmaxy;
-	centroidTarget[ 5 ] = cmaxz;
-
-}
-
-
-// precomputes the bounding box for each triangle; required for quickly calculating tree splits.
-// result is an array of size tris.length * 6 where triangle i maps to a
-// [x_center, x_delta, y_center, y_delta, z_center, z_delta] tuple starting at index i * 6,
-// representing the center and half-extent in each dimension of triangle i
-function computeTriangleBounds( geo, fullBounds ) {
-
-	// clear the bounds to empty
-	makeEmptyBounds( fullBounds );
-
-	const posAttr = geo.attributes.position;
-	const index = geo.index ? geo.index.array : null;
-	const triCount = getTriCount( geo );
-	const triangleBounds = new Float32Array( triCount * 6 );
-	const normalized = posAttr.normalized;
-
-	// used for non-normalized positions
-	const posArr = posAttr.array;
-
-	// support for an interleaved position buffer
-	const bufferOffset = posAttr.offset || 0;
-	let stride = 3;
-	if ( posAttr.isInterleavedBufferAttribute ) {
-
-		stride = posAttr.data.stride;
-
-	}
-
-	// used for normalized positions
-	const getters = [ 'getX', 'getY', 'getZ' ];
-
-	for ( let tri = 0; tri < triCount; tri ++ ) {
-
-		const tri3 = tri * 3;
-		const tri6 = tri * 6;
-
-		let ai = tri3 + 0;
-		let bi = tri3 + 1;
-		let ci = tri3 + 2;
-
-		if ( index ) {
-
-			ai = index[ ai ];
-			bi = index[ bi ];
-			ci = index[ ci ];
-
-		}
-
-		// we add the stride and offset here since we access the array directly
-		// below for the sake of performance
-		if ( ! normalized ) {
-
-			ai = ai * stride + bufferOffset;
-			bi = bi * stride + bufferOffset;
-			ci = ci * stride + bufferOffset;
-
-		}
-
-		for ( let el = 0; el < 3; el ++ ) {
-
-			let a, b, c;
-
-			if ( normalized ) {
-
-				a = posAttr[ getters[ el ] ]( ai );
-				b = posAttr[ getters[ el ] ]( bi );
-				c = posAttr[ getters[ el ] ]( ci );
-
-			} else {
-
-				a = posArr[ ai + el ];
-				b = posArr[ bi + el ];
-				c = posArr[ ci + el ];
-
-			}
-
-			let min = a;
-			if ( b < min ) min = b;
-			if ( c < min ) min = c;
-
-			let max = a;
-			if ( b > max ) max = b;
-			if ( c > max ) max = c;
-
-			// Increase the bounds size by float32 epsilon to avoid precision errors when
-			// converting to 32 bit float. Scale the epsilon by the size of the numbers being
-			// worked with.
-			const halfExtents = ( max - min ) / 2;
-			const el2 = el * 2;
-			triangleBounds[ tri6 + el2 + 0 ] = min + halfExtents;
-			triangleBounds[ tri6 + el2 + 1 ] = halfExtents + ( Math.abs( min ) + halfExtents ) * FLOAT32_EPSILON;
-
-			if ( min < fullBounds[ el ] ) fullBounds[ el ] = min;
-			if ( max > fullBounds[ el + 3 ] ) fullBounds[ el + 3 ] = max;
-
-		}
-
-	}
-
-	return triangleBounds;
 
 }
 
@@ -797,6 +762,8 @@ class MeshBVHNode {
 		// internal nodes have boundingData, left, right, and splitAxis
 		// leaf nodes have offset and count (referring to primitives in the mesh geometry)
 
+		this.boundingData = new Float32Array( 6 );
+
 	}
 
 }
@@ -928,6 +895,149 @@ function partition_indirect( indirectBuffer, index, triangleBounds, offset, coun
 
 }
 
+function IS_LEAF( n16, uint16Array ) {
+
+	return uint16Array[ n16 + 15 ] === 0xFFFF;
+
+}
+
+function OFFSET( n32, uint32Array ) {
+
+	return uint32Array[ n32 + 6 ];
+
+}
+
+function COUNT( n16, uint16Array ) {
+
+	return uint16Array[ n16 + 14 ];
+
+}
+
+function LEFT_NODE( n32 ) {
+
+	return n32 + 8;
+
+}
+
+function RIGHT_NODE( n32, uint32Array ) {
+
+	return uint32Array[ n32 + 6 ];
+
+}
+
+function SPLIT_AXIS( n32, uint32Array ) {
+
+	return uint32Array[ n32 + 7 ];
+
+}
+
+function BOUNDING_DATA_INDEX( n32 ) {
+
+	return n32;
+
+}
+
+let float32Array, uint32Array, uint16Array, uint8Array;
+const MAX_POINTER = Math.pow( 2, 32 );
+
+function countNodes( node ) {
+
+	if ( node.count ) {
+
+		return 1;
+
+	} else {
+
+		return 1 + countNodes( node.left ) + countNodes( node.right );
+
+	}
+
+}
+
+function populateBuffer( byteOffset, node, buffer ) {
+
+	float32Array = new Float32Array( buffer );
+	uint32Array = new Uint32Array( buffer );
+	uint16Array = new Uint16Array( buffer );
+	uint8Array = new Uint8Array( buffer );
+
+	return _populateBuffer( byteOffset, node );
+
+}
+
+// pack structure
+// boundingData  				: 6 float32
+// right / offset 				: 1 uint32
+// splitAxis / isLeaf + count 	: 1 uint32 / 2 uint16
+function _populateBuffer( byteOffset, node ) {
+
+	const stride4Offset = byteOffset / 4;
+	const stride2Offset = byteOffset / 2;
+	const isLeaf = ! ! node.count;
+	const boundingData = node.boundingData;
+	for ( let i = 0; i < 6; i ++ ) {
+
+		float32Array[ stride4Offset + i ] = boundingData[ i ];
+
+	}
+
+	if ( isLeaf ) {
+
+		if ( node.buffer ) {
+
+			const buffer = node.buffer;
+			uint8Array.set( new Uint8Array( buffer ), byteOffset );
+
+			for ( let offset = byteOffset, l = byteOffset + buffer.byteLength; offset < l; offset += BYTES_PER_NODE ) {
+
+				const offset2 = offset / 2;
+				if ( ! IS_LEAF( offset2, uint16Array ) ) {
+
+					uint32Array[ ( offset / 4 ) + 6 ] += stride4Offset;
+
+
+				}
+
+			}
+
+			return byteOffset + buffer.byteLength;
+
+		} else {
+
+			const offset = node.offset;
+			const count = node.count;
+			uint32Array[ stride4Offset + 6 ] = offset;
+			uint16Array[ stride2Offset + 14 ] = count;
+			uint16Array[ stride2Offset + 15 ] = IS_LEAFNODE_FLAG;
+			return byteOffset + BYTES_PER_NODE;
+
+		}
+
+	} else {
+
+		const left = node.left;
+		const right = node.right;
+		const splitAxis = node.splitAxis;
+
+		let nextUnusedPointer;
+		nextUnusedPointer = _populateBuffer( byteOffset + BYTES_PER_NODE, left );
+
+		if ( ( nextUnusedPointer / 4 ) > MAX_POINTER ) {
+
+			throw new Error( 'MeshBVH: Cannot store child pointer greater than 32 bits.' );
+
+		}
+
+		uint32Array[ stride4Offset + 6 ] = nextUnusedPointer / 4;
+		nextUnusedPointer = _populateBuffer( nextUnusedPointer, right );
+
+		uint32Array[ stride4Offset + 7 ] = splitAxis;
+		return nextUnusedPointer;
+
+	}
+
+}
+
 function generateIndirectBuffer( geometry, useSharedArrayBuffer ) {
 
 	const triCount = ( geometry.index ? geometry.index.count : geometry.attributes.position.count ) / 3;
@@ -946,56 +1056,31 @@ function generateIndirectBuffer( geometry, useSharedArrayBuffer ) {
 
 }
 
-function buildTree( bvh, options ) {
+function buildTree( bvh, triangleBounds, offset, count, options ) {
 
-	// Compute the full bounds of the geometry at the same time as triangle bounds because
-	// we'll need it for the root bounds in the case with no groups and it should be fast here.
-	// We can't use the geometry bounding box if it's available because it may be out of date.
+	// epxand variables
+	const {
+		maxDepth,
+		verbose,
+		maxLeafTris,
+		strategy,
+		onProgress,
+		indirect,
+	} = options;
+	const indirectBuffer = bvh._indirectBuffer;
 	const geometry = bvh.geometry;
 	const indexArray = geometry.index ? geometry.index.array : null;
-	const maxDepth = options.maxDepth;
-	const verbose = options.verbose;
-	const maxLeafTris = options.maxLeafTris;
-	const strategy = options.strategy;
-	const onProgress = options.onProgress;
+	const partionFunc = indirect ? partition_indirect : partition;
+
+	// generate intermediate variables
 	const totalTriangles = getTriCount( geometry );
-	const indirectBuffer = bvh._indirectBuffer;
+	const cacheCentroidBoundingData = new Float32Array( 6 );
 	let reachedMaxDepth = false;
 
-	const fullBounds = new Float32Array( 6 );
-	const cacheCentroidBoundingData = new Float32Array( 6 );
-	const triangleBounds = computeTriangleBounds( geometry, fullBounds );
-	const partionFunc = options.indirect ? partition_indirect : partition;
-
-	const roots = [];
-	const ranges = options.indirect ? getFullGeometryRange( geometry ) : getRootIndexRanges( geometry );
-
-	if ( ranges.length === 1 ) {
-
-		const range = ranges[ 0 ];
-		const root = new MeshBVHNode();
-		root.boundingData = fullBounds;
-		getCentroidBounds( triangleBounds, range.offset, range.count, cacheCentroidBoundingData );
-
-		splitNode( root, range.offset, range.count, cacheCentroidBoundingData );
-		roots.push( root );
-
-	} else {
-
-		for ( let range of ranges ) {
-
-			const root = new MeshBVHNode();
-			root.boundingData = new Float32Array( 6 );
-			getBounds( triangleBounds, range.offset, range.count, root.boundingData, cacheCentroidBoundingData );
-
-			splitNode( root, range.offset, range.count, cacheCentroidBoundingData );
-			roots.push( root );
-
-		}
-
-	}
-
-	return roots;
+	const root = new MeshBVHNode();
+	getBounds( triangleBounds, offset, count, root.boundingData, cacheCentroidBoundingData );
+	splitNode( root, offset, count, cacheCentroidBoundingData );
+	return root;
 
 	function triggerProgress( trianglesProcessed ) {
 
@@ -1062,7 +1147,6 @@ function buildTree( bvh, options ) {
 			const lstart = offset;
 			const lcount = splitOffset - offset;
 			node.left = left;
-			left.boundingData = new Float32Array( 6 );
 
 			getBounds( triangleBounds, lstart, lcount, left.boundingData, cacheCentroidBoundingData );
 			splitNode( left, lstart, lcount, cacheCentroidBoundingData, depth + 1 );
@@ -1072,7 +1156,6 @@ function buildTree( bvh, options ) {
 			const rstart = splitOffset;
 			const rcount = count - lcount;
 			node.right = right;
-			right.boundingData = new Float32Array( 6 );
 
 			getBounds( triangleBounds, rstart, rcount, right.boundingData, cacheCentroidBoundingData );
 			splitNode( right, rstart, rcount, cacheCentroidBoundingData, depth + 1 );
@@ -1109,92 +1192,19 @@ function buildPackedTree( bvh, options ) {
 
 	}
 
-	// boundingData  				: 6 float32
-	// right / offset 				: 1 uint32
-	// splitAxis / isLeaf + count 	: 1 uint32 / 2 uint16
-	const roots = buildTree( bvh, options );
-
-	let float32Array;
-	let uint32Array;
-	let uint16Array;
-	const packedRoots = [];
 	const BufferConstructor = options.useSharedArrayBuffer ? SharedArrayBuffer : ArrayBuffer;
-	for ( let i = 0; i < roots.length; i ++ ) {
 
-		const root = roots[ i ];
-		let nodeCount = countNodes( root );
+	const triangleBounds = computeTriangleBounds( geometry );
+	const geometryRanges = options.indirect ? getFullGeometryRange( geometry ) : getRootIndexRanges( geometry );
+	bvh._roots = geometryRanges.map( range => {
 
+		const root = buildTree( bvh, triangleBounds, range.offset, range.count, options );
+		const nodeCount = countNodes( root );
 		const buffer = new BufferConstructor( BYTES_PER_NODE * nodeCount );
-		float32Array = new Float32Array( buffer );
-		uint32Array = new Uint32Array( buffer );
-		uint16Array = new Uint16Array( buffer );
-		populateBuffer( 0, root );
-		packedRoots.push( buffer );
+		populateBuffer( 0, root, buffer );
+		return buffer;
 
-	}
-
-	bvh._roots = packedRoots;
-	return;
-
-	function countNodes( node ) {
-
-		if ( node.count ) {
-
-			return 1;
-
-		} else {
-
-			return 1 + countNodes( node.left ) + countNodes( node.right );
-
-		}
-
-	}
-
-	function populateBuffer( byteOffset, node ) {
-
-		const stride4Offset = byteOffset / 4;
-		const stride2Offset = byteOffset / 2;
-		const isLeaf = ! ! node.count;
-		const boundingData = node.boundingData;
-		for ( let i = 0; i < 6; i ++ ) {
-
-			float32Array[ stride4Offset + i ] = boundingData[ i ];
-
-		}
-
-		if ( isLeaf ) {
-
-			const offset = node.offset;
-			const count = node.count;
-			uint32Array[ stride4Offset + 6 ] = offset;
-			uint16Array[ stride2Offset + 14 ] = count;
-			uint16Array[ stride2Offset + 15 ] = IS_LEAFNODE_FLAG;
-			return byteOffset + BYTES_PER_NODE;
-
-		} else {
-
-			const left = node.left;
-			const right = node.right;
-			const splitAxis = node.splitAxis;
-
-			let nextUnusedPointer;
-			nextUnusedPointer = populateBuffer( byteOffset + BYTES_PER_NODE, left );
-
-			if ( ( nextUnusedPointer / 4 ) > Math.pow( 2, 32 ) ) {
-
-				throw new Error( 'MeshBVH: Cannot store child pointer greater than 32 bits.' );
-
-			}
-
-			uint32Array[ stride4Offset + 6 ] = nextUnusedPointer / 4;
-			nextUnusedPointer = populateBuffer( nextUnusedPointer, right );
-
-			uint32Array[ stride4Offset + 7 ] = splitAxis;
-			return nextUnusedPointer;
-
-		}
-
-	}
+	} );
 
 }
 
@@ -2497,48 +2507,6 @@ class ExtendedTrianglePoolBase extends PrimitivePool {
 }
 
 const ExtendedTrianglePool = /* @__PURE__ */ new ExtendedTrianglePoolBase();
-
-function IS_LEAF( n16, uint16Array ) {
-
-	return uint16Array[ n16 + 15 ] === 0xFFFF;
-
-}
-
-function OFFSET( n32, uint32Array ) {
-
-	return uint32Array[ n32 + 6 ];
-
-}
-
-function COUNT( n16, uint16Array ) {
-
-	return uint16Array[ n16 + 14 ];
-
-}
-
-function LEFT_NODE( n32 ) {
-
-	return n32 + 8;
-
-}
-
-function RIGHT_NODE( n32, uint32Array ) {
-
-	return uint32Array[ n32 + 6 ];
-
-}
-
-function SPLIT_AXIS( n32, uint32Array ) {
-
-	return uint32Array[ n32 + 7 ];
-
-}
-
-function BOUNDING_DATA_INDEX( n32 ) {
-
-	return n32;
-
-}
 
 class _BufferStack {
 
@@ -4732,6 +4700,42 @@ function isSharedArrayBufferSupported() {
 
 }
 
+function convertToBufferType( array, BufferConstructor ) {
+
+	if ( array === null ) {
+
+		return array;
+
+	} else if ( array.buffer ) {
+
+		const buffer = array.buffer;
+		if ( buffer.constructor === BufferConstructor ) {
+
+			return array;
+
+		}
+
+		const ArrayConstructor = array.constructor;
+		const result = new ArrayConstructor( new BufferConstructor( buffer.byteLength ) );
+		result.set( array );
+		return result;
+
+	} else {
+
+		if ( array.constructor === BufferConstructor ) {
+
+			return array;
+
+		}
+
+		const result = new BufferConstructor( array.byteLength );
+		new Uint8Array( result ).set( new Uint8Array( array ) );
+		return result;
+
+	}
+
+}
+
 const _bufferStack1 = new BufferStack.constructor();
 const _bufferStack2 = new BufferStack.constructor();
 const _boxPool = new PrimitivePool( () => new Box3() );
@@ -5042,6 +5046,16 @@ function _traverse(
 
 const obb = /* @__PURE__ */ new OrientedBox();
 const tempBox = /* @__PURE__ */ new Box3();
+const DEFAULT_OPTIONS = {
+	strategy: CENTER,
+	maxDepth: 40,
+	maxLeafTris: 10,
+	useSharedArrayBuffer: false,
+	setBoundingBox: true,
+	onProgress: null,
+	indirect: false,
+	verbose: true,
+};
 
 class MeshBVH {
 
@@ -5134,14 +5148,7 @@ class MeshBVH {
 		// default options
 		options = Object.assign( {
 
-			strategy: CENTER,
-			maxDepth: 40,
-			maxLeafTris: 10,
-			verbose: true,
-			useSharedArrayBuffer: false,
-			setBoundingBox: true,
-			onProgress: null,
-			indirect: false,
+			...DEFAULT_OPTIONS,
 
 			// undocumented options
 
@@ -5561,7 +5568,7 @@ class MeshBVH {
 }
 
 const boundingBox = /* @__PURE__ */ new Box3();
-class MeshBVHRootVisualizer extends Object3D {
+class MeshBVHRootHelper extends Object3D {
 
 	get isMesh() {
 
@@ -5581,16 +5588,16 @@ class MeshBVHRootVisualizer extends Object3D {
 
 	}
 
-	constructor( mesh, material, depth = 10, group = 0 ) {
+	constructor( bvh, material, depth = 10, group = 0 ) {
 
 		super();
 
 		this.material = material;
 		this.geometry = new BufferGeometry();
-		this.name = 'MeshBVHRootVisualizer';
+		this.name = 'MeshBVHRootHelper';
 		this.depth = depth;
 		this.displayParents = false;
-		this.mesh = mesh;
+		this.bvh = bvh;
 		this.displayEdges = true;
 		this._group = group;
 
@@ -5601,7 +5608,7 @@ class MeshBVHRootVisualizer extends Object3D {
 	update() {
 
 		const geometry = this.geometry;
-		const boundsTree = this.mesh.geometry.boundsTree;
+		const boundsTree = this.bvh;
 		const group = this._group;
 		geometry.dispose();
 		this.visible = false;
@@ -5613,7 +5620,7 @@ class MeshBVHRootVisualizer extends Object3D {
 			let boundsCount = 0;
 			boundsTree.traverse( ( depth, isLeaf ) => {
 
-				if ( depth === targetDepth || isLeaf ) {
+				if ( depth >= targetDepth || isLeaf ) {
 
 					boundsCount ++;
 					return true;
@@ -5631,7 +5638,7 @@ class MeshBVHRootVisualizer extends Object3D {
 			const positionArray = new Float32Array( 8 * 3 * boundsCount );
 			boundsTree.traverse( ( depth, isLeaf, boundingData ) => {
 
-				const terminate = depth === targetDepth || isLeaf;
+				const terminate = depth >= targetDepth || isLeaf;
 				if ( terminate || displayParents ) {
 
 					arrayToBox( 0, boundingData, boundingBox );
@@ -5757,7 +5764,7 @@ class MeshBVHRootVisualizer extends Object3D {
 
 }
 
-class MeshBVHVisualizer extends Group {
+class MeshBVHHelper extends Group {
 
 	get color() {
 
@@ -5778,13 +5785,31 @@ class MeshBVHVisualizer extends Group {
 
 	}
 
-	constructor( mesh, depth = 10 ) {
+	constructor( mesh = null, bvh = null, depth = 10 ) {
+
+		// handle bvh, depth signature
+		if ( mesh instanceof MeshBVH ) {
+
+			depth = bvh || 10;
+			bvh = mesh;
+			mesh = null;
+
+		}
+
+		// handle mesh, depth signature
+		if ( typeof bvh === 'number' ) {
+
+			depth = bvh;
+			bvh = null;
+
+		}
 
 		super();
 
-		this.name = 'MeshBVHVisualizer';
+		this.name = 'MeshBVHHelper';
 		this.depth = depth;
 		this.mesh = mesh;
+		this.bvh = bvh;
 		this.displayParents = false;
 		this.displayEdges = true;
 		this._roots = [];
@@ -5814,7 +5839,7 @@ class MeshBVHVisualizer extends Group {
 
 	update() {
 
-		const bvh = this.mesh.geometry.boundsTree;
+		const bvh = this.bvh || this.mesh.geometry.boundsTree;
 		const totalRoots = bvh ? bvh._roots.length : 0;
 		while ( this._roots.length > totalRoots ) {
 
@@ -5826,20 +5851,21 @@ class MeshBVHVisualizer extends Group {
 
 		for ( let i = 0; i < totalRoots; i ++ ) {
 
+			const { depth, edgeMaterial, meshMaterial, displayParents, displayEdges } = this;
+
 			if ( i >= this._roots.length ) {
 
-				const root = new MeshBVHRootVisualizer( this.mesh, this.edgeMaterial, this.depth, i );
+				const root = new MeshBVHRootHelper( bvh, edgeMaterial, depth, i );
 				this.add( root );
 				this._roots.push( root );
 
 			}
 
 			const root = this._roots[ i ];
-			root.depth = this.depth;
-			root.mesh = this.mesh;
-			root.displayParents = this.displayParents;
-			root.displayEdges = this.displayEdges;
-			root.material = this.displayEdges ? this.edgeMaterial : this.meshMaterial;
+			root.depth = depth;
+			root.displayParents = displayParents;
+			root.displayEdges = displayEdges;
+			root.material = displayEdges ? edgeMaterial : meshMaterial;
 			root.update();
 
 		}
@@ -5848,9 +5874,34 @@ class MeshBVHVisualizer extends Group {
 
 	updateMatrixWorld( ...args ) {
 
-		this.position.copy( this.mesh.position );
-		this.rotation.copy( this.mesh.rotation );
-		this.scale.copy( this.mesh.scale );
+		const mesh = this.mesh;
+		const parent = this.parent;
+
+		if ( mesh !== null ) {
+
+			mesh.updateWorldMatrix( true, false );
+
+			if ( parent ) {
+
+				this.matrix
+					.copy( parent.matrixWorld )
+					.invert()
+					.multiply( mesh.matrixWorld );
+
+			} else {
+
+				this.matrix
+					.copy( mesh.matrixWorld );
+
+			}
+
+			this.matrix.decompose(
+				this.position,
+				this.quaternion,
+				this.scale,
+			);
+
+		}
 
 		super.updateMatrixWorld( ...args );
 
@@ -5860,12 +5911,15 @@ class MeshBVHVisualizer extends Group {
 
 		this.depth = source.depth;
 		this.mesh = source.mesh;
+		this.bvh = source.bvh;
+		this.opacity = source.opacity;
+		this.color.copy( source.color );
 
 	}
 
 	clone() {
 
-		return new MeshBVHVisualizer( this.mesh, this.depth );
+		return new MeshBVHHelper( this.mesh, this.bvh, this.depth );
 
 	}
 
@@ -5880,6 +5934,18 @@ class MeshBVHVisualizer extends Group {
 			children[ i ].geometry.dispose();
 
 		}
+
+	}
+
+}
+
+class MeshBVHVisualizer extends MeshBVHHelper {
+
+	constructor( ...args ) {
+
+		super( ...args );
+
+		console.warn( 'MeshBVHVisualizer: MeshBVHVisualizer has been deprecated. Use MeshBVHHelper, instead.' );
 
 	}
 
@@ -6074,11 +6140,20 @@ function validateBounds( bvh ) {
 		if ( isLeaf ) {
 
 			// check triangles
-			for ( let i = offset * 3, l = ( offset + count ) * 3; i < l; i += 3 ) {
+			for ( let i = offset, l = offset + count; i < l; i ++ ) {
 
-				const i0 = index.getX( i );
-				const i1 = index.getX( i + 1 );
-				const i2 = index.getX( i + 2 );
+				const triIndex = bvh.resolveTriangleIndex( i );
+				let i0 = 3 * triIndex;
+				let i1 = 3 * triIndex + 1;
+				let i2 = 3 * triIndex + 2;
+
+				if ( index ) {
+
+					i0 = index.getX( i0 );
+					i1 = index.getX( i1 );
+					i2 = index.getX( i2 );
+
+				}
 
 				let isContained;
 
@@ -6704,456 +6779,6 @@ function bvhToTextures( bvh, boundsTexture, contentsTexture ) {
 	contentsTexture.dispose();
 
 }
-
-// Note that a struct cannot be used for the hit record including faceIndices, faceNormal, barycoord,
-// side, and dist because on some mobile GPUS (such as Adreno) numbers are afforded less precision specifically
-// when in a struct leading to inaccurate hit results. See KhronosGroup/WebGL#3351 for more details.
-const shaderStructs = /* glsl */`
-#ifndef TRI_INTERSECT_EPSILON
-#define TRI_INTERSECT_EPSILON 1e-5
-#endif
-
-#ifndef INFINITY
-#define INFINITY 1e20
-#endif
-
-struct BVH {
-
-	usampler2D index;
-	sampler2D position;
-
-	sampler2D bvhBounds;
-	usampler2D bvhContents;
-
-};
-`;
-
-const shaderIntersectFunction = /* glsl */`
-
-// Utilities
-uvec4 uTexelFetch1D( usampler2D tex, uint index ) {
-
-	uint width = uint( textureSize( tex, 0 ).x );
-	uvec2 uv;
-	uv.x = index % width;
-	uv.y = index / width;
-
-	return texelFetch( tex, ivec2( uv ), 0 );
-
-}
-
-ivec4 iTexelFetch1D( isampler2D tex, uint index ) {
-
-	uint width = uint( textureSize( tex, 0 ).x );
-	uvec2 uv;
-	uv.x = index % width;
-	uv.y = index / width;
-
-	return texelFetch( tex, ivec2( uv ), 0 );
-
-}
-
-vec4 texelFetch1D( sampler2D tex, uint index ) {
-
-	uint width = uint( textureSize( tex, 0 ).x );
-	uvec2 uv;
-	uv.x = index % width;
-	uv.y = index / width;
-
-	return texelFetch( tex, ivec2( uv ), 0 );
-
-}
-
-vec4 textureSampleBarycoord( sampler2D tex, vec3 barycoord, uvec3 faceIndices ) {
-
-	return
-		barycoord.x * texelFetch1D( tex, faceIndices.x ) +
-		barycoord.y * texelFetch1D( tex, faceIndices.y ) +
-		barycoord.z * texelFetch1D( tex, faceIndices.z );
-
-}
-
-void ndcToCameraRay(
-	vec2 coord, mat4 cameraWorld, mat4 invProjectionMatrix,
-	out vec3 rayOrigin, out vec3 rayDirection
-) {
-
-	// get camera look direction and near plane for camera clipping
-	vec4 lookDirection = cameraWorld * vec4( 0.0, 0.0, - 1.0, 0.0 );
-	vec4 nearVector = invProjectionMatrix * vec4( 0.0, 0.0, - 1.0, 1.0 );
-	float near = abs( nearVector.z / nearVector.w );
-
-	// get the camera direction and position from camera matrices
-	vec4 origin = cameraWorld * vec4( 0.0, 0.0, 0.0, 1.0 );
-	vec4 direction = invProjectionMatrix * vec4( coord, 0.5, 1.0 );
-	direction /= direction.w;
-	direction = cameraWorld * direction - origin;
-
-	// slide the origin along the ray until it sits at the near clip plane position
-	origin.xyz += direction.xyz * near / dot( direction, lookDirection );
-
-	rayOrigin = origin.xyz;
-	rayDirection = direction.xyz;
-
-}
-
-// Raycasting
-float intersectsBounds( vec3 rayOrigin, vec3 rayDirection, vec3 boundsMin, vec3 boundsMax ) {
-
-	// https://www.reddit.com/r/opengl/comments/8ntzz5/fast_glsl_ray_box_intersection/
-	// https://tavianator.com/2011/ray_box.html
-	vec3 invDir = 1.0 / rayDirection;
-
-	// find intersection distances for each plane
-	vec3 tMinPlane = invDir * ( boundsMin - rayOrigin );
-	vec3 tMaxPlane = invDir * ( boundsMax - rayOrigin );
-
-	// get the min and max distances from each intersection
-	vec3 tMinHit = min( tMaxPlane, tMinPlane );
-	vec3 tMaxHit = max( tMaxPlane, tMinPlane );
-
-	// get the furthest hit distance
-	vec2 t = max( tMinHit.xx, tMinHit.yz );
-	float t0 = max( t.x, t.y );
-
-	// get the minimum hit distance
-	t = min( tMaxHit.xx, tMaxHit.yz );
-	float t1 = min( t.x, t.y );
-
-	// set distance to 0.0 if the ray starts inside the box
-	float dist = max( t0, 0.0 );
-
-	return t1 >= dist ? dist : INFINITY;
-
-}
-
-bool intersectsTriangle(
-	vec3 rayOrigin, vec3 rayDirection, vec3 a, vec3 b, vec3 c,
-	out vec3 barycoord, out vec3 norm, out float dist, out float side
-) {
-
-	// https://stackoverflow.com/questions/42740765/intersection-between-line-and-triangle-in-3d
-	vec3 edge1 = b - a;
-	vec3 edge2 = c - a;
-	norm = cross( edge1, edge2 );
-
-	float det = - dot( rayDirection, norm );
-	float invdet = 1.0 / det;
-
-	vec3 AO = rayOrigin - a;
-	vec3 DAO = cross( AO, rayDirection );
-
-	vec4 uvt;
-	uvt.x = dot( edge2, DAO ) * invdet;
-	uvt.y = - dot( edge1, DAO ) * invdet;
-	uvt.z = dot( AO, norm ) * invdet;
-	uvt.w = 1.0 - uvt.x - uvt.y;
-
-	// set the hit information
-	barycoord = uvt.wxy; // arranged in A, B, C order
-	dist = uvt.z;
-	side = sign( det );
-	norm = side * normalize( norm );
-
-	// add an epsilon to avoid misses between triangles
-	uvt += vec4( TRI_INTERSECT_EPSILON );
-
-	return all( greaterThanEqual( uvt, vec4( 0.0 ) ) );
-
-}
-
-bool intersectTriangles(
-	BVH bvh, vec3 rayOrigin, vec3 rayDirection, uint offset, uint count,
-	inout float minDistance, inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord,
-	inout float side, inout float dist
-) {
-
-	bool found = false;
-	vec3 localBarycoord, localNormal;
-	float localDist, localSide;
-	for ( uint i = offset, l = offset + count; i < l; i ++ ) {
-
-		uvec3 indices = uTexelFetch1D( bvh.index, i ).xyz;
-		vec3 a = texelFetch1D( bvh.position, indices.x ).rgb;
-		vec3 b = texelFetch1D( bvh.position, indices.y ).rgb;
-		vec3 c = texelFetch1D( bvh.position, indices.z ).rgb;
-
-		if (
-			intersectsTriangle( rayOrigin, rayDirection, a, b, c, localBarycoord, localNormal, localDist, localSide )
-			&& localDist < minDistance
-		) {
-
-			found = true;
-			minDistance = localDist;
-
-			faceIndices = uvec4( indices.xyz, i );
-			faceNormal = localNormal;
-
-			side = localSide;
-			barycoord = localBarycoord;
-			dist = localDist;
-
-		}
-
-	}
-
-	return found;
-
-}
-
-float intersectsBVHNodeBounds( vec3 rayOrigin, vec3 rayDirection, BVH bvh, uint currNodeIndex ) {
-
-	vec3 boundsMin = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 0u ).xyz;
-	vec3 boundsMax = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 1u ).xyz;
-	return intersectsBounds( rayOrigin, rayDirection, boundsMin, boundsMax );
-
-}
-
-bool bvhIntersectFirstHit(
-	BVH bvh, vec3 rayOrigin, vec3 rayDirection,
-
-	// output variables
-	inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord,
-	inout float side, inout float dist
-) {
-
-	// stack needs to be twice as long as the deepest tree we expect because
-	// we push both the left and right child onto the stack every traversal
-	int ptr = 0;
-	uint stack[ 60 ];
-	stack[ 0 ] = 0u;
-
-	float triangleDistance = 1e20;
-	bool found = false;
-	while ( ptr > - 1 && ptr < 60 ) {
-
-		uint currNodeIndex = stack[ ptr ];
-		ptr --;
-
-		// check if we intersect the current bounds
-		float boundsHitDistance = intersectsBVHNodeBounds( rayOrigin, rayDirection, bvh, currNodeIndex );
-		if ( boundsHitDistance == INFINITY || boundsHitDistance > triangleDistance ) {
-
-			continue;
-
-		}
-
-		uvec2 boundsInfo = uTexelFetch1D( bvh.bvhContents, currNodeIndex ).xy;
-		bool isLeaf = bool( boundsInfo.x & 0xffff0000u );
-
-		if ( isLeaf ) {
-
-			uint count = boundsInfo.x & 0x0000ffffu;
-			uint offset = boundsInfo.y;
-
-			found = intersectTriangles(
-				bvh, rayOrigin, rayDirection, offset, count, triangleDistance,
-				faceIndices, faceNormal, barycoord, side, dist
-			) || found;
-
-		} else {
-
-			uint leftIndex = currNodeIndex + 1u;
-			uint splitAxis = boundsInfo.x & 0x0000ffffu;
-			uint rightIndex = boundsInfo.y;
-
-			bool leftToRight = rayDirection[ splitAxis ] >= 0.0;
-			uint c1 = leftToRight ? leftIndex : rightIndex;
-			uint c2 = leftToRight ? rightIndex : leftIndex;
-
-			// set c2 in the stack so we traverse it later. We need to keep track of a pointer in
-			// the stack while we traverse. The second pointer added is the one that will be
-			// traversed first
-			ptr ++;
-			stack[ ptr ] = c2;
-
-			ptr ++;
-			stack[ ptr ] = c1;
-
-		}
-
-	}
-
-	return found;
-
-}
-`;
-
-// Distance to Point
-const shaderDistanceFunction = /* glsl */`
-
-float dot2( vec3 v ) {
-
-	return dot( v, v );
-
-}
-
-// https://www.shadertoy.com/view/ttfGWl
-vec3 closestPointToTriangle( vec3 p, vec3 v0, vec3 v1, vec3 v2, out vec3 barycoord ) {
-
-    vec3 v10 = v1 - v0;
-    vec3 v21 = v2 - v1;
-    vec3 v02 = v0 - v2;
-
-	vec3 p0 = p - v0;
-	vec3 p1 = p - v1;
-	vec3 p2 = p - v2;
-
-    vec3 nor = cross( v10, v02 );
-
-    // method 2, in barycentric space
-    vec3  q = cross( nor, p0 );
-    float d = 1.0 / dot2( nor );
-    float u = d * dot( q, v02 );
-    float v = d * dot( q, v10 );
-    float w = 1.0 - u - v;
-
-	if( u < 0.0 ) {
-
-		w = clamp( dot( p2, v02 ) / dot2( v02 ), 0.0, 1.0 );
-		u = 0.0;
-		v = 1.0 - w;
-
-	} else if( v < 0.0 ) {
-
-		u = clamp( dot( p0, v10 ) / dot2( v10 ), 0.0, 1.0 );
-		v = 0.0;
-		w = 1.0 - u;
-
-	} else if( w < 0.0 ) {
-
-		v = clamp( dot( p1, v21 ) / dot2( v21 ), 0.0, 1.0 );
-		w = 0.0;
-		u = 1.0-v;
-
-	}
-
-	barycoord = vec3( u, v, w );
-    return u * v1 + v * v2 + w * v0;
-
-}
-
-float distanceToTriangles(
-	BVH bvh, vec3 point, uint offset, uint count, float closestDistanceSquared,
-
-	inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord, inout float side, inout vec3 outPoint
-) {
-
-	bool found = false;
-	uvec3 localIndices;
-	vec3 localBarycoord;
-	vec3 localNormal;
-	for ( uint i = offset, l = offset + count; i < l; i ++ ) {
-
-		uvec3 indices = uTexelFetch1D( bvh.index, i ).xyz;
-		vec3 a = texelFetch1D( bvh.position, indices.x ).rgb;
-		vec3 b = texelFetch1D( bvh.position, indices.y ).rgb;
-		vec3 c = texelFetch1D( bvh.position, indices.z ).rgb;
-
-		// get the closest point and barycoord
-		vec3 closestPoint = closestPointToTriangle( point, a, b, c, localBarycoord );
-		vec3 delta = point - closestPoint;
-		float sqDist = dot2( delta );
-		if ( sqDist < closestDistanceSquared ) {
-
-			// set the output results
-			closestDistanceSquared = sqDist;
-			faceIndices = uvec4( indices.xyz, i );
-			faceNormal = normalize( cross( a - b, b - c ) );
-			barycoord = localBarycoord;
-			outPoint = closestPoint;
-			side = sign( dot( faceNormal, delta ) );
-
-		}
-
-	}
-
-	return closestDistanceSquared;
-
-}
-
-float distanceSqToBounds( vec3 point, vec3 boundsMin, vec3 boundsMax ) {
-
-	vec3 clampedPoint = clamp( point, boundsMin, boundsMax );
-	vec3 delta = point - clampedPoint;
-	return dot( delta, delta );
-
-}
-
-float distanceSqToBVHNodeBoundsPoint( vec3 point, BVH bvh, uint currNodeIndex ) {
-
-	vec3 boundsMin = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 0u ).xyz;
-	vec3 boundsMax = texelFetch1D( bvh.bvhBounds, currNodeIndex * 2u + 1u ).xyz;
-	return distanceSqToBounds( point, boundsMin, boundsMax );
-
-}
-
-float bvhClosestPointToPoint(
-	BVH bvh, vec3 point,
-
-	// output variables
-	inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord,
-	inout float side, inout vec3 outPoint
- ) {
-
-	// stack needs to be twice as long as the deepest tree we expect because
-	// we push both the left and right child onto the stack every traversal
-	int ptr = 0;
-	uint stack[ 60 ];
-	stack[ 0 ] = 0u;
-	float closestDistanceSquared = pow( 100000.0, 2.0 );
-	bool found = false;
-	while ( ptr > - 1 && ptr < 60 ) {
-
-		uint currNodeIndex = stack[ ptr ];
-		ptr --;
-
-		// check if we intersect the current bounds
-		float boundsHitDistance = distanceSqToBVHNodeBoundsPoint( point, bvh, currNodeIndex );
-		if ( boundsHitDistance > closestDistanceSquared ) {
-
-			continue;
-
-		}
-
-		uvec2 boundsInfo = uTexelFetch1D( bvh.bvhContents, currNodeIndex ).xy;
-		bool isLeaf = bool( boundsInfo.x & 0xffff0000u );
-		if ( isLeaf ) {
-
-			uint count = boundsInfo.x & 0x0000ffffu;
-			uint offset = boundsInfo.y;
-			closestDistanceSquared = distanceToTriangles(
-				bvh, point, offset, count, closestDistanceSquared,
-
-				// outputs
-				faceIndices, faceNormal, barycoord, side, outPoint
-			);
-
-		} else {
-
-			uint leftIndex = currNodeIndex + 1u;
-			uint splitAxis = boundsInfo.x & 0x0000ffffu;
-			uint rightIndex = boundsInfo.y;
-			bool leftToRight = distanceSqToBVHNodeBoundsPoint( point, bvh, leftIndex ) < distanceSqToBVHNodeBoundsPoint( point, bvh, rightIndex );//rayDirection[ splitAxis ] >= 0.0;
-			uint c1 = leftToRight ? leftIndex : rightIndex;
-			uint c2 = leftToRight ? rightIndex : leftIndex;
-
-			// set c2 in the stack so we traverse it later. We need to keep track of a pointer in
-			// the stack while we traverse. The second pointer added is the one that will be
-			// traversed first
-			ptr ++;
-			stack[ ptr ] = c2;
-			ptr ++;
-			stack[ ptr ] = c1;
-
-		}
-
-	}
-
-	return sqrt( closestDistanceSquared );
-
-}
-`;
 
 const _positionVector = /*@__PURE__*/ new Vector3();
 const _normalVector = /*@__PURE__*/ new Vector3();
@@ -7848,5 +7473,529 @@ class StaticGeometryGenerator {
 
 }
 
-export { AVERAGE, CENTER, CONTAINED, ExtendedTriangle, FloatVertexAttributeTexture, INTERSECTED, IntVertexAttributeTexture, MeshBVH, MeshBVHUniformStruct, MeshBVHVisualizer, NOT_INTERSECTED, OrientedBox, SAH, StaticGeometryGenerator, UIntVertexAttributeTexture, VertexAttributeTexture, acceleratedRaycast, computeBoundsTree, disposeBoundsTree, estimateMemoryInBytes, getBVHExtremes, getJSONStructure, getTriangleHitPointInfo, shaderDistanceFunction, shaderIntersectFunction, shaderStructs, validateBounds };
+const common_functions = /* glsl */`
+
+// A stack of uint32 indices can can store the indices for
+// a perfectly balanced tree with a depth up to 31. Lower stack
+// depth gets higher performance.
+//
+// However not all trees are balanced. Best value to set this to
+// is the trees max depth.
+#ifndef BVH_STACK_DEPTH
+#define BVH_STACK_DEPTH 60
+#endif
+
+#ifndef INFINITY
+#define INFINITY 1e20
+#endif
+
+// Utilities
+uvec4 uTexelFetch1D( usampler2D tex, uint index ) {
+
+	uint width = uint( textureSize( tex, 0 ).x );
+	uvec2 uv;
+	uv.x = index % width;
+	uv.y = index / width;
+
+	return texelFetch( tex, ivec2( uv ), 0 );
+
+}
+
+ivec4 iTexelFetch1D( isampler2D tex, uint index ) {
+
+	uint width = uint( textureSize( tex, 0 ).x );
+	uvec2 uv;
+	uv.x = index % width;
+	uv.y = index / width;
+
+	return texelFetch( tex, ivec2( uv ), 0 );
+
+}
+
+vec4 texelFetch1D( sampler2D tex, uint index ) {
+
+	uint width = uint( textureSize( tex, 0 ).x );
+	uvec2 uv;
+	uv.x = index % width;
+	uv.y = index / width;
+
+	return texelFetch( tex, ivec2( uv ), 0 );
+
+}
+
+vec4 textureSampleBarycoord( sampler2D tex, vec3 barycoord, uvec3 faceIndices ) {
+
+	return
+		barycoord.x * texelFetch1D( tex, faceIndices.x ) +
+		barycoord.y * texelFetch1D( tex, faceIndices.y ) +
+		barycoord.z * texelFetch1D( tex, faceIndices.z );
+
+}
+
+void ndcToCameraRay(
+	vec2 coord, mat4 cameraWorld, mat4 invProjectionMatrix,
+	out vec3 rayOrigin, out vec3 rayDirection
+) {
+
+	// get camera look direction and near plane for camera clipping
+	vec4 lookDirection = cameraWorld * vec4( 0.0, 0.0, - 1.0, 0.0 );
+	vec4 nearVector = invProjectionMatrix * vec4( 0.0, 0.0, - 1.0, 1.0 );
+	float near = abs( nearVector.z / nearVector.w );
+
+	// get the camera direction and position from camera matrices
+	vec4 origin = cameraWorld * vec4( 0.0, 0.0, 0.0, 1.0 );
+	vec4 direction = invProjectionMatrix * vec4( coord, 0.5, 1.0 );
+	direction /= direction.w;
+	direction = cameraWorld * direction - origin;
+
+	// slide the origin along the ray until it sits at the near clip plane position
+	origin.xyz += direction.xyz * near / dot( direction, lookDirection );
+
+	rayOrigin = origin.xyz;
+	rayDirection = direction.xyz;
+
+}
+`;
+
+// Distance to Point
+const bvh_distance_functions = /* glsl */`
+
+float dot2( vec3 v ) {
+
+	return dot( v, v );
+
+}
+
+// https://www.shadertoy.com/view/ttfGWl
+vec3 closestPointToTriangle( vec3 p, vec3 v0, vec3 v1, vec3 v2, out vec3 barycoord ) {
+
+    vec3 v10 = v1 - v0;
+    vec3 v21 = v2 - v1;
+    vec3 v02 = v0 - v2;
+
+	vec3 p0 = p - v0;
+	vec3 p1 = p - v1;
+	vec3 p2 = p - v2;
+
+    vec3 nor = cross( v10, v02 );
+
+    // method 2, in barycentric space
+    vec3  q = cross( nor, p0 );
+    float d = 1.0 / dot2( nor );
+    float u = d * dot( q, v02 );
+    float v = d * dot( q, v10 );
+    float w = 1.0 - u - v;
+
+	if( u < 0.0 ) {
+
+		w = clamp( dot( p2, v02 ) / dot2( v02 ), 0.0, 1.0 );
+		u = 0.0;
+		v = 1.0 - w;
+
+	} else if( v < 0.0 ) {
+
+		u = clamp( dot( p0, v10 ) / dot2( v10 ), 0.0, 1.0 );
+		v = 0.0;
+		w = 1.0 - u;
+
+	} else if( w < 0.0 ) {
+
+		v = clamp( dot( p1, v21 ) / dot2( v21 ), 0.0, 1.0 );
+		w = 0.0;
+		u = 1.0-v;
+
+	}
+
+	barycoord = vec3( u, v, w );
+    return u * v1 + v * v2 + w * v0;
+
+}
+
+float distanceToTriangles(
+	// geometry info and triangle range
+	sampler2D positionAttr, usampler2D indexAttr, uint offset, uint count,
+
+	// point and cut off range
+	vec3 point, float closestDistanceSquared,
+
+	// outputs
+	inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord, inout float side, inout vec3 outPoint
+) {
+
+	bool found = false;
+	vec3 localBarycoord;
+	for ( uint i = offset, l = offset + count; i < l; i ++ ) {
+
+		uvec3 indices = uTexelFetch1D( indexAttr, i ).xyz;
+		vec3 a = texelFetch1D( positionAttr, indices.x ).rgb;
+		vec3 b = texelFetch1D( positionAttr, indices.y ).rgb;
+		vec3 c = texelFetch1D( positionAttr, indices.z ).rgb;
+
+		// get the closest point and barycoord
+		vec3 closestPoint = closestPointToTriangle( point, a, b, c, localBarycoord );
+		vec3 delta = point - closestPoint;
+		float sqDist = dot2( delta );
+		if ( sqDist < closestDistanceSquared ) {
+
+			// set the output results
+			closestDistanceSquared = sqDist;
+			faceIndices = uvec4( indices.xyz, i );
+			faceNormal = normalize( cross( a - b, b - c ) );
+			barycoord = localBarycoord;
+			outPoint = closestPoint;
+			side = sign( dot( faceNormal, delta ) );
+
+		}
+
+	}
+
+	return closestDistanceSquared;
+
+}
+
+float distanceSqToBounds( vec3 point, vec3 boundsMin, vec3 boundsMax ) {
+
+	vec3 clampedPoint = clamp( point, boundsMin, boundsMax );
+	vec3 delta = point - clampedPoint;
+	return dot( delta, delta );
+
+}
+
+float distanceSqToBVHNodeBoundsPoint( vec3 point, sampler2D bvhBounds, uint currNodeIndex ) {
+
+	uint cni2 = currNodeIndex * 2u;
+	vec3 boundsMin = texelFetch1D( bvhBounds, cni2 ).xyz;
+	vec3 boundsMax = texelFetch1D( bvhBounds, cni2 + 1u ).xyz;
+	return distanceSqToBounds( point, boundsMin, boundsMax );
+
+}
+
+// use a macro to hide the fact that we need to expand the struct into separate fields
+#define\
+	bvhClosestPointToPoint(\
+		bvh,\
+		point, faceIndices, faceNormal, barycoord, side, outPoint\
+	)\
+	_bvhClosestPointToPoint(\
+		bvh.position, bvh.index, bvh.bvhBounds, bvh.bvhContents,\
+		point, faceIndices, faceNormal, barycoord, side, outPoint\
+	)
+
+float _bvhClosestPointToPoint(
+	// bvh info
+	sampler2D bvh_position, usampler2D bvh_index, sampler2D bvh_bvhBounds, usampler2D bvh_bvhContents,
+
+	// point to check
+	vec3 point,
+
+	// output variables
+	inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord,
+	inout float side, inout vec3 outPoint
+ ) {
+
+	// stack needs to be twice as long as the deepest tree we expect because
+	// we push both the left and right child onto the stack every traversal
+	int ptr = 0;
+	uint stack[ BVH_STACK_DEPTH ];
+	stack[ 0 ] = 0u;
+
+	float closestDistanceSquared = pow( 100000.0, 2.0 );
+	bool found = false;
+	while ( ptr > - 1 && ptr < BVH_STACK_DEPTH ) {
+
+		uint currNodeIndex = stack[ ptr ];
+		ptr --;
+
+		// check if we intersect the current bounds
+		float boundsHitDistance = distanceSqToBVHNodeBoundsPoint( point, bvh_bvhBounds, currNodeIndex );
+		if ( boundsHitDistance > closestDistanceSquared ) {
+
+			continue;
+
+		}
+
+		uvec2 boundsInfo = uTexelFetch1D( bvh_bvhContents, currNodeIndex ).xy;
+		bool isLeaf = bool( boundsInfo.x & 0xffff0000u );
+		if ( isLeaf ) {
+
+			uint count = boundsInfo.x & 0x0000ffffu;
+			uint offset = boundsInfo.y;
+			closestDistanceSquared = distanceToTriangles(
+				bvh_position, bvh_index, offset, count, point, closestDistanceSquared,
+
+				// outputs
+				faceIndices, faceNormal, barycoord, side, outPoint
+			);
+
+		} else {
+
+			uint leftIndex = currNodeIndex + 1u;
+			uint splitAxis = boundsInfo.x & 0x0000ffffu;
+			uint rightIndex = boundsInfo.y;
+			bool leftToRight = distanceSqToBVHNodeBoundsPoint( point, bvh_bvhBounds, leftIndex ) < distanceSqToBVHNodeBoundsPoint( point, bvh_bvhBounds, rightIndex );//rayDirection[ splitAxis ] >= 0.0;
+			uint c1 = leftToRight ? leftIndex : rightIndex;
+			uint c2 = leftToRight ? rightIndex : leftIndex;
+
+			// set c2 in the stack so we traverse it later. We need to keep track of a pointer in
+			// the stack while we traverse. The second pointer added is the one that will be
+			// traversed first
+			ptr ++;
+			stack[ ptr ] = c2;
+			ptr ++;
+			stack[ ptr ] = c1;
+
+		}
+
+	}
+
+	return sqrt( closestDistanceSquared );
+
+}
+`;
+
+const bvh_ray_functions = /* glsl */`
+
+#ifndef TRI_INTERSECT_EPSILON
+#define TRI_INTERSECT_EPSILON 1e-5
+#endif
+
+// Raycasting
+bool intersectsBounds( vec3 rayOrigin, vec3 rayDirection, vec3 boundsMin, vec3 boundsMax, out float dist ) {
+
+	// https://www.reddit.com/r/opengl/comments/8ntzz5/fast_glsl_ray_box_intersection/
+	// https://tavianator.com/2011/ray_box.html
+	vec3 invDir = 1.0 / rayDirection;
+
+	// find intersection distances for each plane
+	vec3 tMinPlane = invDir * ( boundsMin - rayOrigin );
+	vec3 tMaxPlane = invDir * ( boundsMax - rayOrigin );
+
+	// get the min and max distances from each intersection
+	vec3 tMinHit = min( tMaxPlane, tMinPlane );
+	vec3 tMaxHit = max( tMaxPlane, tMinPlane );
+
+	// get the furthest hit distance
+	vec2 t = max( tMinHit.xx, tMinHit.yz );
+	float t0 = max( t.x, t.y );
+
+	// get the minimum hit distance
+	t = min( tMaxHit.xx, tMaxHit.yz );
+	float t1 = min( t.x, t.y );
+
+	// set distance to 0.0 if the ray starts inside the box
+	dist = max( t0, 0.0 );
+
+	return t1 >= dist;
+
+}
+
+bool intersectsTriangle(
+	vec3 rayOrigin, vec3 rayDirection, vec3 a, vec3 b, vec3 c,
+	out vec3 barycoord, out vec3 norm, out float dist, out float side
+) {
+
+	// https://stackoverflow.com/questions/42740765/intersection-between-line-and-triangle-in-3d
+	vec3 edge1 = b - a;
+	vec3 edge2 = c - a;
+	norm = cross( edge1, edge2 );
+
+	float det = - dot( rayDirection, norm );
+	float invdet = 1.0 / det;
+
+	vec3 AO = rayOrigin - a;
+	vec3 DAO = cross( AO, rayDirection );
+
+	vec4 uvt;
+	uvt.x = dot( edge2, DAO ) * invdet;
+	uvt.y = - dot( edge1, DAO ) * invdet;
+	uvt.z = dot( AO, norm ) * invdet;
+	uvt.w = 1.0 - uvt.x - uvt.y;
+
+	// set the hit information
+	barycoord = uvt.wxy; // arranged in A, B, C order
+	dist = uvt.z;
+	side = sign( det );
+	norm = side * normalize( norm );
+
+	// add an epsilon to avoid misses between triangles
+	uvt += vec4( TRI_INTERSECT_EPSILON );
+
+	return all( greaterThanEqual( uvt, vec4( 0.0 ) ) );
+
+}
+
+bool intersectTriangles(
+	// geometry info and triangle range
+	sampler2D positionAttr, usampler2D indexAttr, uint offset, uint count,
+
+	// ray
+	vec3 rayOrigin, vec3 rayDirection,
+
+	// outputs
+	inout float minDistance, inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord,
+	inout float side, inout float dist
+) {
+
+	bool found = false;
+	vec3 localBarycoord, localNormal;
+	float localDist, localSide;
+	for ( uint i = offset, l = offset + count; i < l; i ++ ) {
+
+		uvec3 indices = uTexelFetch1D( indexAttr, i ).xyz;
+		vec3 a = texelFetch1D( positionAttr, indices.x ).rgb;
+		vec3 b = texelFetch1D( positionAttr, indices.y ).rgb;
+		vec3 c = texelFetch1D( positionAttr, indices.z ).rgb;
+
+		if (
+			intersectsTriangle( rayOrigin, rayDirection, a, b, c, localBarycoord, localNormal, localDist, localSide )
+			&& localDist < minDistance
+		) {
+
+			found = true;
+			minDistance = localDist;
+
+			faceIndices = uvec4( indices.xyz, i );
+			faceNormal = localNormal;
+
+			side = localSide;
+			barycoord = localBarycoord;
+			dist = localDist;
+
+		}
+
+	}
+
+	return found;
+
+}
+
+bool intersectsBVHNodeBounds( vec3 rayOrigin, vec3 rayDirection, sampler2D bvhBounds, uint currNodeIndex, out float dist ) {
+
+	uint cni2 = currNodeIndex * 2u;
+	vec3 boundsMin = texelFetch1D( bvhBounds, cni2 ).xyz;
+	vec3 boundsMax = texelFetch1D( bvhBounds, cni2 + 1u ).xyz;
+	return intersectsBounds( rayOrigin, rayDirection, boundsMin, boundsMax, dist );
+
+}
+
+// use a macro to hide the fact that we need to expand the struct into separate fields
+#define\
+	bvhIntersectFirstHit(\
+		bvh,\
+		rayOrigin, rayDirection, faceIndices, faceNormal, barycoord, side, dist\
+	)\
+	_bvhIntersectFirstHit(\
+		bvh.position, bvh.index, bvh.bvhBounds, bvh.bvhContents,\
+		rayOrigin, rayDirection, faceIndices, faceNormal, barycoord, side, dist\
+	)
+
+bool _bvhIntersectFirstHit(
+	// bvh info
+	sampler2D bvh_position, usampler2D bvh_index, sampler2D bvh_bvhBounds, usampler2D bvh_bvhContents,
+
+	// ray
+	vec3 rayOrigin, vec3 rayDirection,
+
+	// output variables split into separate variables due to output precision
+	inout uvec4 faceIndices, inout vec3 faceNormal, inout vec3 barycoord,
+	inout float side, inout float dist
+) {
+
+	// stack needs to be twice as long as the deepest tree we expect because
+	// we push both the left and right child onto the stack every traversal
+	int ptr = 0;
+	uint stack[ BVH_STACK_DEPTH ];
+	stack[ 0 ] = 0u;
+
+	float triangleDistance = INFINITY;
+	bool found = false;
+	while ( ptr > - 1 && ptr < BVH_STACK_DEPTH ) {
+
+		uint currNodeIndex = stack[ ptr ];
+		ptr --;
+
+		// check if we intersect the current bounds
+		float boundsHitDistance;
+		if (
+			! intersectsBVHNodeBounds( rayOrigin, rayDirection, bvh_bvhBounds, currNodeIndex, boundsHitDistance )
+			|| boundsHitDistance > triangleDistance
+		) {
+
+			continue;
+
+		}
+
+		uvec2 boundsInfo = uTexelFetch1D( bvh_bvhContents, currNodeIndex ).xy;
+		bool isLeaf = bool( boundsInfo.x & 0xffff0000u );
+
+		if ( isLeaf ) {
+
+			uint count = boundsInfo.x & 0x0000ffffu;
+			uint offset = boundsInfo.y;
+
+			found = intersectTriangles(
+				bvh_position, bvh_index, offset, count,
+				rayOrigin, rayDirection, triangleDistance,
+				faceIndices, faceNormal, barycoord, side, dist
+			) || found;
+
+		} else {
+
+			uint leftIndex = currNodeIndex + 1u;
+			uint splitAxis = boundsInfo.x & 0x0000ffffu;
+			uint rightIndex = boundsInfo.y;
+
+			bool leftToRight = rayDirection[ splitAxis ] >= 0.0;
+			uint c1 = leftToRight ? leftIndex : rightIndex;
+			uint c2 = leftToRight ? rightIndex : leftIndex;
+
+			// set c2 in the stack so we traverse it later. We need to keep track of a pointer in
+			// the stack while we traverse. The second pointer added is the one that will be
+			// traversed first
+			ptr ++;
+			stack[ ptr ] = c2;
+
+			ptr ++;
+			stack[ ptr ] = c1;
+
+		}
+
+	}
+
+	return found;
+
+}
+`;
+
+// Note that a struct cannot be used for the hit record including faceIndices, faceNormal, barycoord,
+// side, and dist because on some mobile GPUS (such as Adreno) numbers are afforded less precision specifically
+// when in a struct leading to inaccurate hit results. See KhronosGroup/WebGL#3351 for more details.
+const bvh_struct_definitions = /* glsl */`
+struct BVH {
+
+	usampler2D index;
+	sampler2D position;
+
+	sampler2D bvhBounds;
+	usampler2D bvhContents;
+
+};
+`;
+
+var BVHShaderGLSL = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	bvh_distance_functions: bvh_distance_functions,
+	bvh_ray_functions: bvh_ray_functions,
+	bvh_struct_definitions: bvh_struct_definitions,
+	common_functions: common_functions
+});
+
+const shaderStructs = bvh_struct_definitions;
+const shaderDistanceFunction = bvh_distance_functions;
+const shaderIntersectFunction = `
+	${ common_functions }
+	${ bvh_ray_functions }
+`;
+
+export { AVERAGE, BVHShaderGLSL, CENTER, CONTAINED, ExtendedTriangle, FloatVertexAttributeTexture, INTERSECTED, IntVertexAttributeTexture, MeshBVH, MeshBVHHelper, MeshBVHUniformStruct, NOT_INTERSECTED, OrientedBox, SAH, StaticGeometryGenerator, UIntVertexAttributeTexture, VertexAttributeTexture, acceleratedRaycast, computeBoundsTree, disposeBoundsTree, estimateMemoryInBytes, getBVHExtremes, getJSONStructure, getTriangleHitPointInfo, shaderDistanceFunction, shaderIntersectFunction, shaderStructs, validateBounds };
 //# sourceMappingURL=index.module.js.map

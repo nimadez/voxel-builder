@@ -20,7 +20,6 @@ const directions = [
 
 class Raycaster {
     constructor() {
-        this.isInit = false;
         this.geom = undefined;
         this.mesh = undefined;
         this.ray = new THREE.Ray();
@@ -30,7 +29,11 @@ class Raycaster {
     }
 
     create() {
-        this.buildGeometry(builder.positions, builder.indices, null);
+        builder.fillArrayBuffers();
+        this.geom = new THREE.BufferGeometry();
+        this.geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
+        this.geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
+        this.buildBvh(this.geom, 25);
     }
 
     createFromData(positions, indices) {
@@ -39,13 +42,6 @@ class Raycaster {
 
     createFromDataWithColor(positions, colors, indices) {
         this.buildGeometry(new Float32Array(positions), new Uint32Array(indices), new Float32Array(colors));
-    }
-
-    createFaster() {
-        this.geom = new THREE.BufferGeometry();
-        this.geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
-        this.geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
-        this.buildBvh(this.geom);
     }
 
     buildGeometry(positions, indices, colors = null) {
@@ -64,15 +60,13 @@ class Raycaster {
         this.invMat.copy(this.mesh.matrixWorld).invert();
     }
 
-    buildBvh(geometry) {
+    buildBvh(geometry, maxDepth = 40) {
         geometry.computeBoundsTree({
             //strategy: CENTER,
-            maxDepth: 30,    // def: 40
-            maxLeafTris: 10, // def: 10
+            maxDepth: maxDepth, // def: 40
+            maxLeafTris: 10,    // def: 10
             indirect: true
         });
-
-        this.isInit = true;
     }
 
     raycast(ox, oy, oz, dx, dy, dz) {
@@ -85,14 +79,6 @@ class Raycaster {
         this.ray.origin.set(ox, oy, oz);
         this.ray.direction = new THREE.Vector3(px, py, pz).sub(this.ray.origin).normalize();
         return this.geom.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
-    }
-
-    raycastFace(ox, oy, oz, dx, dy, dz) {
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction.set(dx, dy, dz);
-        const res = this.geom.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
-        if (res) return res.face.normal;
-        return null;
     }
 
     raycastOmni(x, y, z) {

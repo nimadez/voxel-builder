@@ -80,7 +80,7 @@
         #loadingscreen { z-index: 5000; background: #181b22CC; position: absolute; width: 100%; height: 100%; }
         #loadingscreen .logo { color: orange; font-family: Astro; font-size: 16px; letter-spacing: 0.06em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -15px; text-align: center; }
         #loadingscreen .logo :first-child { font-weight: normal; color: transparent; background: linear-gradient(to right, orange 10%, #bbb 60%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; animation: shine 2s ease-in-out infinite alternate; }
-        #loadingscreen .progress { color: slategray; font-size: 10px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 5px; text-align: center; }
+        #loadingscreen .progress { color: slategray; font-size: 10px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 10px; text-align: center; }
         #canvas_render { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(0deg, #3e465a 0%, #5a657a 100%); }
         #canvas_palette { z-index: 1; image-rendering: pixelated; position: relative; width: 100%; height: 32000px; }
         #canvas_pt { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell;
@@ -115,13 +115,13 @@
         .menu_L li:hover i:first-child { color: orange; }
         #toolbar_top { z-index: 500; opacity: 0.95; width: 200px; left: 50%; margin-left: -100px; top: 3px; text-align: center; position: fixed; }
         #toolbar_C { display: flex; }
-        #toolbar_C li { color: var(--btn-color); width: 100%; padding: 5px 0 5px 0; letter-spacing: 0.06em; font-size: 10px; border: 1px var(--borders); border-radius: 0; border-top: none; cursor: pointer; }
+        #toolbar_C li { color: var(--btn-color); width: 100%; padding: 6px 0 6px 0; letter-spacing: 0.06em; font-size: 10px; border: 1px var(--borders); border-radius: 0; border-top: none; cursor: pointer; }
         #toolbar_C li:hover { color: black; }
         #toolbar_C li:nth-child(1) { border-top-left-radius: 2px; border-right: solid 1px var(--borders); }
         #toolbar_C li:nth-child(3) { border-top-right-radius: 2px; border-left: solid 1px var(--borders); }
         #toolbar_C li.mode_select { background: var(--btn-bg); color: orange; }
         #toolbar_C_mem { display: flex; }
-        #toolbar_C_mem li { width: 100%; font-size: 10px; padding: 4px 0 4px 0; background: #3e4558CC; color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
+        #toolbar_C_mem li { width: 100%; font-size: 10px; padding: 5px 0 5px 0; background: #3e4558CC; color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C_mem li:hover { color: orange; }
         #toolbar_C_mem li.btn_select { border-bottom-color: orange; }
         #toolbar_C_mem :nth-child(1) { border-bottom-left-radius: 2px; border-right-width: 0; }
@@ -165,8 +165,8 @@
         #material-switch button { width: 34px; padding: 3px; font-size: 10px; }
         #colorpicker { z-index: 500; position: absolute; width: 36px; left: 4px; bottom: 99px; }
         #colorpicker :first-child { height: 25px; }
-        #colorbucket { z-index: 9; padding: 3px; color: var(--btn-color); background: none; border: none; left: 6px; bottom: 6px; position: absolute; cursor: pointer; }
-        #colorbucket:hover { color: orange; }
+        #btn-inscreen-bucket { z-index: 9; padding: 3px; color: var(--btn-color); background: none; border: none; left: 6px; bottom: 6px; position: absolute; cursor: pointer; }
+        #btn-inscreen-bucket:hover { color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: absolute; }
         #menu-about .about { font-size: 11px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 5px 5px 3px 5px; cursor: help; }
         #menu-about .about h1 { font-size: 11px; font-weight: normal; color: #98a1ac; letter-spacing: 1px; cursor: help; }
@@ -180,11 +180,11 @@
         #btn-symm-axis-x:hover { background: var(--input-bg); }
         #btn-symm-axis-y:hover { background: var(--input-bg); }
         #btn-symm-axis-z:hover { background: var(--input-bg); }
-        #btn-helper-symmetry { padding: 4px; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
-        #menu_inscreen_right { z-index: 9; display: unset; background: #30394740; width: 30px; right: 0; bottom: 95px; position: absolute; text-align: center; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
-        #menu_inscreen_bottom { z-index: 9; display: flex; background: #30394740; height: fit-content; left: 50%; bottom: 20px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
-        #menu_inscreen_bottom div { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
-        #menu_inscreen_bottom div i { font-size: 18px; color: aqua; opacity: 0.8; }
+        #menu-inscreen-right { z-index: 9; display: unset; background: #30394740; width: 30px; right: 0; bottom: 95px; position: absolute; text-align: center; border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+        #menu-inscreen-right li { padding: 4px; color: #00ffffAA; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
+        #menu-inscreen-bottom { z-index: 9; display: flex; background: #30394740; height: fit-content; left: 50%; bottom: 20px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
+        #menu-inscreen-bottom div { z-index: 9; padding: 5px; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
+        #menu-inscreen-bottom div i { font-size: 18px; color: aqua; opacity: 0.7; }
         #axisview-hitbox { z-index: 500; display: none; width: 40px; height: 40px; position: absolute; right: 30px; bottom: 30px; }
         #info { z-index: 9; background: #2c313a60; color: #97a5b880; font-size: 9px; position: absolute; padding: 2px; width: auto; bottom: 0; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: #97a5b8; letter-spacing: 0.05em; }
@@ -230,7 +230,7 @@
         </ul>
         <ul id="toolbar_L">
             <li>
-                <button title="Orthographic View" onclick="camera.switchOrtho()"><i class="material-icons">view_in_ar</i></button>
+                <button title="Frame Camera" onclick="camera.frame()"><i class="material-icons">view_in_ar</i></button>
                 <button title="Render Settings" onclick="ui.toggleMenuPathtracer()"><i class="material-icons">camera</i></button>
             </li>
             <li><button onclick="ui.toggleMenuCamera()">CAMERA</button></li>
@@ -285,9 +285,10 @@
             </li>
             <li class="category">EXTRAS</li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus();">Asset Viewer</button></li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus();">Pixel Monk</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.2.7 Beta
+                4.2.8 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub Repository</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
@@ -298,8 +299,9 @@
             <li class="category">GENERAL</li>
             <li><input type="checkbox" id="pref_startup" onclick="preferences.setStartup(this.checked)"> <label for="pref_startup">User Startup</label></li>
             <li><input type="checkbox" id="pref_nohover" onclick="preferences.setNoHover(this.checked)"> <label for="pref_nohover">No Hover Menu</label></li>
-            <li class="row"><label>Palette</label>&nbsp;<input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1" oninput="palette.expand(this.value)"></li>
+            <li><input type="checkbox" id="pref_bvhpicking" onclick="preferences.setBvhPicking(this.checked)" checked> <label for="pref_bvhpicking" title="Turn it off to trade minimal accuracy for lag-free experience (128K+)">BVH Picking</label></li>
             <li><input type="checkbox" id="pref_pointcloud" onclick="preferences.setPointCloud(this.checked)" checked> <label for="pref_pointcloud">Point Cloud</label></li>
+            <li class="row"><label>Palette</label>&nbsp;<input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1" oninput="palette.expand(this.value)"></li>
             <li class="category">WEBSOCKET</li>
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>
@@ -455,7 +457,7 @@
             <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>BAKERY</span></li>
             <li class="category">ADD BAKE</li>
             <li><button onclick="bakery.newBake()">New Bake All</button></li>
-            <li><button onclick="tool.toolSelector('bakecolor')" class="tool_bakecolor">New Bake Color</button></li>
+            <li><button onclick="tool.toolSelector('bakecolor');ui.setMode(0);" class="tool_bakecolor">New Bake Color</button></li>
             <li class="category">BATCH BAKE</li>
             <li><button onclick="bakery.bakeAll()">Bake All</button></li>
             <li><button onclick="bakery.bakeAllColors()">Bake<br>Color Groups</button></li>
@@ -521,7 +523,7 @@
             <li class="category">MESHES</li>
             <li class="row">
                 <input id="input-pt-ground" type="checkbox"></input>&nbsp;<label for="input-pt-ground" style="width: 100%">Add Ground</label>
-                <input type="color" id="input-pt-groundcolor" value="#837E72" style="width: 50px">
+                <input type="color" id="input-pt-groundcolor" value="#878378" style="width: 50px">
             </li>
             <li class="spacer"></li>
             <li><button onclick="bakery.updateVertexColors('#000000')">Convert to Emitter</button></li>
@@ -537,6 +539,7 @@
             <li class="row"><label style="min-width: 50%">Focal Len.</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="50" min="0" max="500" step="0.05"></li>
             <li class="category">ANIMATION</li>
             <li><input type="checkbox" id="input-autorotate" onclick="camera.toggleCameraAutoRotation()"> <label for="input-autorotate">Auto Rotate</label></li>
+            <li><input type="checkbox" id="input-autorotate-ccw" onclick="camera.updateCameraAutoRotation()"> <label for="input-autorotate-ccw">CCW</label></li>
         </ul>
         <ul class="menu_L" id="menu-env">
             <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>ENVIRONMENT</span></li>
@@ -638,17 +641,18 @@
         <li class="tool_add hover_disabled" onclick="tool.toolSelector('add')"><i class="material-icons">create</i></li>
         <li class="tool_eyedrop" onclick="tool.toolSelector('eyedrop')"><i class="material-icons">colorize</i></li>
     </ul>
-    <ul id="menu_inscreen_right">
-        <li id="btn-helper-symmetry" title="Symmetry" onclick="symmetry.switchAxis()">S</li>
+    <ul id="menu-inscreen-right">
+        <li id="btn-inscreen-symmetry" title="Symmetry" onclick="symmetry.switchAxis()">S</li>
+        <li id="btn-inscreen-ortho" title="Orthographic View" onclick="camera.switchOrtho()">P</li>
     </ul>
-    <ul id="menu_inscreen_bottom">
+    <ul id="menu-inscreen-bottom">
         <div id="btn-inscreen-floorplane" title="Floor Plane" onclick="helper.toggleWorkplane(0)"><i class="material-icons">border_inner</i></div>
         <div id="btn-inscreen-workplane" title="Workplane 3D" onclick="helper.toggleWorkplane(1)"><i class="material-icons">border_style</i></div>
         <div id="btn-inscreen-lightlocator" title="Light Locator" onclick="uix.toggleLightLocator()"><i class="material-icons">tungsten</i></button>
     </ul>
     <div id="material-switch"><button onclick="material.switchMaterial()">CEL</button></div>
     <div id="colorpicker"><input type="color" id="input-color" value="#8398AF"></div>
-    <div id="colorbucket" title="Color Bucket Tool" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></div>
+    <div id="btn-inscreen-bucket" title="Color Bucket Tool" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></div>
     <div id="axisview-hitbox" onclick="camera.frame()"></div>
     <!-- dynamic -->
     <div id="pathtracer">
@@ -688,6 +692,5 @@
     }
 }
 </script>
-<script src="src/modules.js" type="module"></script>
 </body>
 </html>

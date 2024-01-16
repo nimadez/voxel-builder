@@ -3,13 +3,6 @@
     @nimadez
 
     Bake voxels to mesh
-    
-    The processing speed is decent, but the algorithm is not the fastest,
-    this is actually an old trick I used to rebuild the mesh with planes.
-
-    Of course vertices can be processed to remove shared vertices, but
-    if we add capping and color-based grouping to it, it may be slower,
-    and in terms of quality, I don't think it will reach the current method.
 */
 
 const facePositions = [
