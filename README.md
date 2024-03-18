@@ -13,7 +13,6 @@
 [FAQ](https://github.com/nimadez/voxel-builder#faq)
 
 > - We have successfully upgraded to thin-instances and returned to the stable channel as of version 4.2.8
-> - three-mesh-bvh has been updated to 0.7.0 and the pathtracer issue on Chrome for Android devices has been resolved.
 > - The online version does not have maximum functionality, be sure to [download](https://github.com/nimadez/voxel-builder/releases/tag/installer) the Electron package.
 
 ## Features
@@ -59,11 +58,11 @@
 > - PWA A2HS-ready *(add to home screen)*
 > - Touch pen or Wacom tablet recommended for best experience
 > - Voxel Builder is made for desktop and mobile, but its features have not been fully tested on mobile devices.
+> - Rendering issues have been reported on Linux OS with NVIDIA graphics cards.
 
 ## Known Issues
 ```
 :: Higher than 512K is not recommended
-* If you don't manipulate a lot of voxels, you can render up to 512K+
 * Electron is recommended for working with a large number of voxels
 * For lag-free experience, turn off BVH Picking after 128K
 * You cannot turn off BVH Picking when the Rect-Add tool is active
