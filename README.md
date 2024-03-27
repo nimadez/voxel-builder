@@ -12,8 +12,7 @@
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
 [FAQ](https://github.com/nimadez/voxel-builder#faq)
 
-> - We have successfully upgraded to thin-instances and returned to the stable channel as of version 4.2.8
-> - The online version does not have maximum functionality, be sure to [download](https://github.com/nimadez/voxel-builder/releases/tag/installer) the Electron package.
+> The online version does not have maximum functionality, be sure to [download](https://github.com/nimadez/voxel-builder/releases/tag/installer) the Electron package.
 
 ## Features
 
@@ -58,7 +57,7 @@
 > - PWA A2HS-ready *(add to home screen)*
 > - Touch pen or Wacom tablet recommended for best experience
 > - Voxel Builder is made for desktop and mobile, but its features have not been fully tested on mobile devices.
-> - Rendering issues have been reported on Linux OS with NVIDIA graphics cards.
+> - Rendering issues have been reported on Linux OS with NVIDIA cards.
 
 ## Known Issues
 ```
@@ -101,7 +100,7 @@ Postponed to future
 
 ## History
 ```
-↑ Voxel engine updated to Thin Instances (massive boost)
+↑ Voxel engine updated to Thin Instances
 ↑ Cut half precision (new scene)
 ↑ Real-time GPU path tracing
 ↑ Introducing ES modules
@@ -137,6 +136,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 
 Thank you to those who have contributed knowledge:
 - [Allen Hastings](https://www.linkedin.com/in/allenhastings)
+- [David Catuhe](https://twitter.com/deltakosh)
 - [Erich Loftis](https://github.com/erichlof)
 - [Eric Heitz](https://eheitzresearch.wordpress.com/772-2/)
 - [Evan Wallace](https://github.com/evanw)
