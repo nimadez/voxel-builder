@@ -620,7 +620,7 @@ document.getElementById('input-pt-emissive').oninput = (ev) => {
 };
 
 document.getElementById('input-pt-roughness').oninput = (ev) => {
-    if (pt.isLoaded)
+    if (pt.isLoaded && ev.target.value > 0)
         pt.updateUniformMaterialRoughness(ev.target.value);
 };
 
