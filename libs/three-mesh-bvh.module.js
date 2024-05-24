@@ -942,7 +942,7 @@ const MAX_POINTER = Math.pow( 2, 32 );
 
 function countNodes( node ) {
 
-	if ( node.count ) {
+	if ( 'count' in node ) {
 
 		return 1;
 
@@ -973,7 +973,7 @@ function _populateBuffer( byteOffset, node ) {
 
 	const stride4Offset = byteOffset / 4;
 	const stride2Offset = byteOffset / 2;
-	const isLeaf = ! ! node.count;
+	const isLeaf = 'count' in node;
 	const boundingData = node.boundingData;
 	for ( let i = 0; i < 6; i ++ ) {
 
@@ -3339,11 +3339,84 @@ function refit( bvh, nodeIndices = null ) {
 
 }
 
-const _boundingBox = /* @__PURE__ */ new Box3();
-function intersectRay( nodeIndex32, array, ray, target ) {
+/**
+ * This function performs intersection tests similar to Ray.intersectBox in three.js,
+ * with the difference that the box values are read from an array to improve performance.
+ */
+function intersectRay( nodeIndex32, array, ray ) {
 
-	arrayToBox( nodeIndex32, array, _boundingBox );
-	return ray.intersectBox( _boundingBox, target );
+	let tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+	const invdirx = 1 / ray.direction.x,
+		invdiry = 1 / ray.direction.y,
+		invdirz = 1 / ray.direction.z;
+
+	const ox = ray.origin.x;
+	const oy = ray.origin.y;
+	const oz = ray.origin.z;
+
+	let minx = array[ nodeIndex32 ];
+	let maxx = array[ nodeIndex32 + 3 ];
+
+	let miny = array[ nodeIndex32 + 1 ];
+	let maxy = array[ nodeIndex32 + 3 + 1 ];
+
+	let minz = array[ nodeIndex32 + 2 ];
+	let maxz = array[ nodeIndex32 + 3 + 2 ];
+
+	if ( invdirx >= 0 ) {
+
+		tmin = ( minx - ox ) * invdirx;
+		tmax = ( maxx - ox ) * invdirx;
+
+	} else {
+
+		tmin = ( maxx - ox ) * invdirx;
+		tmax = ( minx - ox ) * invdirx;
+
+	}
+
+	if ( invdiry >= 0 ) {
+
+		tymin = ( miny - oy ) * invdiry;
+		tymax = ( maxy - oy ) * invdiry;
+
+	} else {
+
+		tymin = ( maxy - oy ) * invdiry;
+		tymax = ( miny - oy ) * invdiry;
+
+	}
+
+	if ( ( tmin > tymax ) || ( tymin > tmax ) ) return false;
+
+	if ( tymin > tmin || isNaN( tmin ) ) tmin = tymin;
+
+	if ( tymax < tmax || isNaN( tmax ) ) tmax = tymax;
+
+	if ( invdirz >= 0 ) {
+
+		tzmin = ( minz - oz ) * invdirz;
+		tzmax = ( maxz - oz ) * invdirz;
+
+	} else {
+
+		tzmin = ( maxz - oz ) * invdirz;
+		tzmax = ( minz - oz ) * invdirz;
+
+	}
+
+	if ( ( tmin > tzmax ) || ( tzmin > tmax ) ) return false;
+
+	// if ( tzmin > tmin || tmin !== tmin ) tmin = tzmin; // Uncomment this line if add the distance check
+
+	if ( tzmax < tmax || tmax !== tmax ) tmax = tzmax;
+
+	//return point closest to the ray (positive side)
+
+	if ( tmax < 0 ) return false;
+
+	return true;
 
 }
 
@@ -3426,7 +3499,6 @@ function iterateOverTriangles_indirect(
 /* This file is generated from "raycast.template.js". */
 /******************************************************/
 
-const _boxIntersection$3 = /* @__PURE__ */ new Vector3();
 function raycast( bvh, root, side, ray, intersects ) {
 
 	BufferStack.setBuffer( bvh._roots[ root ] );
@@ -3452,14 +3524,14 @@ function _raycast$1( nodeIndex32, bvh, side, ray, intersects ) {
 	} else {
 
 		const leftIndex = LEFT_NODE( nodeIndex32 );
-		if ( intersectRay( leftIndex, float32Array, ray, _boxIntersection$3 ) ) {
+		if ( intersectRay( leftIndex, float32Array, ray ) ) {
 
 			_raycast$1( leftIndex, bvh, side, ray, intersects );
 
 		}
 
 		const rightIndex = RIGHT_NODE( nodeIndex32, uint32Array );
-		if ( intersectRay( rightIndex, float32Array, ray, _boxIntersection$3 ) ) {
+		if ( intersectRay( rightIndex, float32Array, ray ) ) {
 
 			_raycast$1( rightIndex, bvh, side, ray, intersects );
 
@@ -3472,8 +3544,9 @@ function _raycast$1( nodeIndex32, bvh, side, ray, intersects ) {
 /***********************************************************/
 /* This file is generated from "raycastFirst.template.js". */
 /***********************************************************/
-const _boxIntersection$2 = /* @__PURE__ */ new Vector3();
+
 const _xyzFields$1 = [ 'x', 'y', 'z' ];
+
 function raycastFirst( bvh, root, side, ray ) {
 
 	BufferStack.setBuffer( bvh._roots[ root ] );
@@ -3522,7 +3595,7 @@ function _raycastFirst$1( nodeIndex32, bvh, side, ray ) {
 
 		}
 
-		const c1Intersection = intersectRay( c1, float32Array, ray, _boxIntersection$2 );
+		const c1Intersection = intersectRay( c1, float32Array, ray );
 		const c1Result = c1Intersection ? _raycastFirst$1( c1, bvh, side, ray ) : null;
 
 		// if we got an intersection in the first node and it's closer than the second node's bounding
@@ -3546,7 +3619,7 @@ function _raycastFirst$1( nodeIndex32, bvh, side, ray ) {
 
 		// either there was no intersection in the first node, or there could still be a closer
 		// intersection in the second, so check the second node and then take the better of the two
-		const c2Intersection = intersectRay( c2, float32Array, ray, _boxIntersection$2 );
+		const c2Intersection = intersectRay( c2, float32Array, ray );
 		const c2Result = c2Intersection ? _raycastFirst$1( c2, bvh, side, ray ) : null;
 
 		if ( c1Result && c2Result ) {
@@ -4152,7 +4225,6 @@ function refit_indirect( bvh, nodeIndices = null ) {
 /* This file is generated from "raycast.template.js". */
 /******************************************************/
 
-const _boxIntersection$1 = /* @__PURE__ */ new Vector3();
 function raycast_indirect( bvh, root, side, ray, intersects ) {
 
 	BufferStack.setBuffer( bvh._roots[ root ] );
@@ -4177,14 +4249,14 @@ function _raycast( nodeIndex32, bvh, side, ray, intersects ) {
 	} else {
 
 		const leftIndex = LEFT_NODE( nodeIndex32 );
-		if ( intersectRay( leftIndex, float32Array, ray, _boxIntersection$1 ) ) {
+		if ( intersectRay( leftIndex, float32Array, ray ) ) {
 
 			_raycast( leftIndex, bvh, side, ray, intersects );
 
 		}
 
 		const rightIndex = RIGHT_NODE( nodeIndex32, uint32Array );
-		if ( intersectRay( rightIndex, float32Array, ray, _boxIntersection$1 ) ) {
+		if ( intersectRay( rightIndex, float32Array, ray ) ) {
 
 			_raycast( rightIndex, bvh, side, ray, intersects );
 
@@ -4197,8 +4269,9 @@ function _raycast( nodeIndex32, bvh, side, ray, intersects ) {
 /***********************************************************/
 /* This file is generated from "raycastFirst.template.js". */
 /***********************************************************/
-const _boxIntersection = /* @__PURE__ */ new Vector3();
+
 const _xyzFields = [ 'x', 'y', 'z' ];
+
 function raycastFirst_indirect( bvh, root, side, ray ) {
 
 	BufferStack.setBuffer( bvh._roots[ root ] );
@@ -4246,7 +4319,7 @@ function _raycastFirst( nodeIndex32, bvh, side, ray ) {
 
 		}
 
-		const c1Intersection = intersectRay( c1, float32Array, ray, _boxIntersection );
+		const c1Intersection = intersectRay( c1, float32Array, ray );
 		const c1Result = c1Intersection ? _raycastFirst( c1, bvh, side, ray ) : null;
 
 		// if we got an intersection in the first node and it's closer than the second node's bounding
@@ -4270,7 +4343,7 @@ function _raycastFirst( nodeIndex32, bvh, side, ray ) {
 
 		// either there was no intersection in the first node, or there could still be a closer
 		// intersection in the second, so check the second node and then take the better of the two
-		const c2Intersection = intersectRay( c2, float32Array, ray, _boxIntersection );
+		const c2Intersection = intersectRay( c2, float32Array, ray );
 		const c2Result = c2Intersection ? _raycastFirst( c2, bvh, side, ray ) : null;
 
 		if ( c1Result && c2Result ) {
@@ -5075,7 +5148,7 @@ class MeshBVH {
 
 			result = {
 				roots: rootData.map( root => root.slice() ),
-				index: indexAttribute.array.slice(),
+				index: indexAttribute ? indexAttribute.array.slice() : null,
 				indirectBuffer: indirectBuffer ? indirectBuffer.slice() : null,
 			};
 
@@ -5083,7 +5156,7 @@ class MeshBVH {
 
 			result = {
 				roots: rootData,
-				index: indexAttribute.array,
+				index: indexAttribute ? indexAttribute.array : null,
 				indirectBuffer: indirectBuffer,
 			};
 
@@ -5862,6 +5935,7 @@ class MeshBVHHelper extends Group {
 			}
 
 			const root = this._roots[ i ];
+			root.bvh = bvh;
 			root.depth = depth;
 			root.displayParents = displayParents;
 			root.displayEdges = displayEdges;
@@ -6522,7 +6596,7 @@ class VertexAttributeTexture extends DataTexture {
 		}
 
 		// copy the data over to the new texture array
-		const dimension = Math.ceil( Math.sqrt( count ) );
+		const dimension = Math.ceil( Math.sqrt( count ) ) || 1;
 		const length = finalStride * dimension * dimension;
 		const dataArray = new targetBufferCons( length );
 
@@ -7120,6 +7194,48 @@ function checkTypedArrayEquality( a, b ) {
 
 }
 
+function invertGeometry( geometry ) {
+
+	const { index, attributes } = geometry;
+	if ( index ) {
+
+		for ( let i = 0, l = index.count; i < l; i += 3 ) {
+
+			const v0 = index.getX( i );
+			const v2 = index.getX( i + 2 );
+			index.setX( i, v2 );
+			index.setX( i + 2, v0 );
+
+		}
+
+	} else {
+
+		for ( const key in attributes ) {
+
+			const attr = attributes[ key ];
+			const itemSize = attr.itemSize;
+			for ( let i = 0, l = attr.count; i < l; i += 3 ) {
+
+				for ( let j = 0; j < itemSize; j ++ ) {
+
+					const v0 = attr.getComponent( i, j );
+					const v2 = attr.getComponent( i + 2, j );
+					attr.setComponent( i, j, v2 );
+					attr.setComponent( i + 2, j, v0 );
+
+				}
+
+			}
+
+		}
+
+	}
+
+	return geometry;
+
+
+}
+
 // Checks whether the geometry changed between this and last evaluation
 class GeometryDiff {
 
@@ -7280,7 +7396,31 @@ class StaticGeometryGenerator {
 
 		}
 
-		mergeBufferGeometries( _intermediateGeometry, { useGroups, skipAttributes }, targetGeometry );
+		if ( _intermediateGeometry.length === 0 ) {
+
+			// if there are no geometries then just create a fake empty geometry to provide
+			targetGeometry.setIndex( null );
+
+			// remove all geometry
+			const attrs = targetGeometry.attributes;
+			for ( const key in attrs ) {
+
+				targetGeometry.deleteAttribute( key );
+
+			}
+
+			// create dummy attributes
+			for ( const key in this.attributes ) {
+
+				targetGeometry.setAttribute( this.attributes[ key ], new BufferAttribute( new Float32Array( 0 ), 4, false ) );
+
+			}
+
+		} else {
+
+			mergeBufferGeometries( _intermediateGeometry, { useGroups, skipAttributes }, targetGeometry );
+
+		}
 
 		for ( const key in targetGeometry.attributes ) {
 
@@ -7302,9 +7442,9 @@ class StaticGeometryGenerator {
 		const targetAttributes = targetGeometry.attributes;
 
 		// initialize the attributes if they don't exist
-		if ( ! targetGeometry.index ) {
+		if ( ! targetGeometry.index && geometry.index ) {
 
-			targetGeometry.index = geometry.index;
+			targetGeometry.index = geometry.index.clone();
 
 		}
 
@@ -7354,6 +7494,14 @@ class StaticGeometryGenerator {
 		const normalMatrix = new Matrix3();
 		normalMatrix.getNormalMatrix( mesh.matrixWorld );
 
+		// copy the index
+		if ( geometry.index ) {
+
+			targetGeometry.index.array.set( geometry.index.array );
+
+		}
+
+		// copy and apply other attributes
 		for ( let i = 0, l = attributes.position.count; i < l; i ++ ) {
 
 			_positionVector.fromBufferAttribute( position, i );
@@ -7464,6 +7612,12 @@ class StaticGeometryGenerator {
 
 			validateAttributes( attributes[ key ], targetAttributes[ key ] );
 			copyAttributeContents( attributes[ key ], targetAttributes[ key ] );
+
+		}
+
+		if ( mesh.matrixWorld.determinant() < 0 ) {
+
+			invertGeometry( targetGeometry );
 
 		}
 

@@ -10,7 +10,7 @@ from zipfile import ZipFile
 
 
 VBUILDER = 'https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip'
-EXCLUDE = [ "voxel-builder-main", "python_embed", "electron", "user.backup" ]
+EXCLUDE = [ "voxel-builder-main", "electron", "user.backup" ]
 run_bat = """@echo off
 title Voxel Builder
 start "" electron\electron .

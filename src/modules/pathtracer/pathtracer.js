@@ -207,7 +207,7 @@ class Pathtracer {
         this.geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
         this.geom.computeVertexNormals();
 
-        if (document.getElementById('input-pt-ground').checked)
+        if (document.getElementById('input-pt-floor').checked)
             this.geom = this.createPlaneGeometry(this.geom);
 
         this.geom.computeBoundsTree({
@@ -227,10 +227,11 @@ class Pathtracer {
     }
 
     createPlaneGeometry(geom) {
-        const plane = new THREE.PlaneGeometry(CAM_FAR*2, CAM_FAR*2, 1, 1);
+        const r = Math.max(40, ~~builder.getRadius()) * 4;
+        const plane = new THREE.PlaneGeometry(r, r, 1, 1);
         plane.rotateX(Math.PI / 2);
         plane.translate(0, -0.5, 0);
-        const color = new THREE.Color(document.getElementById('input-pt-groundcolor').value);
+        const color = new THREE.Color(document.getElementById('input-pt-floorcolor').value);
         const colors = new Float32Array(plane.attributes.position.count * 4);
         for (let i = 0; i < colors.length / 4; i++) {
             colors[4 * i + 0] = color.r;
@@ -277,7 +278,7 @@ class Pathtracer {
 
     updateUniformGrid(isEnabled) {
         (isEnabled) ?
-            this.uniRender['uGrid'].value = 0.25 :
+            this.uniRender['uGrid'].value = 0.15 :
             this.uniRender['uGrid'].value = 0;
         this.resetSamples();
     }
@@ -620,7 +621,7 @@ document.getElementById('input-pt-emissive').oninput = (ev) => {
 };
 
 document.getElementById('input-pt-roughness').oninput = (ev) => {
-    if (pt.isLoaded)
+    if (pt.isLoaded && ev.target.value > 0)
         pt.updateUniformMaterialRoughness(ev.target.value);
 };
 
@@ -634,7 +635,7 @@ document.getElementById('input-pt-shade').oninput = () => {
         pt.updateAttributeColors();
 };
 
-document.getElementById('input-pt-ground').oninput = () => {
+document.getElementById('input-pt-floor').oninput = () => {
     if (pt.isLoaded)
         pt.createGeometry();
 };

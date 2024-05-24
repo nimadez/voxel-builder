@@ -32,7 +32,6 @@
 */
 
 const ENVMAP = "assets/snow_field_2_puresky_1k.hdr";
-const PARTICLE = "data:image/png;base64,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";
 const SNAPSHOT = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 90%22><text x=%220.18em%22 y=%221.1em%22 font-size=%2260%22 style="filter: grayscale(); opacity: 0.13;">❌</text></svg>';
 const TEX_PATTERNS = [
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC",
@@ -70,7 +69,6 @@ const COL_RED = '#FF0000';
 
 const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
-const FPS = 1000 / 60;
 const FPS_TOOLMOVE = 1000 / 50;
 
 const MAXAMOUNT = 512000;
@@ -83,6 +81,7 @@ const DEF_BGCOLOR = document.getElementById('input-env-background').value.toUppe
 const DEF_LIGHTCOLOR = document.getElementById('input-light-color').value.toUpperCase();
 
 let MODE = 0; // model|render|export
+let FPS = 1000 / 60;
 let isRendering = true;
 let isRenderAxisView = true;
 let currentColor = document.getElementById('input-color').value.toUpperCase();
@@ -282,7 +281,7 @@ function createAxisViewScene(engine, mainScene) {
     axisHelper.yAxis.parent = cube;
     axisHelper.zAxis.parent = cube;
 
-    const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.55, segments: 5 }, scene);
+    const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.6, segments: 5 }, scene);
     for (let i = 0; i < 6; i++) {
         const a = axis.clone();
         a.renderOverlay = true;
@@ -720,7 +719,7 @@ function Material(scene) {
     this.mat_pbr = null;
     this.mat_pbr_v = null;
     this.mat_workplane = null;
-    this.mat_grid = null;
+    this.mat_floor = null;
     this.mat_white = null;
     this.tex_pbr = null;
     this.textures = [];
@@ -742,7 +741,7 @@ function Material(scene) {
         this.createSTDMaterial();
 
         this.createWorkplaneMaterial();
-        this.createGridMaterial();
+        this.createFloorMaterial();
         this.createWhiteMaterial();
     }
 
@@ -810,24 +809,21 @@ function Material(scene) {
         mat.minorUnitVisibility = 0.4;
         mat.mainColor = new BABYLON.Color3(0, 1, 1);
         mat.lineColor = new BABYLON.Color3(0, 1, 1);
-        mat.opacity = 0.8;
+        mat.opacity = 0.6;
         mat.backFaceCulling = false;
         mat.freeze();
         this.mat_workplane = mat;
     }
 
-    this.createGridMaterial = function() {
-        const mat = new BABYLON.GridMaterial("grid", scene);
-        mat.opacityTexture = new BABYLON.Texture(PARTICLE, scene, undefined, undefined, BABYLON.Texture.LINEAR_LINEAR);
-        mat.opacityTexture.optimizeUVAllocation = true;
-        mat.gridRatio = 0; // overrided by setGrid()
-        mat.majorUnitFrequency = 40;
+    this.createFloorMaterial = function() {
+        const mat = new BABYLON.GridMaterial("floor", scene);
+        mat.gridRatio = 0; // overrided by setFloor()
+        mat.majorUnitFrequency = 20;
         mat.minorUnitVisibility = 0.25;
-        mat.mainColor = new BABYLON.Color3(1,1,1);
-        mat.lineColor = new BABYLON.Color3(1,1,1);
-        mat.opacity = 0.05;
-        mat.backFaceCulling = false;
-        this.mat_grid = mat;
+        mat.mainColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+        mat.lineColor = new BABYLON.Color3(1, 1, 1);
+        mat.backFaceCulling = true;
+        this.mat_floor = mat;
     }
 
     this.createWhiteMaterial = function() {
@@ -986,7 +982,7 @@ function Material(scene) {
                 brdf += 0.8 * spc * vec3(1);
 
                 vec3 col = pow(vColor.rgb * vColor.rgb, vec3(0.4545));
-                col = mix(col, vec3(0), line * 0.2);
+                col = mix(col, vec3(0), line * 0.15);
                 col *= brdf;
                 col = pow(col, vec3(0.4545));
 
@@ -1111,7 +1107,7 @@ function Builder(scene) {
         
         setTimeout(() => {
             palette.create();
-            helper.setGrid();
+            helper.setFloor();
             helper.setSymmPivot();
 
             if (preferences.getWebsocket())
@@ -1232,6 +1228,15 @@ function Builder(scene) {
 
     this.getRadius = function() {
         return this.mesh.getBoundingInfo().boundingSphere.radius;
+    }
+
+    this.getSize = function() {
+        const bounds = this.mesh.getBoundingInfo();
+        return new BABYLON.Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z)
+        );
     }
 
     this.getIndexAtPointer = function() { // GPU color-picking method
@@ -1639,9 +1644,9 @@ function Ghosts(scene) {
 
         const setParticles = function(particle, i, s) {
             particle.position.copyFrom(voxels[s].position);
-            particle.position.x += 0.5 * Math.random() - 0.25;
-            particle.position.y += 0.5 * Math.random() - 0.25;
-            particle.position.z += 0.5 * Math.random() - 0.25;
+            particle.position.x += 0.8 * Math.random() - 0.4;
+            particle.position.y += 0.8 * Math.random() - 0.4;
+            particle.position.z += 0.8 * Math.random() - 0.4;
             particle.color = COL_AQUA_RGBA;
         };
 
@@ -1939,8 +1944,8 @@ function Palette() {
 
 
 function Helper(scene, sceneAxisView) {
-    this.gridPlane = BABYLON.MeshBuilder.CreatePlane("gridplane", { width: 3, height: 3, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, scene);
-    this.floorPlane = BABYLON.MeshBuilder.CreatePlane("floorplane", { size: 2500, sideOrientation: BABYLON.Mesh.BACKSIDE, updatable: false }, scene);
+    this.floorPlane = BABYLON.MeshBuilder.CreatePlane("floorplane", { width: 4, height: 4, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, scene);
+    this.gridPlane = BABYLON.MeshBuilder.CreatePlane("gridplane", { size: 2500, sideOrientation: BABYLON.Mesh.BACKSIDE, updatable: false }, scene);
     this.workplane = BABYLON.MeshBuilder.CreatePlane("workplane", { size: WORKPLANE_SIZE, sideOrientation: BABYLON.Mesh.BACKSIDE, updatable: false }, scene);
     this.axisPlane = BABYLON.MeshBuilder.CreatePlane("axisplane", { width: 1.1, height: 1.1, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, sceneAxisView);
     this.overlayPlane = BABYLON.MeshBuilder.CreatePlane("overlayplane", { sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, scene);
@@ -1953,16 +1958,17 @@ function Helper(scene, sceneAxisView) {
     this.isFloorPlaneActive = false;
 
     this.init = function() {
-        this.gridPlane.material = material.mat_grid;
-        this.gridPlane.isVisible = true;
-        this.gridPlane.isPickable = true;
-        this.gridPlane.position.x = -0.5;
-        this.gridPlane.position.y = -0.5;
-        this.gridPlane.position.z = -0.5;
-        this.gridPlane.rotation.x = PIH;
-        this.gridPlane.doNotSerialize = true;
-        this.gridPlane.convertToUnIndexedMesh();
-        this.gridPlane.freezeNormals();
+        this.floorPlane.material = material.mat_floor;
+        this.floorPlane.visibility = 0.06;
+        this.floorPlane.isVisible = true; // overrided
+        this.floorPlane.isPickable = true;
+        this.floorPlane.position.x = -0.5;
+        this.floorPlane.position.y = -0.5;
+        this.floorPlane.position.z = -0.5;
+        this.floorPlane.rotation.x = PIH;
+        this.floorPlane.doNotSerialize = true;
+        this.floorPlane.convertToUnIndexedMesh();
+        this.floorPlane.freezeNormals();
         
         this.axisPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
         this.axisPlane.isPickable = false;
@@ -1991,15 +1997,15 @@ function Helper(scene, sceneAxisView) {
         this.overlayCube.convertToUnIndexedMesh();
         this.overlayCube.freezeNormals();
 
-        this.floorPlane.position.copyFrom(this.gridPlane.position);
-        this.floorPlane.rotation.x = -PIH;
-        this.floorPlane.material = material.mat_workplane;
-        this.floorPlane.isVisible = false;
-        this.floorPlane.isPickable = true;
-        this.floorPlane.visibility = WORKPLANE_VISIBILITY;
-        this.floorPlane.doNotSerialize = true;
-        this.floorPlane.convertToUnIndexedMesh();
-        this.floorPlane.freezeNormals();
+        this.gridPlane.position.copyFrom(this.floorPlane.position);
+        this.gridPlane.rotation.x = -PIH;
+        this.gridPlane.material = material.mat_workplane;
+        this.gridPlane.isVisible = false;
+        this.gridPlane.isPickable = true; // overrided
+        this.gridPlane.visibility = WORKPLANE_VISIBILITY;
+        this.gridPlane.doNotSerialize = true;
+        this.gridPlane.convertToUnIndexedMesh();
+        this.gridPlane.freezeNormals();
 
         const wpHalf = WORKPLANE_SIZE / 2;
         const wpVol = [
@@ -2074,20 +2080,17 @@ function Helper(scene, sceneAxisView) {
         this.symmPivot.doNotSerialize = true;
     }
 
-    this.setGrid = function(min = 20) {
-        const radius = builder.getRadius();
-        let r = min;
-        if (radius) r = radius;
-        r = 2 * r + 4;
-        this.gridPlane.scaling.x = r;
-        this.gridPlane.scaling.y = r;
-        this.gridPlane.scaling.z = r;
-        this.gridPlane.material.gridRatio = 1 / r;
+    this.setFloor = function() {
+        const r = Math.max(40, ~~builder.getRadius());
+        this.floorPlane.scaling.x = r;
+        this.floorPlane.scaling.y = r;
+        this.floorPlane.scaling.z = 1;
+        this.floorPlane.material.gridRatio = 1 / r;
     }
 
     this.enableFloorPlane = function(isEnabled) {
         this.isFloorPlaneActive = isEnabled;
-        this.displayFloorPlane(isEnabled);
+        this.displayGridPlane(isEnabled);
         if (isEnabled)
             this.enableWorkplane(false);
     }
@@ -2108,19 +2111,20 @@ function Helper(scene, sceneAxisView) {
         }
     }
 
-    this.displayFloorPlane = function(isEnabled) {
-        this.floorPlane.isVisible = isEnabled;
+    this.displayGridPlane = function(isEnabled, isPickable = true) {
+        this.gridPlane.isVisible = isEnabled;
+        this.gridPlane.isPickable = isPickable;
         if (isEnabled) {
-            ui.domInScreenFloorPlane.firstChild.style.color = COL_ORANGE;
+            ui.domInScreenGridPlane.firstChild.style.color = COL_ORANGE;
         } else {
-            ui.domInScreenFloorPlane.firstChild.style.color = COL_AQUA;
+            ui.domInScreenGridPlane.firstChild.style.color = COL_AQUA;
         }
     }
 
     this.toggleWorkplane = function(id) {
         if (id == 0) {
             this.isFloorPlaneActive = !this.isFloorPlaneActive;
-            this.displayFloorPlane();
+            this.displayGridPlane();
             this.enableFloorPlane(this.isFloorPlaneActive);
         } else {
             this.isWorkplaneActive = !this.isWorkplaneActive;
@@ -2778,8 +2782,8 @@ function Tool(scene) {
     }
 
     const predicateWorkplane = function(mesh) {
-        if (helper.isFloorPlaneActive && helper.floorPlane.isVisible)
-            return mesh == helper.floorPlane;
+        if (helper.isFloorPlaneActive && helper.gridPlane.isVisible)
+            return mesh == helper.gridPlane;
         if (helper.isWorkplaneActive && helper.workplane.isVisible)
             return mesh == helper.workplane;
         return null;
@@ -3529,91 +3533,83 @@ function Bakery(scene) {
 
     this.newBake = function(voxels = null) {
         engine.displayLoadingUI();
-        setTimeout(() => {
-            if (MODE !== 2) ui.setMode(2);
-            material.setPBRTexture();
+        if (MODE !== 2) ui.setMode(2);
 
-            (voxels) ? this.bakeToMesh(voxels) : this.bakeToMesh();
+        material.setPBRTexture();
 
-            uix.bindTransformGizmo(this.meshes[this.meshes.length-1]);
-            uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
+        (voxels) ? this.bakeToMesh(voxels) : this.bakeToMesh();
 
-            camera.frame();
-            engine.hideLoadingUI();
-        }, 100);
+        uix.bindTransformGizmo(this.meshes[this.meshes.length-1]);
+        uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
+
+        camera.frame();
+        engine.hideLoadingUI();
     }
 
     this.bakeColor = function(hex) {
         engine.displayLoadingUI();
-        setTimeout(() => {
-            if (MODE !== 2) ui.setMode(2);
-            material.setPBRTexture();
+        if (MODE !== 2) ui.setMode(2);
 
-            const voxels = [];
-            for (let i = 0; i < builder.voxels.length; i++) {
-                if (builder.voxels[i].color == hex)
-                    voxels.push(builder.voxels[i]);
-            }
-            this.bakeToMesh(voxels);
+        material.setPBRTexture();
 
-            uix.bindTransformGizmo(this.meshes[this.meshes.length-1]);
-            uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
+        const voxels = [];
+        for (let i = 0; i < builder.voxels.length; i++) {
+            if (builder.voxels[i].color == hex)
+                voxels.push(builder.voxels[i]);
+        }
+        this.bakeToMesh(voxels);
 
-            camera.frame();
-            engine.hideLoadingUI();
-        }, 100);
+        uix.bindTransformGizmo(this.meshes[this.meshes.length-1]);
+        uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
+
+        camera.frame();
+        engine.hideLoadingUI();
     }
 
     this.bakeColor = function(hex) {
         engine.displayLoadingUI();
-        setTimeout(() => {
-            if (MODE !== 2) ui.setMode(2);
-            material.setPBRTexture();
+        if (MODE !== 2) ui.setMode(2);
 
-            const voxels = [];
-            for (let i = 0; i < builder.voxels.length; i++) {
-                if (builder.voxels[i].color == hex)
-                    voxels.push(builder.voxels[i]);
-            }
-            this.bakeToMesh(voxels);
+        material.setPBRTexture();
 
-            uix.bindTransformGizmo(this.meshes[this.meshes.length-1]);
-            uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
+        const voxels = [];
+        for (let i = 0; i < builder.voxels.length; i++) {
+            if (builder.voxels[i].color == hex)
+                voxels.push(builder.voxels[i]);
+        }
+        this.bakeToMesh(voxels);
 
-            camera.frame();
-            engine.hideLoadingUI();
-        }, 100);
+        camera.frame();
+        engine.hideLoadingUI();
     }
 
     this.bakeAll = async function() {
         if (!await ui.showConfirm('clear and bake all voxels?')) return;
         engine.displayLoadingUI();
-        setTimeout(() => {
-            if (MODE !== 2) ui.setMode(2);
-            material.setPBRTexture();
-            this.clearBakes();
+        if (MODE !== 2) ui.setMode(2);
 
-            this.bakeToMesh();
+        material.setPBRTexture();
 
-            camera.frame();
-            engine.hideLoadingUI();
-        }, 100);
+        this.clearBakes();
+        this.bakeToMesh();
+
+        camera.frame();
+        engine.hideLoadingUI();
     }
 
     this.bakeAllColors = async function() {
         if (!await ui.showConfirm('clear and bake all voxels<br>grouped by colors?')) return;
         engine.displayLoadingUI();
-        setTimeout(() => {
-            if (MODE !== 2) ui.setMode(2);
-            material.setPBRTexture();
-            this.clearBakes();
+        if (MODE !== 2) ui.setMode(2);
 
-            for (let i = 0; i < palette.uniqueColors.length; i++)
-                this.bakeToMesh(builder.getVoxelsByColor(palette.uniqueColors[i]));
+        material.setPBRTexture();
 
-            camera.frame();
-            engine.hideLoadingUI();
-        }, 100);
+        this.clearBakes();
+        for (let i = 0; i < palette.uniqueColors.length; i++)
+            this.bakeToMesh(builder.getVoxelsByColor(palette.uniqueColors[i]));
+
+        camera.frame();
+        engine.hideLoadingUI();
     }
 
     this.cloneSelected = function() {
@@ -4075,7 +4071,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.2.8",
+            version: "Voxel Builder 4.2.9",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4336,7 +4332,7 @@ function UserInterface(scene) {
     this.domMenuInScreenBottom = document.getElementById('menu-inscreen-bottom');
     this.domInScreenSymmAxis = document.getElementById('btn-inscreen-symmetry');
     this.domInScreenOrtho = document.getElementById('btn-inscreen-ortho');
-    this.domInScreenFloorPlane = document.getElementById('btn-inscreen-floorplane');
+    this.domInScreenGridPlane = document.getElementById('btn-inscreen-gridplane');
     this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
     this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
     this.domInScreenBucket = document.getElementById('btn-inscreen-bucket');
@@ -4391,8 +4387,8 @@ function UserInterface(scene) {
     this.domLoadingScreen = document.getElementById('loadingscreen');
     const styleMenuR = '-200px';
     const styleMenuL = '-200px';
-    const styleMenuR_open = '65px';
-    const styleMenuL_open = '65px';
+    const styleMenuR_open = '75px';
+    const styleMenuL_open = '75px';
     const hoverOffset = { x: 0, y: 0 };
     let notificationTimer = null;
 
@@ -4441,7 +4437,7 @@ function UserInterface(scene) {
         }, false);
 
         this.domLightLocator.addEventListener('input', (ev) => {
-            if (MODE !== 0) return;
+            if (MODE == 1) return;
             (ev.target.checked) ? uix.showLightLocator() : uix.hideLightLocator();
             uix.isSunLocatorActive = ev.target.checked;
         }, false);
@@ -4472,10 +4468,10 @@ function UserInterface(scene) {
             scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
             builder.setMeshVisibility(true);
             bakery.setBakesVisibility(false);
-            helper.displayFloorPlane(helper.isFloorPlaneActive);
+            helper.displayGridPlane(helper.isFloorPlaneActive, true);
             helper.displayWorkplane(helper.isWorkplaneActive);
             helper.toggleAxisPlane(symmetry.axis !== -1);
-            helper.gridPlane.isVisible = true;
+            helper.floorPlane.isVisible = preferences.getFloorPlane();
             uix.unbindTransformGizmo();
             light.updateShadowMap();
             uix.setLightLocator(uix.isSunLocatorActive);
@@ -4488,13 +4484,13 @@ function UserInterface(scene) {
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
             bakery.createBakeryList();
-            helper.displayFloorPlane(true);
-            helper.displayWorkplane(false);
+            helper.displayGridPlane(helper.isFloorPlaneActive, true);
+            helper.displayWorkplane(helper.isWorkplaneActive);
             helper.toggleAxisPlane(false);
             helper.clearOverlays();
-            helper.gridPlane.isVisible = false;
+            helper.floorPlane.isVisible = preferences.getFloorPlane();
             light.updateShadowMap();
-            uix.hideLightLocator();
+            uix.setLightLocator(uix.isSunLocatorActive);
             if (preferences.getPointCloud())
                 ghost.createPointCloud();
             if (bakery.meshes.length == 0)
@@ -4522,9 +4518,8 @@ function UserInterface(scene) {
         this.domColorPicker.style.display = 'none';
         this.domInScreenBucket.style.display = 'none';
         this.domMenuInScreenRight.style.display = 'none';
-        this.domMenuInScreenBottom.style.display = 'none';
         this.domMaterialSwitch.style.display = 'none';
-        this.domLightLocator.disabled = true;
+        this.domLightLocator.disabled = false;
         uix.colorPicker.isVisible = false;
         for (const i of this.domToolbarL.children)
             i.style.display = 'unset';
@@ -4538,10 +4533,8 @@ function UserInterface(scene) {
             this.domToolbarL.children[3].style.display = 'none'; // MATERIAL
             this.domToolbarL.children[4].style.display = 'none'; // TEXTURE
             this.domMenuInScreenRight.style.display = 'unset';
-            this.domMenuInScreenBottom.style.display = 'flex';
             this.domInScreenBucket.style.display = 'unset';
             this.domMaterialSwitch.style.display = 'unset';
-            this.domLightLocator.disabled = false;
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
             this.clearAllMenus('right');
@@ -4559,6 +4552,7 @@ function UserInterface(scene) {
             this.domToolbarL.children[4].style.display = 'none'; // TEXTURE
             this.domToolbarL.children[5].style.display = 'none'; // STORAGE
             this.domToolbarL.children[6].style.display = 'none'; // GROUP
+            this.domLightLocator.disabled = true;
             xformer.apply();
             window.pt.toggle();
         } else if (mode == 2) {
@@ -4709,6 +4703,14 @@ function UserInterface(scene) {
         if (!eyeDropper) return;
         eyeDropper.open({ signal: abortController.signal }).then(res => {
             currentColor = res.sRGBHex.toUpperCase();
+            // fix eyedropper in linux systems (sRGBHex return RGBA)
+            if (currentColor.startsWith('RGBA')) {
+                const rgb = currentColor.match(/\d+/g);
+                rgb[0] = 255 * Math.pow((rgb[0] / 255), 1 / 2.2); // 0.4545
+                rgb[1] = 255 * Math.pow((rgb[1] / 255), 1 / 2.2);
+                rgb[2] = 255 * Math.pow((rgb[2] / 255), 1 / 2.2);
+                currentColor = rgbIntToHex(rgb[0], rgb[1], rgb[2]);
+            }
             uix.colorPicker.value = BABYLON.Color3.FromHexString(currentColor);
         }).catch(err => {
             abortController.abort();
@@ -5057,6 +5059,8 @@ function Preferences() {
     const KEY_PALETTE_SIZE = "pref_palette_size";
     const KEY_BVHPICKING = "pref_bvhpicking";
     const KEY_POINTCLOUD = "pref_pointcloud";
+    const KEY_FLOORPLANE = "pref_floorplane";
+    const KEY_POWERSAVER = "pref_powersaver";
 
     this.init = function() {
         document.getElementById(KEY_STARTUP).checked = false;
@@ -5066,6 +5070,8 @@ function Preferences() {
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_BVHPICKING).checked = true;
         document.getElementById(KEY_POINTCLOUD).checked = true;
+        document.getElementById(KEY_FLOORPLANE).checked = true;
+        document.getElementById(KEY_POWERSAVER).checked = isMobile;
 
         initPrefCheck(KEY_STARTUP);
         initPrefCheck(KEY_NOHOVER);
@@ -5080,10 +5086,17 @@ function Preferences() {
         initPrefCheck(KEY_POINTCLOUD, (chk) => {
             (chk && MODE == 2) ? ghost.createPointCloud() : ghost.disposePointCloud();
         });
+        initPrefCheck(KEY_FLOORPLANE, (chk) => {
+            if (MODE == 0 || MODE == 2) helper.floorPlane.isVisible = chk;
+        });
+        initPrefCheck(KEY_POWERSAVER, (chk) => {
+            (chk) ? FPS = 1000 / 30 : FPS = 1000 / 60;
+        });
     }
 
     this.finish = function() {
         setTimeout(() => {
+            (this.getPowerSaver()) ? FPS = 1000 / 30 : FPS = 1000 / 60;
             palette.expand(this.getPaletteSize());
             ui.toggleHover(!this.getNoHover());
         }, 100);
@@ -5106,7 +5119,7 @@ function Preferences() {
                         window.rc.create();
                     });
                 } else {
-                    project.newProject(false, '#618ABD');
+                    project.newProject(false, '#5F82B9');
                     window.rc.create();
                 }
                 ui.hideInterface(false);
@@ -5161,6 +5174,22 @@ function Preferences() {
 
     this.getPointCloud = function() {
         return document.getElementById(KEY_POINTCLOUD).checked;
+    }
+
+    this.setFloorPlane = function(isEnabled) {
+        localStorage.setItem(KEY_FLOORPLANE, isEnabled);
+    }
+
+    this.getFloorPlane = function() {
+        return document.getElementById(KEY_FLOORPLANE).checked;
+    }
+
+    this.setPowerSaver = function(isEnabled) {
+        localStorage.setItem(KEY_POWERSAVER, isEnabled);
+    }
+
+    this.getPowerSaver = function() {
+        return document.getElementById(KEY_POWERSAVER).checked;
     }
 
     function initPref(key, callback = undefined) {
@@ -5555,12 +5584,10 @@ function createScreenshot(scale = 4) {
     const canvasHeight = canvas.height;
     engine.setSize(canvasWidth * scale, canvasHeight * scale);
     isRenderAxisView = false;
-    helper.gridPlane.isVisible = false;
     uix.colorPicker.isVisible = false;
     BABYLON.ScreenshotTools.CreateScreenshotWithResizeAsync(engine,
         scene.activeCamera, canvasWidth * scale, canvasHeight * scale).then(() => {
             isRenderAxisView = true;
-            helper.gridPlane.isVisible = true;
             uix.colorPicker.isVisible = (MODE == 0);
             engine.setSize(canvasWidth, canvasHeight);
     });
@@ -5568,12 +5595,10 @@ function createScreenshot(scale = 4) {
 
 function createScreenshotBasic(width, height, callback) {
     isRenderAxisView = false;
-    helper.gridPlane.isVisible = false;
     uix.colorPicker.isVisible = false;
     BABYLON.ScreenshotTools.CreateScreenshot(engine,
         scene.activeCamera, { width: width, height: height }, (data) => {
             isRenderAxisView = true;
-            helper.gridPlane.isVisible = true;
             uix.colorPicker.isVisible = (MODE == 0);
             callback(data);
     });
