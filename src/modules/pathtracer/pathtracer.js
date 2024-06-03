@@ -5,6 +5,7 @@
     Real-time GPU Path Tracer
     Powered by "three-mesh-bvh" library by @gkjohnson
 */
+
 import {
     THREE,
     OrbitControls,
@@ -17,14 +18,12 @@ import {
 } from '../three.js';
 
 const DPR = 1;
-const DPR_MOVE = 0.6;
 const DPR_FASTMODE = 0.6;
 const CAM_FAR = 1000;
 const MAXSAMPLES = 4096;
 const MAXWHITE = 0.86;
 const GRAY = MAXWHITE / 2;
 const LIGHT_POWER = 16.0 * 16.0;
-const RAD2DEG_STATIC = 180 / Math.PI;
 let imageFragment = null;
 let renderFragment = null;
 let noiseTexture = null;
@@ -36,7 +35,6 @@ class Pathtracer {
         this.isLoaded = false;
         this.isProgressing = false;
         this.isFastMode = false;
-        this.lastHDR = null;
         this.pingPong = 0;
 
         this.container = document.getElementById('pathtracer');
@@ -67,12 +65,10 @@ class Pathtracer {
     }
 
     init() {
-        this.renderer = new THREE.WebGLRenderer({
-            canvas: this.canvas, antialias: false, preserveDrawingBuffer: true });
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: false, preserveDrawingBuffer: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio * DPR);
         this.renderer.setClearColor(0x000000, 0);
-        this.renderer.info.autoReset = false;
 
         this.scene = new THREE.Scene();
 
@@ -84,21 +80,20 @@ class Pathtracer {
         this.controls.maxDistance = CAM_FAR;
         this.controls.update();
         this.controls.addEventListener('start', () => {
-            if (this.isLoaded)
-                this.resize(DPR_MOVE);
+            //
         });
         this.controls.addEventListener('change', () => {
             if (this.isLoaded)
                 this.resetSamples();
         });
         this.controls.addEventListener('end', () => {
-            if (this.isLoaded)
-                this.resize();
+            //
         });
 
-        this.RTTA = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
-        this.RTTB = new THREE.WebGLRenderTarget(1, 1, { type: THREE.FloatType, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
-        this.CRTT = new THREE.WebGLCubeRenderTarget(512, { type: THREE.FloatType, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+        const type = (this.renderer.extensions.get('OES_texture_float_linear')) ? THREE.FloatType : THREE.HalfFloatType;
+        this.RTTA = new THREE.WebGLRenderTarget(1, 1, { type: type, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+        this.RTTB = new THREE.WebGLRenderTarget(1, 1, { type: type, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+        this.CRTT = new THREE.WebGLCubeRenderTarget(512, { type: type, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
         this.RTTA.texture.generateMipmaps = false;
         this.RTTB.texture.generateMipmaps = false;
         this.CRTT.texture.generateMipmaps = false;
@@ -117,8 +112,7 @@ class Pathtracer {
         this.resize();
 
         // restore previous states
-        if (hdri.hdrMap.url !== this.lastHDR)
-            pt.updateHDR(hdri.hdrMap.url);
+        this.updateHDR(hdri.hdrMap.url);
         this.updateUniformBounces(document.getElementById('input-pt-bounces').value);
         this.updateUniformRenderPassId(document.getElementById('input-pt-passes').value);
         this.updateUniformCameraAperture(ui.domCameraAperture.value);
@@ -278,7 +272,7 @@ class Pathtracer {
 
     updateUniformGrid(isEnabled) {
         (isEnabled) ?
-            this.uniRender['uGrid'].value = 0.15 :
+            this.uniRender['uGrid'].value = 0.16 :
             this.uniRender['uGrid'].value = 0;
         this.resetSamples();
     }
@@ -331,9 +325,10 @@ class Pathtracer {
     updateUniformLightCol(hex) {
         if (!this.uniRender) return;
         const col = new THREE.Color(hex);
-        col.r = (col.r * col.r) * (ui.domLightIntensity.value * 3);
-        col.g = (col.g * col.g) * (ui.domLightIntensity.value * 3);
-        col.b = (col.b * col.b) * (ui.domLightIntensity.value * 3);
+        const brightness = document.getElementById('input-pt-envpower').value / 3;
+        col.r = (col.r * col.r) * (ui.domLightIntensity.value * brightness);
+        col.g = (col.g * col.g) * (ui.domLightIntensity.value * brightness);
+        col.b = (col.b * col.b) * (ui.domLightIntensity.value * brightness);
         this.uniRender['uLightCol'].value = col;
         this.resetSamples();
     }
@@ -344,9 +339,8 @@ class Pathtracer {
     }
 
     async updateHDR(url) {
-        if (!this.uniRender) return; // workaround for error: loading hdr before pt.init
+        if (!this.uniRender) return;
         await loadRGBE(url).then(tex => {
-            this.lastHDR = url;
             if (this.envTexture) this.envTexture.dispose();
             tex.minFilter = THREE.LinearFilter;
             tex.magFilter = THREE.LinearFilter;
@@ -393,7 +387,7 @@ class Pathtracer {
                 pt.then = now - (elapsed % FPS);
 
                 // CPU AA jitter (GPU has more to do)
-                if (pt.samples == 0) {
+                if (pt.samples === 0) {
                     pt.camera.clearViewOffset();
                 } else {
                     pt.camera.setViewOffset(
@@ -550,21 +544,13 @@ await loadTexture('assets/bluenoise256.png').then(tex => {
 // Register events
 
 
-ui.domCameraFov.oninput = (ev) => {
-    if (pt.isLoaded) {
-        pt.camera.fov = ev.target.value * RAD2DEG_STATIC;
-        pt.camera.updateProjectionMatrix();
-        pt.resetSamples();
-    }
-};
-
-ui.domCameraAperture.oninput = (ev) => {
-    if (pt.isLoaded)
+ui.domCameraAperture.onchange = (ev) => {
+    if (pt.isLoaded && ev.target.value > 0)
         pt.updateUniformCameraAperture(ev.target.value);
 };
 
-ui.domCameraFocalLength.oninput = (ev) => {
-    if (pt.isLoaded)
+ui.domCameraFocalLength.onchange = (ev) => {
+    if (pt.isLoaded && ev.target.value > 0)
         pt.updateUniformCameraFocalLength(ev.target.value);
 };
 
@@ -653,15 +639,6 @@ document.getElementById('btn-pt-shot').onclick = () => {
 document.getElementById('btn-pt-fast').onclick = () => {
     pt.fastMode();
 };
-
-pt.canvas.addEventListener('wheel', () => {
-    if (pt.isLoaded) {
-        pt.resize(DPR_MOVE);
-        setTimeout(() => {
-            pt.resize();
-        }, 100);
-    }
-}, false);
 
 window.addEventListener('resize', () => {
     if (pt.isLoaded)

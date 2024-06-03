@@ -2,21 +2,16 @@
 
 ![banner](https://repository-images.githubusercontent.com/565157149/8cd060fd-3126-4f46-bc15-7f8e26b975b5)
 
-Voxel-based 3D modeling application
-
-```Version 4.2.9 Beta```
-
+Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
+
+```Version 4.3.0 Beta```<br>
+[Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
 [Documentation](https://github.com/nimadez/voxel-builder/wiki)<br>
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
 [FAQ](https://github.com/nimadez/voxel-builder#faq)
-
-```
-Update 4.2.9 includes CSS updates, improved visuals, fixed bakery functionality,
-new floor plane to support linux and windows, bug fixes, and updated dependencies.
-```
 
 ## Features
 
@@ -24,28 +19,35 @@ new floor plane to support linux and windows, bug fixes, and updated dependencie
 - Save and load JSON [?](https://github.com/nimadez/voxel-builder/wiki/File-Format)
 - Import MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL [?](https://github.com/nimadez/voxel-builder/wiki/project)
-
-**Voxelization**
-- BVH voxelization method
-- 3D model voxelizer [?](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
-- Image voxelizer
+- Local storages, quicksave, undo
 
 **Model and Paint**
+- High performance picking system
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
 - Symmetric drawing and painting
+- Color groups and transform tools
 
 **Rendering**
+- High performance voxel engine
 - Real-time GPU path tracing [?](https://github.com/nimadez/voxel-builder/wiki/render)
 
+**Voxelization**
+- Bvh voxelization method
+- 3D model voxelizer [?](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
+- Image voxelizer
+
 **Export Meshes**
-- Bake voxels to mesh [?](https://github.com/nimadez/voxel-builder/wiki/export)
-- Unbake mesh to voxels
+- Bake voxels to editable meshes [?](https://github.com/nimadez/voxel-builder/wiki/export)
+- Bake voxels by color groups
+- Unbake meshes to voxels
+- glTF compatible editor
 
 **Extensibility**
 - ES modules [?](https://github.com/nimadez/voxel-builder/wiki/Modules)
-- WebSocket client [?](https://github.com/nimadez/voxel-builder/wiki/WebSocket-Client)
+- WebSockets client [?](https://github.com/nimadez/voxel-builder/wiki/WebSocket-Client)
 - User startup project
+- Blender importer script
 
 **More**
 - Extras [?](https://github.com/nimadez/voxel-builder/wiki/Extras)
@@ -75,15 +77,13 @@ python3 update.py
 - Google Chrome for desktop
 - Google Chrome for mobile devices
 > - PWA A2HS-ready *(add to home screen)*
-> - Touch pen or Wacom tablet recommended for best experience
-> - Voxel Builder is made for desktop and mobile, but its features have not been fully tested on mobile devices.
+> - Tablets with a stylus or Wacom recommended for best experience
+> - Voxel Builder has not been fully tested on mobile devices
 
 ## Known Issues
 Higher than 512K is not recommended
 ```
-* Electron is recommended for working with a large number of voxels
-* For lag-free experience, turn off BVH Picking after 128K
-* You cannot turn off BVH Picking when the Rect-Add tool is active
+Electron is recommended for working with a large number of voxels
 
 Higher values can have the following problems:
 - Unable to quick-save baked meshes (DOMException: exceeded the quota)
@@ -91,13 +91,16 @@ Higher values can have the following problems:
 - Chrome tab may freeze or crash
 
 Of course, the number of voxels is unlimited,
-I have rendered up to 1 million voxels at 25 FPS.
+I have rendered up to 1 million voxels.
 ```
 Failed to import GLB meshes for voxelization
 ```
-Multiple meshes need to have the same properties,
-or they won't merge, the only solution is to merge meshes
-before exporting to GLB.
+Multiple meshes need to have the same properties or they won't merge,
+the only solution is to merge meshes before exporting to GLB.
+```
+Visual artifacts and Moire patterns
+```
+These are related to thin-instances and nothing special can be done at this time.
 ```
 
 ## FAQ

@@ -128,7 +128,7 @@ vec4 pathtrace(vec3 ro, vec3 rd, float seed) {
     for (int b = 0; b < uBounces; b++) {
 
         if (!bvhIntersectFirstHit(bvh, ro, rd, faceIndices, faceNormal, barycoord, side, dist)) {
-             if (b == 0) {
+            if (b == 0) {
                 acc = background(rd);
             } else {
                 acc += att * ibl(rd, uEnvPower);

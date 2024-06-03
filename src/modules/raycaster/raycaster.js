@@ -4,8 +4,8 @@
 
     BVH Raycaster
 */
-import { THREE } from '../three.js';
 
+import { THREE } from '../three.js';
 
 const nullMaterial = new THREE.MeshBasicMaterial();
 const directions = [
@@ -16,7 +16,6 @@ const directions = [
     new THREE.Vector3(0,-1,0),
     new THREE.Vector3(0,0,-1)
 ];
-
 
 class Raycaster {
     constructor() {

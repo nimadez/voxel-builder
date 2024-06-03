@@ -4,19 +4,13 @@
 
     Web worker processor
 */
+
 import { parseMagicaVoxel } from '../loaders/magicavoxel.js';
 
 let arr = [];
 
 onmessage = (ev) => {
     switch (ev.data.id) {
-
-        case 'findDuplicates':
-            arr = ev.data.data[0].filter((val, idx) =>
-                idx === ev.data.data[1][`${val.position._x}_${val.position._y}_${val.position._z}`]);
-            postMessage(arr);
-            arr = [];
-            break;
 
         case 'findInnerVoxels':
             arr = [];

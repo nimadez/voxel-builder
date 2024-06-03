@@ -30,9 +30,10 @@
     25. Websocket
     26. Utils
 */
+//data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 90%22><text x=%220.18em%22 y=%221.1em%22 font-size=%2260%22 style="filter: grayscale(); opacity: 0.15;">❌</text></svg>
 
 const ENVMAP = "assets/snow_field_2_puresky_1k.hdr";
-const SNAPSHOT = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 90%22><text x=%220.18em%22 y=%221.1em%22 font-size=%2260%22 style="filter: grayscale(); opacity: 0.13;">❌</text></svg>';
+const SNAPSHOT = "data:image/png;base64,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";
 const TEX_PATTERNS = [
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC",
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MkU4REU5Qjk4OTRDMTFFRTg2QjBFRjM0QzQ0QkI4QkMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MkU4REU5Qjg4OTRDMTFFRTg2QjBFRjM0QzQ0QkI4QkMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7JL+VyAAAABlBMVEXu7u7///8o06qaAAABNUlEQVR42uzQAQEAAAgCIPt/ugUuECaQAMy7SQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBDQAgBGvQADACdQ7GV7QTbFAAAAAElFTkSuQmCC",
@@ -69,14 +70,13 @@ const COL_RED = '#FF0000';
 
 const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
-const FPS_TOOLMOVE = 1000 / 50;
+const RAD2DEG_STATIC = 180 / Math.PI;
 
-const MAXAMOUNT = 512000;
-const MAXAMOUNTBOX = 128000;
-const MAX_Z = 2000;
-const GROUND_SIZE = 2500;
+const MAX_VOXELS = 512000;
+const MAX_VOXELS_DRAW = 64000;
 const WORKPLANE_SIZE = 120;
 const WORKPLANE_VISIBILITY = 0.2;
+const DUPLICATE_POS = new BABYLON.Vector3(-1000000, -1000000, -1000000);
 const DEF_BGCOLOR = document.getElementById('input-env-background').value.toUpperCase();
 const DEF_LIGHTCOLOR = document.getElementById('input-light-color').value.toUpperCase();
 
@@ -86,17 +86,14 @@ let isRendering = true;
 let isRenderAxisView = true;
 let currentColor = document.getElementById('input-color').value.toUpperCase();
 let currentColorBake = document.getElementById('input-material-albedo').value.toUpperCase();
-let azimuth = null;
-const viewAxes = [];
-
-const canvas = document.getElementById('canvas_render');
-const canvasPalette = document.getElementById('canvas_palette');
+let duplicateFlag = 0;
 
 const workplaneWhiteList = [
     'add',
-    'box_add', 'box_rem', 'box_paint',
+    'box_add', 'box_remove', 'box_paint',
     'transform_box', 'transform_rect',
-    'rect_add', 'rect_remove', 'rect_paint'
+    'rect_add', 'rect_remove', 'rect_paint',
+    'measure_volume'
 ];
 
 const bvhWhiteList = [
@@ -109,6 +106,9 @@ const bvhWhiteList = [
 
 
 const isMobile = isMobileDevice();
+
+const canvas = document.getElementById('canvas_render');
+const canvasPalette = document.getElementById('canvas_palette');
 
 const engine = new BABYLON.Engine(canvas, true, {});
 engine.disablePerformanceMonitorInBackground = true;
@@ -156,8 +156,8 @@ const voxelizer = new Voxelizer(scene);
 
 const client = new WebsocketClient();
 
-
 // startup
+
 scene.executeOnceBeforeRender(() => {
     preferences.init();
 });
@@ -189,6 +189,11 @@ scene.registerAfterRender(() => {
         
         if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
             camera.setOrthoMode();
+
+        if (duplicateFlag == 1) {
+            builder.removeDuplicates();
+            duplicateFlag = 0;
+        }
 
         ui.updateStatus();
     }
@@ -252,8 +257,8 @@ function createAxisViewScene(engine, mainScene) {
     scene.useRightHandedSystem = true;
 
     const ambient = new BABYLON.HemisphericLight("ambient", new BABYLON.Vector3(0, 0, -1), scene);
-    ambient.diffuse = new BABYLON.Color3(1, 1, 1);
-    ambient.groundColor = new BABYLON.Color3(1, 1, 1);
+    ambient.diffuse = BABYLON.Color3.White();
+    ambient.groundColor = BABYLON.Color3.White();
     ambient.intensity = 1;
 
     const cam = new BABYLON.ArcRotateCamera("camera", 0, 0, 10, BABYLON.Vector3.Zero(), scene);
@@ -281,13 +286,14 @@ function createAxisViewScene(engine, mainScene) {
     axisHelper.yAxis.parent = cube;
     axisHelper.zAxis.parent = cube;
 
+    const viewAxes = [];
     const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.6, segments: 5 }, scene);
     for (let i = 0; i < 6; i++) {
         const a = axis.clone();
         a.renderOverlay = true;
         a.renderOutline = true;
-        a.outlineWidth = 0.04;
-        a.overlayAlpha = 0.9;
+        a.outlineWidth = 0.05;
+        a.overlayAlpha = 0.8;
         a.doNotSyncBoundingInfo = true;
         a.doNotSerialize = true;
         a.convertToUnIndexedMesh();
@@ -333,10 +339,6 @@ function createAxisViewScene(engine, mainScene) {
             const pick = scene.pick(scene.pointerX, scene.pointerY, predicate);
             if (pick.hit) {
                 if (pick.pickedMesh == cube) {
-                    if (MODE == 2) { // solved picking conflict for camera.frame() (deselected bake)
-                        bakery.selected = bakery.lastSelected;
-                        bakery.lastSelected = null;
-                    }
                     camera.frame();
                 } else {
                     if (pick.pickedMesh == viewAxes[0]) camera.setView('x');
@@ -384,7 +386,7 @@ function Camera() {
         this.camera0.panningSensibility = 300; //def: 1000
         this.camera0.inertia = 0.9; //def: 0.9
         this.camera0.minZ = 0.1;
-        this.camera0.maxZ = MAX_Z;
+        this.camera0.maxZ = 2000;
         this.camera0.fov = fov; //def: 0.8
 
         this.camera1.setPosition(new BABYLON.Vector3(73, 73, 73));
@@ -398,7 +400,7 @@ function Camera() {
         this.camera1.panningSensibility = 300;
         this.camera1.inertia = 0.9;
         this.camera1.minZ = 0.1;
-        this.camera1.maxZ = MAX_Z;
+        this.camera1.maxZ = 2000;
         this.camera1.fov = fov;
     }
 
@@ -649,7 +651,7 @@ function HDRI(scene) {
     }
 
     this.loadHDR = function(url) {
-        if (window.pt)
+        if (window.pt.isActive)
             window.pt.updateHDR(url);
 
         if (this.hdrMap)
@@ -715,7 +717,7 @@ function HDRI(scene) {
 function Material(scene) {
     this.mode = 'CEL';
     this.mat_cel = null;
-    this.mat_std = null;
+    this.mat_highlight = null;
     this.mat_pbr = null;
     this.mat_pbr_v = null;
     this.mat_workplane = null;
@@ -738,30 +740,17 @@ function Material(scene) {
         this.createCelMaterial();
         this.createPBRMaterialVoxels();
         this.createPBRMaterial(true);
-        this.createSTDMaterial();
+        this.createSTDMaterialHighlight();
 
         this.createWorkplaneMaterial();
         this.createFloorMaterial();
         this.createWhiteMaterial();
     }
 
-    this.createSTDMaterial = function() {
-        const mat = new BABYLON.StandardMaterial("STD", scene);
-        mat.diffuseColor = new BABYLON.Color3(1, 1, 1);
-        mat.specularColor = new BABYLON.Color3(0, 0, 0);
-        mat.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-        mat.useEmissiveAsIllumination = false;
-        mat.linkEmissiveWithDiffuse = true;
-        mat.backFaceCulling = true;
-        mat.transparencyMode = 0;
-        mat.checkReadyOnEveryCall = false;
-        this.mat_std = mat;
-    }
-
     this.createPBRMaterialVoxels = function() {
         const tex = this.createVoxelTexture();
         const mat = new BABYLON.PBRMaterial("PBR_V", scene);
-        mat.albedoColor = new BABYLON.Color3(1, 1, 1);
+        mat.albedoColor = BABYLON.Color3.White();
         mat.albedoTexture = tex;
         mat.roughness = 0.8;
         mat.metallic = 0.4;
@@ -784,7 +773,7 @@ function Material(scene) {
             this.mat_pbr.dispose();
         }
         const mat = new BABYLON.PBRMaterial("PBR", scene);
-        mat.albedoColor = new BABYLON.Color3(1, 1, 1);
+        mat.albedoColor = BABYLON.Color3.White();
         mat.albedoTexture = this.tex_pbr.clone();
         mat.reflectionTexture = hdri.hdrMap.clone();
         mat.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
@@ -802,14 +791,27 @@ function Material(scene) {
         this.mat_pbr = mat;
     }
 
+    this.createSTDMaterialHighlight = function() {
+        const mat = new BABYLON.StandardMaterial("STD_highlight", scene);
+        mat.diffuseColor = BABYLON.Color3.White(); // overrided
+        mat.specularColor = BABYLON.Color3.Black();
+        mat.emissiveColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+        mat.useEmissiveAsIllumination = false;
+        mat.linkEmissiveWithDiffuse = true;
+        mat.backFaceCulling = true;
+        mat.transparencyMode = 0;
+        mat.checkReadyOnEveryCall = false;
+        this.mat_highlight = mat;
+    }
+
     this.createWorkplaneMaterial = function() {
         const mat = new BABYLON.GridMaterial("workplane", scene);
         mat.gridRatio = 1;
         mat.majorUnitFrequency = 20;
-        mat.minorUnitVisibility = 0.4;
+        mat.minorUnitVisibility = 0.5;
         mat.mainColor = new BABYLON.Color3(0, 1, 1);
         mat.lineColor = new BABYLON.Color3(0, 1, 1);
-        mat.opacity = 0.6;
+        mat.opacity = 0.8;
         mat.backFaceCulling = false;
         mat.freeze();
         this.mat_workplane = mat;
@@ -821,7 +823,7 @@ function Material(scene) {
         mat.majorUnitFrequency = 20;
         mat.minorUnitVisibility = 0.25;
         mat.mainColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        mat.lineColor = new BABYLON.Color3(1, 1, 1);
+        mat.lineColor = BABYLON.Color3.White();
         mat.backFaceCulling = true;
         this.mat_floor = mat;
     }
@@ -916,7 +918,7 @@ function Material(scene) {
             varying vec3 vNormalW;
             varying vec2 vUv;
             varying vec4 vColor;
-            varying float vDepth;
+            //varying float vDepth;
 
             uniform mat4 viewProjection;
 
@@ -933,7 +935,7 @@ function Material(scene) {
                 vPositionW = vec3(worldPos);
                 vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
                 vUv = uv;
-                vDepth = 1.0 + gl_Position.w;
+                //vDepth = 1.0 + gl_Position.w;
             }
         `;
 
@@ -944,7 +946,7 @@ function Material(scene) {
             varying vec3 vNormalW;
             varying vec2 vUv;
             varying vec4 vColor;
-            varying float vDepth;
+            //varying float vDepth;
 
             uniform mat4 uCamMatrix;
             uniform vec3 uLightPos;
@@ -953,11 +955,7 @@ function Material(scene) {
             void main() {
                 vec2 grid = abs(fract(vUv - 0.5) - 0.5) / fwidth(vUv);
                 float line = min(grid.x, grid.y);
-                if (any(greaterThan(vColor.rgb, vec3(0.217)))) {
-                    line = 1.0 - min(line, 1.0);
-                } else {
-                    line = min(line, 1.0);
-                }
+                line = 1.0 - min(line, 1.0);
 
                 vec3 origin = vec3(uCamMatrix[3][0], uCamMatrix[3][1], uCamMatrix[3][2]);
                 vec3 position = normalize(vPositionW);
@@ -973,16 +971,16 @@ function Material(scene) {
 		        float spc = pow(spp, 8.0);
 
                 if (dot(normal, lightDir) < 0.0)
-                    amb *= 1.8;
+                    amb *= 2.0;
 
                 vec3 brdf = vec3(0);
                 brdf += 0.5 * amb * vec3(1);
-                brdf += 1.2 * dif * uLightCol;
+                brdf += 1.0 * dif * uLightCol;
                 brdf += 0.4 * inv * uLightCol;
-                brdf += 0.8 * spc * vec3(1);
+                brdf += 0.6 * spc * vec3(1);
 
                 vec3 col = pow(vColor.rgb * vColor.rgb, vec3(0.4545));
-                col = mix(col, vec3(0), line * 0.15);
+                col = mix(col, vec3(0), line * 0.16);
                 col *= brdf;
                 col = pow(col, vec3(0.4545));
 
@@ -1063,7 +1061,7 @@ function Builder(scene) {
     this.positionsMap = [];
 
     this.init = function() {
-        this.voxel = BABYLON.MeshBuilder.CreateBox("voxel", { updatable: false }, scene);
+        this.voxel = BABYLON.MeshBuilder.CreateBox("voxel", { size: 1, updatable: false }, scene);
         this.voxel.isVisible = false;
         this.voxel.isPickable = false;
         this.voxel.receiveShadows = true;
@@ -1084,23 +1082,16 @@ function Builder(scene) {
             generator.newBox(1, currentColor);
 
         this.isWorking = true;
-        this.createThinInstances(this.voxels);
+        this.createThinInstances();
 
         renderPickTarget.renderList = [ this.mesh ];
         renderPickTarget.setMaterialForRendering(this.mesh, material.mat_white);
 
-        if (preferences.getBvhPicking()) {
-            setTimeout(() => { // TODO: this causes a delay,
-                window.rc.create(); // but we couldn't use a web worker
-                builder.isWorking = false;
-            });
-        } else {
-            setTimeout(() => {
-                if (bvhWhiteList.includes(tool.name))
-                    window.rc.create();
-                builder.isWorking = false;
-            });
-        }
+        setTimeout(() => {
+            if (bvhWhiteList.includes(tool.name))
+                window.rc.create();
+            builder.isWorking = false;
+        });
 
         light.addMesh(this.mesh);
         light.updateShadowMap();
@@ -1115,7 +1106,7 @@ function Builder(scene) {
         }, 10);
     }
 
-    this.createThinInstances = function(voxels) {
+    this.createThinInstances = function(voxels = this.voxels) {
         this.bufferMatrix = new Float32Array(16 * voxels.length);
         this.bufferColors = new Float32Array(4 * voxels.length);
         this.rttColors = new Float32Array(4 * voxels.length);
@@ -1123,8 +1114,13 @@ function Builder(scene) {
         this.positionsMap = new Array(voxels.length);
 
         for (let i = 0; i < voxels.length; i++) {
-            tMatrix = BABYLON.Matrix.Translation(
-                voxels[i].position.x, voxels[i].position.y, voxels[i].position.z);
+            if (this.getIndexAtPosition(voxels[i].position) > -1) {
+                voxels[i].position = DUPLICATE_POS; // flag duplicates for one-shot mass destruction
+                voxels[i].visible = false;
+                duplicateFlag = 1;
+            }
+            
+            tMatrix = BABYLON.Matrix.Translation(voxels[i].position.x, voxels[i].position.y, voxels[i].position.z);
             if (!voxels[i].visible)
                 tMatrix = tMatrix.multiply(BABYLON.Matrix.Scaling(0, 0, 0));
             tMatrix.copyToArray(this.bufferMatrix, i * 16);
@@ -1155,6 +1151,7 @@ function Builder(scene) {
         this.mesh.thinInstanceEnablePicking = false;
         this.mesh.doNotSyncBoundingInfo = false;
         this.mesh.material = material.getMaterial();
+        this.mesh.name = "thin";
         //this.mesh.thinInstanceRefreshBoundingInfo();
 
         this.bufferWorld = this.mesh.thinInstanceGetWorldMatrices();
@@ -1271,14 +1268,14 @@ function Builder(scene) {
         return null;
     }
 
-    this.getVoxelsByPosition = function(pos) { // dup
+    this.getVoxelsByPosition = function(pos) {
         return this.voxels.filter(i =>
             i.position.x === pos.x &&
             i.position.y === pos.y &&
             i.position.z === pos.z);
     }
 
-    this.getVoxelsByColor = function(hex) { // dup
+    this.getVoxelsByColor = function(hex) {
         return this.voxels.filter(i => i.color === hex);
     }
 
@@ -1316,12 +1313,12 @@ function Builder(scene) {
             this.voxels.splice(idx, 1);
     }
 
-    this.removeByArray = function(arr) {
+    this.removeArray = function(arr) {
         this.voxels = this.voxels.filter(i => !arr.includes(i));
     }
 
-    this.removeByPosition = function(pos) { // dup
-        this.removeByArray(this.getVoxelsByPosition(pos));
+    this.removeByPosition = function(pos) {
+        this.removeArray(this.getVoxelsByPosition(pos));
     }
 
     this.paintByArray = function(arr, hex) {
@@ -1369,7 +1366,7 @@ function Builder(scene) {
         const group = this.getVoxelsByColor(hex);
         if (group.length == 0) return;
         
-        this.removeByArray(group);
+        this.removeArray(group);
         this.create();
         this.update();
     }
@@ -1380,7 +1377,7 @@ function Builder(scene) {
         if (hiddens.length == 0) return;
         if (!await ui.showConfirm('delete hidden voxels?')) return;
         
-        this.removeByArray(hiddens);
+        this.removeArray(hiddens);
         this.create();
         this.update();
     }
@@ -1394,7 +1391,7 @@ function Builder(scene) {
             for (let i = 0; i < data.length; i++) {
                 this.add(new BABYLON.Vector3(
                     data[i].position._x, data[i].position._y, data[i].position._z),
-                    data[i].color, true);
+                    data[i].color, data[i].visible);
             }
             this.create();
             this.update();
@@ -1403,22 +1400,14 @@ function Builder(scene) {
     }
 
     this.removeDuplicates = function() {
-        const last = this.voxels.length;
-        
-        window.worker.start('findDuplicates', [ this.voxels, this.positionsMap ], (data) => {
-            this.voxels = [];
-            for (let i = 0; i < data.length; i++) {
-                this.add(new BABYLON.Vector3(
-                    data[i].position._x, data[i].position._y, data[i].position._z),
-                    data[i].color, true);
-            }
-            this.create();
-            this.update();
-            ui.notification(`found ${ last - this.voxels.length } duplicates`);
-        });
+        //const last = this.voxels.length;
+        this.removeByPosition(DUPLICATE_POS);
+        this.create();
+        //console.log(`remove ${ last - this.voxels.length } duplicates`);
     }
 
-    this.normalizeVoxelPositions = function(isRecordMem) {
+    this.normalizeVoxelPositions = async function(isRecordMem) {
+        if (isRecordMem && !await ui.showConfirm('normalize voxel positions?')) return;
         const bounds = this.mesh.getBoundingInfo();
         const size = getMeshSize(bounds);
         const center = bounds.boundingBox.center;
@@ -1456,7 +1445,6 @@ function Builder(scene) {
     }
 
     this.setData = function(data) {
-        xformer.cancel();
         const voxels = JSON.parse(data);
         const newData = [];
         for (let i = 0; i < voxels.length; i++) {
@@ -1475,7 +1463,6 @@ function Builder(scene) {
     }
 
     this.setDataFromString = function(data) {
-        xformer.cancel();
         const voxels = data.split(';').slice(0, -1);
         const newData = [];
         for (let i = 0; i < voxels.length; i++) {
@@ -1495,35 +1482,45 @@ function Builder(scene) {
     }
 
     this.setDataFromArray = function(arr) {
-        xformer.cancel();
         this.voxels = arr;
         this.create();
     }
 
+    let tmparr = [];
+
     this.createArrayFromPositions = function(positions, isSymmetry) {
-        const arr = [];
+        tmparr = [];
         let v;
         for (let i = 0; i < positions.length; i++) {
             v = this.getVoxelAtPosition(positions[i]);
-            if (v) arr.push(v);
+            if (v) tmparr.push(v);
 
             if (isSymmetry) {
                 v = this.getVoxelAtPosition(symmetry.invertPos(positions[i]));
-                if (v) arr.push(v);
+                if (v) tmparr.push(v);
             }
         }
-        return arr;
+        return tmparr;
     }
 
     this.createArrayFromNewPositions = function(positions, hex, isSymmetry) {
-        const arr = [];
+        tmparr = [];
         for (let i = 0; i < positions.length; i++) {
-            this.add(positions[i], hex, true);
+            tmparr.push({
+                position: positions[i],
+                color: hex,
+                visible: true
+            });
 
-            if (isSymmetry)
-                this.add(symmetry.invertPos(positions[i]), hex, true);
+            if (isSymmetry) {
+                tmparr.push({
+                    position: symmetry.invertPos(positions[i]),
+                    color: hex,
+                    visible: true
+                });
+            }
         }
-        return arr;
+        return tmparr;
     }
 
     this.update = function() {
@@ -1548,12 +1545,12 @@ function Ghosts(scene) {
     let tMatrix = BABYLON.Matrix.Identity();
 
     this.init = function() {
-        this.voxel = BABYLON.MeshBuilder.CreateBox("ghostvoxel", { size: 1.01, updatable: false }, scene);
+        this.voxel = BABYLON.MeshBuilder.CreateBox("ghost_voxel", { size: 1, updatable: false }, scene);
         this.voxel.isVisible = false;
         this.voxel.isPickable = false;
         this.voxel.receiveShadows = false;
         this.voxel.doNotSerialize = true;
-        this.voxel.material = material.mat_std;
+        this.voxel.material = material.mat_highlight;
         this.voxel.freezeWorldMatrix();
         this.voxel.freezeNormals();
 
@@ -1585,6 +1582,7 @@ function Ghosts(scene) {
         this.thin.isVisible = true;
         this.thin.material.diffuseColor = BABYLON.Color3.White();
 
+        // TODO: visual artifacts with thin-instances
         highlightOverlayMesh(this.thin, COL_ORANGE_RGB);
         highlightOutlineMesh(this.thin, COL_ORANGE_RGBA);
 
@@ -1603,6 +1601,7 @@ function Ghosts(scene) {
 
         this.thin = this.voxel.clone();
         this.thin.isVisible = false;
+        this.thin.name = "ghost_thin";
     }
 
     this.createSPS = function(voxels = builder.voxels) {
@@ -1611,19 +1610,20 @@ function Ghosts(scene) {
         if (this.sps)
             this.sps.dispose();
         
-        this.sps = new BABYLON.SolidParticleSystem('ghostsps', scene, { isPickable: true, updatable: false, expandable: false, boundingSphereOnly: true });
-        this.sps.computeBoundingBox = false;
+        this.sps = new BABYLON.SolidParticleSystem('ghost_sps', scene, { updatable: false, expandable: false, boundingSphereOnly: true });
 
         this.sps.addShape(this.voxel, voxels.length, { positionFunction: (particle, i, s) => {
             particle.position.copyFrom(voxels[i].position);
-            particle.color = BABYLON.Color4.FromHexString(voxels[i].color);
+            //particle.color = BABYLON.Color4.FromHexString(voxels[i].color);
             if (!voxels[i].visible) particle.scaling.set(0,0,0);
         }});
 
         this.sps.initParticles();
         this.sps.buildMesh();
+        this.sps.computeBoundingBox = false;
         this.sps.mesh.isPickable = true;
         this.sps.mesh.doNotSerialize = true;
+        this.sps.mesh.layerMask = 0x00000000;
         this.sps.mesh.freezeNormals();
     }
 
@@ -1639,22 +1639,20 @@ function Ghosts(scene) {
         if (this.cloud)
             this.cloud.dispose();
         
-        this.cloud = new BABYLON.PointsCloudSystem('ghostcloud', 1, scene, { updatable: false });
+        this.cloud = new BABYLON.PointsCloudSystem('ghost_cloud', 2, scene, { updatable: false });
         this.cloud.computeBoundingBox = false;
 
         const setParticles = function(particle, i, s) {
             particle.position.copyFrom(voxels[s].position);
-            particle.position.x += 0.8 * Math.random() - 0.4;
-            particle.position.y += 0.8 * Math.random() - 0.4;
-            particle.position.z += 0.8 * Math.random() - 0.4;
-            particle.color = COL_AQUA_RGBA;
+            particle.position.x += 0.2 * Math.random() - 0.1;
+            particle.position.y += 0.2 * Math.random() - 0.1;
+            particle.position.z += 0.2 * Math.random() - 0.1;
+            particle.color = BABYLON.Color4.FromHexString(voxels[s].color);
         };
 
         this.cloud.addPoints(voxels.length, setParticles);
-        this.cloud.addPoints(voxels.length, setParticles);
-        this.cloud.addPoints(voxels.length, setParticles);
         this.cloud.buildMeshAsync().then((mesh) => {
-            mesh.visibility = 0.2;
+            mesh.visibility = 0.3;
             mesh.isPickable = false;
             mesh.doNotSerialize = true;
             mesh.doNotSyncBoundingInfo = true;
@@ -1697,10 +1695,9 @@ function Ghosts(scene) {
 function Transformers() {
     this.root = new BABYLON.TransformNode('xformer');
     this.isActive = false;
-    this.isTransform = false;
     this.isNewObject = false;
-    let indexes = [];
     let origins = [];
+    let indexes = [];
     let startPos = null;
     let useCurrentColor = false;
 
@@ -1718,11 +1715,10 @@ function Transformers() {
 
         indexes = [];
         for (let i = 0; i < voxels.length; i++) {
-            const idx = voxels[i].idx;
-            if (indexes.indexOf(idx) == -1) { // duplicates broke transform
-                indexes.push(idx);
+            if (indexes.indexOf(voxels[i].idx) == -1) { // duplicates broke transform
+                indexes.push(voxels[i].idx);
                 if (!ui.domTransformClone.checked)
-                    builder.voxels[idx].visible = false;
+                    builder.voxels[ voxels[i].idx ].visible = false;
             }
         }
 
@@ -1730,11 +1726,10 @@ function Transformers() {
             builder.create();
 
         this.isActive = true;
-        this.isTransform = true;
     }
 
     this.finish = function() {
-        if (this.isTransform) {
+        if (this.isActive) {
             const p = this.root.position.subtract(startPos);
 
             if (!p.equals(BABYLON.Vector3.Zero())) { // change on move
@@ -1795,41 +1790,23 @@ function Transformers() {
     }
 
     this.apply = function() {
-        if (this.isTransform || this.isNewObject) {
+        if (this.isActive || this.isNewObject) {
             this.finish();
             this.finishNewObject();
             
             this.isActive = false;
-            this.isTransform = false;
             this.isNewObject = false;
 
             builder.create();
             builder.update();
 
             uix.unbindVoxelGizmo();
+            
             ghost.thin.setParent(null);
             ghost.disposeThin();
             
-            indexes = [];
             origins = [];
-            useCurrentColor = false;
-        }
-    }
-
-    this.cancel = function() {
-        if (this.isTransform || this.isNewObject) {
-            this.isActive = false;
-            this.isTransform = false;
-            this.isNewObject = false;
-
-            builder.create();
-
-            uix.unbindVoxelGizmo();
-            ghost.thin.setParent(null);
-            ghost.disposeThin();
-
             indexes = [];
-            origins = [];
             useCurrentColor = false;
         }
     }
@@ -1841,9 +1818,9 @@ function Transformers() {
 
 
 function Palette() {
-    const W = 25;
-    const H = 25;
-    const pad = 2;
+    const W = 28;
+    const H = 28;
+    const pad = 4;
     const ctx = canvasPalette.getContext('2d', { willReadFrequently: true });
     this.uniqueColors = [];
 
@@ -1947,19 +1924,18 @@ function Helper(scene, sceneAxisView) {
     this.floorPlane = BABYLON.MeshBuilder.CreatePlane("floorplane", { width: 4, height: 4, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, scene);
     this.gridPlane = BABYLON.MeshBuilder.CreatePlane("gridplane", { size: 2500, sideOrientation: BABYLON.Mesh.BACKSIDE, updatable: false }, scene);
     this.workplane = BABYLON.MeshBuilder.CreatePlane("workplane", { size: WORKPLANE_SIZE, sideOrientation: BABYLON.Mesh.BACKSIDE, updatable: false }, scene);
-    this.axisPlane = BABYLON.MeshBuilder.CreatePlane("axisplane", { width: 1.1, height: 1.1, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, sceneAxisView);
-    this.overlayPlane = BABYLON.MeshBuilder.CreatePlane("overlayplane", { sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, scene);
-    this.overlayCube = BABYLON.MeshBuilder.CreateBox("overlaycube", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
-    this.boxShape = BABYLON.MeshBuilder.CreateBox("boxShape", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
-    this.boxShapeSymm = BABYLON.MeshBuilder.CreateBox("boxShapeSymm", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
-    this.magnet = BABYLON.MeshBuilder.CreateBox("magnet", { size: 1.1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
+    this.axisPlane = BABYLON.MeshBuilder.CreatePlane("axisplane", { size: 1.1, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, sceneAxisView);
+    this.overlayPlane = BABYLON.MeshBuilder.CreatePlane("overlay_plane", { sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: false }, scene);
+    this.overlayCube = BABYLON.MeshBuilder.CreateBox("overlay_cube", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
+    this.boxShape = BABYLON.MeshBuilder.CreateBox("boxshape", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
+    this.boxShapeSymm = BABYLON.MeshBuilder.CreateBox("boxshapesymm", { size: 1, sideOrientation: BABYLON.Mesh.FRONTSIDE, updatable: false }, scene);
     this.symmPivot = undefined;
     this.isWorkplaneActive = false;
     this.isFloorPlaneActive = false;
 
     this.init = function() {
         this.floorPlane.material = material.mat_floor;
-        this.floorPlane.visibility = 0.06;
+        this.floorPlane.visibility = 0.07;
         this.floorPlane.isVisible = true; // overrided
         this.floorPlane.isPickable = true;
         this.floorPlane.position.x = -0.5;
@@ -2058,17 +2034,11 @@ function Helper(scene, sceneAxisView) {
         this.boxShapeSymm.convertToUnIndexedMesh();
         this.boxShapeSymm.freezeNormals();
 
-        this.magnet.isVisible = true;
-        this.magnet.isPickable = true;
-        this.magnet.layerMask = 0x00000000;
-        this.magnet.doNotSerialize = true;
-        this.magnet.convertToUnIndexedMesh();
-        this.magnet.freezeNormals();
-
+        const r = Math.max(10, ~~builder.getRadius());
         const axisLines = [
-            [ BABYLON.Vector3.Zero(), new BABYLON.Vector3(10, 0, 0) ],
-            [ BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 10, 0) ],
-            [ BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, 10) ]
+            [ BABYLON.Vector3.Zero(), new BABYLON.Vector3(r, 0, 0) ],
+            [ BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, r, 0) ],
+            [ BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, r) ]
         ];
         const axisColors = [
             [ COL_AXIS_X_RGBA, COL_AXIS_X_RGBA ],
@@ -2146,9 +2116,9 @@ function Helper(scene, sceneAxisView) {
             }
 
             this.symmPivot.scaling = BABYLON.Vector3.One();
-            if (symmetry.axis == BABYLON.Axis.X) this.symmPivot.scaling.x *= 2;
-            if (symmetry.axis == BABYLON.Axis.Y) this.symmPivot.scaling.y *= 2;
-            if (symmetry.axis == BABYLON.Axis.Z) this.symmPivot.scaling.z *= 2;
+            if (symmetry.axis == BABYLON.Axis.X) this.symmPivot.scaling.x *= 2.2;
+            if (symmetry.axis == BABYLON.Axis.Y) this.symmPivot.scaling.y *= 2.2;
+            if (symmetry.axis == BABYLON.Axis.Z) this.symmPivot.scaling.z *= 2.2;
         }
     }
 
@@ -2250,6 +2220,7 @@ function Tool(scene) {
     let then = performance.now();
     let now, elapsed;
     let tmp = [];
+    let tmpsps = [];
     const VEC3_2 = new BABYLON.Vector3(2, 2, 2);
 
     this.init = function() {
@@ -2320,8 +2291,6 @@ function Tool(scene) {
     }
 
     this.boxShape = function(start, end, color) {
-        // dev note: I actually wrote this as a pseudo code,
-        // but it works fine, so we didn't change it
         if (end.x <= start.x && end.y <= start.y && end.z <= start.z) {
             sX = end.x;      eX = start.x;
             sY = end.y;      eY = start.y;
@@ -2377,19 +2346,18 @@ function Tool(scene) {
         }
 
         boxCount = helper.boxShape.scaling.x * helper.boxShape.scaling.y * helper.boxShape.scaling.z;
-        if (boxCount > MAXAMOUNTBOX) {
+        if (boxCount > MAX_VOXELS_DRAW)
             helper.updateBoxShape(COL_RED);
-        }
     }
 
     this.boxSelectAdd = function(start, end, color) {
-        if (fixedHeight > 0) // enable wall drawing
+        if (fixedHeight > 1) // enable wall drawing
             end.y = start.y + fixedHeight - 1;
 
         this.boxShape(start, end, color);
 
         this.selected = [];
-        if (boxCount > MAXAMOUNTBOX || boxCount == 0)
+        if (boxCount > MAX_VOXELS_DRAW || boxCount == 0)
             return;
 
         for (let x = sX; x <= eX; x++) {
@@ -2409,7 +2377,7 @@ function Tool(scene) {
         this.boxShape(start, end, color);
 
         this.selected = [];
-        if (boxCount > MAXAMOUNTBOX || boxCount == 0)
+        if (boxCount > MAX_VOXELS_DRAW || boxCount == 0)
             return;
 
         for (let x = sX; x <= eX; x++) {
@@ -2470,7 +2438,7 @@ function Tool(scene) {
     }
 
     this.pickWorkplane = function(pick, norm) {
-        norm.z = parseInt(norm.z.toFixed(1)); // fix normal precision bug
+        norm.z = parseInt(norm.z.toFixed(1)); // fix normal precision
 
         const pos = pick.pickedPoint.add(BABYLON.Vector3.One()).subtract(new BABYLON.Vector3(0.5,0.5,0.5)).floor();
 
@@ -2487,7 +2455,7 @@ function Tool(scene) {
     this.onToolDown = function(pick) {
         const index = pick.INDEX;
         const norm = pick.NORMAL;
-        isWorkplane = pick.ISWORKPLANE;
+        isWorkplane = pick.WORKPLANE;
         isSymmetry = symmetry.axis !== -1;
 
         if (!isWorkplane) {
@@ -2526,11 +2494,11 @@ function Tool(scene) {
                 builder.deleteColorAndUpdate(builder.voxels[index].color);
                 break;
             case 'box_add':
-                this.addNoHelper(posNorm); // allow 1 voxel drawing
+                this.addNoHelper(posNorm); // allow 1 voxel
                 startBox = posNorm;
                 fixedHeight = parseInt(ui.domBoxToolHeight.value);
                 break;
-            case 'box_rem':
+            case 'box_remove':
                 this.removeNoHelper(pos);
                 startBox = pos;
                 if (isWorkplane)
@@ -2574,7 +2542,14 @@ function Tool(scene) {
                 xformer.apply();
                 xformer.begin(builder.getVoxelsByVisibility(true));
                 break;
-            case 'bakecolor':
+            case 'measure_volume':
+                this.addNoHelper(pos); // allow 1 voxel
+                startBox = pos;
+                break;
+            case 'measure_color':
+                ui.notification(`${ builder.getVoxelsByColor(builder.voxels[index].color).length } Voxels`, 5000);
+                break;
+            case 'bake_color':
                 bakery.bakeColor(builder.voxels[index].color);
                 break;
         }
@@ -2583,7 +2558,7 @@ function Tool(scene) {
     this.onToolMove = function(pick) {
         const index = pick.INDEX;
         const norm = pick.NORMAL;
-        isWorkplane = pick.ISWORKPLANE;
+        isWorkplane = pick.WORKPLANE;
 
         if (!isWorkplane) {
             pos = builder.voxels[index].position;
@@ -2615,7 +2590,7 @@ function Tool(scene) {
                 if (startBox)
                     this.boxSelectAdd(startBox, posNorm, BABYLON.Color3.FromHexString(currentColor));
                 break;
-            case 'box_rem':
+            case 'box_remove':
                 if (startBox)
                     this.boxSelect(startBox, pos, posNorm, COL_ORANGE_RGB);
                 break;
@@ -2642,6 +2617,10 @@ function Tool(scene) {
             case 'transform_rect':
                 if (startRect)
                     this.rectSelect(startRect);
+                break;
+            case 'measure_volume':
+                if (startBox)
+                    this.boxSelect(startBox, pos, posNorm, COL_ORANGE_RGB);
                 break;
         }
     }
@@ -2678,10 +2657,10 @@ function Tool(scene) {
                     builder.update();
                 }
                 break;
-            case 'box_rem':
+            case 'box_remove':
                 if (this.selected.length > 0) {
                     tmp = builder.createArrayFromPositions(this.selected, isSymmetry);
-                    builder.removeByArray(tmp);
+                    builder.removeArray(tmp);
                     builder.create();
                     builder.update();
                 }
@@ -2703,7 +2682,7 @@ function Tool(scene) {
                 break;
             case 'rect_remove':
                 if (this.selected.length > 0) {
-                    builder.removeByArray(this.selected);
+                    builder.removeArray(this.selected);
                     builder.create();
                     builder.update();
                 }
@@ -2731,6 +2710,10 @@ function Tool(scene) {
                     xformer.begin(tmp);
                 }
                 break;
+            case 'measure_volume':
+                if (this.selected.length > 0)
+                    ui.notification(`${ this.selected.length } Voxels`, 5000);
+                break;
         }
     }
 
@@ -2750,8 +2733,8 @@ function Tool(scene) {
         if (this.name !== 'camera' && !camera.isCameraChange() && !builder.isWorking) {
             now = performance.now();
             elapsed = now - then;
-            if (elapsed > FPS_TOOLMOVE) {
-                then = now - (elapsed % FPS_TOOLMOVE);
+            if (elapsed > FPS) {
+                then = now - (elapsed % FPS);
                 this.setPickInfo(pickInfo, (p) => {
                     tool.onToolMove(p);
                 });
@@ -2770,6 +2753,7 @@ function Tool(scene) {
             boxCount = 0;
             startBox = null;
             startRect = null;
+            tmp = [];
 
             ghost.disposeThin();
             helper.clearBoxShape();
@@ -2789,8 +2773,8 @@ function Tool(scene) {
         return null;
     };
 
-    const predicateMagnet = function(mesh) {
-        return mesh == helper.magnet;
+    const predicateSPS = function(mesh) {
+        return mesh == ghost.sps.mesh;
     };
 
     const directions = [
@@ -2802,57 +2786,40 @@ function Tool(scene) {
         new BABYLON.Vector3(0, 0, -1)
     ];
 
-    let norms = [];
-    function normalProbe(p) { // find picking-normal
-        norms = [];           // to eliminate the bvh-generation lag
+    // invented an unusual method to find picking-normal with a magnetic probe
+    function normalProbe(p) {
+        let norm = undefined;
+        tmpsps = [];
 
-        for (let i = 0; i < directions.length; i++) { // omni normal-finder
-            if (!builder.getIndexAtPosition(p.add(directions[i])))
-                norms.push(directions[i]);
+        tmpsps.push({ position: p, color: COL_RED, visible: true });
+        for (let i = 0; i < directions.length; i++) {
+            const pos = p.add(directions[i]);
+            const idx = builder.getIndexAtPosition(pos);
+            if (idx > -1) 
+                tmpsps.push({ position: pos, color: COL_RED, visible: builder.voxels[idx].visible });
         }
 
-        if (norms.length > 0) {
-            if (norms.length == 1) { // surface
-                return norms[0];
-            } else { // edge, TODO: trading accuracy is not necessary
-                helper.magnet.position = p; // magnetic normal-finder
-                const pick = scene.pick(scene.pointerX, scene.pointerY, predicateMagnet);
-                if (pick && pick.hit)
-                    return pick.getNormal(true);
-            }
-        }
-        return null;
+        ghost.createSPS(tmpsps);
+        const pick = scene.pick(scene.pointerX, scene.pointerY, predicateSPS);
+        if (pick && pick.hit)
+            norm = pick.getNormal(true);
+        ghost.disposeSPS();
+        
+        tmpsps = [];
+        return norm;
     }
 
     this.setPickInfo = function(pick, onHit) {
         const index = builder.getIndexAtPointer();
         if (index > -1) {
-            if (preferences.getBvhPicking()) { // accurate but also introduce lag
-                const res = window.rc.raycast(
-                    pick.ray.origin.x,
-                    pick.ray.origin.y,
-                    pick.ray.origin.z,
-                    pick.ray.direction.x,
-                    pick.ray.direction.y,
-                    pick.ray.direction.z);
-                if (res) {
-                    pick.INDEX = index;
-                    pick.NORMAL = new BABYLON.Vector3(-res.face.normal.x, -res.face.normal.y, -res.face.normal.z);
-                    pick.ISWORKPLANE = false;
-                    onHit(pick);
-                } else {
-                    helper.clearOverlays();
-                }
-            } else { // less accurate but lag-free
-                const norm = normalProbe(builder.voxels[index].position);
-                if (norm) {
-                    pick.INDEX = index;
-                    pick.NORMAL = norm;
-                    pick.ISWORKPLANE = false;
-                    onHit(pick);
-                } else {
-                    helper.clearOverlays();
-                }
+            const norm = normalProbe(builder.voxels[index].position);
+            if (norm) {
+                pick.INDEX = index;
+                pick.NORMAL = norm;
+                pick.WORKPLANE = false;
+                onHit(pick);
+            } else {
+                helper.clearOverlays();
             }
         } else {
             helper.clearOverlays();
@@ -2861,7 +2828,7 @@ function Tool(scene) {
             if (pick && pick.hit) {
                 pick.INDEX = pick.faceId;
                 pick.NORMAL = pick.getNormal(true);
-                pick.ISWORKPLANE = true;
+                pick.WORKPLANE = true;
                 onHit(pick);
             } else {
                 helper.clearOverlays();
@@ -2887,6 +2854,8 @@ function Tool(scene) {
 
         if (finishTransforms)
             xformer.apply();
+
+        ui.domInfoTool.innerHTML = `[ ${ this.name.replace('_', ' ') } ]`;
     }
 
     this.init();
@@ -3037,7 +3006,7 @@ function Symmetry() {
             }
         }
 
-        builder.removeByArray(toDelete);
+        builder.removeArray(toDelete);
     }
 
     this.invertPos = function(p) { // invert positive to negative and reverse
@@ -3118,7 +3087,7 @@ function Voxelizer(scene) {
     this.voxelize2D = function(imgData) {
         engine.displayLoadingUI();
         const ratio = parseFloat(document.getElementById('input-voxelizer-ratio').value);
-        const zUp = document.getElementById('input-voxelizer-zup').checked;
+        const yUp = document.getElementById('input-voxelizer-yup').checked;
         const img = new Image();
         img.src = imgData;
         img.crossOrigin = "Anonymous";
@@ -3146,7 +3115,7 @@ function Voxelizer(scene) {
                     b = imageData[i + 2];
                     x = (i / 4) % c.width;
                     y = ~~(i / 4 / c.width);
-                    if (zUp) {
+                    if (yUp) {
                         data.push({
                             position: new BABYLON.Vector3(x, dim.height-y-1, 0).floor(),
                             color: rgbIntToHex(r, g, b),
@@ -3346,11 +3315,7 @@ function Generator() {
             builder.setDataFromArray(data);
             clearScene();
         } else {
-            if (data.length < MAXAMOUNTBOX / 2) {
-                xformer.beginNewObject(data);
-            } else {
-                ui.notification('exceeds the limit, check new scene');
-            }
+            xformer.beginNewObject(data);
         }
 
         data = null;
@@ -3381,11 +3346,7 @@ function Generator() {
             builder.setDataFromArray(data);
             clearScene();
         } else {
-            if (data.length < MAXAMOUNTBOX / 2) {
-                xformer.beginNewObject(data);
-            } else {
-                ui.notification('exceeds the limit, check new scene');
-            }
+            xformer.beginNewObject(data);
         }
 
         data = null;
@@ -3435,11 +3396,7 @@ function Generator() {
             builder.setDataFromArray(data);
             clearScene();
         } else {
-            if (data.length < MAXAMOUNTBOX / 2) {
-                xformer.beginNewObject(data);
-            } else {
-                ui.notification('exceeds the limit, check new scene');
-            }
+            xformer.beginNewObject(data);
         }
 
         data = null;
@@ -3452,7 +3409,7 @@ function Generator() {
         const Y = parseInt(document.getElementById('input-terrain-y').value);
         const Z = parseInt(document.getElementById('input-terrain-z').value);
 
-        const simplex = new window.simplexNoise();
+        const simplex = new window.SimplexNoise();
         const colArrayHigh = gradientHexArray('#87BC24', '#31A531', Y);
         const colArrayLow  = gradientHexArray('#217EC4', '#31A531', Y);
 
@@ -3515,11 +3472,11 @@ function Bakery(scene) {
     };
     
     this.bakeToMesh = function(voxels = builder.voxels) {
-        const baked = window.baker('_bake', voxels);
+        const baked = window.baker('_mesh', voxels);
 
         resetPivot(baked);
 
-        baked.material = material.mat_pbr.clone('_bake');
+        baked.material = material.mat_pbr.clone('_mesh');
 
         baked.checkCollisions = true;
         baked.receiveShadows = true;
@@ -3533,7 +3490,7 @@ function Bakery(scene) {
 
     this.newBake = function(voxels = null) {
         engine.displayLoadingUI();
-        if (MODE !== 2) ui.setMode(2);
+        ui.setMode(2);
 
         material.setPBRTexture();
 
@@ -3548,7 +3505,7 @@ function Bakery(scene) {
 
     this.bakeColor = function(hex) {
         engine.displayLoadingUI();
-        if (MODE !== 2) ui.setMode(2);
+        ui.setMode(2);
 
         material.setPBRTexture();
 
@@ -3568,7 +3525,7 @@ function Bakery(scene) {
 
     this.bakeColor = function(hex) {
         engine.displayLoadingUI();
-        if (MODE !== 2) ui.setMode(2);
+        ui.setMode(2);
 
         material.setPBRTexture();
 
@@ -3579,14 +3536,18 @@ function Bakery(scene) {
         }
         this.bakeToMesh(voxels);
 
-        camera.frame();
-        engine.hideLoadingUI();
+        setTimeout(() => {
+            uix.bindTransformGizmo(this.meshes[this.meshes.length-1]);
+            uix.gizmo.attachToMesh(this.meshes[this.meshes.length-1]);
+            camera.frame();
+            engine.hideLoadingUI();
+        }, 100);
     }
 
     this.bakeAll = async function() {
         if (!await ui.showConfirm('clear and bake all voxels?')) return;
         engine.displayLoadingUI();
-        if (MODE !== 2) ui.setMode(2);
+        ui.setMode(2);
 
         material.setPBRTexture();
 
@@ -3600,7 +3561,7 @@ function Bakery(scene) {
     this.bakeAllColors = async function() {
         if (!await ui.showConfirm('clear and bake all voxels<br>grouped by colors?')) return;
         engine.displayLoadingUI();
-        if (MODE !== 2) ui.setMode(2);
+        ui.setMode(2);
 
         material.setPBRTexture();
 
@@ -4071,7 +4032,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.2.9",
+            version: "Voxel Builder 4.3.0",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4167,6 +4128,35 @@ function Project(scene) {
             bakery.loadBakes(data.data.bakes, false);
         } else {
             bakery.clearBakes(false);
+        }
+    }
+
+    this.importVoxels = function(data) {
+        ui.setMode(0);
+        
+        const voxels = JSON.parse(data).data.voxels.split(';').slice(0, -1);
+        for (let i = 0; i < voxels.length; i++) {
+            const chunk = voxels[i].split(',');
+            builder.add(new BABYLON.Vector3(
+                    parseFloat(chunk[0]),
+                    parseFloat(chunk[1]),
+                    parseFloat(chunk[2])
+                ),
+                chunk[3].toUpperCase(),
+                parseBool(chunk[4]));
+        }
+        
+        builder.create();
+        builder.update();
+    }
+
+    this.importBakes = function(data) {
+        data = JSON.parse(data);
+        if (data.data.meshes) {
+            ui.setMode(2);
+            bakery.loadBakes(data.data.meshes, true);
+        } else {
+            ui.notification('no baked meshes');
         }
     }
 
@@ -4371,7 +4361,6 @@ function UserInterface(scene) {
     this.domColorPickerEmissive = document.getElementById('input-material-emissive');
     this.domColorPickerLightColor = document.getElementById('input-light-color');
     this.domColorPickerVertexColor = document.getElementById('input-vertex-color');
-    this.domLightLocator = document.getElementById('input-light-locator');
     this.domLightIntensity = document.getElementById('input-light-intensity');
     this.domMaterialSwitch = document.getElementById('material-switch');
     this.domProjectName = document.getElementById('input-project-name');
@@ -4383,6 +4372,7 @@ function UserInterface(scene) {
     this.domNotifier = document.getElementById('notifier');
     this.domInfo = document.getElementById('info').children;
     this.domInfoParent = document.getElementById('info');
+    this.domInfoTool = document.getElementById('info_tool');
     this.domProgressBar = document.getElementById('progressbar');
     this.domLoadingScreen = document.getElementById('loadingscreen');
     const styleMenuR = '-200px';
@@ -4393,10 +4383,21 @@ function UserInterface(scene) {
     let notificationTimer = null;
 
     this.init = function() {
+        this.domCameraFov.addEventListener('change', (ev) => {
+            if (ev.target.value > 0) {
+                scene.activeCamera.fov = ev.target.value;
+                if (pt.isActive && pt.isLoaded) {
+                    pt.camera.fov = ev.target.value * RAD2DEG_STATIC;
+                    pt.camera.updateProjectionMatrix();
+                    pt.resetSamples();
+                }
+            }
+        }, false);
+        
         this.domMenus.addEventListener('pointerdown', (ev) => {
             if (MODE == 0) { // prevent premature usage!
                 if (ev.target !== canvas && ev.target !== this.domHover) {
-                    (xformer.isActive) ? xformer.apply() : xformer.cancel();
+                    xformer.apply();
                     helper.clearOverlays();
                 }
             }
@@ -4436,12 +4437,6 @@ function UserInterface(scene) {
             light.updateColor(ev.target.value);
         }, false);
 
-        this.domLightLocator.addEventListener('input', (ev) => {
-            if (MODE == 1) return;
-            (ev.target.checked) ? uix.showLightLocator() : uix.hideLightLocator();
-            uix.isSunLocatorActive = ev.target.checked;
-        }, false);
-
         document.getElementById('btn-light-defaultsun').onclick = () => {
             ui.domColorPickerLightColor.value = '#EDD59E';
             light.updateColor('#EDD59E');
@@ -4451,9 +4446,11 @@ function UserInterface(scene) {
     }
 
     this.setMode = function(mode) {
+        if (preferences.isInitialized && MODE == mode) return;
         MODE = mode;
 
         scene.autoClear = this.domBackgroundCheck.checked;
+        scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
         hdri.toggleSkybox(this.domHdriToggle.checked);
 
         if (scene.activeCamera.useAutoRotationBehavior)
@@ -4465,22 +4462,19 @@ function UserInterface(scene) {
 
         if (mode == 0) {
             if (preferences.getWebsocket()) client.ws_connect();
-            scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
             builder.setMeshVisibility(true);
             bakery.setBakesVisibility(false);
             helper.displayGridPlane(helper.isFloorPlaneActive, true);
             helper.displayWorkplane(helper.isWorkplaneActive);
             helper.toggleAxisPlane(symmetry.axis !== -1);
-            helper.floorPlane.isVisible = preferences.getFloorPlane();
-            uix.unbindTransformGizmo();
             light.updateShadowMap();
             uix.setLightLocator(uix.isSunLocatorActive);
+            uix.unbindTransformGizmo();
             ghost.disposePointCloud();
         } else if (mode == 1) {
             //
         } else if (mode == 2) {
             client.ws_close();
-            scene.clearColor = BABYLON.Color4.FromHexString(this.domColorPickerBackground.value);
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
             bakery.createBakeryList();
@@ -4488,7 +4482,6 @@ function UserInterface(scene) {
             helper.displayWorkplane(helper.isWorkplaneActive);
             helper.toggleAxisPlane(false);
             helper.clearOverlays();
-            helper.floorPlane.isVisible = preferences.getFloorPlane();
             light.updateShadowMap();
             uix.setLightLocator(uix.isSunLocatorActive);
             if (preferences.getPointCloud())
@@ -4501,12 +4494,6 @@ function UserInterface(scene) {
     }
 
     this.setInterfaceMode = function(mode) {
-        this.domToolbarC_mem.children[0].innerHTML = 'SAVE';
-        this.domToolbarC_mem.children[1].innerHTML = 'LOAD';
-        this.domToolbarC_mem.children[3].innerHTML = 'UNDO';
-        this.domToolbarC_mem.children[4].innerHTML = 'REDO';
-        this.domToolbarC_mem.children[0].classList.remove("btn_select");
-        this.domToolbarC_mem.children[1].classList.remove("btn_select");
         this.domToolbarC_mem.children[0].style.display = 'unset';
         this.domToolbarC_mem.children[1].style.display = 'unset';
         this.domToolbarC_mem.children[2].style.display = 'unset'; // spacer
@@ -4519,7 +4506,7 @@ function UserInterface(scene) {
         this.domInScreenBucket.style.display = 'none';
         this.domMenuInScreenRight.style.display = 'none';
         this.domMaterialSwitch.style.display = 'none';
-        this.domLightLocator.disabled = false;
+        this.domInfoTool.style.display = 'none';
         uix.colorPicker.isVisible = false;
         for (const i of this.domToolbarL.children)
             i.style.display = 'unset';
@@ -4530,14 +4517,14 @@ function UserInterface(scene) {
             this.domPalette.style.display = 'unset';
             this.domColorPicker.style.display = 'unset';
             this.domToolbarR.children[9].style.display = 'none'; // MESHES
-            this.domToolbarL.children[3].style.display = 'none'; // MATERIAL
-            this.domToolbarL.children[4].style.display = 'none'; // TEXTURE
+            this.domToolbarL.children[4].style.display = 'none'; // MATERIAL
+            this.domToolbarL.children[5].style.display = 'none'; // TEXTURE
             this.domMenuInScreenRight.style.display = 'unset';
             this.domInScreenBucket.style.display = 'unset';
             this.domMaterialSwitch.style.display = 'unset';
+            this.domInfoTool.style.display = 'unset';
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
-            this.clearAllMenus('right');
             this.domHover.style.display = 'none';
             this.domToolbarR.children[1].style.display = 'none'; // FILE
             this.domToolbarR.children[2].style.display = 'none'; // GENERATOR
@@ -4548,11 +4535,10 @@ function UserInterface(scene) {
             this.domToolbarR.children[7].style.display = 'none'; // VOXELS
             this.domToolbarR.children[8].style.display = 'none'; // BAKERY
             this.domToolbarR.children[9].style.display = 'none'; // MESHES
-            this.domToolbarL.children[3].style.display = 'none'; // MATERIAL
-            this.domToolbarL.children[4].style.display = 'none'; // TEXTURE
-            this.domToolbarL.children[5].style.display = 'none'; // STORAGE
-            this.domToolbarL.children[6].style.display = 'none'; // GROUP
-            this.domLightLocator.disabled = true;
+            this.domToolbarL.children[4].style.display = 'none'; // MATERIAL
+            this.domToolbarL.children[5].style.display = 'none'; // TEXTURE
+            this.domToolbarL.children[6].style.display = 'none'; // STORAGE
+            this.domToolbarL.children[7].style.display = 'none'; // GROUP
             xformer.apply();
             window.pt.toggle();
         } else if (mode == 2) {
@@ -4564,11 +4550,13 @@ function UserInterface(scene) {
             this.domToolbarR.children[5].style.display = 'none'; // MODEL
             this.domToolbarR.children[6].style.display = 'none'; // PAINT
             this.domToolbarR.children[7].style.display = 'none'; // VOXELS
-            this.domToolbarL.children[5].style.display = 'none'; // STORAGE
-            this.domToolbarL.children[6].style.display = 'none'; // GROUP
+            this.domToolbarL.children[1].style.display = 'none'; // RENDER
+            this.domToolbarL.children[6].style.display = 'none'; // STORAGE
+            this.domToolbarL.children[7].style.display = 'none'; // GROUP
         }
 
         this.setToolbarMem(mode);
+        this.setMenuModes(mode);
 
         for (const i of this.domModes)
             i.classList.remove("mode_select");
@@ -4581,24 +4569,30 @@ function UserInterface(scene) {
 
     this.setToolbarMem = function(mode) {
         if (mode == 0) {
-            this.domToolbarC_mem.children[0].onclick = () => { snapshot.setStorageVoxels() }; // SAVE
-            this.domToolbarC_mem.children[1].onclick = () => { snapshot.getStorageVoxels() }; // LOAD
-            this.domToolbarC_mem.children[3].onclick = () => { memory.undo() }; // UNDO
-            this.domToolbarC_mem.children[4].onclick = () => { memory.redo() }; // REDO
+            this.domToolbarC_mem.children[0].onclick = () => { snapshot.setStorageVoxels() };
+            this.domToolbarC_mem.children[1].onclick = () => { snapshot.getStorageVoxels() };
+            this.domToolbarC_mem.children[3].onclick = () => { memory.undo() };
+            this.domToolbarC_mem.children[4].onclick = () => { memory.redo() };
+            this.domToolbarC_mem.children[0].innerHTML = 'SAVE';
+            this.domToolbarC_mem.children[1].innerHTML = 'LOAD';
+            this.domToolbarC_mem.children[3].innerHTML = 'UNDO';
+            this.domToolbarC_mem.children[4].innerHTML = 'REDO';
         } else if (mode == 1) {
-            this.domToolbarC_mem.children[0].onclick = () => { window.pt.fastMode() }; // SAVE
-            this.domToolbarC_mem.children[1].onclick = () => { window.pt.domShade.checked = !window.pt.domShade.checked; window.pt.updateAttributeColors() }; // LOAD
-            this.domToolbarC_mem.children[3].onclick = () => { window.pt.pause() }; // UNDO
-            this.domToolbarC_mem.children[4].onclick = () => { window.pt.shot() }; // REDO
+            this.domToolbarC_mem.children[0].onclick = () => { window.pt.fastMode() };
+            this.domToolbarC_mem.children[1].onclick = () => { window.pt.domShade.checked = !window.pt.domShade.checked; window.pt.updateAttributeColors() };
+            this.domToolbarC_mem.children[3].onclick = () => { window.pt.pause() };
+            this.domToolbarC_mem.children[4].onclick = () => { window.pt.shot() };
             this.domToolbarC_mem.children[0].innerHTML = 'FAST';
             this.domToolbarC_mem.children[1].innerHTML = 'SHADE';
             this.domToolbarC_mem.children[3].innerHTML = 'PAUSE';
             this.domToolbarC_mem.children[4].innerHTML = 'SHOT';
         } else if (mode == 2) {
-            this.domToolbarC_mem.children[0].onclick = () => { snapshot.setStorageBakes() }; // SAVE
-            this.domToolbarC_mem.children[1].onclick = () => { snapshot.getStorageBakes() }; // LOAD
-            this.domToolbarC_mem.children[3].onclick = () => { bakery.bakeAllColors() }; // UNDO
-            this.domToolbarC_mem.children[4].onclick = () => { project.exportBakes() }; // REDO
+            this.domToolbarC_mem.children[0].onclick = () => { snapshot.setStorageBakes() };
+            this.domToolbarC_mem.children[1].onclick = () => { snapshot.getStorageBakes() };
+            this.domToolbarC_mem.children[3].onclick = () => { bakery.bakeAllColors() };
+            this.domToolbarC_mem.children[4].onclick = () => { project.exportBakes() };
+            this.domToolbarC_mem.children[0].innerHTML = 'SAVE';
+            this.domToolbarC_mem.children[1].innerHTML = 'LOAD';
             this.domToolbarC_mem.children[3].innerHTML = 'BAKE';
             this.domToolbarC_mem.children[4].innerHTML = 'GET';
         }
@@ -4624,14 +4618,40 @@ function UserInterface(scene) {
     this.toggleMenuStorage = function() { this.switchMenus(this.domMenusLeft[5], 'left') }
     this.toggleMenuGroups = function() { this.switchMenus(this.domMenusLeft[6], 'left') }
 
+    let arrL = [];
+    let arrR = [];
+    this.setMenuModes = function(mode) { // exclude menus in certain modes
+        arrL = [];
+        arrR = [];
+        if (mode == 0) {
+            arrL = [ 3, 4 ];
+            arrR = [ 10 ];
+        } else if (mode == 1) {
+            arrL = [ 3, 4, 5, 6 ];
+            arrR = [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+        } else if (mode == 2) {
+            arrL = [ 0, 5, 6 ];
+            arrR = [ 3, 4, 5, 6, 7, 8 ];
+        }
+
+        for (let i = 0; i < arrL.length; i++) {
+            if (this.domMenusLeft[arrL[i]].style.marginLeft == styleMenuL_open)
+                this.switchMenus(this.domMenusLeft[arrL[i]], 'left');
+        }
+
+        for (let i = 0; i < arrR.length; i++) {
+            if (this.domMenusRight[arrR[i]].style.marginRight == styleMenuR_open)
+                this.switchMenus(this.domMenusRight[arrR[i]], 'right');
+        }
+    }
+
     this.clearAllMenus = function(side, exclude = null) {
         if (side == 'right' || side == 'both') {
             for (let i = 0; i < this.domMenusRight.length; i++) {
                 if (this.domMenusRight[i] !== exclude)
                     this.domMenusRight[i].style.marginRight = styleMenuR;
             }
-        }
-        if (side == 'left' || side == 'both') {
+        } else if (side == 'left' || side == 'both') {
             for (let i = 0; i < this.domMenusLeft.length; i++) {
                 if (this.domMenusLeft[i] !== exclude)
                     this.domMenusLeft[i].style.marginLeft = styleMenuL;
@@ -4646,12 +4666,16 @@ function UserInterface(scene) {
                 dom.style.marginRight = styleMenuR;
             } else {
                 dom.style.marginRight = styleMenuR_open;
+                if (isMobile)
+                    this.clearAllMenus('left', dom);
             }
         } else if (side == 'left') {
             if (dom.style.marginLeft === styleMenuL_open) {
                 dom.style.marginLeft = styleMenuL;
             } else {
                 dom.style.marginLeft = styleMenuL_open;
+                if (isMobile)
+                    this.clearAllMenus('right', dom);
             }
         }
     }
@@ -4670,9 +4694,6 @@ function UserInterface(scene) {
         this.domInfo[0].innerHTML = Math.round(engine.getFps());
         if (MODE == 0) {
             this.domInfo[1].innerHTML = builder.voxels.length + ' VOX';
-            (builder.voxels.length >= MAXAMOUNT) ?
-                 this.domInfo[1].style.color = 'indianred' :
-                 this.domInfo[1].style.color = '#97a5b8';
             this.domInfo[2].innerHTML = palette.uniqueColors.length + ' COL';
         } else if (MODE == 1) {
             //
@@ -4682,12 +4703,11 @@ function UserInterface(scene) {
         }
     }
 
-    this.notification = function(txt, timeout = 3000) {
-        if (notificationTimer) // prevent overdraw
+    this.notification = function(str, timeout = 2500) {
+        if (notificationTimer)
             clearTimeout(notificationTimer);
-        this.domNotifier.innerHTML = txt.toUpperCase();
+        this.domNotifier.innerHTML = str.toUpperCase();
         this.domNotifier.style.display = 'unset';
-        this.domNotifier.style.marginLeft = -(this.domNotifier.getBoundingClientRect().width/2) + 'px';
         notificationTimer = setTimeout(() => {
             ui.domNotifier.style.display = 'none';
         }, timeout);
@@ -4703,13 +4723,10 @@ function UserInterface(scene) {
         if (!eyeDropper) return;
         eyeDropper.open({ signal: abortController.signal }).then(res => {
             currentColor = res.sRGBHex.toUpperCase();
-            // fix eyedropper in linux systems (sRGBHex return RGBA)
+            // fix for linux systems (sRGBHex return RGBA)
             if (currentColor.startsWith('RGBA')) {
                 const rgb = currentColor.match(/\d+/g);
-                rgb[0] = 255 * Math.pow((rgb[0] / 255), 1 / 2.2); // 0.4545
-                rgb[1] = 255 * Math.pow((rgb[1] / 255), 1 / 2.2);
-                rgb[2] = 255 * Math.pow((rgb[2] / 255), 1 / 2.2);
-                currentColor = rgbIntToHex(rgb[0], rgb[1], rgb[2]);
+                currentColor = rgbIntToHexGamma(rgb[0], rgb[1], rgb[2], 1);
             }
             uix.colorPicker.value = BABYLON.Color3.FromHexString(currentColor);
         }).catch(err => {
@@ -4754,6 +4771,7 @@ function UserInterface(scene) {
             this.domMenuInScreenRight.style.display = 'none';
             this.domMenuInScreenBottom.style.display = 'none';
             this.domInfoParent.style.display = 'none';
+            this.domInfoTool.style.display = 'none';
         } else {
             this.domMenus.style.display = 'unset';
             if (MODE == 0) {
@@ -4764,6 +4782,7 @@ function UserInterface(scene) {
                 this.domMaterialSwitch.style.display = 'unset';
                 this.domMenuInScreenRight.style.display = 'unset';
                 this.domMenuInScreenBottom.style.display = 'flex';
+                this.domInfoTool.style.display = 'unset';
                 palette.create();
             }
             if (MODE == 2) {
@@ -4912,7 +4931,7 @@ function UserInterfaceAdvanced(scene) {
         this.gizmoVoxel.usePointerToAttachGizmos = false;
         this.gizmoVoxel.clearGizmoOnEmptyPointerEvent = true;
 
-        this.gizmoVoxel.gizmos.positionGizmo.scaleRatio = 0.5;
+        this.gizmoVoxel.gizmos.positionGizmo.scaleRatio = 0.6;
         this.gizmoVoxel.gizmos.positionGizmo.snapDistance = 1;
         this.gizmoVoxel.gizmos.positionGizmo.planarGizmoEnabled = false;
         this.gizmoVoxel.gizmos.positionGizmo.updateGizmoRotationToMatchAttachedMesh = true;
@@ -4945,7 +4964,7 @@ function UserInterfaceAdvanced(scene) {
         this.gizmo.usePointerToAttachGizmos = true;
         this.gizmo.clearGizmoOnEmptyPointerEvent = true;
 
-        this.gizmo.gizmos.positionGizmo.scaleRatio = 0.5;
+        this.gizmo.gizmos.positionGizmo.scaleRatio = 0.6;
         this.gizmo.gizmos.positionGizmo.snapDistance = 1;
         this.gizmo.gizmos.positionGizmo.xPlaneGizmo.snapDistance = 1;
         this.gizmo.gizmos.positionGizmo.yPlaneGizmo.snapDistance = 1;
@@ -4963,7 +4982,7 @@ function UserInterfaceAdvanced(scene) {
                 });
             });
         
-        this.gizmo.gizmos.rotationGizmo.scaleRatio = 0.25;
+        this.gizmo.gizmos.rotationGizmo.scaleRatio = 0.3;
         this.gizmo.gizmos.rotationGizmo.snapDistance = Math.PI / 8;
         this.gizmo.gizmos.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
         [ this.gizmo.gizmos.rotationGizmo.xGizmo,
@@ -5007,7 +5026,7 @@ function UserInterfaceAdvanced(scene) {
         });
 
         this.sunGizmoNews = new BABYLON.PlaneRotationGizmo(BABYLON.Axis.Y, COL_AQUA_RGB, this.utilLayer);
-        this.sunGizmoNews.scaleRatio = 0.7;
+        this.sunGizmoNews.scaleRatio = 0.8;
         this.sunGizmoNews.attachedMesh = null;
         this.sunGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
         this.sunGizmoNews.dragBehavior.onDragObservable.add(() => {
@@ -5015,18 +5034,18 @@ function UserInterfaceAdvanced(scene) {
         });
     }
 
-    this.showLightLocator = function() {
+    this.showLightLocator = function() {        
         this.sunGizmoUp.attachedMesh = this.sunNode;
         this.sunGizmoNews.attachedMesh = this.sunNode;
         ui.domInScreenLightLocator.firstChild.style.color = COL_ORANGE;
-        ui.domLightLocator.checked = true;
+        uix.isSunLocatorActive = true;
     }
 
     this.hideLightLocator = function() {
         this.sunGizmoUp.attachedMesh = null;
         this.sunGizmoNews.attachedMesh = null;
         ui.domInScreenLightLocator.firstChild.style.color = COL_AQUA;
-        ui.domLightLocator.checked = false;
+        uix.isSunLocatorActive = false;
     }
 
     this.setLightLocator = function(isEnabled) {
@@ -5054,56 +5073,71 @@ function UserInterfaceAdvanced(scene) {
 function Preferences() {
     const KEY_STARTUP = "pref_startup";
     const KEY_NOHOVER = "pref_nohover";
+    const KEY_PALETTE_SIZE = "pref_palette_size";
+    const KEY_FLOORPLANE = "pref_floorplane";
+    const KEY_POINTCLOUD = "pref_pointcloud";
+    const KEY_POWERSAVER = "pref_powersaver";
     const KEY_WEBSOCKET = "pref_websocket";
     const KEY_WEBSOCKET_URL = "pref_websocket_url";
-    const KEY_PALETTE_SIZE = "pref_palette_size";
-    const KEY_BVHPICKING = "pref_bvhpicking";
-    const KEY_POINTCLOUD = "pref_pointcloud";
-    const KEY_FLOORPLANE = "pref_floorplane";
-    const KEY_POWERSAVER = "pref_powersaver";
+    this.isInitialized = false;
 
     this.init = function() {
         document.getElementById(KEY_STARTUP).checked = false;
         document.getElementById(KEY_NOHOVER).checked = false;
+        document.getElementById(KEY_PALETTE_SIZE).value = 1;
+        document.getElementById(KEY_FLOORPLANE).checked = true;
+        document.getElementById(KEY_POINTCLOUD).checked = true;
+        document.getElementById(KEY_POWERSAVER).checked = isMobile;
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8011";
-        document.getElementById(KEY_PALETTE_SIZE).value = 1;
-        document.getElementById(KEY_BVHPICKING).checked = true;
-        document.getElementById(KEY_POINTCLOUD).checked = true;
-        document.getElementById(KEY_FLOORPLANE).checked = true;
-        document.getElementById(KEY_POWERSAVER).checked = isMobile;
 
         initPrefCheck(KEY_STARTUP);
         initPrefCheck(KEY_NOHOVER);
-        initPrefCheck(KEY_WEBSOCKET, (chk) => {
-            (chk && MODE == 0) ? client.ws_connect() : client.ws_close();
-        });
-        initPref(KEY_WEBSOCKET_URL);
         initPref(KEY_PALETTE_SIZE);
-        initPrefCheck(KEY_BVHPICKING, (chk) => {
-            if (chk && MODE == 0) window.rc.create();
+        initPrefCheck(KEY_FLOORPLANE, (chk) => {
+            if (MODE == 0 || MODE == 2) helper.floorPlane.isVisible = chk;
         });
         initPrefCheck(KEY_POINTCLOUD, (chk) => {
             (chk && MODE == 2) ? ghost.createPointCloud() : ghost.disposePointCloud();
         });
-        initPrefCheck(KEY_FLOORPLANE, (chk) => {
-            if (MODE == 0 || MODE == 2) helper.floorPlane.isVisible = chk;
-        });
         initPrefCheck(KEY_POWERSAVER, (chk) => {
-            (chk) ? FPS = 1000 / 30 : FPS = 1000 / 60;
+            if (chk) {
+                FPS = 1000 / 30;
+                document.getElementById('input-pt-bounces').value = 3;
+                document.getElementById('input-pt-envpower').value = 3.5;
+            } else {
+                FPS = 1000 / 60;
+                document.getElementById('input-pt-bounces').value = 4;
+                document.getElementById('input-pt-envpower').value = 4.5;
+            }
+            if (window.pt.isActive && window.pt.isLoaded) {
+                window.pt.updateUniformBounces(document.getElementById('input-pt-bounces').value);
+                window.pt.updateUniformEnvPower(document.getElementById('input-pt-envpower').value);
+            }
         });
+        initPrefCheck(KEY_WEBSOCKET, (chk) => {
+            (chk && MODE == 0) ? client.ws_connect() : client.ws_close();
+        });
+        initPref(KEY_WEBSOCKET_URL);
     }
 
     this.finish = function() {
-        setTimeout(() => {
-            (this.getPowerSaver()) ? FPS = 1000 / 30 : FPS = 1000 / 60;
-            palette.expand(this.getPaletteSize());
-            ui.toggleHover(!this.getNoHover());
-        }, 100);
+        if (this.getPowerSaver()) {
+            FPS = 1000 / 30;
+            document.getElementById('input-pt-bounces').value = 3;
+            document.getElementById('input-pt-envpower').value = 3.5;
+        } else {
+            FPS = 1000 / 60;
+            document.getElementById('input-pt-bounces').value = 4;
+            document.getElementById('input-pt-envpower').value = 4.5;
+        }
+        palette.expand(this.getPaletteSize());
+        ui.toggleHover(!this.getNoHover());
+        helper.floorPlane.isVisible = this.getFloorPlane();
 
         const scriptModules = document.createElement('script');
         scriptModules.type = 'module';
-        scriptModules.src = 'src/modules.js';
+        scriptModules.src = 'src/modules/modules.js';
         document.body.appendChild(scriptModules);
 
         // inject the user modules entry point
@@ -5126,8 +5160,9 @@ function Preferences() {
                 engine.hideLoadingUI();
                 console.log('initialized.');
                 clearInterval(interval);
+                this.isInitialized = true;
             }
-        }, 500);
+        }, 100);
     }
 
     this.setStartup = function(isEnabled) {
@@ -5148,32 +5183,8 @@ function Preferences() {
         ui.toggleHover(!isEnabled);
     }
 
-    this.getWebsocket = function() {
-        return document.getElementById(KEY_WEBSOCKET).checked;
-    }
-
-    this.getWebsocketUrl = function() {
-        return document.getElementById(KEY_WEBSOCKET_URL).value;
-    }
-
     this.getPaletteSize = function() {
         return document.getElementById(KEY_PALETTE_SIZE).value;
-    }
-
-    this.setBvhPicking = function(isEnabled) {
-        localStorage.setItem(KEY_BVHPICKING, isEnabled);
-    }
-
-    this.getBvhPicking = function() {
-        return document.getElementById(KEY_BVHPICKING).checked;
-    }
-
-    this.setPointCloud = function(isEnabled) {
-        localStorage.setItem(KEY_POINTCLOUD, isEnabled);
-    }
-
-    this.getPointCloud = function() {
-        return document.getElementById(KEY_POINTCLOUD).checked;
     }
 
     this.setFloorPlane = function(isEnabled) {
@@ -5184,12 +5195,28 @@ function Preferences() {
         return document.getElementById(KEY_FLOORPLANE).checked;
     }
 
+    this.setPointCloud = function(isEnabled) {
+        localStorage.setItem(KEY_POINTCLOUD, isEnabled);
+    }
+
+    this.getPointCloud = function() {
+        return document.getElementById(KEY_POINTCLOUD).checked;
+    }
+
     this.setPowerSaver = function(isEnabled) {
         localStorage.setItem(KEY_POWERSAVER, isEnabled);
     }
 
     this.getPowerSaver = function() {
         return document.getElementById(KEY_POWERSAVER).checked;
+    }
+
+    this.getWebsocket = function() {
+        return document.getElementById(KEY_WEBSOCKET).checked;
+    }
+
+    this.getWebsocketUrl = function() {
+        return document.getElementById(KEY_WEBSOCKET_URL).value;
     }
 
     function initPref(key, callback = undefined) {
@@ -5257,10 +5284,10 @@ document.addEventListener("keydown", (ev) => {
                 xformer.apply();
             break;
         case ' ':
-            if (MODE == 0) tool.toolSelector('camera');
+            if (MODE == 0) tool.toolSelector('camera', true);
             break;
         case '`':
-            if (MODE == 0) tool.toolSelector('camera');
+            if (MODE == 0) tool.toolSelector('camera', true);
             break;
         case '1':
             if (MODE == 0) tool.toolSelector('add', true);
@@ -5272,7 +5299,7 @@ document.addEventListener("keydown", (ev) => {
             if (MODE == 0) tool.toolSelector('box_add', true);
             break;
         case '4':
-            if (MODE == 0) tool.toolSelector('box_rem', true);
+            if (MODE == 0) tool.toolSelector('box_remove', true);
             break;
         case '5':
             if (MODE == 0) tool.toolSelector('paint', true);
@@ -5357,6 +5384,19 @@ function fileHandler(file) {
     }
 }
 
+function fileHandlerNoDrop(file, type) {
+    const url = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+        if (type === 'import_voxels') project.importVoxels(reader.result);
+        if (type === 'import_bakes')  project.importBakes(reader.result);
+        URL.revokeObjectURL(url);
+    }
+    if (type === 'import_voxels' || type === 'import_bakes') {
+        reader.readAsText(file);
+    }
+}
+
 function dropHandler(ev) {
     ev.preventDefault();
     if (ev.dataTransfer.files[0] && ev.dataTransfer.files[0].path !== "")
@@ -5372,6 +5412,16 @@ function dragLeaveHandler(ev) {
 document.getElementById('openfile_json').addEventListener("change", (ev) => {
     if (ev.target.files.length > 0)
         fileHandler(ev.target.files[0]);
+}, false);
+
+document.getElementById('openfile_import_voxels').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandlerNoDrop(ev.target.files[0], 'import_voxels');
+}, false);
+
+document.getElementById('openfile_import_bakes').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandlerNoDrop(ev.target.files[0], 'import_bakes');
 }, false);
 
 document.getElementById('openfile_vox').addEventListener("change", (ev) => {
@@ -5604,12 +5654,15 @@ function createScreenshotBasic(width, height, callback) {
     });
 }
 
-function clearCache() {
+function clearCache(elem) {
     engine.clearInternalTexturesCache();
     scene.cleanCachedTextureBuffer();
     BABYLON.Tools.ClearLogCache();
     memory.clear();
-    ui.notification('cleared cache and memory');
+    elem.innerHTML = 'Cleared';
+    setTimeout(() => {
+        elem.innerHTML = 'Clear Cache';
+    }, 800);
 }
 
 const isTargetIn = (startPos, endPos, target, camera) => {
@@ -5629,4 +5682,265 @@ const isTargetIn = (startPos, endPos, target, camera) => {
         return true;
     }
     return false;
+}
+
+function numToColor(num) {
+    return [ 
+        ((num & 0xff0000) >> 16),
+        ((num & 0x00ff00) >>  8),
+        ((num & 0x0000ff) >>  0)
+     ];
+}
+
+function readTexturePixels(gl, texture, x, y, w, h) {
+    const frameBuffer = gl.createFramebuffer();
+    const pixels = new Uint8Array(w * h * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    return pixels;
+}
+
+function removeDuplicatesArray(arr) {
+    return arr.filter((value, index, self) =>
+        index === self.findIndex(i =>
+            i.position.x == value.position.x &&
+            i.position.y == value.position.y &&
+            i.position.z == value.position.z
+        ));
+}
+
+function loadUrl(url, callback, onerror = null) {
+    fetch(url).then((res) => {
+        if (res.status !== 200) {
+            if (onerror) onerror();
+            return;
+        }
+        res.text().then((data) => {
+            callback(data);
+        });
+    }).catch((err) => {
+        if (onerror) onerror();
+    });
+}
+
+function downloadText(txt, filename) {
+    const blob = new Blob([ txt ], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function downloadImage(imgSrc, filename) {
+    const a = document.createElement("a");
+    a.href = imgSrc;
+    a.download = filename;
+    a.click();
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+async function saveFile(blob, filename, reject) {
+    if (!isElectron() && !isMobile) { // to show a file dialog in Chrome
+        try {
+            const fileHandle = await self.showSaveFilePicker({
+                suggestedName: filename,
+                types: [ { description: "File" } ]
+            });
+            const writeFile = async (fileHandle, contents) => {
+                const writable = await fileHandle.createWritable();
+                await writable.write(contents);
+                await writable.close();
+            };
+            writeFile(fileHandle, blob).then(() => {
+                //
+            });
+        } catch (err) {
+            // canceled
+        }
+    } else { // showSaveFilePicker browser compatibility
+        reject();
+    }
+}
+
+function saveDialog(data, filename) {
+    const blob = new Blob([ data ], { type: "text/plain" });
+    saveFile(blob, filename, () => {
+        downloadText(data, filename);
+    });
+}
+
+function saveDialogImage(data, filename) {
+    const blob = dataURItoBlob(data);
+    saveFile(blob, filename, () => {
+        downloadImage(data, filename);
+    });
+}
+
+function dataURItoBlob(dataURI) {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ ab ], { type: mimeString });
+    return blob;
+}
+
+function toggleFullscreen() {
+    (document.fullscreenElement) ? document.exitFullscreen() : document.body.requestFullscreen();
+}
+
+function isMobileDevice() {
+    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(navigator.userAgent) 
+        || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(navigator.userAgent.substr(0,4))) { 
+        return true;
+    }
+    return false;
+}
+
+function isElectron() {
+    if (typeof window !== 'undefined' && typeof window.process === 'object' && window.process.type === 'renderer') return true;
+    if (typeof process !== 'undefined' && typeof process.versions === 'object' && !!process.versions.electron) return true;
+    if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) return true;
+    return false;
+}
+
+function isOffScreen(elem, minPad = 20) {
+    const rect = elem.getBoundingClientRect();
+    return ((rect.x + (rect.width/2) - minPad) < 0 || (rect.x + minPad) > window.innerWidth ||
+            (rect.y + minPad) < 0 || (rect.y + minPad) > window.innerHeight);
+}
+
+function aspectRatioFit(srcW, srcH, maxW, maxH) {
+    const ratio = Math.min(maxW / srcW, maxH / srcH);
+    return { width: srcW * ratio, height: srcH * ratio };
+}
+
+function getStyleRoot(key) {
+    return getComputedStyle(document.querySelector(':root')).getPropertyValue(key);
+}
+
+function evenNumberIndicatorInt(elem) {
+    (Math.abs(parseInt(elem.value) % 2) == 1) ? // detect odd numbers
+        elem.style.color = 'indianred' :
+        elem.style.color = getStyleRoot('--input-color');
+}
+
+function rgbIntToHex(r, g, b) {
+    return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
+}
+
+function rgbIntToHexGamma(r, g, b, gamma) {
+    r = 255 * Math.pow(r / 255, gamma);
+    g = 255 * Math.pow(g / 255, gamma);
+    b = 255 * Math.pow(b / 255, gamma);
+    return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
+}
+
+function rgbFloatToHex(r, g, b) { // thanks to @labris
+    const hr = Math.max(0, Math.min(255, Math.round(r * 255))).toString(16);
+    const hg = Math.max(0, Math.min(255, Math.round(g * 255))).toString(16);
+    const hb = Math.max(0, Math.min(255, Math.round(b * 255))).toString(16);
+    return ("#" +
+        (hr.length<2?"0":"") + hr +
+        (hg.length<2?"0":"") + hg +
+        (hb.length<2?"0":"") + hb).toUpperCase();
+}
+
+function hexToRgbFloat(hex, gamma = 2.2) { // 1 / 0.4545
+    return {
+        r: Math.pow(parseInt(hex.substring(1, 3), 16) / 255, gamma),
+        g: Math.pow(parseInt(hex.substring(3, 5), 16) / 255, gamma),
+        b: Math.pow(parseInt(hex.substring(5, 7), 16) / 255, gamma)
+    }
+}
+
+function randomHexColor() {
+    return "#000000".replace(/0/g, () => {
+        return (~~(Math.random()*16)).toString(16).toUpperCase();
+    });
+}
+
+function gradientHexArray(hexStart, hexEnd, count) {
+    const start = hexToRgbFloat(hexStart);
+    const end = hexToRgbFloat(hexEnd);
+    const arr = [];
+    let a = 0;
+    for (let i = 0; i < count; i++) {
+        a += (1 / count);
+        arr.push(rgbFloatToHex(
+            start.r * a + (1 - a) * end.r,
+            start.g * a + (1 - a) * end.g,
+            start.b * a + (1 - a) * end.b
+        ));
+    }
+    return arr;
+}
+
+function getCanvasColor(context, x, y) {
+    const data = context.getImageData(x, y, 1, 1).data;
+    if (data[3] > 0) return rgbIntToHex(data[0], data[1], data[2]);
+    return null;
+}
+
+function randomRangeInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function parseBool(val) {
+    return val === true || val === "true";
+}
+
+function timeFormat(t) {
+    const sec_num = parseInt(t, 10);
+    let h = Math.floor(sec_num / 3600);
+    let m = Math.floor((sec_num - (h * 3600)) / 60);
+    let s = sec_num - (h * 3600) - (m * 60);
+    if (h < 10) { h = "0" + h; }
+    if (m < 10) { m = "0" + m; }
+    if (s < 10) { s = "0" + s; }
+    return h + ':' + m + ':' + s;
+}
+
+function parseINI(data) {
+    const regex = {
+        section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+        param: /^\s*([^=]+?)\s*=\s*(.*?)\s*$/,
+        comment: /^\s*;.*$/
+    };
+    const value = {};
+    const lines = data.split(/[\r\n]+/);
+    let section = null;
+    lines.forEach((line) => {
+        if (regex.comment.test(line)) {
+            return;
+        } else if (regex.param.test(line)) {
+            const match = line.match(regex.param);
+            if (section) {
+                value[section][match[1]] = match[2];
+            } else{
+                value[match[1]] = match[2];
+            }
+        } else if (regex.section.test(line)) {
+            const match = line.match(regex.section);
+            value[match[1]] = {};
+            section = match[1];
+        } else if (line.length == 0 && section) {
+            section = null;
+        }
+    });
+    return value;
 }
