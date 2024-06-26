@@ -1,5 +1,18 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.1
+- Add merge-selected to export tab
+- Add render source to PT (render baked meshes from export tab)<br>
+  Fix multiple camera conflict, camera position returns to the selected source<br>
+  Shortcut R respect selected source
+- Add max-samples to PT (8-8192, 4096 default)
+- Firefox optimization (fix save file, css styles, palette right-click)
+- Update to babylonjs 7.10.0
+- Fix workplanes undetected picking
+- Fix attachableMeshes error in export tab
+- Fix baked meshes visible in model tab under certain conditions
+- Remove deprecated ini format to save resources
+
 ## 4.3.0 nightly
 > This version is a breath of fresh air after the SPS fallout
 - Add tool indicator, display the name of the selected tool

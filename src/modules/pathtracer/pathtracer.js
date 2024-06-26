@@ -20,7 +20,6 @@ import {
 const DPR = 1;
 const DPR_FASTMODE = 0.6;
 const CAM_FAR = 1000;
-const MAXSAMPLES = 4096;
 const MAXWHITE = 0.86;
 const GRAY = MAXWHITE / 2;
 const LIGHT_POWER = 16.0 * 16.0;
@@ -37,29 +36,28 @@ class Pathtracer {
         this.isFastMode = false;
         this.pingPong = 0;
 
-        this.container = document.getElementById('pathtracer');
-        this.canvas = document.getElementById('canvas_pt');
-        this.info = document.getElementById('info_pt');
-        this.domPause = document.getElementById('btn-pt-pause');
-        this.domFastMode = document.getElementById('btn-pt-fast');
-        this.domShade = document.getElementById('input-pt-shade');
-
         this.renderer = undefined;
         this.scene = undefined;
         this.camera = undefined;
         this.controls = undefined;
         this.rtQuadA = undefined;
         this.rtQuadB = undefined;
-        this.samples = 0;
         this.uniImage = undefined;
         this.uniRender = undefined;
         this.RTTA = undefined;
         this.RTTB = undefined;
         this.CRTT = undefined;
         this.envTexture = undefined;
-        this.voxelTexture = createTexture(TEX_PATTERNS[3]);
-        this.nullTexture = new THREE.Texture();
         this.geom = undefined;
+        this.framed = undefined;
+        this.maxSamples = 0;
+        this.samples = 0;
+
+        this.container = document.getElementById('pathtracer');
+        this.canvas = document.getElementById('canvas_pt');
+        this.source = document.getElementById('input-pt-source');
+        this.domShade = document.getElementById('input-pt-shade');
+        this.domPause = document.getElementById('btn-pt-pause');
         
         this.init();
     }
@@ -79,16 +77,12 @@ class Pathtracer {
         this.controls.minDistance = 1;
         this.controls.maxDistance = CAM_FAR;
         this.controls.update();
-        this.controls.addEventListener('start', () => {
-            //
-        });
+        //this.controls.addEventListener('start', () => {});
         this.controls.addEventListener('change', () => {
             if (this.isLoaded)
                 this.resetSamples();
         });
-        this.controls.addEventListener('end', () => {
-            //
-        });
+        //this.controls.addEventListener('end', () => {});
 
         const type = (this.renderer.extensions.get('OES_texture_float_linear')) ? THREE.FloatType : THREE.HalfFloatType;
         this.RTTA = new THREE.WebGLRenderTarget(1, 1, { type: type, format: THREE.RGBAFormat, stencilBuffer: false, depthBuffer: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
@@ -100,19 +94,16 @@ class Pathtracer {
     }
 
     create() {
-        this.camera.position.set(camera.camera0.position.x, camera.camera0.position.y, camera.camera0.position.z);
-        this.camera.fov = camera.camera0.fov * RAD2DEG_STATIC;
-        this.camera.updateProjectionMatrix();
-        this.controls.target = new THREE.Vector3(camera.camera0.target.x, camera.camera0.target.y, camera.camera0.target.z);
-        this.controls.update();
-
+        this.updateCamera();
         this.setShaderMaterials();
         this.createGeometry();
         this.animate();
         this.resize();
 
         // restore previous states
+        this.update();
         this.updateHDR(hdri.hdrMap.url);
+        this.updateUniformMaxSamples(this.maxSamples);
         this.updateUniformBounces(document.getElementById('input-pt-bounces').value);
         this.updateUniformRenderPassId(document.getElementById('input-pt-passes').value);
         this.updateUniformCameraAperture(ui.domCameraAperture.value);
@@ -128,6 +119,24 @@ class Pathtracer {
         this.updateUniformGrid(document.getElementById('input-pt-grid').checked);
     }
 
+    update() {
+        this.maxSamples = document.getElementById('input-pt-maxsamples').value;
+    }
+
+    updateCamera() {
+        if (this.source.value == 'model') {
+            this.camera.position.set(camera.camera0.position.x, camera.camera0.position.y, camera.camera0.position.z);
+            this.camera.fov = camera.camera0.fov * RAD2DEG_STATIC;
+            this.controls.target = new THREE.Vector3(camera.camera0.target.x, camera.camera0.target.y, camera.camera0.target.z);
+        } else {
+            this.camera.position.set(camera.camera1.position.x, camera.camera1.position.y, camera.camera1.position.z);
+            this.camera.fov = camera.camera1.fov * RAD2DEG_STATIC;
+            this.controls.target = new THREE.Vector3(camera.camera1.target.x, camera.camera1.target.y, camera.camera1.target.z);
+        }
+        this.camera.updateProjectionMatrix();
+        this.controls.update();
+    }
+
     setShaderMaterials() {
         this.uniImage = {
             uBuffer: { value: this.RTTA.texture },
@@ -138,6 +147,7 @@ class Pathtracer {
             uRenderPassId: { value: 0 },
             
             uBounces: { value: 4 },
+            uMaxSamples: { value: 4096 },
             uSamples: { value: 0 },
             uAperture: { value: 0.0 },
             uFocalLength: { value: 50.0 },
@@ -192,13 +202,32 @@ class Pathtracer {
             this.geom.dispose()
         };
 
-        builder.fillArrayBuffers();
-        this.geom = new THREE.BufferGeometry();
-        this.geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
-        //this.geom.setAttribute('normal', new THREE.BufferAttribute(builder.normals, 3));
-        this.geom.setAttribute('uv', new THREE.BufferAttribute(builder.uvs, 2));
-        this.geom.setAttribute('color', new THREE.BufferAttribute(builder.colors, 4));
-        this.geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
+        if (this.source.value == 'model') {
+            builder.fillArrayBuffers();
+            this.geom = new THREE.BufferGeometry();
+            this.geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
+            //this.geom.setAttribute('normal', new THREE.BufferAttribute(builder.normals, 3));
+            this.geom.setAttribute('uv', new THREE.BufferAttribute(builder.uvs, 2));
+            this.geom.setAttribute('color', new THREE.BufferAttribute(builder.colors, 4));
+            this.geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
+            this.framed = camera.getFramed(builder.mesh);
+        } else {
+            if (bakery.meshes.length > 0) {
+                const mesh = BABYLON.Mesh.MergeMeshes(bakery.meshes, false, true);
+                this.geom = new THREE.BufferGeometry();
+                this.geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind)), 3));
+                //this.geom.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(mesh.getVerticesData(BABYLON.VertexBuffer.NormalKind)), 3));
+                this.geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(mesh.getVerticesData(BABYLON.VertexBuffer.UVKind)), 2));
+                this.geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(mesh.getVerticesData(BABYLON.VertexBuffer.ColorKind)), 4));
+                this.geom.setIndex(new THREE.BufferAttribute(new Uint32Array(mesh.getIndices()), 1));
+                this.framed = camera.getFramed(mesh);
+                mesh.dispose();
+            } else {
+                this.source.selectedIndex = 0;
+                this.createGeometry(); // revert to voxels
+            }
+        }
+
         this.geom.computeVertexNormals();
 
         if (document.getElementById('input-pt-floor').checked)
@@ -217,6 +246,7 @@ class Pathtracer {
         this.updateAttributeColors();
 
         this.isLoaded = true;
+        this.updateCamera();
         this.resetSamples();
     }
 
@@ -248,7 +278,7 @@ class Pathtracer {
     } */
 
     updateAttributeColors() {
-        if (pt.domShade.checked) {
+        if (this.domShade.checked) {
             const colors = new Float32Array(this.geom.attributes.position.count * 4);
             colors.fill(GRAY / 1.5);
             this.uniRender['colorAttribute'].value.updateFrom(new THREE.BufferAttribute(colors, 4));
@@ -258,15 +288,20 @@ class Pathtracer {
         this.resetSamples();
     }
 
-    updateUniformRenderPassId(id) {
-        id = parseInt(id);
-        this.uniImage['uRenderPassId'].value = id;
-        this.uniRender['uRenderPassId'].value = id;
+    updateUniformMaxSamples(num) {
+        this.uniRender['uMaxSamples'].value = parseInt(num);
         this.resetSamples();
     }
 
     updateUniformBounces(num) {
         this.uniRender['uBounces'].value = parseInt(num);
+        this.resetSamples();
+    }
+
+    updateUniformRenderPassId(id) {
+        id = parseInt(id);
+        this.uniImage['uRenderPassId'].value = id;
+        this.uniRender['uRenderPassId'].value = id;
         this.resetSamples();
     }
 
@@ -372,8 +407,8 @@ class Pathtracer {
     fastMode() {
         this.isFastMode = !this.isFastMode;
         (this.isFastMode) ?
-            this.domFastMode.classList.add('btn_select_pt') :
-            this.domFastMode.classList.remove('btn_select_pt');
+            document.getElementById('btn-pt-fast').classList.add('btn_select_pt') :
+            document.getElementById('btn-pt-fast').classList.remove('btn_select_pt');
         if (this.isLoaded)
             this.resize();
     }
@@ -383,7 +418,7 @@ class Pathtracer {
         if (pt.isLoaded) {
             const now = performance.now();
             const elapsed = now - pt.then;
-            if (pt.isProgressing && elapsed > FPS && pt.samples < MAXSAMPLES) {
+            if (pt.isProgressing && elapsed > FPS && pt.samples < pt.maxSamples) {
                 pt.then = now - (elapsed % FPS);
 
                 // CPU AA jitter (GPU has more to do)
@@ -415,11 +450,12 @@ class Pathtracer {
                 pt.pingPong ^= 1;
                 pt.samples++;
 
-                ui.domProgressBar.style.width = ~~Math.abs((pt.samples/MAXSAMPLES)*100) + '%';
-                pt.info.children[0].innerHTML = ui.domProgressBar.style.width;
-                pt.info.children[1].innerHTML = ~~Math.abs((pt.samples/MAXSAMPLES)*(MAXSAMPLES));
-                pt.info.children[2].innerHTML = timeFormat(pt.samples);
-                pt.info.children[3].innerHTML = pt.uniRender['uBounces'].value;
+                ui.domProgressBar.style.width = ~~Math.abs((pt.samples/pt.maxSamples)*100) + '%';
+                ui.domInfoRender.children[0].innerHTML = ui.domProgressBar.style.width;
+                ui.domInfoRender.children[1].innerHTML = ~~Math.abs((pt.samples/pt.maxSamples)*(pt.maxSamples));
+                ui.domInfoRender.children[2].innerHTML = pt.maxSamples;
+                ui.domInfoRender.children[3].innerHTML = timeFormat(pt.samples);
+                ui.domInfoRender.children[4].innerHTML = pt.uniRender['uBounces'].value;
             }
         }
     }
@@ -443,15 +479,14 @@ class Pathtracer {
     }
 
     frameCamera() {
-        const f = camera.getFramed(builder.mesh);
         const size = new THREE.Vector3();
         const center = new THREE.Vector3();
         this.geom.boundingBox.getSize(size);
         this.geom.boundingBox.getCenter(center);
-        const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(f.radius);
+        const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(this.framed.radius);
 
         this.camera.position.copy(center).sub(direction);
-        this.controls.target.copy(new THREE.Vector3(f.target.x, f.target.y, f.target.z));
+        this.controls.target.copy(new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z));
 
         this.camera.updateProjectionMatrix();
         this.controls.update();
@@ -459,7 +494,7 @@ class Pathtracer {
 
     shot() {
         const uri = this.renderer.domElement.toDataURL('image/png');
-        saveDialogImage(uri, `shot_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
+        saveDialogImage(uri, `${ ui.domProjectName.value }_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
     }
 
     toggle() {
@@ -485,8 +520,13 @@ class Pathtracer {
     deactivate() {
         if (!this.isLoaded) return;
 
-        camera.camera0.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
-        camera.camera0.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
+        if (this.source.value == 'model') {
+            camera.camera0.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+            camera.camera0.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
+        } else {
+            camera.camera1.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+            camera.camera1.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
+        }
        
         this.isLoaded = false;
         this.isProgressing = false;
@@ -544,24 +584,19 @@ await loadTexture('assets/bluenoise256.png').then(tex => {
 // Register events
 
 
-ui.domCameraAperture.onchange = (ev) => {
-    if (pt.isLoaded && ev.target.value > 0)
-        pt.updateUniformCameraAperture(ev.target.value);
+document.getElementById('input-pt-source').onchange = () => {
+    if (pt.isLoaded) {
+        pt.createGeometry();
+        pt.resetSamples();
+    }
 };
 
-ui.domCameraFocalLength.onchange = (ev) => {
-    if (pt.isLoaded && ev.target.value > 0)
-        pt.updateUniformCameraFocalLength(ev.target.value);
-};
-
-ui.domColorPickerLightColor.oninput = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformLightCol(ev.target.value);
-};
-
-ui.domLightIntensity.onchange = () => {
-    if (pt.isLoaded)
-        pt.updateUniformLightCol(ui.domColorPickerLightColor.value);
+document.getElementById('input-pt-maxsamples').onchange = (ev) => {
+    if (ev.target.value < 8) ev.target.value = 8;
+    if (pt.isLoaded) {
+        pt.update();
+        pt.updateUniformMaxSamples(ev.target.value);
+    }
 };
 
 document.getElementById('input-pt-passes').onchange = (ev) => {
@@ -575,10 +610,9 @@ document.getElementById('input-pt-bounces').onchange = (ev) => {
 };
 
 document.getElementById('input-pt-envpower').onchange = (ev) => {
-    if (pt.isLoaded) {
-        if (ev.target.value < 1) ev.target.value = 1;
+    if (ev.target.value < 1) ev.target.value = 1;
+    if (pt.isLoaded)
         pt.updateUniformEnvPower(ev.target.value);
-    }
 };
 
 document.getElementById('input-pt-envpower').onwheel = (ev) => {
@@ -640,6 +674,26 @@ document.getElementById('btn-pt-fast').onclick = () => {
     pt.fastMode();
 };
 
+ui.domCameraAperture.onchange = (ev) => {
+    if (pt.isLoaded && ev.target.value > 0)
+        pt.updateUniformCameraAperture(ev.target.value);
+};
+
+ui.domCameraFocalLength.onchange = (ev) => {
+    if (pt.isLoaded && ev.target.value > 0)
+        pt.updateUniformCameraFocalLength(ev.target.value);
+};
+
+ui.domColorPickerLightColor.oninput = (ev) => {
+    if (pt.isLoaded)
+        pt.updateUniformLightCol(ev.target.value);
+};
+
+ui.domLightIntensity.onchange = () => {
+    if (pt.isLoaded)
+        pt.updateUniformLightCol(ui.domColorPickerLightColor.value);
+};
+
 window.addEventListener('resize', () => {
     if (pt.isLoaded)
         pt.resize();
@@ -666,18 +720,4 @@ async function loadRGBE(url) {
     return new Promise(resolve => {
         new RGBELoader().load(url, resolve);
     });
-}
-
-function createTexture(url) {
-    const tex = new THREE.TextureLoader().load(url);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    tex.format = THREE.RGBAFormat;
-    tex.minFilter = THREE.NearestFilter;
-    tex.magFilter = THREE.NearestFilter;
-    tex.generateMipmaps = false;
-    tex.premultiplyAlpha = false;
-    tex.flipY = false;
-    return tex;
 }

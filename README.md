@@ -1,11 +1,11 @@
 # Voxel Builder
 
-![banner](https://repository-images.githubusercontent.com/565157149/8cd060fd-3126-4f46-bc15-7f8e26b975b5)
+![screenshot](media/screenshot.jpg?raw=true "Screenshot")
 
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.0 Beta```<br>
+```Version 4.3.1 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -22,11 +22,11 @@ Voxel-based 3D modeling application<br>
 - Local storages, quicksave, undo
 
 **Model and Paint**
-- High performance picking system
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
 - Symmetric drawing and painting
 - Color groups and transform tools
+- High performance GPU picking system
 
 **Rendering**
 - High performance voxel engine
@@ -50,12 +50,12 @@ Voxel-based 3D modeling application<br>
 - Blender importer script
 
 **More**
-- Extras [?](https://github.com/nimadez/voxel-builder/wiki/Extras)
 - Minimum dependency, portable, online and offline
-- Ad-free, no trackers, no logging
+- Ad-free, no miners and trackers, no logging
+- Extras [?](https://github.com/nimadez/voxel-builder/wiki/Extras)
 
 ## Installation
-Install [Electron](https://github.com/electron/electron/releases) for linux or windows
+Install [Electron](https://github.com/electron/electron/releases) for Linux or Windows
 ```
 electron-v*-linux-x64.zip
 electron-v*-win32-x64.zip
@@ -74,8 +74,8 @@ python3 update.py
 
 ## Supported Browsers
 - Electron *(recommended)*
-- Google Chrome for desktop
-- Google Chrome for mobile devices
+- Google Chrome
+- Mozilla Firefox *(with minor CSS issues)*
 > - PWA A2HS-ready *(add to home screen)*
 > - Tablets with a stylus or Wacom recommended for best experience
 > - Voxel Builder has not been fully tested on mobile devices
@@ -132,8 +132,6 @@ How to run Blender importer script?
 ↑ New SPS particles to build the world
 ↑ I wrote a playground for learning Babylon.js
 ```
-
-![screenshot](media/screenshot.jpg?raw=true "Screenshot")
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
 ![screenshot](media/devshots.jpg?raw=true "Screenshot")

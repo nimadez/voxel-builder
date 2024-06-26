@@ -2,16 +2,16 @@
     Nov 2023
     @nimadez
 */
-#define MAXSAMPLES 4096
 #define RAYOFFSET 1e-5
 #define EPSILON 1e-6
 #define PI2 6.28318530718
 #define PIDF 0.31830988618 // 1.0/PI
 
 uniform sampler2D uBuffer;
+uniform int uMaxSamples;
+uniform int uSamples;
 uniform int uRenderPassId;
 uniform int uBounces;
-uniform int uSamples;
 uniform float uAperture;
 uniform float uFocalLength;
 uniform sampler2D uNoise;
@@ -62,7 +62,7 @@ float hash(float s) { return fract(sin(s)*43758.5453); }
 float blueNoise() {
     return fract(texelFetch(uNoise,
         ivec2(gl_FragCoord.xy)/1%ivec2(256.0), 0).r +
-            float(uSamples%MAXSAMPLES)*1.61803398874989484820459); // Φ golden ratio
+            float(uSamples%uMaxSamples)*1.61803398874989484820459); // Φ golden ratio
 }
 
 vec3 uniformVector(float seed) {
