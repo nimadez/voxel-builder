@@ -245,7 +245,6 @@ function createScene(engine) {
     shadowcatcher.isPickable = false;
     shadowcatcher.doNotSyncBoundingInfo = true;
     shadowcatcher.doNotSerialize = true;
-    shadowcatcher.convertToUnIndexedMesh();
     shadowcatcher.freezeWorldMatrix();
     shadowcatcher.freezeNormals();
 
@@ -279,7 +278,6 @@ function createAxisViewScene(engine, mainScene) {
     cube.material.freeze();
     cube.doNotSyncBoundingInfo = true;
     cube.doNotSerialize = true;
-    cube.convertToUnIndexedMesh();
     cube.freezeWorldMatrix();
     cube.freezeNormals();
 
@@ -301,7 +299,6 @@ function createAxisViewScene(engine, mainScene) {
         a.overlayAlpha = 0.8;
         a.doNotSyncBoundingInfo = true;
         a.doNotSerialize = true;
-        a.convertToUnIndexedMesh();
         a.freezeNormals();
         viewAxes.push(a);
     }
@@ -694,7 +691,6 @@ function HDRI(scene) {
         skybox.ignoreCameraMaxZ = true;
         skybox.rotation.y = -Math.PI / 2;
         skybox.doNotSyncBoundingInfo = true;
-        skybox.convertToUnIndexedMesh();
         skybox.freezeWorldMatrix();
         skybox.freezeNormals();
         return skybox;
@@ -1939,7 +1935,6 @@ function Helper(scene, sceneAxisView) {
         this.floorPlane.position.z = -0.5;
         this.floorPlane.rotation.x = PIH;
         this.floorPlane.doNotSerialize = true;
-        this.floorPlane.convertToUnIndexedMesh();
         this.floorPlane.freezeNormals();
         
         this.axisPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
@@ -1950,7 +1945,6 @@ function Helper(scene, sceneAxisView) {
         this.axisPlane.edgesWidth = 6;
         this.axisPlane.edgesColor = COL_AQUA_RGBA;
         this.axisPlane.enableEdgesRendering();
-        this.axisPlane.convertToUnIndexedMesh();
         this.axisPlane.freezeNormals();
 
         this.overlayPlane.isVisible = false;
@@ -1958,7 +1952,6 @@ function Helper(scene, sceneAxisView) {
         this.overlayPlane.visibility = 0.01;
         this.overlayPlane.doNotSerialize = true;
         highlightOverlayMesh(this.overlayPlane, COL_ORANGE_RGB, 1);
-        this.overlayPlane.convertToUnIndexedMesh();
         this.overlayPlane.freezeNormals();
 
         this.overlayCube.isVisible = false;
@@ -1966,7 +1959,6 @@ function Helper(scene, sceneAxisView) {
         this.overlayCube.visibility = 0.1;
         this.overlayCube.doNotSerialize = true;
         highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB);
-        this.overlayCube.convertToUnIndexedMesh();
         this.overlayCube.freezeNormals();
 
         this.gridPlane.position.copyFrom(this.floorPlane.position);
@@ -1976,7 +1968,6 @@ function Helper(scene, sceneAxisView) {
         this.gridPlane.isPickable = true; // overrided
         this.gridPlane.visibility = WORKPLANE_VISIBILITY;
         this.gridPlane.doNotSerialize = true;
-        this.gridPlane.convertToUnIndexedMesh();
         this.gridPlane.freezeNormals();
 
         const wpHalf = WORKPLANE_SIZE / 2;
@@ -2007,7 +1998,6 @@ function Helper(scene, sceneAxisView) {
         this.workplane.position.z = wpHalf - 0.5;
         this.workplane.visibility = WORKPLANE_VISIBILITY;
         this.workplane.doNotSerialize = true;
-        this.workplane.convertToUnIndexedMesh();
         this.workplane.freezeNormals();
 
         this.boxShape.isVisible = false;
@@ -2017,7 +2007,6 @@ function Helper(scene, sceneAxisView) {
         this.boxShape.doNotSerialize = true;
         highlightOverlayMesh(this.boxShape, COL_ORANGE_RGB);
         highlightEdgesMesh(this.boxShape, COL_ORANGE_RGBA);
-        this.boxShape.convertToUnIndexedMesh();
         this.boxShape.freezeNormals();
 
         this.boxShapeSymm.renderingGroupId = 1;
@@ -2027,7 +2016,6 @@ function Helper(scene, sceneAxisView) {
         this.boxShapeSymm.doNotSerialize = true;
         highlightEdgesMesh(this.boxShapeSymm, COL_AQUA_RGBA);
         this.boxShapeSymm.edgesColor.a = 0.4;
-        this.boxShapeSymm.convertToUnIndexedMesh();
         this.boxShapeSymm.freezeNormals();
 
         const r = Math.max(10, ~~builder.getRadius());
@@ -4146,7 +4134,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.3.1",
+            version: "Voxel Builder 4.3.2",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,

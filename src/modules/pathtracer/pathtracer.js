@@ -196,7 +196,7 @@ class Pathtracer {
         this.rtQuadB = new FullScreenQuad(rtMaterialRender);
     }
 
-    createGeometry() {
+    createGeometry(isUpdateCamera = true) {
         if (this.geom) {
             this.geom.boundsTree.geometry.dispose();
             this.geom.dispose()
@@ -246,7 +246,7 @@ class Pathtracer {
         this.updateAttributeColors();
 
         this.isLoaded = true;
-        this.updateCamera();
+        if (isUpdateCamera) this.updateCamera();
         this.resetSamples();
     }
 
@@ -479,14 +479,12 @@ class Pathtracer {
     }
 
     frameCamera() {
-        const size = new THREE.Vector3();
-        const center = new THREE.Vector3();
-        this.geom.boundingBox.getSize(size);
-        this.geom.boundingBox.getCenter(center);
+        const center = new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z);
         const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(this.framed.radius);
-
+        
         this.camera.position.copy(center).sub(direction);
-        this.controls.target.copy(new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z));
+        this.camera.lookAt(center);
+        this.controls.target.copy(center);
 
         this.camera.updateProjectionMatrix();
         this.controls.update();
@@ -657,7 +655,7 @@ document.getElementById('input-pt-shade').oninput = () => {
 
 document.getElementById('input-pt-floor').oninput = () => {
     if (pt.isLoaded)
-        pt.createGeometry();
+        pt.createGeometry(false);
 };
 
 document.getElementById('btn-pt-pause').onclick = () => {

@@ -1,5 +1,12 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.2
+- Update to babylonjs 7.13.1
+- Update to three r166
+- Fix all convertToUnIndexedMesh related issues introduced by update
+- Fix firefox scrollbars (broken by new firefox update)
+- PT: fix frame camera when floor is checked (overflow, force update)
+
 ## 4.3.1
 - Add merge-selected to export tab
 - Add render source to PT (render baked meshes from export tab)<br>
