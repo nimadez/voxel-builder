@@ -492,7 +492,7 @@ class Pathtracer {
 
     shot() {
         const uri = this.renderer.domElement.toDataURL('image/png');
-        saveDialogImage(uri, `${ ui.domProjectName.value }_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
+        downloadImage(uri, `${ ui.domProjectName.value }_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
     }
 
     toggle() {

@@ -5,7 +5,7 @@
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.2 Beta```<br>
+```Version 4.3.3 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>

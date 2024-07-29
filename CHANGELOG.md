@@ -1,5 +1,14 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.3
+- Update three-mesh-bvh to 0.7.6
+- Update three to r167
+- Update to babylonjs 7.17.0
+- Prevent frame camera on quickload voxels (holds the camera for further changes)
+- Remove showSaveFilePicker, this experimental technology is not ready for production<br>
+  Fix save file functionality in electron and mobile<br>
+  Fix save format from .txt to .json in mobile
+
 ## 4.3.2
 - Update to babylonjs 7.13.1
 - Update to three r166

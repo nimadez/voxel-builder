@@ -3569,6 +3569,7 @@ function _raycastFirst$1( nodeIndex32, bvh, side, ray, near, far ) {
 		const count = COUNT( nodeIndex16, uint16Array );
 
 
+		// eslint-disable-next-line no-unreachable
 		return intersectClosestTri( bvh, side, ray, offset, count, near, far );
 
 
@@ -6144,7 +6145,7 @@ function estimateMemoryInBytes( obj ) {
 
 		for ( let key in curr ) {
 
-			if ( ! curr.hasOwnProperty( key ) ) {
+			if ( ! Object.hasOwn( curr, key ) ) {
 
 				continue;
 
@@ -6331,8 +6332,8 @@ function convertRaycastIntersect( hit, object, raycaster ) {
 const ray = /* @__PURE__ */ new Ray();
 const direction = /* @__PURE__ */ new Vector3();
 const tmpInverseMatrix = /* @__PURE__ */ new Matrix4();
-const worldScale = /* @__PURE__ */ new Vector3();
 const origMeshRaycastFunc = Mesh.prototype.raycast;
+const _worldScale = /* @__PURE__ */ new Vector3();
 
 function acceleratedRaycast( raycaster, intersects ) {
 
@@ -6343,8 +6344,8 @@ function acceleratedRaycast( raycaster, intersects ) {
 		tmpInverseMatrix.copy( this.matrixWorld ).invert();
 		ray.copy( raycaster.ray ).applyMatrix4( tmpInverseMatrix );
 
-		this.getWorldScale( worldScale );
-		direction.copy( ray.direction ).multiply( worldScale );
+		extractMatrixScale( this.matrixWorld, _worldScale );
+		direction.copy( ray.direction ).multiply( _worldScale );
 
 		const scaleFactor = direction.length();
 		const near = raycaster.near / scaleFactor;
@@ -6394,6 +6395,18 @@ function computeBoundsTree( options ) {
 function disposeBoundsTree() {
 
 	this.boundsTree = null;
+
+}
+
+// https://github.com/mrdoob/three.js/blob/dev/src/math/Matrix4.js#L732
+// extracting the scale directly is ~3x faster than using "decompose"
+function extractMatrixScale( matrix, target ) {
+
+	const te = matrix.elements;
+	const sx = target.set( te[ 0 ], te[ 1 ], te[ 2 ] ).length();
+	const sy = target.set( te[ 4 ], te[ 5 ], te[ 6 ] ).length();
+	const sz = target.set( te[ 8 ], te[ 9 ], te[ 10 ] ).length();
+	return target.set( sx, sy, sz );
 
 }
 

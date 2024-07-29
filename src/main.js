@@ -4001,7 +4001,7 @@ function Snapshot(scene) {
             return;
         }
         builder.setData(data);
-        clearScene();
+        clearScene(false);
     }
 
     this.setStorageBakes = function() {
@@ -4134,7 +4134,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.3.2",
+            version: "Voxel Builder 4.3.3",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4186,12 +4186,12 @@ function Project(scene) {
                 const reader = new FileReader();
                 reader.onload = () => {
                     json.data.meshes = reader.result;
-                    saveDialog(JSON.stringify(json, null, 4), ui.domProjectName.value + '.json');
+                    downloadJson(JSON.stringify(json, null, 4), ui.domProjectName.value + '.json');
                 }
                 reader.readAsDataURL(file);
             });
         } else {
-            saveDialog(JSON.stringify(json, null, 4), ui.domProjectName.value + '.json');
+            downloadJson(JSON.stringify(json, null, 4), ui.domProjectName.value + '.json');
         }
     }
 
@@ -5605,12 +5605,14 @@ function WebsocketClient() {
 // Utils
 
 
-function clearScene() {
+function clearScene(frameCamera = true) {
     memory.clear();
     symmetry.resetAxis();
-    setTimeout(() => {
-        camera.frame();
-    }, 10);
+    if (frameCamera) {
+        setTimeout(() => {
+            camera.frame();
+        }, 10);
+    }
 }
 
 function clearSceneAndReset() {
@@ -5811,8 +5813,8 @@ function loadUrl(url, callback, onerror = null) {
     });
 }
 
-function downloadText(txt, filename) {
-    const blob = new Blob([ txt ], { type: "text/plain" });
+function downloadJson(data, filename) {
+    const blob = new Blob([ data ], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -5835,53 +5837,6 @@ function downloadBlob(blob, filename) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-}
-
-async function saveFile(blob, filename, reject) {
-    if ("showSaveFilePicker" in window) {
-        try {
-            const fileHandle = await window.showSaveFilePicker({
-                suggestedName: filename,
-                types: [ { description: "File" } ]
-            });
-            const writeFile = async (fileHandle, contents) => {
-                const writable = await fileHandle.createWritable();
-                await writable.write(contents);
-                await writable.close();
-            };
-            writeFile(fileHandle, blob).then(() => {
-                //
-            });
-        } catch (err) {
-            // canceled
-        }
-    } else {
-        reject();
-    }
-}
-
-function saveDialog(data, filename) {
-    const blob = new Blob([ data ], { type: "text/plain" });
-    saveFile(blob, filename, () => {
-        downloadText(data, filename);
-    });
-}
-
-function saveDialogImage(data, filename) {
-    const blob = dataURItoBlob(data);
-    saveFile(blob, filename, () => {
-        downloadImage(data, filename);
-    });
-}
-
-function dataURItoBlob(dataURI) {
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++)
-        ia[i] = byteString.charCodeAt(i);
-    return new Blob([ ab ], { type: mimeString });
 }
 
 function toggleFullscreen() {
