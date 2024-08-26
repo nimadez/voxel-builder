@@ -1,11 +1,11 @@
 # Voxel Builder
 
-![screenshot](media/screenshot.jpg?raw=true "Screenshot")
+![screenshot](media/screenshot.png?raw=true "Screenshot")
 
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.3 Beta```<br>
+```Version 4.3.4 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -19,21 +19,21 @@ Voxel-based 3D modeling application<br>
 - Save and load JSON [?](https://github.com/nimadez/voxel-builder/wiki/File-Format)
 - Import MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL [?](https://github.com/nimadez/voxel-builder/wiki/project)
-- Local storages, quicksave, undo
+- Local storages, snapshots, quicksave, undo
 
 **Model and Paint**
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
 - Symmetric drawing and painting
-- Color groups and transform tools
-- High performance GPU picking system
+- Color groups and voxel transform tools
+- High performance GPU picking system *(the second inventor)*
 
 **Rendering**
 - High performance voxel engine
 - Real-time GPU path tracing [?](https://github.com/nimadez/voxel-builder/wiki/render)
 
 **Voxelization**
-- Bvh voxelization method
+- Fast BVH voxelization method
 - 3D model voxelizer [?](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
 - Image voxelizer
 
@@ -101,6 +101,14 @@ the only solution is to merge meshes before exporting to GLB.
 Visual artifacts and Moire patterns
 ```
 These are related to thin-instances and nothing special can be done at this time.
+Reproduce: set camera FOV to 0.1 and press F to fit camera
+(but usually you don't need that FOV, use orthographic mode)
+```
+Wacom tablet crashes randomly and throws warning on Linux (GNOME)
+```
+Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.
+This is a Babylon.js and Wayland issue that needs to be fixed.
+(wayland uses multiple pointers, one for each input device)
 ```
 
 ## FAQ
@@ -121,7 +129,9 @@ How to run Blender importer script?
 
 ## History
 ```
-↑ Voxel engine updated to thin-instances
+↑ Stable x1.5 faster (optimized to current state)
+↑ Linux and Firefox ready
+↑ Voxel engine updated to thin-instances (64k to 1M boost)
 ↑ Cut half precision (new scene)
 ↑ Real-time GPU path tracing
 ↑ Introducing ES modules

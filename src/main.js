@@ -32,6 +32,7 @@
     27. Utils
 */
 //data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 90%22><text x=%220.18em%22 y=%221.1em%22 font-size=%2260%22 style="filter: grayscale(); opacity: 0.15;">❌</text></svg>
+const startTime = performance.now();
 
 const ENVMAP = "assets/snow_field_2_puresky_1k.hdr";
 const SNAPSHOT = "data:image/png;base64,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";
@@ -67,7 +68,9 @@ const COL_AXIS_Y_RGBA = BABYLON.Color4.FromHexString(COL_AXIS_Y + 'FF');
 const COL_AXIS_Z = '#2F81DF';
 const COL_AXIS_Z_RGB = BABYLON.Color3.FromHexString(COL_AXIS_Z);
 const COL_AXIS_Z_RGBA = BABYLON.Color4.FromHexString(COL_AXIS_Z + 'FF');
+const COL_ICE = '#8398AF';
 const COL_RED = '#FF0000';
+const COL_BLUE = '#4682B4';
 const COL_CLEAR_RGBA = new BABYLON.Color4(0, 0, 0, 0);
 
 const PI2 = Math.PI * 2;
@@ -266,7 +269,7 @@ function createAxisViewScene(engine, mainScene) {
     ambient.intensity = 1;
 
     const cam = new BABYLON.ArcRotateCamera("camera", 0, 0, 10, BABYLON.Vector3.Zero(), scene);
-    cam.viewport = updateViewport(100, 100, 5, -5);
+    cam.viewport = updateViewport(100, 100, 1, -1);
     cam.radius = 5.2;
     cam.fov = 0.5;
     cam.alpha = engine.scenes[0].activeCamera.alpha;
@@ -290,7 +293,7 @@ function createAxisViewScene(engine, mainScene) {
     axisHelper.zAxis.parent = cube;
 
     const viewAxes = [];
-    const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.6, segments: 5 }, scene);
+    const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.65, segments: 5 }, scene);
     for (let i = 0; i < 6; i++) {
         const a = axis.clone();
         a.renderOverlay = true;
@@ -304,28 +307,28 @@ function createAxisViewScene(engine, mainScene) {
     }
     axis.dispose();
 
-    viewAxes[0].position.x = 0.85;
+    viewAxes[0].position.x = 0.9;
     viewAxes[0].renderOutline = false;
     viewAxes[0].overlayColor = COL_AXIS_X_RGB;
-    viewAxes[1].position.x = -0.85;
+    viewAxes[1].position.x = -0.9;
     viewAxes[1].scaling.scaleInPlace(-0.9); // exclude border size
     viewAxes[1].overlayAlpha = 0.3;
     viewAxes[1].visibility = 0.01;
     viewAxes[1].overlayColor = viewAxes[0].overlayColor;
     viewAxes[1].outlineColor = viewAxes[0].overlayColor;
-    viewAxes[2].position.y = 0.85;
+    viewAxes[2].position.y = 0.9;
     viewAxes[2].renderOutline = false;
     viewAxes[2].overlayColor = COL_AXIS_Y_RGB;
-    viewAxes[3].position.y = -0.85;
+    viewAxes[3].position.y = -0.9;
     viewAxes[3].scaling.scaleInPlace(-0.9);
     viewAxes[3].overlayAlpha = 0.3;
     viewAxes[3].visibility = 0.01;
     viewAxes[3].overlayColor = viewAxes[2].overlayColor;
     viewAxes[3].outlineColor = viewAxes[2].overlayColor;
-    viewAxes[4].position.z = 0.85;
+    viewAxes[4].position.z = 0.9;
     viewAxes[4].renderOutline = false;
     viewAxes[4].overlayColor = COL_AXIS_Z_RGB;
-    viewAxes[5].position.z = -0.85;
+    viewAxes[5].position.z = -0.9;
     viewAxes[5].scaling.scaleInPlace(-0.9);
     viewAxes[5].overlayAlpha = 0.3;
     viewAxes[5].visibility = 0.01;
@@ -419,6 +422,11 @@ function Camera() {
     }
 
     this.frame = function() {
+        if (xformer.isActive) {
+            this.setFramingBehavior(this.camera0, ghost.thin);
+            return;
+        }
+        
         if (MODE == 0) {
             this.setFramingBehavior(this.camera0, builder.mesh);
         } else if (MODE == 1) {
@@ -438,19 +446,36 @@ function Camera() {
         }
     }
 
+    this.frameTarget = function(mesh) {
+        if (MODE == 0)
+            this.setFramingBehavior(this.camera0, mesh);
+    }
+
     this.setFramingBehavior = function(cam, mesh) {
         const f = this.getFramed(mesh);
         animator(cam, 'radius', cam.radius, f.radius);
         animator(cam, 'target', cam.target.clone(), f.target);
     }
 
-    this.getFramed = function(mesh, offset = 60) {
+    this.getFramed = function(mesh, offset = 2.0) {
         if (!mesh) return;
         mesh.computeWorldMatrix(true);
         const bounds = mesh.getBoundingInfo();
+
+        const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
+        const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
+        const radiusWithoutFraming = BABYLON.Vector3.Distance(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld) * 0.5;
+        
+        if (radiusWithoutFraming > 20) offset = 1.2; // for larger scene
+        if (radiusWithoutFraming < 2)  offset = 3.0; // for smaller scene
+        const radius = radiusWithoutFraming * offset;
+        const distanceForHorizontalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeX * frustumSlopeX));
+        const distanceForVerticalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeY * frustumSlopeY));
+        
+        const lowerRadius = Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
         const radiusWorld = bounds.boundingBox.maximumWorld.subtract(bounds.boundingBox.minimumWorld).scale(0.5);
         return {
-            radius: (bounds.boundingSphere.radiusWorld + offset) / scene.activeCamera.fov,
+            radius: lowerRadius,
             target: bounds.boundingBox.minimumWorld.add(radiusWorld)
         };
     }
@@ -478,12 +503,10 @@ function Camera() {
     this.switchOrtho = function() {
         if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA) {
             this.setView('persp');
-            if (MODE == 0)
-                ui.domInScreenOrtho.innerHTML = 'P';
+            ui.domInScreenOrtho.innerHTML = 'P';
         } else {
             this.setView('ortho');
-            if (MODE == 0)
-                ui.domInScreenOrtho.innerHTML = 'O';
+            ui.domInScreenOrtho.innerHTML = 'O';
         }
     }
 
@@ -642,11 +665,14 @@ function HDRI(scene) {
     this.isLoaded = false;
 
     this.init = function() {
-        this.hdrMap = new BABYLON.HDRCubeTexture(ENVMAP, scene, 512, undefined,undefined,undefined,undefined, () => {
-            hdri.hdrMap.gammaSpace = false;
-            hdri.skybox = hdri.createSkybox(hdri.hdrMap.clone(), parseFloat(ui.domHdriBlur.value));
-            scene.environmentTexture = hdri.hdrMap;
-        });
+        this.hdrMap = new BABYLON.HDRCubeTexture();
+    }
+
+    this.preload = function() {
+        this.hdrMap = new BABYLON.HDRCubeTexture(ENVMAP, scene, 512, false, false, false, false);
+        this.hdrMap.gammaSpace = false;
+        this.skybox = this.createSkybox(this.hdrMap.clone(), parseFloat(ui.domHdriBlur.value));
+        scene.environmentTexture = this.hdrMap;
     }
 
     this.loadHDR = function(url) {
@@ -656,7 +682,7 @@ function HDRI(scene) {
         if (this.hdrMap)
             this.hdrMap.dispose();
 
-        this.hdrMap = new BABYLON.HDRCubeTexture(url, scene, 512, undefined,undefined,undefined,undefined, () => {
+        this.hdrMap = new BABYLON.HDRCubeTexture(url, scene, 512, false, false, false, false, () => {
             hdri.hdrMap.gammaSpace = false;
             if (hdri.skybox.material.reflectionTexture)
                 hdri.skybox.material.reflectionTexture.dispose();
@@ -892,7 +918,7 @@ function Material(scene) {
             this.mode = 'CEL';
             builder.mesh.material = this.mat_cel;
         }
-        ui.domMaterialSwitch.firstChild.innerHTML = this.mode;
+        ui.domMaterialSwitch.innerHTML = this.mode;
     }
 
     this.getMaterial = function() {
@@ -1077,7 +1103,7 @@ function Builder(scene) {
 
     this.create = function() {
         if (this.voxels.length == 0)
-            generator.newBox(1, currentColor);
+            generator.newBox(1, COL_ICE);
 
         this.isWorking = true;
         this.createThinInstances();
@@ -1100,7 +1126,7 @@ function Builder(scene) {
             helper.setSymmPivot();
 
             if (preferences.getWebsocket())
-                client.ws_send(this.voxels);
+                client.sendMessage(this.voxels);
         }, 10);
     }
 
@@ -1235,13 +1261,13 @@ function Builder(scene) {
     }
 
     this.getIndexAtPointer = function() { // GPU color-picking method
-        const x = Math.round(scene.pointerX); // by @kikoshoung
+        const x = Math.round(scene.pointerX); // translated from Three.js by @kikoshoung
         const y = engine.getRenderHeight() - Math.round(scene.pointerY);
         const pixels = readTexturePixels(engine._gl, renderPickTarget._texture._hardwareTexture.underlyingResource, x, y, 1, 1);
         const colorId = `${pixels[0]}_${pixels[1]}_${pixels[2]}`;
         if (this.bufferWorld[this.rttColorsMap[colorId]])
             return this.rttColorsMap[colorId];
-        return undefined;
+        return -1;
     }
 
     this.getIndexAtPosition = function(pos) {
@@ -1665,7 +1691,7 @@ function Ghosts(scene) {
 
         this.cloud.addPoints(voxels.length, setParticles);
         this.cloud.buildMeshAsync().then((mesh) => {
-            mesh.visibility = 0.3;
+            mesh.visibility = 0.35;
             mesh.isPickable = false;
             mesh.doNotSerialize = true;
             mesh.doNotSyncBoundingInfo = true;
@@ -1851,15 +1877,13 @@ function Palette() {
                 builder.setVoxelsVisibilityByColor(hex, !builder.getVoxelsVisibilityByColor(hex));
         }, false);
 
-        if (isMobile) {
-            canvasPalette.addEventListener("dblclick", (ev) => {
-                const hex = getCanvasColor(ctx, ev.offsetX, ev.offsetY);
-                if (hex && palette.uniqueColors.includes(hex))
-                    builder.setVoxelsVisibilityByColor(hex, !builder.getVoxelsVisibilityByColor(hex));
-            }, false);
-        }
+        canvasPalette.addEventListener("dblclick", (ev) => {
+            const hex = getCanvasColor(ctx, ev.offsetX, ev.offsetY);
+            if (hex && palette.uniqueColors.includes(hex))
+                builder.setVoxelsVisibilityByColor(hex, !builder.getVoxelsVisibilityByColor(hex));
+        }, false);
 
-        new ResizeObserver((ev) => {
+        new ResizeObserver(() => {
             palette.create();
         }).observe(canvasPalette);
     }
@@ -2035,7 +2059,7 @@ function Helper(scene, sceneAxisView) {
     }
 
     this.setFloor = function() {
-        const r = Math.max(40, ~~builder.getRadius());
+        const r = camera.getFramed(builder.mesh).radius;
         this.floorPlane.scaling.x = r;
         this.floorPlane.scaling.y = r;
         this.floorPlane.scaling.z = 1;
@@ -2696,7 +2720,9 @@ function Tool(scene) {
                 break;
             case 'measure_volume':
                 if (this.selected.length > 0)
-                    ui.notification(`${ this.selected.length } Voxels`, 5000);
+                    (this.selected.length == 1) ? 
+                        ui.notification(`X: ${ this.selected[0]._x }, Y: ${ this.selected[0]._y }, Z: ${ this.selected[0]._z }`, 10000):
+                        ui.notification(`${ this.selected.length } Voxels`, 8000);
                 break;
         }
     }
@@ -2779,7 +2805,7 @@ function Tool(scene) {
         for (let i = 0; i < directions.length; i++) {
             const pos = p.add(directions[i]);
             const idx = builder.getIndexAtPosition(pos);
-            if (idx > -1) 
+            if (idx > -1)
                 tmpsps.push({ position: pos, color: COL_RED, visible: builder.voxels[idx].visible });
         }
 
@@ -2795,7 +2821,8 @@ function Tool(scene) {
 
     this.setPickInfo = function(pick, onHit) {
         const index = builder.getIndexAtPointer();
-        if (index) {
+
+        if (index > -1) {
             const norm = normalProbe(builder.voxels[index].position);
             if (norm) {
                 pick.INDEX = index;
@@ -2804,18 +2831,18 @@ function Tool(scene) {
                 onHit(pick);
             } else {
                 helper.clearOverlays();
-            }
-        } else {
-            helper.clearOverlays();
-            
-            pick = scene.pick(scene.pointerX, scene.pointerY, predicateWorkplane);
-            if (pick && pick.hit) {
-                pick.INDEX = pick.faceId;
-                pick.NORMAL = pick.getNormal(true);
-                pick.WORKPLANE = true;
-                onHit(pick);
-            } else {
-                helper.clearOverlays();
+                pick = scene.pick(scene.pointerX, scene.pointerY, predicateWorkplane);
+
+                if (!index && pick) {
+                    if (pick && pick.hit) {
+                        pick.INDEX = pick.faceId;
+                        pick.NORMAL = pick.getNormal(true);
+                        pick.WORKPLANE = true;
+                        onHit(pick);
+                    } else {
+                        helper.clearOverlays();
+                    }
+                }
             }
         }
     }
@@ -2839,7 +2866,10 @@ function Tool(scene) {
         if (finishTransforms)
             xformer.apply();
 
-        ui.domInfoTool.innerHTML = `[ ${ this.name.replace('_', ' ') } ]`;
+        if (bvhWhiteList.includes(this.name))
+            window.rc.create();
+
+        ui.domInfoTool.innerHTML = `[ ${ this.name.replace('_', ' ').toUpperCase() } ]`;
     }
 
     this.init();
@@ -3126,7 +3156,7 @@ function Voxelizer(scene) {
         const scale = parseInt(document.getElementById('input-voxelizer-scale').value);
 
         normalizeMesh(mesh, scale);
-        const data = window.voxelizeMesh(mesh, scale, currentColor);
+        const data = window.voxelizeMesh(mesh, scale, COL_ICE);
         
         builder.setDataFromArray(data);
         clearScene();
@@ -3316,27 +3346,28 @@ function Voxelizer(scene) {
 
 
 function Generator() {
-    this.newBoxData = function(size, color) {
-        const data = [];
+    this.newBox = function(size, color) {
+        builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    data.push({
-                        position: new BABYLON.Vector3(x, y, z),
-                        color: color,
-                        visible: true
-                    });
+                    builder.add(new BABYLON.Vector3(x, y, z), color, true);
                 }
             }
         }
-        return data;
     }
 
-    this.newBox = function(size, color) {
-        const data = this.newBoxData(size, color);
-        builder.voxels = [];
-        for (let i = 0; i < data.length; i++) 
-            builder.add(data[i].position, data[i].color, data[i].visible);
+    this.newBoxPosition = function(ev, elem) {
+        if (ev.key == 'Enter') {
+            const str = elem.value.split(',');
+            if (str.length == 3 && parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
+                builder.add(new BABYLON.Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), currentColor, true);
+                builder.create();
+                builder.update();
+            } else {
+                ui.notification("invalid coord (e.g. 20,20,20)");
+            }
+        }
     }
 
     this.createBox = async function(isPlane = false) {
@@ -3345,18 +3376,17 @@ function Generator() {
         
         const isFill = document.getElementById('input-grid-fill').checked;
         const X = parseInt(document.getElementById('input-grid-x').value);
-        let Y = parseInt(document.getElementById('input-grid-y').value);
+        const Y = (isPlane) ? 1 : parseInt(document.getElementById('input-grid-y').value);
         const Z = parseInt(document.getElementById('input-grid-z').value);
-        if (isPlane) Y = 1;
         
-        let data = [];
+        const data = [];
         if (isFill) {
             for (let x = 0; x < X; x++) {
                 for (let y = 0; y < Y; y++) {
                     for (let z = 0; z < Z; z++) {
                         data.push({
                             position: new BABYLON.Vector3(x, y, z),
-                            color: currentColor,
+                            color: COL_ICE,
                             visible: true
                         });
                     }
@@ -3370,7 +3400,7 @@ function Generator() {
                             x == X-1 || y == Y-1 || z == Z-1) {
                             data.push({
                                 position: new BABYLON.Vector3(x, y, z),
-                                color: currentColor,
+                                color: COL_ICE,
                                 visible: true
                             });
                         }
@@ -3385,8 +3415,6 @@ function Generator() {
         } else {
             xformer.beginNewObject(data);
         }
-
-        data = null;
     }
 
     this.createIsometric = async function() {
@@ -3396,14 +3424,14 @@ function Generator() {
         const Y = parseInt(document.getElementById('input-grid-y').value);
         const Z = parseInt(document.getElementById('input-grid-z').value);
 
-        let data = [];
+        const data = [];
         for (let x = 0; x < X; x++) {
             for (let y = 0; y < Y; y++) {
                 for (let z = 0; z < Z; z++) {
                     if (x == 0 || y == 0 || z == 0)
                         data.push({
                             position: new BABYLON.Vector3(x, y, z),
-                            color: currentColor,
+                            color: COL_ICE,
                             visible: true
                         });
                 }
@@ -3416,8 +3444,6 @@ function Generator() {
         } else {
             xformer.beginNewObject(data);
         }
-
-        data = null;
     }
 
     this.createSphere = async function() {
@@ -3426,7 +3452,6 @@ function Generator() {
 
         const size = parseInt(document.getElementById('input-sphere-size').value);
         let inner = parseInt(document.getElementById('input-sphere-inner').value);
-
         if (inner >= size) {
             inner = size - 1;
             document.getElementById('input-sphere-inner').value = inner;
@@ -3436,7 +3461,7 @@ function Generator() {
         const rrmax = size * size;
         const rrmin = inner * inner;
         const center = size - 1;
-        let data = [];
+        const data = [];
 
         function isSurface(x, y, z) {
             const dx = 2*x - center;
@@ -3452,7 +3477,7 @@ function Generator() {
                     if (isSurface(x, y, z)) {
                         data.push({
                             position: new BABYLON.Vector3(x, y, z),
-                            color: currentColor,
+                            color: COL_ICE,
                             visible: true
                         });
                     }
@@ -3466,12 +3491,11 @@ function Generator() {
         } else {
             xformer.beginNewObject(data);
         }
-
-        data = null;
     }
 
     this.createTerrain = async function() {
-        if (!await ui.showConfirm('clear and replace all voxels?')) return;
+        const isNewScene = document.getElementById('input-terrain-new').checked;
+        if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
         const isHeightGrad = document.getElementById('input-terrain-grad').checked;
         const X = parseInt(document.getElementById('input-terrain-x').value);
         const Y = parseInt(document.getElementById('input-terrain-y').value);
@@ -3481,36 +3505,38 @@ function Generator() {
         const colArrayHigh = gradientHexArray('#87BC24', '#31A531', Y);
         const colArrayLow  = gradientHexArray('#217EC4', '#31A531', Y);
 
+        const data = [];
+        const scaleFactor = 0.17;
         let xoff = 0;
         let zoff = 0;
-        let v = 0;
-        let data = [];
+        let h = 0;
         for (let x = 0; x < X; x++) {
             for (let z = 0; z < Z; z++) {
-                xoff = (0.2 / Y) * x; // fill x and z
-                zoff = (0.2 / Y) * z; // relative to Y
-                v = ~~(simplex.noise3d(xoff, 0, zoff) * Y);
-                if (v >= 0) {
+                xoff = scaleFactor * x / Y;
+                zoff = scaleFactor * z / Y;
+                h = ~~(simplex.noise3d(xoff, 0, zoff) * Y);
+                if (h >= 0) {
                     data.push({
-                        position: new BABYLON.Vector3(x, v, z),
-                        color: (isHeightGrad) ? colArrayHigh[ v ] : currentColor,
+                        position: new BABYLON.Vector3(x, h, z),
+                        color: (isHeightGrad) ? colArrayHigh[h] : COL_ICE,
                         visible: true
                     });
                 } else {
                     data.push({
-                        position: new BABYLON.Vector3(x, v, z),
-                        color: (isHeightGrad) ? colArrayLow[ Math.abs(v) ] : currentColor,
+                        position: new BABYLON.Vector3(x, h, z),
+                        color: (isHeightGrad) ? colArrayLow[ Math.abs(h) ] : COL_ICE,
                         visible: true
                     });
                 }
             }
         }
 
-        builder.setDataFromArray(data);
-        builder.normalizeVoxelPositions();
-        clearScene();
-
-        data = null;
+        if (isNewScene) {
+            builder.setDataFromArray(data);
+            clearScene();
+        } else {
+            xformer.beginNewObject(data);
+        }
     }
 }
 
@@ -4001,7 +4027,7 @@ function Snapshot(scene) {
             return;
         }
         builder.setData(data);
-        clearScene(false);
+        clearScene(true);
     }
 
     this.setStorageBakes = function() {
@@ -4134,7 +4160,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.3.3",
+            version: "Voxel Builder 4.3.4",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4167,10 +4193,23 @@ function Project(scene) {
         }
     }
 
-    this.newProject = async function(isAlert, color = currentColor) {
-        if (isAlert && !await ui.showConfirm('create new project?')) return;
-        
-        generator.newBox(20, color);
+    this.newProject = async function() {
+        if (!await ui.showConfirm('create new project?')) return;
+        generator.newBox(1, COL_ICE);
+        builder.create();
+        clearSceneAndReset();
+        ui.domProjectName.value = 'untitled';
+    }
+
+    this.newProjectStartup = function(size = 20) {
+        builder.voxels = [];
+        for (let x = 0; x < size; x++) {
+            for (let y = 0; y < size; y++) {
+                for (let z = 0; z < size; z++) {
+                    builder.add(new BABYLON.Vector3(x, y, z), COL_ICE, true);
+                }
+            }
+        }
         builder.create();
         clearSceneAndReset();
         ui.domProjectName.value = 'untitled';
@@ -4405,13 +4444,13 @@ function UserInterface(scene) {
     this.domModes = document.querySelectorAll('#toolbar_C li.mode');
     this.domMenus = document.getElementById('menus');
     this.domMenuInScreenRight = document.getElementById('menu-inscreen-right');
+    this.domMenuInScreenLeft = document.getElementById('menu-inscreen-left');
     this.domMenuInScreenBottom = document.getElementById('menu-inscreen-bottom');
     this.domInScreenSymmAxis = document.getElementById('btn-inscreen-symmetry');
     this.domInScreenOrtho = document.getElementById('btn-inscreen-ortho');
     this.domInScreenGridPlane = document.getElementById('btn-inscreen-gridplane');
     this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
     this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
-    this.domInScreenBucket = document.getElementById('btn-inscreen-bucket');
     this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
     this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
     this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
@@ -4461,15 +4500,19 @@ function UserInterface(scene) {
     this.domInfoTool = document.getElementById('info_tool');
     this.domInfoRender = document.getElementById('info_render');
     this.domProgressBar = document.getElementById('progressbar');
-    this.domLoadingScreen = document.getElementById('loadingscreen');
+    this.domWebSocketStatus = document.getElementById('ws_status');
     const styleMenuR = '-200px';
     const styleMenuL = '-200px';
     const styleMenuR_open = '75px';
     const styleMenuL_open = '75px';
-    const hoverOffset = { x: 0, y: 0 };
+    const hoverOffsets = [];
     let notificationTimer = null;
 
     this.init = function() {
+        document.querySelectorAll('.panel').forEach(() => {
+            hoverOffsets.push({ x: 0, y: 0 });
+        }, false);
+
         this.domCameraFov.addEventListener('change', (ev) => {
             if (ev.target.value > 0) {
                 scene.activeCamera.fov = ev.target.value;
@@ -4548,7 +4591,7 @@ function UserInterface(scene) {
             window.pt.deactivate();
 
         if (mode == 0) {
-            if (preferences.getWebsocket()) client.ws_connect();
+            if (preferences.isInitialized && preferences.getWebsocket()) client.connect();
             builder.setMeshVisibility(true);
             bakery.setBakesVisibility(false);
             helper.displayGridPlane(helper.isFloorPlaneActive, true);
@@ -4559,9 +4602,10 @@ function UserInterface(scene) {
             uix.unbindTransformGizmo();
             ghost.disposePointCloud();
         } else if (mode == 1) {
-            //
+            if (!hdri.isLoaded) // forced reload if user hits Render within 1 second of launch!
+                hdri.loadHDR(ENVMAP)
         } else if (mode == 2) {
-            client.ws_close();
+            client.disconnect();
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
             bakery.createBakeryList();
@@ -4590,10 +4634,8 @@ function UserInterface(scene) {
         this.domPalette.style.display = 'none';
         this.domBakeryList.style.display = 'none';
         this.domHover.style.display = 'unset';
-        this.domColorPicker.style.display = 'none';
-        this.domInScreenBucket.style.display = 'none';
+        this.domMenuInScreenLeft.style.display = 'none';
         this.domMenuInScreenRight.style.display = 'none';
-        this.domMaterialSwitch.style.display = 'none';
         this.domInfoTool.style.display = 'none';
         uix.colorPicker.isVisible = false;
         for (const i of this.domToolbarL.children)
@@ -4603,13 +4645,11 @@ function UserInterface(scene) {
             
         if (mode == 0) {
             this.domPalette.style.display = 'unset';
-            this.domColorPicker.style.display = 'unset';
             this.domToolbarR.children[9].style.display = 'none'; // MESHES
             this.domToolbarL.children[4].style.display = 'none'; // MATERIAL
             this.domToolbarL.children[5].style.display = 'none'; // TEXTURE
-            this.domMenuInScreenRight.style.display = 'unset';
-            this.domInScreenBucket.style.display = 'unset';
-            this.domMaterialSwitch.style.display = 'unset';
+            this.domMenuInScreenLeft.style.display = 'flex';
+            this.domMenuInScreenRight.style.display = 'flex';
             this.domInfoTool.style.display = 'unset';
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
@@ -4649,9 +4689,13 @@ function UserInterface(scene) {
             i.classList.remove("mode_select");
         this.domModes[mode].classList.add("mode_select");
 
-        (scene.activeCamera.mode == BABYLON.Camera.PERSPECTIVE_CAMERA) ?
-            this.domOrthoBtn.innerHTML = 'Perspective' :
+        if (scene.activeCamera.mode == BABYLON.Camera.PERSPECTIVE_CAMERA) {
+            this.domOrthoBtn.innerHTML = 'Perspective';
+            ui.domInScreenOrtho.innerHTML = 'P';
+        } else {
             this.domOrthoBtn.innerHTML = 'Orthographic';
+            ui.domInScreenOrtho.innerHTML = 'O';
+        }
     }
 
     this.setToolbarMem = function(mode) {
@@ -4850,9 +4894,7 @@ function UserInterface(scene) {
             this.domHover.style.display = 'none';
             this.domPalette.style.display = 'none';
             this.domBakeryList.style.display = 'none';
-            this.domColorPicker.style.display = 'none';
-            this.domInScreenBucket.style.display = 'none';
-            this.domMaterialSwitch.style.display = 'none';
+            this.domMenuInScreenLeft.style.display = 'none';
             this.domMenuInScreenRight.style.display = 'none';
             this.domMenuInScreenBottom.style.display = 'none';
             this.domInfoParent.style.display = 'none';
@@ -4862,10 +4904,8 @@ function UserInterface(scene) {
             if (MODE == 0) {
                 this.domHover.style.display = 'unset';
                 this.domPalette.style.display = 'unset';
-                this.domColorPicker.style.display = 'unset';
-                this.domInScreenBucket.style.display = 'unset';
-                this.domMaterialSwitch.style.display = 'unset';
-                this.domMenuInScreenRight.style.display = 'unset';
+                this.domMenuInScreenLeft.style.display = 'flex';
+                this.domMenuInScreenRight.style.display = 'flex';
                 this.domMenuInScreenBottom.style.display = 'flex';
                 this.domInfoTool.style.display = 'unset';
                 palette.create();
@@ -4895,7 +4935,7 @@ function UserInterface(scene) {
         }
     }
 
-    this.dragElement = function(elem) {
+    this.dragElement = function(hIndex, elem, target) {
         let active = false;
         let currentX, currentY, initialX, initialY;
 
@@ -4909,16 +4949,16 @@ function UserInterface(scene) {
 
         function dragStart(e) {
             if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - hoverOffset.x;
-                initialY = e.touches[0].clientY - hoverOffset.y;
+                initialX = e.touches[0].clientX - hoverOffsets[hIndex].x;
+                initialY = e.touches[0].clientY - hoverOffsets[hIndex].y;
             } else {
-                initialX = e.clientX - hoverOffset.x;
-                initialY = e.clientY - hoverOffset.y;
+                initialX = e.clientX - hoverOffsets[hIndex].x;
+                initialY = e.clientY - hoverOffsets[hIndex].y;
             }
             if (e.target === elem) active = true;
         }
 
-        function dragEnd(e) {
+        function dragEnd() {
             initialX = currentX;
             initialY = currentY;
             active = false;
@@ -4939,9 +4979,9 @@ function UserInterface(scene) {
                     currentX = e.clientX - initialX;
                     currentY = e.clientY - initialY;
                 }
-                hoverOffset.x = currentX;
-                hoverOffset.y = currentY;
-                setTranslate(currentX, currentY, elem.parentElement);
+                hoverOffsets[hIndex].x = currentX;
+                hoverOffsets[hIndex].y = currentY;
+                setTranslate(currentX, currentY, target);
             }
         }
         
@@ -4950,10 +4990,16 @@ function UserInterface(scene) {
         }
     }
 
-    this.hoverTranslate = function(elem, x, y) {
+    this.hoverTranslate = function(elem, idx, x, y) {
         elem.style.transform = "translate(" + x + "px, " + y + "px)";
-        hoverOffset.x = 0;
-        hoverOffset.y = 0;
+        hoverOffsets[idx].x = 0;
+        hoverOffsets[idx].y = 0;
+    }
+
+    this.isHoverOffScreen = function(elem, minPad = 20) {
+        const rect = elem.getBoundingClientRect();
+        return ((rect.x + (rect.width/2) - minPad) < 0 || (rect.x + minPad) > window.innerWidth ||
+                (rect.y + minPad) < 0 || (rect.y + minPad) > window.innerHeight);
     }
 
     this.init();
@@ -4986,8 +5032,8 @@ function UserInterfaceAdvanced(scene) {
 
     this.createAdvancedColorPicker = function() {
         const panel = new BABYLON.GUI.StackPanel();
-        panel.width = "115px";
-        panel.height = "105px";
+        panel.width = "116px";
+        panel.height = "116px";
         panel.isVertical = true;
         panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
         panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
@@ -4995,9 +5041,8 @@ function UserInterfaceAdvanced(scene) {
 
         this.colorPicker = new BABYLON.GUI.ColorPicker();
         this.colorPicker.value = BABYLON.Color3.FromHexString(currentColor);
-        this.colorPicker.height = "100px";
-        this.colorPicker.width = "100px";
-        this.colorPicker.paddingBottom = "3px";
+        this.colorPicker.height = "110px";
+        this.colorPicker.width = "110px";
         this.colorPicker.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
         this.colorPicker.verticalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_TOP;
         this.colorPicker.onValueChangedObservable.add((color3) => {
@@ -5177,7 +5222,7 @@ function Preferences() {
         document.getElementById(KEY_POINTCLOUD).checked = true;
         document.getElementById(KEY_POWERSAVER).checked = isMobile;
         document.getElementById(KEY_WEBSOCKET).checked = false;
-        document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8011";
+        document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
 
         initPrefCheck(KEY_STARTUP);
         initPrefCheck(KEY_NOHOVER);
@@ -5192,19 +5237,16 @@ function Preferences() {
             if (chk) {
                 FPS = 1000 / 30;
                 document.getElementById('input-pt-bounces').value = 3;
-                document.getElementById('input-pt-envpower').value = 3.5;
             } else {
                 FPS = 1000 / 60;
                 document.getElementById('input-pt-bounces').value = 4;
-                document.getElementById('input-pt-envpower').value = 4.5;
             }
             if (window.pt.isActive && window.pt.isLoaded) {
                 window.pt.updateUniformBounces(document.getElementById('input-pt-bounces').value);
-                window.pt.updateUniformEnvPower(document.getElementById('input-pt-envpower').value);
             }
         });
         initPrefCheck(KEY_WEBSOCKET, (chk) => {
-            (chk && MODE == 0) ? client.ws_connect() : client.ws_close();
+            (chk && MODE == 0) ? client.connect() : client.disconnect();
         });
         initPref(KEY_WEBSOCKET_URL);
     }
@@ -5213,42 +5255,50 @@ function Preferences() {
         if (this.getPowerSaver()) {
             FPS = 1000 / 30;
             document.getElementById('input-pt-bounces').value = 3;
-            document.getElementById('input-pt-envpower').value = 3.5;
         } else {
             FPS = 1000 / 60;
             document.getElementById('input-pt-bounces').value = 4;
-            document.getElementById('input-pt-envpower').value = 4.5;
         }
         palette.expand(this.getPaletteSize());
         ui.toggleHover(!this.getNoHover());
         helper.floorPlane.isVisible = this.getFloorPlane();
 
-        const scriptModules = document.createElement('script');
-        scriptModules.type = 'module';
-        scriptModules.src = 'src/modules/modules.js';
-        document.body.appendChild(scriptModules);
-
-        // inject the user modules entry point
-        const scriptUserModules = document.createElement('script');
-        scriptUserModules.type = 'module';
-        scriptUserModules.src = 'user/user.js';
-        document.body.appendChild(scriptUserModules);
-
         const interval = setInterval(() => {
             if (window.rc) {
                 if (this.getStartup()) {
                     project.loadFromUrl('user/startup.json', () => {
-                        window.rc.create();
+                        ui.hideInterface(false);
+                        engine.hideLoadingUI();
+                        clearInterval(interval);
+                        this.isInitialized = true;
+                        console.log(`initialized in ${performance.now()-startTime} ms.`);
                     });
                 } else {
-                    project.newProject(false, '#5F82B9');
-                    window.rc.create();
+                    project.newProjectStartup();
+                    ui.hideInterface(false);
+                    engine.hideLoadingUI();
+                    clearInterval(interval);
+                    this.isInitialized = true;
+                    console.log(`initialized in ${performance.now()-startTime} ms.`);
                 }
-                ui.hideInterface(false);
-                engine.hideLoadingUI();
-                console.log('initialized.');
-                clearInterval(interval);
-                this.isInitialized = true;
+
+                // inject the user modules entry point
+                const scriptUserModules = document.createElement('script');
+                scriptUserModules.type = 'module';
+                scriptUserModules.src = 'user/user.js';
+                document.body.appendChild(scriptUserModules);
+
+                setTimeout(() => {
+                    hdri.preload();
+                    
+                    // inject extra babylon libs
+                    const scriptSerializers = document.createElement('script');
+                    scriptSerializers.src = 'libs/babylonjs.serializers.min.js';
+                    document.body.appendChild(scriptSerializers);
+                    const scriptInspector = document.createElement('script');
+                    scriptInspector.src = 'libs/babylon.inspector.bundle.js';
+                    document.body.appendChild(scriptInspector);
+                }, 1000); // no less, major startup time ratio
             }
         }, 100);
     }
@@ -5550,8 +5600,8 @@ window.addEventListener("resize", () => {
     if (MODE == 0) palette.create();
     if (MODE == 2) bakery.createBakeryList();
 
-    if (isOffScreen(ui.domHover))
-        ui.hoverTranslate(ui.domHover, 0, 0);
+    if (ui.isHoverOffScreen(ui.domHover))
+        ui.hoverTranslate(ui.domHover, 0, 0, 0);
 }, false);
 
 
@@ -5560,43 +5610,83 @@ window.addEventListener("resize", () => {
 
 
 function WebsocketClient() {
-    let socket = null;
-    let timeout = null;
+    this.ws = undefined;
+    const retryDelay = 2000;
+    const maxRetry = 10;
+    let retry = 0;
+    let interval = null;
+    let parsed = [];
+    let data = [];
 
-    this.ws_connect = function() {
-        try {
-            socket = new WebSocket("ws://" + preferences.getWebsocketUrl());
-        } catch (err) {
-            ui.notification("invalid websocket address");
-            return;
-        }
-        
-        socket.onopen = () => {
+    this.connect = function() {
+        this.ws = new WebSocket("ws://" + preferences.getWebsocketUrl());
+
+        this.ws.onopen = () => {
+            clearInterval(interval);
+            ui.domWebSocketStatus.innerHTML = 'Connected';
+            ui.domWebSocketStatus.style.color = 'limegreen';
+            retry = 0;
             if (MODE == 0)
-                socket.send(JSON.stringify({ voxels: builder.voxels }));
-        }
+                this.sendMessage(JSON.stringify({ voxels: builder.voxels }));
+        };
 
-        socket.onmessage = (msg) => {
-            if (MODE == 0)
-                builder.setDataFromArray(JSON.parse(msg.data).voxels);
-        }
+        this.ws.onmessage = (ev) => {
+            if (MODE == 0) {
+                parsed = JSON.parse(ev.data);
 
-        socket.onclose = () => {
-            console.clear();
-            clearTimeout(timeout);
-            if (preferences.getWebsocket())
-                timeout = setTimeout(client.ws_connect, 3000);
-        }
+                data = [];
+                for (let i = 0; i < parsed.voxels.length; i++) {
+                    data.push({
+                        position: new BABYLON.Vector3(parsed.voxels[i].position.x, parsed.voxels[i].position.y, parsed.voxels[i].position.z),
+                        color: parsed.voxels[i].color,
+                        visible: parsed.voxels[i].visible
+                    })
+                }
+
+                if (parsed.is_clear) {
+                    builder.setDataFromArray(data);
+                } else {
+                    builder.add(data[0].position, data[0].color, data[0].visible);
+                    builder.create();
+                }
+            }
+        };
+
+        this.ws.onclose = () => {
+            this.retryConnection();
+        };
+
+        this.ws.onerror = () => {
+            this.retryConnection();
+        };
     }
 
-    this.ws_send = function(voxels) {
-        if (socket && socket.readyState == WebSocket.OPEN)
-            socket.send(JSON.stringify({ voxels: voxels }));
+    this.retryConnection = function() {
+        clearInterval(interval);
+        interval = setInterval(() => {
+            if (retry < maxRetry) {
+                this.connect();
+                retry++;
+                ui.domWebSocketStatus.innerHTML = `Retry ${retry}/${maxRetry} ...`;
+                ui.domWebSocketStatus.style.color = 'slategray';
+            } else {
+                this.disconnect();
+            }
+        }, retryDelay);
     }
 
-    this.ws_close = function() {
-        clearTimeout(timeout);
-        socket = null;
+    this.sendMessage = function(voxels) {
+        if (MODE == 0 && this.ws && this.ws.readyState === WebSocket.OPEN)
+            this.ws.send(JSON.stringify({ voxels: voxels }));
+    }
+    
+    this.disconnect = function() {
+        clearInterval(interval);
+        if (this.ws && this.ws.readyState === WebSocket.OPEN)
+            this.ws.close();
+        this.ws = undefined;
+        ui.domWebSocketStatus.innerHTML = 'Disconnected';
+        ui.domWebSocketStatus.style.color = 'indianred';
     }
 }
 
@@ -5856,12 +5946,6 @@ function isElectron() {
     if (typeof process !== 'undefined' && typeof process.versions === 'object' && !!process.versions.electron) return true;
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) return true;
     return false;
-}
-
-function isOffScreen(elem, minPad = 20) {
-    const rect = elem.getBoundingClientRect();
-    return ((rect.x + (rect.width/2) - minPad) < 0 || (rect.x + minPad) > window.innerWidth ||
-            (rect.y + minPad) < 0 || (rect.y + minPad) > window.innerHeight);
 }
 
 function aspectRatioFit(srcW, srcH, maxW, maxH) {

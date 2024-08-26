@@ -20,9 +20,9 @@ void main()	{
     col = ACES(col);
 
     // grading
-    if (uRenderPassId == 0) {
-        col = pow(col, vec3(0.8, 0.85, 0.9));
-    }
+    //if (uRenderPassId == 0) {
+    //    col = pow(col, vec3(0.8, 0.85, 0.9));
+    //}
 
     // gamma 1.0/2.2
     col = pow(col, vec3(0.4545));
@@ -35,7 +35,7 @@ void main()	{
         col *= 1.0 - grain;
 
         // vignette
-        col *= vec3(1) * smoothstep(2.0, 0.5, length(vUv * 2.0 - 1.0)) * 0.5 + 0.5;
+        col *= vec3(1) * smoothstep(2.0, 0.8, length(vUv * 2.0 - 1.0)) * 0.5 + 0.5;
     }
     
     gl_FragColor = vec4(col, data.a);

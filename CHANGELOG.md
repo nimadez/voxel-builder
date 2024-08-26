@@ -1,5 +1,30 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.4 x1.5
+- Faster startup time (avg. 2s to 0.5s - x1.5 faster)
+- Change default PT material to lambert
+- Remove color grading from FX mode
+- Snapshot frames the camera
+- Automatic camera framing (allow to work with a small group of voxels)
+- Shortcut 'F' can be used to frame camera during voxel transformation
+- New project generates 1 voxel
+- Default ice color is used to generate new voxels (instead of selected color)
+- Darker color theme, larger hover menu, axis view and color picker
+- Improve hover code, we can use this to float multiple elements
+- Improve and manage all the in-screen buttons
+- Measure volume tool show XYZ position on single click
+- Add 'new scene' option for terrain generator
+- Reduce the chance of random holes on the terrain surface
+- Allow double-click for color palette in desktop
+- Add voxel by X,Y,Z direct coordinate input as string
+- The websockets client has been rewritten (auto disconnect after 10 retries)
+- New 'ws-connect.py' script, to connect with machine learning models
+- Fix a bug when the startup project is heavy and the UI doesn't wait for it
+- Fix a bug where you can't select the first voxel at 0,0,0
+
+> - Please clear your browser cache or force reload voxel-builder
+> - BABYLON.HDRCubeTexture seems to be responsible for the potential startup delay/freeze, but other optimizations were done to reach 0.5 second.
+
 ## 4.3.3
 - Update three-mesh-bvh to 0.7.6
 - Update three to r167
