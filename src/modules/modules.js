@@ -3,16 +3,23 @@
     @nimadez
 */
 
-import { baker } from './bakery/baker.js';
+import { bakery } from './bakery/bakery.js';
 import { pt } from './pathtracer/pathtracer.js';
 import { rc, voxelizeMesh, voxelizeBake } from './raycaster/raycaster.js';
-import { worker } from './worker/worker.js';
+import { WorkerPool } from '../../libs/addons/WorkerPool.js';
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 
-window.baker = baker;
+const workerPool = new WorkerPool();
+workerPool.setWorkerCreator(() => {
+    const worker = new Worker('src/modules/worker/worker.js', { type: "module" });
+    worker.postMessage({ id: 'init' });
+    return worker;
+});
+
+window.bakery = bakery;
 window.pt = pt;
 window.rc = rc;
 window.voxelizeMesh = voxelizeMesh;
 window.voxelizeBake = voxelizeBake;
-window.worker = worker;
+window.workerPool = workerPool;
 window.SimplexNoise = SimplexNoise;

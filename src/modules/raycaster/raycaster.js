@@ -99,18 +99,6 @@ class Raycaster {
         return this.geom.boundsTree.intersectsBox(this.box, this.invMat);
     }
 
-    debug(isHit, ray = this.ray, dist = 1) {
-        if (isHit) {
-            const org = new BABYLON.Vector3(ray.origin.x, ray.origin.y, ray.origin.z);
-            const dir = new BABYLON.Vector3(ray.direction.x, ray.direction.y, ray.direction.z);
-            const helper = new BABYLON.RayHelper(new BABYLON.Ray(org, dir, dist));
-            helper.show(uix.utilLayer.utilityLayerScene, BABYLON.Color3.Teal());
-            setTimeout(() => {
-                helper.dispose();
-            }, 5000);
-        }
-    }
-
     dispose() {
         if (this.geom) {
             this.geom.boundsTree.geometry.dispose();

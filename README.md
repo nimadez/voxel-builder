@@ -5,7 +5,7 @@
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.4 Beta```<br>
+```Version 4.3.5 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -50,12 +50,13 @@ Voxel-based 3D modeling application<br>
 - Blender importer script
 
 **More**
+- Unique handcrafted user-interface woven into the code
 - Minimum dependency, portable, online and offline
 - Ad-free, no miners and trackers, no logging
 - Extras [?](https://github.com/nimadez/voxel-builder/wiki/Extras)
 
 ## Installation
-Install [Electron](https://github.com/electron/electron/releases) for Linux or Windows
+Install [Electron](https://github.com/electron/electron/releases) for Linux or Windows *(optional)*
 ```
 electron-v*-linux-x64.zip
 electron-v*-win32-x64.zip
@@ -64,7 +65,12 @@ Get and run Voxel Builder
 ```
 git clone https://github.com/nimadez/voxel-builder.git
 cd voxel-builder
+
+# Start with Electron:
 electron .
+
+# Start with Node.js:
+node server.js
 ```
 Update to the latest version
 ```
@@ -98,17 +104,10 @@ Failed to import GLB meshes for voxelization
 Multiple meshes need to have the same properties or they won't merge,
 the only solution is to merge meshes before exporting to GLB.
 ```
-Visual artifacts and Moire patterns
-```
-These are related to thin-instances and nothing special can be done at this time.
-Reproduce: set camera FOV to 0.1 and press F to fit camera
-(but usually you don't need that FOV, use orthographic mode)
-```
 Wacom tablet crashes randomly and throws warning on Linux (GNOME)
 ```
 Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.
-This is a Babylon.js and Wayland issue that needs to be fixed.
-(wayland uses multiple pointers, one for each input device)
+This problem is related to Babylon.js and nothing can be done.
 ```
 
 ## FAQ
@@ -141,6 +140,8 @@ How to run Blender importer script?
 ↑ Features and uix overhaul
 ↑ New SPS particles to build the world
 ↑ I wrote a playground for learning Babylon.js
+
+"I don't mean to compete, GL is nostalgic for me."
 ```
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>

@@ -53,6 +53,7 @@ const TEX_PRESETS = [
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo5N0FGQjBBMjg5NEUxMUVFOENENEIwRjFFNjE3NzY0QSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo5N0FGQjBBMzg5NEUxMUVFOENENEIwRjFFNjE3NzY0QSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjk3QUZCMEEwODk0RTExRUU4Q0Q0QjBGMUU2MTc3NjRBIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjk3QUZCMEExODk0RTExRUU4Q0Q0QjBGMUU2MTc3NjRBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+lZLONgAAABJQTFRFupp5gmFZz66CspJ1jnFhooJpmRnR4QAAAHdJREFUeNo0j8ERADEIAkG0/5YPNJePQ0YXwLBK7aeq5gxYAqbb39KQsJ4ZtvVOdAZ9MqsbakuFQxpX0ISHnb4PMAsIcDnRXgmRywH3PsANYluvO0eAOg5ejlrM5TjOXQHxfzn0athWuj64QH+PLOD3z0jhT4ABAJa7Av1CV1nPAAAAAElFTkSuQmCC"
 ];
 
+const CSS_ROOT = document.querySelector(':root');
 const COL_ORANGE = '#FFA500';
 const COL_ORANGE_RGB = BABYLON.Color3.FromHexString(COL_ORANGE);
 const COL_ORANGE_RGBA = BABYLON.Color4.FromHexString(COL_ORANGE + 'FF');
@@ -112,7 +113,8 @@ const bvhWhiteList = [
 
 const isMobile = isMobileDevice();
 
-const canvas = document.getElementById('canvas_render');
+const canvas = document.getElementById('canvas');
+const canvasRender = document.getElementById('canvas_render');
 const canvasPalette = document.getElementById('canvas_palette');
 
 const engine = new BABYLON.Engine(canvas, true, {});
@@ -388,8 +390,8 @@ function Camera() {
         this.camera0.pinchPrecision = 30; //def: 12
         this.camera0.panningSensibility = 300; //def: 1000
         this.camera0.inertia = 0.9; //def: 0.9
-        this.camera0.minZ = 0.1;
-        this.camera0.maxZ = 2000;
+        //this.camera0.minZ = 0.1;
+        //this.camera0.maxZ = 2000;
         this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
 
         this.camera1.setPosition(new BABYLON.Vector3(73, 73, 73));
@@ -402,8 +404,8 @@ function Camera() {
         this.camera1.pinchPrecision = 30;
         this.camera1.panningSensibility = 300;
         this.camera1.inertia = 0.9;
-        this.camera1.minZ = 0.1;
-        this.camera1.maxZ = 2000;
+        //this.camera1.minZ = 0.1;
+        //this.camera1.maxZ = 2000;
         this.camera1.fov = parseFloat(document.getElementById('input-camera-fov').value);
     }
 
@@ -412,7 +414,7 @@ function Camera() {
         if (MODE == 0) {
             scene.activeCamera = this.camera0;
         } else if (MODE == 1) {
-            scene.activeCamera = (document.getElementById('input-pt-source').value == 'model') ? this.camera0 : this.camera1;
+            scene.activeCamera = (ui.domRenderSource.value == 'model') ? this.camera0 : this.camera1;
         } else if (MODE == 2) {
             scene.activeCamera = this.camera1;
         }
@@ -1125,8 +1127,7 @@ function Builder(scene) {
             helper.setFloor();
             helper.setSymmPivot();
 
-            if (preferences.getWebsocket())
-                client.sendMessage(this.voxels);
+            client.sendMessage(this.voxels, 'get');
         }, 10);
     }
 
@@ -1423,19 +1424,24 @@ function Builder(scene) {
 
     this.reduceVoxels = async function() {
         if (!await ui.showConfirm('reducing voxels, continue?')) return;
+        engine.displayLoadingUI();
         const last = this.voxels.length;
-
-        window.worker.start('findInnerVoxels', [ this.voxels, this.positionsMap ], (data) => {
+        const msg = await window.workerPool.postMessage({ id: 'findInnerVoxels', data: [ this.voxels, this.positionsMap ] });
+        if (msg) {
             this.voxels = [];
-            for (let i = 0; i < data.length; i++) {
+            for (let i = 0; i < msg.data.length; i++) {
                 this.add(new BABYLON.Vector3(
-                    data[i].position._x, data[i].position._y, data[i].position._z),
-                    data[i].color, data[i].visible);
+                    msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
+                    msg.data[i].color, msg.data[i].visible);
             }
             this.create();
             this.update();
             ui.notification(`${ last - this.voxels.length } voxels removed`);
-        });
+            engine.hideLoadingUI();
+        } else {
+            ui.notification('unable to reduce voxels');
+            engine.hideLoadingUI();
+        }
     }
 
     this.removeDuplicates = function() {
@@ -3566,7 +3572,7 @@ function Bakery(scene) {
     };
     
     this.bakeToMesh = function(voxels = builder.voxels) {
-        const baked = window.baker('_mesh', voxels);
+        const baked = window.bakery('_mesh', voxels);
 
         resetPivot(baked);
 
@@ -4160,7 +4166,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.3.4",
+            version: "Voxel Builder 4.3.5",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4385,13 +4391,15 @@ function Project(scene) {
         });
     }
 
-    this.loadMagicaVoxel = function(buffer) {
-        window.worker.start('parseMagicaVoxel', buffer, (data) => {
+    this.loadMagicaVoxel = async function(buffer) {
+        engine.displayLoadingUI();
+        const msg = await window.workerPool.postMessage({ id: 'parseMagicaVoxel', data: buffer });
+        if (msg) {
             const voxels = [];
-            for (let i = 0; i < data.length; i++) {
+            for (let i = 0; i < msg.data.length; i++) {
                 voxels.push({ 
-                    position: new BABYLON.Vector3(data[i].x, data[i].y, data[i].z),
-                    color: data[i].color,
+                    position: new BABYLON.Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                    color: msg.data[i].color,
                     visible: true
                 });
             }
@@ -4399,9 +4407,11 @@ function Project(scene) {
             builder.normalizeVoxelPositions(false);
             clearSceneAndReset();
             ui.domProjectName.value = 'untitled';
-        }, () => {
+            engine.hideLoadingUI();
+        } else {
             ui.notification('incompatible vox file');
-        });
+            engine.hideLoadingUI();
+        }
     }
 
     function setProjectValues(uiDom, iniKey, defVal) {
@@ -4415,28 +4425,6 @@ function Project(scene) {
 
 
 function UserInterface(scene) {
-    this.domMenusRight = [
-        document.getElementById('menu-about'),
-        document.getElementById('menu-prefs'),
-        document.getElementById('menu-file'),
-        document.getElementById('menu-generator'),
-        document.getElementById('menu-voxelizer'),
-        document.getElementById('menu-symmetry'),
-        document.getElementById('menu-model'),
-        document.getElementById('menu-paint'),
-        document.getElementById('menu-voxels'),
-        document.getElementById('menu-bakery'),
-        document.getElementById('menu-meshes'),
-    ];
-    this.domMenusLeft = [
-        document.getElementById('menu-pathtracer'),
-        document.getElementById('menu-camera'),
-        document.getElementById('menu-env'),
-        document.getElementById('menu-material'),
-        document.getElementById('menu-texture'),
-        document.getElementById('menu-storage'),
-        document.getElementById('menu-groups')
-    ];
     this.domToolbarR = document.getElementById('toolbar_R');
     this.domToolbarL = document.getElementById('toolbar_L');
     this.domToolbarC = document.getElementById('toolbar_C');
@@ -4492,6 +4480,24 @@ function UserInterface(scene) {
     this.domExportFormat = document.getElementById('input-export-format');
     this.domExportSelectedBake = document.getElementById('input-export-selbake');
     this.domOrthoBtn = document.getElementById('btn-ortho');
+    this.domPathtracer = document.getElementById('pathtracer');
+    this.domRenderSource = document.getElementById('input-pt-source');
+    this.domRenderShade = document.getElementById('input-pt-shade');
+    this.domRenderPause = document.getElementById('btn-pt-pause');
+    this.domRenderShot = document.getElementById('btn-pt-shot');
+    this.domRenderFast = document.getElementById('btn-pt-fast');
+    this.domRenderMaxSamples = document.getElementById('input-pt-maxsamples');
+    this.domRenderPasses = document.getElementById('input-pt-passes');
+    this.domRenderBounces = document.getElementById('input-pt-bounces');
+    this.domRenderEnvPower = document.getElementById('input-pt-envpower');
+    this.domRenderDirectLight = document.getElementById('input-pt-directlight');
+    this.domRenderBackground = document.getElementById('input-pt-background');
+    this.domRenderMaterial = document.getElementById('input-pt-material');
+    this.domRenderEmissive = document.getElementById('input-pt-emissive');
+    this.domRenderRoughness = document.getElementById('input-pt-roughness');
+    this.domRenderFloor = document.getElementById('input-pt-floor');
+    this.domRenderFloorColor = document.getElementById('input-pt-floorcolor');
+    this.domRenderGrid = document.getElementById('input-pt-grid');
     this.domConfirm = document.getElementById('confirm');
     this.domConfirmBlocker = document.getElementById('confirmblocker');
     this.domNotifier = document.getElementById('notifier');
@@ -4501,17 +4507,13 @@ function UserInterface(scene) {
     this.domInfoRender = document.getElementById('info_render');
     this.domProgressBar = document.getElementById('progressbar');
     this.domWebSocketStatus = document.getElementById('ws_status');
-    const styleMenuR = '-200px';
-    const styleMenuL = '-200px';
-    const styleMenuR_open = '75px';
-    const styleMenuL_open = '75px';
-    const hoverOffsets = [];
+    this.panels = [];
+    let lastIndex = 1000;
     let notificationTimer = null;
 
     this.init = function() {
-        document.querySelectorAll('.panel').forEach(() => {
-            hoverOffsets.push({ x: 0, y: 0 });
-        }, false);
+        this.registerPanels();
+        this.registerToolbarButtons();
 
         this.domCameraFov.addEventListener('change', (ev) => {
             if (ev.target.value > 0) {
@@ -4591,7 +4593,6 @@ function UserInterface(scene) {
             window.pt.deactivate();
 
         if (mode == 0) {
-            if (preferences.isInitialized && preferences.getWebsocket()) client.connect();
             builder.setMeshVisibility(true);
             bakery.setBakesVisibility(false);
             helper.displayGridPlane(helper.isFloorPlaneActive, true);
@@ -4605,7 +4606,6 @@ function UserInterface(scene) {
             if (!hdri.isLoaded) // forced reload if user hits Render within 1 second of launch!
                 hdri.loadHDR(ENVMAP)
         } else if (mode == 2) {
-            client.disconnect();
             builder.setMeshVisibility(false);
             bakery.setBakesVisibility(true);
             bakery.createBakeryList();
@@ -4691,10 +4691,10 @@ function UserInterface(scene) {
 
         if (scene.activeCamera.mode == BABYLON.Camera.PERSPECTIVE_CAMERA) {
             this.domOrthoBtn.innerHTML = 'Perspective';
-            ui.domInScreenOrtho.innerHTML = 'P';
+            this.domInScreenOrtho.innerHTML = 'P';
         } else {
             this.domOrthoBtn.innerHTML = 'Orthographic';
-            ui.domInScreenOrtho.innerHTML = 'O';
+            this.domInScreenOrtho.innerHTML = 'O';
         }
     }
 
@@ -4710,7 +4710,7 @@ function UserInterface(scene) {
             this.domToolbarC_mem.children[4].innerHTML = 'REDO';
         } else if (mode == 1) {
             this.domToolbarC_mem.children[0].onclick = () => { window.pt.fastMode() };
-            this.domToolbarC_mem.children[1].onclick = () => { window.pt.domShade.checked = !window.pt.domShade.checked; window.pt.updateAttributeColors() };
+            this.domToolbarC_mem.children[1].onclick = () => { ui.domRenderShade.checked = !ui.domRenderShade.checked; window.pt.updateAttributeColors() };
             this.domToolbarC_mem.children[3].onclick = () => { window.pt.pause() };
             this.domToolbarC_mem.children[4].onclick = () => { window.pt.shot() };
             this.domToolbarC_mem.children[0].innerHTML = 'FAST';
@@ -4729,86 +4729,120 @@ function UserInterface(scene) {
         }
     }
 
-    this.toggleMenuAbout = function() { this.switchMenus(this.domMenusRight[0], 'right') }
-    this.toggleMenuPrefs = function() { this.switchMenus(this.domMenusRight[1], 'right') }
-    this.toggleMenuFile = function() { this.switchMenus(this.domMenusRight[2], 'right') }
-    this.toggleMenuGenerator = function() { this.switchMenus(this.domMenusRight[3], 'right') }
-    this.toggleMenuVoxelizer = function() { this.switchMenus(this.domMenusRight[4], 'right') }
-    this.toggleMenuSymmetry = function() { this.switchMenus(this.domMenusRight[5], 'right') }
-    this.toggleMenuModel = function() { this.switchMenus(this.domMenusRight[6], 'right') }
-    this.toggleMenuPaint = function() { this.switchMenus(this.domMenusRight[7], 'right') }
-    this.toggleMenuVoxels = function() { this.switchMenus(this.domMenusRight[8], 'right') }
-    this.toggleMenuBakery = function() { this.switchMenus(this.domMenusRight[9], 'right') }
-    this.toggleMenuMeshes = function() { this.switchMenus(this.domMenusRight[10], 'right') }
-    
-    this.toggleMenuPathtracer = function() { this.switchMenus(this.domMenusLeft[0], 'left') }
-    this.toggleMenuCamera = function() { this.switchMenus(this.domMenusLeft[1], 'left') }
-    this.toggleMenuEnv = function() { this.switchMenus(this.domMenusLeft[2], 'left') }
-    this.toggleMenuMaterial = function() { this.switchMenus(this.domMenusLeft[3], 'left') }
-    this.toggleMenuTexture = function() { this.switchMenus(this.domMenusLeft[4], 'left') }
-    this.toggleMenuStorage = function() { this.switchMenus(this.domMenusLeft[5], 'left') }
-    this.toggleMenuGroups = function() { this.switchMenus(this.domMenusLeft[6], 'left') }
-
-    let arrL = [];
-    let arrR = [];
-    this.setMenuModes = function(mode) { // exclude menus in certain modes
-        arrL = [];
-        arrR = [];
+    // exclude menus in certain modes
+    let excluded = [];
+    this.setMenuModes = function(mode) {
         if (mode == 0) {
-            arrL = [ 3, 4 ];
-            arrR = [ 10 ];
+            excluded = [ 10, 14, 15 ];
         } else if (mode == 1) {
-            arrL = [ 3, 4, 5, 6 ];
-            arrR = [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+            excluded = [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15, 16, 17 ];
         } else if (mode == 2) {
-            arrL = [ 5, 6 ];
-            arrR = [ 3, 4, 5, 6, 7, 8 ];
+            excluded = [ 3, 4, 5, 6, 7, 8, 16, 17 ];
         }
 
-        for (let i = 0; i < arrL.length; i++) {
-            if (this.domMenusLeft[arrL[i]].style.marginLeft == styleMenuL_open)
-                this.switchMenus(this.domMenusLeft[arrL[i]], 'left');
-        }
-
-        for (let i = 0; i < arrR.length; i++) {
-            if (this.domMenusRight[arrR[i]].style.marginRight == styleMenuR_open)
-                this.switchMenus(this.domMenusRight[arrR[i]], 'right');
-        }
+        this.panels.forEach((panel) => {
+            if (excluded.includes(panel.idx) && panel.elem !== this.domHover)
+                if (panel.elem.style.display == 'unset')
+                    this.switchPanel(panel);
+        });
     }
 
-    this.clearAllMenus = function(side, exclude = null) {
-        if (side == 'right' || side == 'both') {
-            for (let i = 0; i < this.domMenusRight.length; i++) {
-                if (this.domMenusRight[i] !== exclude)
-                    this.domMenusRight[i].style.marginRight = styleMenuR;
-            }
-        } else if (side == 'left' || side == 'both') {
-            for (let i = 0; i < this.domMenusLeft.length; i++) {
-                if (this.domMenusLeft[i] !== exclude)
-                    this.domMenusLeft[i].style.marginLeft = styleMenuL;
+    this.registerToolbarButtons = function() {
+        // find and match a toolbar button for a panel by id name
+        const toolbarButtons = document.querySelectorAll("button[id^='toolbar_btn_']");
+        for (let i = 0; i < this.panels.length; i++) {
+            for (let b = 0; b < toolbarButtons.length; b++) {
+                if (toolbarButtons[b].id.split('_')[2] === this.panels[i].elem.id.split('-')[1]) {
+                    toolbarButtons[b].onclick = () => { this.switchPanel(this.panels[i], toolbarButtons[b]) };
+                    this.panels[i].button = toolbarButtons[b];
+                }
             }
         }
     }
 
-    this.switchMenus = function(dom, side) {
-        this.clearAllMenus(side, dom);
-        if (side == 'right') {
-            if (dom.style.marginRight === styleMenuR_open) {
-                dom.style.marginRight = styleMenuR;
-            } else {
-                dom.style.marginRight = styleMenuR_open;
-                if (isMobile)
-                    this.clearAllMenus('left', dom);
-            }
-        } else if (side == 'left') {
-            if (dom.style.marginLeft === styleMenuL_open) {
-                dom.style.marginLeft = styleMenuL;
-            } else {
-                dom.style.marginLeft = styleMenuL_open;
-                if (isMobile)
-                    this.clearAllMenus('right', dom);
-            }
+    this.registerPanels = function() {
+        const panels = document.querySelectorAll('.panel');
+        for (let i = 0; i < panels.length; i++) {
+            this.addToolbarToPanels(i, panels[i]);
+            this.panels.push({
+                idx: i,
+                elem: panels[i],
+                x: 0, y: 0,
+                detach: false
+            });
         }
+    }
+    
+    this.addToolbarToPanels = function(idx, elem) {
+        if (elem !== this.domHover) {
+            const li = document.createElement('li');
+            li.classList.add('row_panel');
+    
+            const div_move = document.createElement('div');
+            const div_hide = document.createElement('div');
+            const div_reset = document.createElement('div');
+            div_move.innerHTML = '<i class="material-icons">open_with</i>';
+            div_hide.innerHTML = '<i class="material-icons">remove_red_eye</i>';
+            div_reset.innerHTML = '<i class="material-icons">exit_to_app</i>';
+            div_move.onpointerdown = (ev) => {
+                elem.style.borderRadius = '6px';
+                elem.style.borderTop = 'solid 1px steelblue';
+                elem.style.zIndex = lastIndex + 1;
+                ui.dragElement(idx, ev.target, elem);
+                lastIndex += 1;
+            };
+            div_hide.onpointerdown = () => { this.switchPanel(this.panels[idx]) };
+            div_reset.onpointerdown = () => { this.resetPanel(idx) };
+            li.appendChild(div_move);
+            li.appendChild(div_hide);
+            li.appendChild(div_reset);
+            
+            elem.classList.add('panel');
+            elem.insertBefore(li, elem.firstChild);
+        } 
+    }
+
+    this.clearAllPanels = function(exclude, isForceAll = false) {
+        if (isForceAll) {
+            this.panels.forEach((panel) => {
+                if (panel.elem !== this.domHover && panel.elem !== exclude) {
+                    panel.elem.style.display = 'none';
+                    if (panel.button)
+                        panel.button.style.fontStyle = 'normal';
+                }
+            });
+        } else {
+            this.panels.forEach((panel) => {
+                if (!panel.detach && panel.elem !== this.domHover && panel.elem !== exclude) {
+                    panel.elem.style.display = 'none';
+                    if (panel.button)
+                        panel.button.style.fontStyle = 'normal';
+                }
+            });
+        }
+    }
+
+    this.switchPanel = function(panel) {
+        this.clearAllPanels(panel.elem);
+        if (panel.elem.style.display === 'unset') {
+            panel.elem.style.display = 'none';
+            panel.button.style.fontStyle = 'normal';
+        } else {
+            panel.elem.style.display = 'unset';
+            panel.button.style.fontStyle = 'italic';
+        }
+    }
+
+    this.resetPanel = function(idx) {
+        this.panels[idx].elem.style.transform = 'none';
+        this.panels[idx].x = 0;
+        this.panels[idx].y = 0;
+        this.panels[idx].detach = false;
+        this.panels[idx].elem.style.borderTop = 'none';
+        this.panels[idx].elem.style.borderRadius = '3px';
+        this.panels[idx].elem.style.borderTopLeftRadius = '0';
+        this.panels[idx].elem.style.borderTopRightRadius = '0';
+        this.switchPanel(this.panels[idx]);
     }
 
     this.toggleHover = function(isEnabled) {
@@ -4889,7 +4923,6 @@ function UserInterface(scene) {
 
     this.hideInterface = function(isEnabled) {
         if (isEnabled) {
-            this.clearAllMenus('both');
             this.domMenus.style.display = 'none';
             this.domHover.style.display = 'none';
             this.domPalette.style.display = 'none';
@@ -4949,11 +4982,11 @@ function UserInterface(scene) {
 
         function dragStart(e) {
             if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - hoverOffsets[hIndex].x;
-                initialY = e.touches[0].clientY - hoverOffsets[hIndex].y;
+                initialX = e.touches[0].clientX - ui.panels[hIndex].x;
+                initialY = e.touches[0].clientY - ui.panels[hIndex].y;
             } else {
-                initialX = e.clientX - hoverOffsets[hIndex].x;
-                initialY = e.clientY - hoverOffsets[hIndex].y;
+                initialX = e.clientX - ui.panels[hIndex].x;
+                initialY = e.clientY - ui.panels[hIndex].y;
             }
             if (e.target === elem) active = true;
         }
@@ -4968,6 +5001,7 @@ function UserInterface(scene) {
             document.body.removeEventListener("touchstart", dragStart, false);
             document.body.removeEventListener("touchend", dragEnd, false);
             document.body.removeEventListener("touchmove", drag, false);
+            ui.panels[hIndex].detach = true;
         }
 
         function drag(e) {
@@ -4979,8 +5013,8 @@ function UserInterface(scene) {
                     currentX = e.clientX - initialX;
                     currentY = e.clientY - initialY;
                 }
-                hoverOffsets[hIndex].x = currentX;
-                hoverOffsets[hIndex].y = currentY;
+                ui.panels[hIndex].x = currentX;
+                ui.panels[hIndex].y = currentY;
                 setTranslate(currentX, currentY, target);
             }
         }
@@ -4992,14 +5026,26 @@ function UserInterface(scene) {
 
     this.hoverTranslate = function(elem, idx, x, y) {
         elem.style.transform = "translate(" + x + "px, " + y + "px)";
-        hoverOffsets[idx].x = 0;
-        hoverOffsets[idx].y = 0;
+        this.panels[idx].x = 0;
+        this.panels[idx].y = 0;
     }
 
     this.isHoverOffScreen = function(elem, minPad = 20) {
         const rect = elem.getBoundingClientRect();
         return ((rect.x + (rect.width/2) - minPad) < 0 || (rect.x + minPad) > window.innerWidth ||
                 (rect.y + minPad) < 0 || (rect.y + minPad) > window.innerHeight);
+    }
+
+    this.offscreenCheck = function() {
+        this.panels.forEach((panel) => {
+            if (panel.elem === this.domHover) {
+                if (this.isHoverOffScreen(panel.elem))
+                    ui.hoverTranslate(panel.elem, panel.idx, 0, 0);
+            } else {
+                if (this.isHoverOffScreen(panel.elem, 60))
+                    ui.hoverTranslate(panel.elem, panel.idx, 0, 0);
+            }
+        });
     }
 
     this.init();
@@ -5236,14 +5282,13 @@ function Preferences() {
         initPrefCheck(KEY_POWERSAVER, (chk) => {
             if (chk) {
                 FPS = 1000 / 30;
-                document.getElementById('input-pt-bounces').value = 3;
+                ui.domRenderBounces.value = 3;
             } else {
                 FPS = 1000 / 60;
-                document.getElementById('input-pt-bounces').value = 4;
+                ui.domRenderBounces.value = 4;
             }
-            if (window.pt.isActive && window.pt.isLoaded) {
-                window.pt.updateUniformBounces(document.getElementById('input-pt-bounces').value);
-            }
+            if (window.pt.isActive && window.pt.isLoaded)
+                window.pt.updateUniformBounces(ui.domRenderBounces.value);
         });
         initPrefCheck(KEY_WEBSOCKET, (chk) => {
             (chk && MODE == 0) ? client.connect() : client.disconnect();
@@ -5254,10 +5299,10 @@ function Preferences() {
     this.finish = function() {
         if (this.getPowerSaver()) {
             FPS = 1000 / 30;
-            document.getElementById('input-pt-bounces').value = 3;
+            ui.domRenderBounces.value = 3;
         } else {
             FPS = 1000 / 60;
-            document.getElementById('input-pt-bounces').value = 4;
+            ui.domRenderBounces.value = 4;
         }
         palette.expand(this.getPaletteSize());
         ui.toggleHover(!this.getNoHover());
@@ -5270,37 +5315,43 @@ function Preferences() {
                         ui.hideInterface(false);
                         engine.hideLoadingUI();
                         clearInterval(interval);
-                        this.isInitialized = true;
-                        console.log(`initialized in ${performance.now()-startTime} ms.`);
+                        console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
+                        this.postFinish();
                     });
                 } else {
                     project.newProjectStartup();
                     ui.hideInterface(false);
                     engine.hideLoadingUI();
                     clearInterval(interval);
-                    this.isInitialized = true;
-                    console.log(`initialized in ${performance.now()-startTime} ms.`);
+                    console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
+                    this.postFinish();
                 }
-
-                // inject the user modules entry point
-                const scriptUserModules = document.createElement('script');
-                scriptUserModules.type = 'module';
-                scriptUserModules.src = 'user/user.js';
-                document.body.appendChild(scriptUserModules);
-
-                setTimeout(() => {
-                    hdri.preload();
-                    
-                    // inject extra babylon libs
-                    const scriptSerializers = document.createElement('script');
-                    scriptSerializers.src = 'libs/babylonjs.serializers.min.js';
-                    document.body.appendChild(scriptSerializers);
-                    const scriptInspector = document.createElement('script');
-                    scriptInspector.src = 'libs/babylon.inspector.bundle.js';
-                    document.body.appendChild(scriptInspector);
-                }, 1000); // no less, major startup time ratio
             }
         }, 100);
+    }
+
+    this.postFinish = function() {
+        // inject the user modules entry point
+        const scriptUserModules = document.createElement('script');
+        scriptUserModules.type = 'module';
+        scriptUserModules.src = 'user/user.js';
+        document.body.appendChild(scriptUserModules);
+
+        setTimeout(() => {
+            hdri.preload();
+            
+            // inject extra babylon libs
+            const scriptSerializers = document.createElement('script');
+            scriptSerializers.src = 'libs/babylonjs.serializers.min.js';
+            document.body.appendChild(scriptSerializers);
+            const scriptInspector = document.createElement('script');
+            scriptInspector.src = 'libs/babylon.inspector.bundle.js';
+            document.body.appendChild(scriptInspector);
+
+            console.log(`WebGPU capability: ${ navigator.gpu !== undefined }`);
+            console.log('initialized.')
+            this.isInitialized = true;
+        }, 1000); // no less, major startup time ratio
     }
 
     this.setStartup = function(isEnabled) {
@@ -5358,9 +5409,9 @@ function Preferences() {
     }
 
     function initPref(key, callback = undefined) {
-        if (localStorage.getItem(key)) {
+        if (localStorage.getItem(key))
             document.getElementById(key).value = localStorage.getItem(key);
-        }
+
         document.getElementById(key).addEventListener("input", (ev) => {
             localStorage.setItem(key, ev.target.value);
             if (callback) callback(ev.target.value);
@@ -5368,9 +5419,9 @@ function Preferences() {
     }
 
     function initPrefCheck(key, callback = undefined) {
-        if (localStorage.getItem(key)) {
+        if (localStorage.getItem(key))
             document.getElementById(key).checked = parseBool(localStorage.getItem(key));
-        }
+        
         document.getElementById(key).addEventListener("input", (ev) => {
             localStorage.setItem(key, ev.target.checked);
             if (callback) callback(ev.target.checked);
@@ -5468,7 +5519,7 @@ document.addEventListener("keydown", (ev) => {
             break;
         case 'r':
             if (window.pt && window.pt.isActive()) {
-                (window.pt.source.value == 'model') ? ui.setMode(0) : ui.setMode(2);
+                (ui.domRenderSource.value == 'model') ? ui.setMode(0) : ui.setMode(2);
             } else {
                 ui.setMode(1);
             }
@@ -5600,8 +5651,7 @@ window.addEventListener("resize", () => {
     if (MODE == 0) palette.create();
     if (MODE == 2) bakery.createBakeryList();
 
-    if (ui.isHoverOffScreen(ui.domHover))
-        ui.hoverTranslate(ui.domHover, 0, 0, 0);
+    ui.offscreenCheck();
 }, false);
 
 
@@ -5619,6 +5669,11 @@ function WebsocketClient() {
     let data = [];
 
     this.connect = function() {
+        if (!preferences.getWebsocket()) {
+            this.disconnect();
+            return;
+        }
+
         this.ws = new WebSocket("ws://" + preferences.getWebsocketUrl());
 
         this.ws.onopen = () => {
@@ -5626,8 +5681,7 @@ function WebsocketClient() {
             ui.domWebSocketStatus.innerHTML = 'Connected';
             ui.domWebSocketStatus.style.color = 'limegreen';
             retry = 0;
-            if (MODE == 0)
-                this.sendMessage(JSON.stringify({ voxels: builder.voxels }));
+            this.sendMessage('Initialized.', 'init');
         };
 
         this.ws.onmessage = (ev) => {
@@ -5657,27 +5711,30 @@ function WebsocketClient() {
         };
 
         this.ws.onerror = () => {
-            this.retryConnection();
+            //this.retryConnection();
         };
     }
 
     this.retryConnection = function() {
         clearInterval(interval);
-        interval = setInterval(() => {
-            if (retry < maxRetry) {
-                this.connect();
-                retry++;
-                ui.domWebSocketStatus.innerHTML = `Retry ${retry}/${maxRetry} ...`;
-                ui.domWebSocketStatus.style.color = 'slategray';
-            } else {
-                this.disconnect();
-            }
-        }, retryDelay);
+        if (preferences.getWebsocket()) {
+            interval = setInterval(() => {
+                if (retry < maxRetry) {
+                    retry++;
+                    ui.domWebSocketStatus.innerHTML = `Retry ${retry}/${maxRetry} ...`;
+                    ui.domWebSocketStatus.style.color = 'slategray';
+                    this.connect();
+                } else {
+                    this.disconnect();
+                }
+            }, retryDelay);
+        }
     }
 
-    this.sendMessage = function(voxels) {
-        if (MODE == 0 && this.ws && this.ws.readyState === WebSocket.OPEN)
-            this.ws.send(JSON.stringify({ voxels: voxels }));
+    this.sendMessage = function(voxels, key) {
+        if (MODE == 0 && preferences.getWebsocket())
+            if (this.ws && this.ws.readyState === WebSocket.OPEN)
+                this.ws.send(JSON.stringify({ key: key, voxels: voxels }));
     }
     
     this.disconnect = function() {

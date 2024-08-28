@@ -1,5 +1,20 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.5
+- ~~Update to babylonjs 7.22.3~~
+  - The update was rolled back, serious bug (no mouseover on Z axis)
+- New detachable floating panels!
+- Review and improve menus (faster and more managable)
+- Improve websockets client and server
+- Standalone node.js server (Electron alternative)
+- Improve three.js module (less memory, faster load time)
+- Fix camera-related visual artifacts (fov 0.1 issue)
+- Improve modules and pathtracer code
+- Add three.js WorkerPool library (more stable)
+
+> - You shouldn't notice a change unless you move the panel
+> - The left button moves the panel, the center button hides the panel and the right button resets the panel to its original position and close it.
+
 ## 4.3.4 x1.5
 - Faster startup time (avg. 2s to 0.5s - x1.5 faster)
 - Change default PT material to lambert

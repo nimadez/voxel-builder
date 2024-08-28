@@ -1,5 +1,5 @@
 //
-// original source: https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/VOXLoader.js
+// source: https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/VOXLoader.js
 //
 
 const DEFAULT_PALETTE = [

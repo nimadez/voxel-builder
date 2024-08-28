@@ -1,48 +1,80 @@
 #!/usr/bin/env python3
-# Aug 2024 https://nimadez.github.io/
 #
 # Websockets Server
 # This script can be used to connect with machine learning models
 # $ python3 ws-connect.py
 
 
-import os, sys, json, random, time
-import asyncio
+import os, sys, json, random, time, asyncio
 
 sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/libs')
-from websockets.asyncio.server import serve
+from websockets.server import serve
+
+if __import__('platform').system == 'Windows': # fix [WinError 10054]
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 PORT = 8014
-TOTAL = 100
-CLEAR = False # clear scene or add voxel
+CLEAR = True # clear scene or add a voxel
+POST = True  # test in send mode?
 
 
-async def handler(ws):
-    while True:
-        data = []
-        for i in range(TOTAL):
-            hex = "#%06x" % random.randint(0, 0xFFFFFF)
-            data.append({
-                "position": { "x": random.randint(-20,20), "y": random.randint(0,20), "z": random.randint(-20,20) },
-                "color": hex.upper(),
-                "visible": True
-            })
-
-        payload = { "voxels": data, "is_clear": CLEAR }
-
-        await ws.send(json.dumps(payload))
-        print('sent')
-        message = await ws.recv()
-        print('receive', message[:40], '...')
-        time.sleep(0.1)
+def generator():
+    data = []
+    for x in range(20):
+        for y in range(20):
+            for z in range(20):
+                if random.randint(0,9) < 5:
+                    hex = "#%06X" % random.randint(0, 0xFFFFFF)
+                    data.append({
+                        "position": { "x": x, "y": y, "z": z },
+                        "color": hex, #.upper()
+                        "visible": True
+                    })
+    return data
 
 
-async def main():
-    async with serve(handler, "", PORT):
-        print(f"Websockets server is ready on port {PORT}")
-        await asyncio.get_running_loop().create_future()
-    
+class Server():
+    def __init__(self):
+        pass
+
+
+    async def handler(self, ws):
+        async for msg in ws:
+            msg = json.loads(msg)
+            if not POST:
+                match msg['key']:
+                    case 'init':
+                        print("Connection established.")
+                    case 'get':
+                        print(f"Received: {str(msg['voxels'])[:40]}...")
+            else:
+                voxel_data = generator()
+                payload = { "voxels": voxel_data, "is_clear": CLEAR }
+                await ws.send(json.dumps(payload))
+                print("Sent")
+                time.sleep(0.2)
+
+            time.sleep(0.1)
+
+
+    async def main(self):
+        try:
+            async with serve(self.handler, "localhost", PORT, max_queue=1, max_size=2 ** 25):
+                print(f"Running websockets server at ws://localhost:{PORT}")
+                await asyncio.get_running_loop().create_future()
+        except Exception as err:
+            print(err)
+
+
+    def start(self):
+        try:
+            asyncio.run(self.main())
+        except KeyboardInterrupt:
+            print('Shutdown.')
+        finally:
+            pass
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    Server().start()

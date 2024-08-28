@@ -17,6 +17,7 @@ import {
 	shaderStructs, shaderIntersectFunction
 } from '../three.js';
 
+
 const DPR = 1;
 const DPR_FASTMODE = 0.6;
 const CAM_FAR = 1000;
@@ -52,18 +53,12 @@ class Pathtracer {
         this.framed = undefined;
         this.maxSamples = 0;
         this.samples = 0;
-
-        this.container = document.getElementById('pathtracer');
-        this.canvas = document.getElementById('canvas_pt');
-        this.source = document.getElementById('input-pt-source');
-        this.domShade = document.getElementById('input-pt-shade');
-        this.domPause = document.getElementById('btn-pt-pause');
         
         this.init();
     }
 
     init() {
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: false, preserveDrawingBuffer: true });
+        this.renderer = new THREE.WebGLRenderer({ canvas: canvasRender, antialias: false, preserveDrawingBuffer: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio * DPR);
         this.renderer.setClearColor(0x000000, 0);
@@ -104,27 +99,27 @@ class Pathtracer {
         this.update();
         this.updateHDR(hdri.hdrMap.url);
         this.updateUniformMaxSamples(this.maxSamples);
-        this.updateUniformBounces(document.getElementById('input-pt-bounces').value);
-        this.updateUniformRenderPassId(document.getElementById('input-pt-passes').value);
+        this.updateUniformBounces(ui.domRenderBounces.value);
+        this.updateUniformRenderPassId(ui.domRenderPasses.value);
         this.updateUniformCameraAperture(ui.domCameraAperture.value);
         this.updateUniformCameraFocalLength(ui.domCameraFocalLength.value);
-        this.updateUniformEnvPower(document.getElementById('input-pt-envpower').value);
-        this.updateUniformDirectLight(document.getElementById('input-pt-directlight').checked);
+        this.updateUniformEnvPower(ui.domRenderEnvPower.value);
+        this.updateUniformDirectLight(ui.domRenderDirectLight.checked);
         this.updateUniformLightDir(-light.getDirection().x, -light.getDirection().y, -light.getDirection().z);
         this.updateUniformLightCol(ui.domColorPickerLightColor.value);
-        this.updateUniformBackground(document.getElementById('input-pt-background').checked);
-        this.updateUniformMaterialId(document.getElementById('input-pt-material').value);
-        this.updateUniformMaterialEmissive(document.getElementById('input-pt-emissive').value);
-        this.updateUniformMaterialRoughness(document.getElementById('input-pt-roughness').value);
-        this.updateUniformGrid(document.getElementById('input-pt-grid').checked);
+        this.updateUniformBackground(ui.domRenderBackground.checked);
+        this.updateUniformMaterialId(ui.domRenderMaterial.value);
+        this.updateUniformMaterialEmissive(ui.domRenderEmissive.value);
+        this.updateUniformMaterialRoughness(ui.domRenderRoughness.value);
+        this.updateUniformGrid(ui.domRenderGrid.checked);
     }
 
     update() {
-        this.maxSamples = document.getElementById('input-pt-maxsamples').value;
+        this.maxSamples = ui.domRenderMaxSamples.value;
     }
 
     updateCamera() {
-        if (this.source.value == 'model') {
+        if (ui.domRenderSource.value == 'model') {
             this.camera.position.set(camera.camera0.position.x, camera.camera0.position.y, camera.camera0.position.z);
             this.camera.fov = camera.camera0.fov * RAD2DEG_STATIC;
             this.controls.target = new THREE.Vector3(camera.camera0.target.x, camera.camera0.target.y, camera.camera0.target.z);
@@ -202,7 +197,7 @@ class Pathtracer {
             this.geom.dispose()
         };
 
-        if (this.source.value == 'model') {
+        if (ui.domRenderSource.value == 'model') {
             builder.fillArrayBuffers();
             this.geom = new THREE.BufferGeometry();
             this.geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
@@ -223,14 +218,14 @@ class Pathtracer {
                 this.framed = camera.getFramed(mesh);
                 mesh.dispose();
             } else {
-                this.source.selectedIndex = 0;
+                ui.domRenderSource.selectedIndex = 0;
                 this.createGeometry(); // revert to voxels
             }
         }
 
         this.geom.computeVertexNormals();
 
-        if (document.getElementById('input-pt-floor').checked)
+        if (ui.domRenderFloor.checked)
             this.geom = this.createPlaneGeometry(this.geom);
 
         this.geom.computeBoundsTree({
@@ -255,7 +250,7 @@ class Pathtracer {
         const plane = new THREE.PlaneGeometry(r, r, 1, 1);
         plane.rotateX(Math.PI / 2);
         plane.translate(0, -0.5, 0);
-        const color = new THREE.Color(document.getElementById('input-pt-floorcolor').value);
+        const color = new THREE.Color(ui.domRenderFloorColor.value);
         const colors = new Float32Array(plane.attributes.position.count * 4);
         for (let i = 0; i < colors.length / 4; i++) {
             colors[4 * i + 0] = color.r;
@@ -278,7 +273,7 @@ class Pathtracer {
     } */
 
     updateAttributeColors() {
-        if (this.domShade.checked) {
+        if (ui.domRenderShade.checked) {
             const colors = new Float32Array(this.geom.attributes.position.count * 4);
             colors.fill(GRAY / 1.5);
             this.uniRender['colorAttribute'].value.updateFrom(new THREE.BufferAttribute(colors, 4));
@@ -360,7 +355,7 @@ class Pathtracer {
     updateUniformLightCol(hex) {
         if (!this.uniRender) return;
         const col = new THREE.Color(hex);
-        const brightness = document.getElementById('input-pt-envpower').value / 3;
+        const brightness = ui.domRenderEnvPower.value / 3;
         col.r = (col.r * col.r) * (ui.domLightIntensity.value * brightness);
         col.g = (col.g * col.g) * (ui.domLightIntensity.value * brightness);
         col.b = (col.b * col.b) * (ui.domLightIntensity.value * brightness);
@@ -394,21 +389,21 @@ class Pathtracer {
     pause() {
         this.isProgressing = !this.isProgressing;
         if (this.isProgressing) {
-            this.domPause.innerHTML = 'Pause';
-            this.domPause.classList.remove('btn_select_pt');
-            this.canvas.style.pointerEvents = 'unset';
+            ui.domRenderPause.innerHTML = 'Pause';
+            ui.domRenderPause.classList.remove('btn_select_pt');
+            canvasRender.style.pointerEvents = 'unset';
         } else {
-            this.domPause.innerHTML = 'Continue';
-            this.domPause.classList.add('btn_select_pt');
-            this.canvas.style.pointerEvents = 'none';
+            ui.domRenderPause.innerHTML = 'Continue';
+            ui.domRenderPause.classList.add('btn_select_pt');
+            canvasRender.style.pointerEvents = 'none';
         }
     }
 
     fastMode() {
         this.isFastMode = !this.isFastMode;
         (this.isFastMode) ?
-            document.getElementById('btn-pt-fast').classList.add('btn_select_pt') :
-            document.getElementById('btn-pt-fast').classList.remove('btn_select_pt');
+            ui.domRenderFast.classList.add('btn_select_pt') :
+            ui.domRenderFast.classList.remove('btn_select_pt');
         if (this.isLoaded)
             this.resize();
     }
@@ -511,14 +506,14 @@ class Pathtracer {
         this.isProgressing = true;
         this.create();
 
-        this.canvas.style.pointerEvents = 'unset';
-        this.container.style.display = 'unset';
+        ui.domPathtracer.style.display = 'unset';
+        canvasRender.style.pointerEvents = 'unset';
     }
 
     deactivate() {
         if (!this.isLoaded) return;
 
-        if (this.source.value == 'model') {
+        if (ui.domRenderSource.value == 'model') {
             camera.camera0.position = new BABYLON.Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
             camera.camera0.target = new BABYLON.Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
         } else {
@@ -533,10 +528,10 @@ class Pathtracer {
         isRendering = true;
         ui.domProgressBar.style.width = 0;
 
-        this.domPause.innerHTML = 'Pause';
-        this.domPause.classList.remove('btn_select_pt');
-        this.canvas.style.pointerEvents = 'none';
-        this.container.style.display = 'none';
+        ui.domRenderPause.innerHTML = 'Pause';
+        ui.domRenderPause.classList.remove('btn_select_pt');
+        ui.domPathtracer.style.display = 'none';
+        canvasRender.style.pointerEvents = 'none';
     }
 
     dispose() {
@@ -582,14 +577,14 @@ await loadTexture('assets/bluenoise256.png').then(tex => {
 // Register events
 
 
-document.getElementById('input-pt-source').onchange = () => {
+ui.domRenderSource.onchange = () => {
     if (pt.isLoaded) {
         pt.createGeometry();
         pt.resetSamples();
     }
 };
 
-document.getElementById('input-pt-maxsamples').onchange = (ev) => {
+ui.domRenderMaxSamples.onchange = (ev) => {
     if (ev.target.value < 8) ev.target.value = 8;
     if (pt.isLoaded) {
         pt.update();
@@ -597,78 +592,78 @@ document.getElementById('input-pt-maxsamples').onchange = (ev) => {
     }
 };
 
-document.getElementById('input-pt-passes').onchange = (ev) => {
+ui.domRenderPasses.onchange = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformRenderPassId(ev.target.value);
 };
 
-document.getElementById('input-pt-bounces').onchange = (ev) => {
+ui.domRenderBounces.onchange = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformBounces(ev.target.value);
 };
 
-document.getElementById('input-pt-envpower').onchange = (ev) => {
+ui.domRenderEnvPower.onchange = (ev) => {
     if (ev.target.value < 1) ev.target.value = 1;
     if (pt.isLoaded)
         pt.updateUniformEnvPower(ev.target.value);
 };
 
-document.getElementById('input-pt-envpower').onwheel = (ev) => {
+ui.domRenderEnvPower.onwheel = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformEnvPower(ev.target.value);
 };
 
-document.getElementById('input-pt-directlight').oninput = (ev) => {
+ui.domRenderDirectLight.oninput = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformDirectLight(ev.target.checked);
 };
 
-document.getElementById('input-pt-background').oninput = (ev) => {
+ui.domRenderBackground.oninput = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformBackground(ev.target.checked);
 };
 
-document.getElementById('input-pt-material').onchange = (ev) => {
+ui.domRenderMaterial.onchange = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformMaterialId(ev.target.value);
 };
 
-document.getElementById('input-pt-emissive').oninput = (ev) => {
+ui.domRenderEmissive.oninput = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformMaterialEmissive(ev.target.value);
 };
 
-document.getElementById('input-pt-roughness').oninput = (ev) => {
+ui.domRenderRoughness.oninput = (ev) => {
     if (pt.isLoaded && ev.target.value > 0)
         pt.updateUniformMaterialRoughness(ev.target.value);
 };
 
-document.getElementById('input-pt-grid').oninput = (ev) => {
+ui.domRenderGrid.oninput = (ev) => {
     if (pt.isLoaded)
         pt.updateUniformGrid(ev.target.checked);
 };
 
-document.getElementById('input-pt-shade').oninput = () => {
+ui.domRenderShade.oninput = () => {
     if (pt.isLoaded)
         pt.updateAttributeColors();
 };
 
-document.getElementById('input-pt-floor').oninput = () => {
+ui.domRenderFloor.oninput = () => {
     if (pt.isLoaded)
         pt.createGeometry(false);
 };
 
-document.getElementById('btn-pt-pause').onclick = () => {
+ui.domRenderPause.onclick = () => {
     if (pt.isLoaded)
         pt.pause();
 };
 
-document.getElementById('btn-pt-shot').onclick = () => {
+ui.domRenderShot.onclick = () => {
     if (pt.isLoaded)
         pt.shot();
 };
 
-document.getElementById('btn-pt-fast').onclick = () => {
+ui.domRenderFast.onclick = () => {
     pt.fastMode();
 };
 

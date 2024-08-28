@@ -40,7 +40,7 @@
             --cat-bg: #282d38;
             --cat-color: #636f85;
             --cat-border: #3e485caa;
-            --menu-bg: #2c323fdd;
+            --menu-bg: #2c323fee;
             --confirm: #222731ee;
             --borders: #161a2050;
             --white: #97a5b8;
@@ -82,15 +82,15 @@
         #loadingscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 24px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -12px; text-align: center; }
         #loadingscreen .logo :first-child { font-weight: normal; color: var(--white); }
         #loadingscreen .progress { animation: progress 8s infinite; background: orange; width: 0; max-width: 200px; height: 1px; left: 50%; top: 50%; margin-left: -100px; margin-top: -10px; position: fixed; text-align: center; }
-        #canvas_render { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(180deg, #434b5c 0%, #313544 100%); }
-        #canvas_palette { z-index: 1; image-rendering: pixelated; position: relative; width: 100%; height: 32000px; }
-        #canvas_pt { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell;
+        #canvas { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(180deg, #434b5c 0%, #313544 100%); }
+        #canvas_render { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell;
             background-color: #363d46;
             background-image: linear-gradient(45deg, #30373d 25%, transparent 20%), linear-gradient(-45deg, #30373d 25%, transparent 25%),
                               linear-gradient(45deg, transparent 75%, #30373d 75%), linear-gradient(-45deg, transparent 75%, #30373d 75%);
             background-size: 38px 38px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
+        #canvas_palette { z-index: 1; image-rendering: pixelated; position: relative; width: 100%; height: 32000px; }
         #menus { display: none; }
-        .menu_R { z-index: 500; background: var(--menu-bg); position: absolute; top: 0; right: 0; padding: 0 4px 4px 4px; transition: all 60ms; width: 120px; height: fit-content; margin-right: -200px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
+        .menu_R { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; right: 275px; padding: 0 4px 4px 4px; width: 120px; height: fit-content; margin-right: -200px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
         .menu_R li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
         .menu_R li:hover { background: none; }
         .menu_R li div.flex { display: flex; }
@@ -99,10 +99,9 @@
         .menu_R .category { color: var(--cat-color); background: var(--cat-bg); border: solid 1px var(--cat-border); font-size: 10px; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 3px 0 2px 0; border-radius: 4px; }
         .menu_R .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_R :first-child { cursor: pointer; }
-        .menu_R :first-child span { color: var(--cat-color); letter-spacing: 0.08em; font-size: 10px; vertical-align: -2px; }
-        .menu_R li i:first-child { color: var(--cat-color); margin-top: 3px; }
-        .menu_R li:hover i:first-child { color: steelblue; }
-        .menu_L { z-index: 500; background: var(--menu-bg); position: absolute; top: 0; left: 0; padding: 0 4px 4px 4px; transition: all 60ms; width: 120px; height: fit-content; margin-left: -200px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
+        .menu_R li div i { color: var(--cat-color); margin-top: 3px; }
+        .menu_R li div:hover i { color: steelblue; }
+        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 275px; padding: 0 4px 4px 4px; width: 120px; height: fit-content; margin-left: -200px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
         .menu_L li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
         .menu_L li:hover { background: none; }
         .menu_L li div.flex { display: flex; }
@@ -111,9 +110,8 @@
         .menu_L .category { color: var(--cat-color); background: var(--cat-bg); border: solid 1px var(--cat-border); font-size: 10px; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 3px 0 2px 0; border-radius: 4px; }
         .menu_L .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_L :first-child { cursor: pointer; }
-        .menu_L :first-child span { color: var(--cat-color); letter-spacing: 0.08em; font-size: 10px; vertical-align: -2px; }
-        .menu_L li i:first-child { color: var(--cat-color); margin-top: 3px; transform: rotate(180deg); }
-        .menu_L li:hover i:first-child { color: steelblue; }
+        .menu_L li div i { color: var(--cat-color); margin-top: 3px; }
+        .menu_L li div:hover i { color: steelblue; }
         #toolbar_top { z-index: 500; width: 200px; left: 50%; margin-left: -100px; top: 0; text-align: center; position: fixed; }
         #toolbar_C { display: flex; }
         #toolbar_C li { color: var(--btn-color); width: 100%; padding: 8px 0 6px 0; letter-spacing: 0.05em; border: 1px var(--borders); border-radius: 0; border-top: none; cursor: pointer; }
@@ -169,7 +167,7 @@
         #menu-texture img { object-fit: fill; border: solid 1px #6b798d; width: 24px; height: 21px; margin: -2px 2px 3px 2px; cursor: pointer; }
         #menu-storage img { object-fit: contain; background: #2b334190; border: dotted 1px #1e1f24; width: 115px; height: 60px; margin-left: 1px; cursor: pointer; }
         #menu-storage li div button { font-size: 11px; letter-spacing: 0.05em; width: 59px; padding: 5px 0 5px 0; }
-        #menu-pathtracer li .btn_select_pt { color: steelblue; }
+        #menu-render li .btn_select_pt { color: steelblue; }
         #btn-symm-axis-s:hover { background: var(--input-bg); }
         #btn-symm-axis-x:hover { background: var(--input-bg); }
         #btn-symm-axis-y:hover { background: var(--input-bg); }
@@ -200,6 +198,7 @@
         #ws_status { font-size: 11px; color: indianred; }
         .spacer { height: 3px; }
         .row { display: flex; width: 100%; align-items: center; }
+        .row_panel { display: flex; width: 100%; align-items: center; gap: 11px; text-indent: 6px; }
         .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 16px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
         ::placeholder { color: #45515c; }
         ::-webkit-scrollbar { width: 5px; }
@@ -217,7 +216,7 @@
             input[type=color] { height: 18px; }
             input[type=color]::-moz-color-swatch { border: none; }
             select { text-indent: 2px; }
-            #palette { top: 158px; bottom: 178px; scrollbar-color: steelblue transparent; }
+            #palette { top: 158px; bottom: 215px; scrollbar-color: steelblue transparent; }
             #bakerylist { top: 158px; scrollbar-color: steelblue transparent; }
             #bakerylist .item_name { width: 55px; }
             #menu-inscreen-bottom { bottom: 22px; }
@@ -225,35 +224,35 @@
     </style>
 </head>
 <body>
-    <canvas id="canvas_render" ondrop="dropHandler(event)" ondragover="dragHandler(event)" ondragleave="dragLeaveHandler(event)"></canvas>
+    <canvas id="canvas" ondrop="dropHandler(event)" ondragover="dragHandler(event)" ondragleave="dragLeaveHandler(event)"></canvas>
     <div id="menus">
         <ul id="toolbar_R">
             <li>
-                <button onclick="ui.toggleMenuPrefs()"><i class="material-icons">settings</i></button>
-                <button onclick="ui.toggleMenuAbout()"><i class="material-icons" style="color:steelblue">help</i></button>
+                <button id="toolbar_btn_prefs"><i class="material-icons">settings</i></button>
+                <button id="toolbar_btn_about"><i class="material-icons" style="color:steelblue">help</i></button>
             </li>
-            <li><button onclick="ui.toggleMenuFile()">FILE</button></li>
-            <li><button onclick="ui.toggleMenuGenerator()">CREATE</button></li>
-            <li><button onclick="ui.toggleMenuVoxelizer()">VOXELIZE</button></li>
-            <li title="Symmetry"><button onclick="ui.toggleMenuSymmetry()">SYMM.</button></li>
-            <li><button onclick="ui.toggleMenuModel()">MODEL</button></li>
-            <li><button onclick="ui.toggleMenuPaint()">PAINT</button></li>
-            <li><button onclick="ui.toggleMenuVoxels()">VOXELS</button></li>
-            <li><button onclick="ui.toggleMenuBakery()">BAKERY</button></li>
-            <li><button onclick="ui.toggleMenuMeshes()">MESHES</button></li>
+            <li><button id="toolbar_btn_file">FILE</button></li>
+            <li><button id="toolbar_btn_create">CREATE</button></li>
+            <li><button id="toolbar_btn_voxelize">VOXELIZE</button></li>
+            <li title="Symmetry"><button id="toolbar_btn_symm">SYMM.</button></li>
+            <li><button id="toolbar_btn_model">MODEL</button></li>
+            <li><button id="toolbar_btn_paint">PAINT</button></li>
+            <li><button id="toolbar_btn_voxels">VOXELS</button></li>
+            <li><button id="toolbar_btn_bakery">BAKERY</button></li>
+            <li><button id="toolbar_btn_meshes">MESHES</button></li>
         </ul>
         <ul id="toolbar_L">
             <li>
                 <button title="Fullscreen" onclick="toggleFullscreen()"><i class="material-icons">view_in_ar</i></button>
                 <button title="Frame Camera" onclick="camera.frame()"><i class="material-icons">center_focus_weak</i></button>
             </li>
-            <li><button onclick="ui.toggleMenuPathtracer()">RENDER</button></li>
-            <li><button onclick="ui.toggleMenuCamera()">CAMERA</button></li>
-            <li title="Environment"><button onclick="ui.toggleMenuEnv()">ENV.</button></li>
-            <li><button onclick="ui.toggleMenuMaterial()">MATERIAL</button></li>
-            <li><button onclick="ui.toggleMenuTexture()">TEXTURE</button></li>
-            <li><button onclick="ui.toggleMenuStorage()">STORAGE</button></li>
-            <li title="Color Groups"><button onclick="ui.toggleMenuGroups()">GROUPS</button></li>
+            <li><button id="toolbar_btn_render">RENDER</button></li>
+            <li><button id="toolbar_btn_camera">CAMERA</button></li>
+            <li title="Environment"><button id="toolbar_btn_env">ENV.</button></li>
+            <li><button id="toolbar_btn_material">MATERIAL</button></li>
+            <li><button id="toolbar_btn_texture">TEXTURE</button></li>
+            <li><button id="toolbar_btn_storage">STORAGE</button></li>
+            <li title="Color Groups"><button id="toolbar_btn_groups">GROUPS</button></li>
         </ul>
         <div id="toolbar_top">
             <ul id="toolbar_C">
@@ -269,8 +268,7 @@
                 <li onclick="memory.redo()"><b>REDO</b></li>
             </ul>
         </div>
-        <ul class="menu_R" id="menu-about">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>ABOUT</span></li>
+        <ul class="menu_R panel" id="menu-about">
             <li class="category">HELP</li>
             <li><button onclick="window.open('https://github.com/nimadez/voxel-builder/wiki', '_blank').focus();">Documentation</button></li>
             <li class="category">EXAMPLES</li>
@@ -303,15 +301,14 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus();">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.3.4 Beta 2024
+                4.3.5 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
                 <br><span style="color: slategray;">made with</span> <a href="https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md" target="_blank"><i style="color: #e25555; font-size: 13px; margin-bottom: 5px;" class="material-icons">favorite</i></a>
             </li>
         </ul>
-        <ul class="menu_R" id="menu-prefs">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>PREFERENCES</span></li>
+        <ul class="menu_R panel" id="menu-prefs">
             <li class="category">GENERAL</li>
             <li><input type="checkbox" id="pref_nohover" onclick="preferences.setNoHover(this.checked)"> <label for="pref_nohover">No Hover Menu</label></li>
             <li><input type="checkbox" id="pref_floorplane" onclick="preferences.setFloorPlane(this.checked)"> <label for="pref_floorplane">Floor Plane</label></li>
@@ -331,8 +328,7 @@
             <li class="spacer"></li>
             <li><button onclick="client.connect()">Reconnect</button></li>
         </ul>
-        <ul class="menu_R" id="menu-file">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>FILE</span></li>
+        <ul class="menu_R panel" id="menu-file">
             <li class="category">PROJECT</li>
             <li><input id="input-project-name" type="text" class="ignorekeys" value="null" minlength="3" maxlength="100" spellcheck="false" placeholder="Project Name"></li>
             <li class="spacer"></li>
@@ -361,8 +357,7 @@
             <li class="category">CAPTURE</li>
             <li><button onclick="createScreenshot()">Screenshot</button></li>
         </ul>
-        <ul class="menu_R" id="menu-generator">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>GENERATOR</span></li>
+        <ul class="menu_R panel" id="menu-create">
             <li class="category">BOX</li>
             <li>
                 <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="input-grid-x" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
@@ -393,8 +388,7 @@
                 <button onclick="generator.createTerrain()">Terrain</button>
             </li>
         </ul>
-        <ul class="menu_R" id="menu-voxelizer">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>VOXELIZER</span></li>
+        <ul class="menu_R panel" id="menu-voxelize">
             <li class="category">3D MODELS</li>
             <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1" max="1000"></li>
             <li class="spacer"></li>
@@ -414,8 +408,7 @@
                 <button onclick="voxelizer.loadFromUrlImage(this.previousElementSibling.value)" style="max-width: 28%"> > </button>
             </li>
         </ul>
-        <ul class="menu_R" id="menu-symmetry">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>SYMMETRY</span></li>
+        <ul class="menu_R panel" id="menu-symm">
             <li class="category">AXIS</li>
             <li class="row">
                 <button id="btn-symm-axis-s" onclick="symmetry.switchAxisByNum(-1)">S</button>
@@ -434,8 +427,7 @@
             <li class="category">PIVOT CENTER</li>
             <li><input type="checkbox" id="input-symm-center" onclick="helper.setSymmPivot()"> <label for="input-symm-center">World Center</label></li>
         </ul>
-        <ul class="menu_R" id="menu-model">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>MODELING</span></li>
+        <ul class="menu_R panel" id="menu-model">
             <li class="category">FREEFORM</li>
             <li><button onclick="tool.toolSelector('add')" class="tool_add">Add</button></li>
             <li><button onclick="tool.toolSelector('remove')" class="tool_remove">Remove</button></li>
@@ -451,8 +443,7 @@
             <li class="category">COORDINATE</li>
             <li><input id="input-newbox-coord" type="text" onkeypress="generator.newBoxPosition(event, document.getElementById('input-newbox-coord'))" class="ignorekeys" placeholder="X, Y, Z"></li>
         </ul>
-        <ul class="menu_R" id="menu-paint">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>PAINTING</span></li>
+        <ul class="menu_R panel" id="menu-paint">
             <li class="category">PAINT COLOR</li>
             <li><button onclick="tool.toolSelector('paint')" class="tool_paint">Freeform</button></li>
             <li><button onclick="tool.toolSelector('box_paint')" class="tool_box_paint">Box Paint</button></li>
@@ -464,8 +455,7 @@
             <li><button onclick="tool.toolSelector('eyedrop')" class="tool_eyedrop">Eyedropper</button></li>
             <li><button onclick="ui.activateEyedropper()" id="pixeleyedrop" disabled>Pixel Eyedropper</button></li>
         </ul>
-        <ul class="menu_R" id="menu-voxels">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>VOXELS</span></li>
+        <ul class="menu_R panel" id="menu-voxels">
             <li class="category">TRANSFORM</li>
             <li><button onclick="tool.toolSelector('transform_box')" class="tool_transform_box">Box Shape</button></li>
             <li><button onclick="tool.toolSelector('transform_rect')" class="tool_transform_rect">Rectangle</button></li>
@@ -480,8 +470,7 @@
             <li class="category">CLEANUP</li>
             <li onclick="builder.reduceVoxels()"><button>Reduce Voxels</button></li>
         </ul>
-        <ul class="menu_R" id="menu-bakery">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>BAKERY</span></li>
+        <ul class="menu_R panel" id="menu-bakery">
             <li class="category">ADD BAKE</li>
             <li><button onclick="bakery.newBake()">New Bake All</button></li>
             <li><button onclick="tool.toolSelector('bake_color');ui.setMode(0);" class="tool_bake_color">New Bake Color</button></li>
@@ -493,8 +482,7 @@
             <li class="spacer"></li>
             <li><button onclick="bakery.clearBakes(true)">Clear All</button></li>
         </ul>
-        <ul class="menu_R" id="menu-meshes">
-            <li onclick="ui.clearAllMenus('right')"><i class="material-icons">exit_to_app</i> <span>MESHES</span></li>
+        <ul class="menu_R panel" id="menu-meshes">
             <li class="category">REPLICATE</li>
             <li title="C"><button onclick="bakery.cloneSelected()">Clone</button></li>
             <li class="category">MERGE</li>
@@ -510,8 +498,7 @@
             <li><button onclick="bakery.resetRotation()">Reset Rotation</button></li>
             <li title="DEL"><button onclick="bakery.deleteSelected()">Delete Selected</button></li>
         </ul>
-        <ul class="menu_L" id="menu-pathtracer">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>RENDER (PT)</span></li>
+        <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
             <li class="row">
                 <label>Source</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -569,8 +556,7 @@
                 <input type="color" id="input-pt-floorcolor" value="#6E7581">
             </li>
         </ul>
-        <ul class="menu_L" id="menu-camera">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>CAMERA</span></li>
+        <ul class="menu_L panel" id="menu-camera">
             <li class="category">VIEW</li>
             <li><button id="btn-ortho" onclick="camera.switchOrtho()">Perspective</button></li>
             <li><button onclick="camera.frame()">Frame</button></li>
@@ -582,8 +568,7 @@
             <li><input type="checkbox" id="input-autorotate" onclick="camera.toggleCameraAutoRotation()"> <label for="input-autorotate">Auto Rotate</label></li>
             <li><input type="checkbox" id="input-autorotate-ccw" onclick="camera.updateCameraAutoRotation()"> <label for="input-autorotate-ccw">CCW</label></li>
         </ul>
-        <ul class="menu_L" id="menu-env">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>ENVIRONMENT</span></li>
+        <ul class="menu_L panel" id="menu-env">
             <li class="category">BACKGROUND</li>
             <li>
                 <input type="checkbox" id="input-env-bgcheck" onclick="scene.autoClear = this.checked" title="Enable Background Color"> <label for="input-env-bgcheck">Enabled</label>
@@ -614,8 +599,7 @@
             <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.8" min="0" max="3" step="0.01" oninput="light.updateIntensity(this.value)"></li>
             <li><input type="checkbox" id="input-light-shadows" onclick="light.enableShadows(this.checked)" checked> <label for="input-light-shadows">Shadows</label></li>
         </ul>
-        <ul class="menu_L" id="menu-material">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>MATERIAL</span></li>
+        <ul class="menu_L panel" id="menu-material">
             <li class="category">COLORS</li>
             <li class="row"><label style="margin-right: 20px">Albedo</label> <input type="color" id="input-material-albedo" value="#FFFFFF"></li>
             <li class="row"><label style="margin-right: 10px">Emissive</label> <input type="color" id="input-material-emissive" value="#000000"></li>
@@ -629,8 +613,7 @@
             <li class="category">VERTEX COLORS<li>
             <li><input type="color" id="input-vertex-color" value="#899AAE"></li>
         </ul>
-        <ul class="menu_L" id="menu-texture">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>TEXTURE</span></li>
+        <ul class="menu_L panel" id="menu-texture">
             <li class="category">PATTERNS</li>
             <li>
                 <div class="flex">
@@ -646,8 +629,7 @@
             <li class="spacer" style="height:8px"></li>
             <li id="texturepresets"></li>
         </ul>
-        <ul class="menu_L" id="menu-storage">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>STORAGE</span></li>
+        <ul class="menu_L panel" id="menu-storage">
             <li class="category">SNAPSHOTS</li>
             <li class="storage"><img><div class="flex"><button>CLEAR</button><button>SAVE</button></div></li>
             <li class="spacer"></li>
@@ -659,8 +641,7 @@
             <li class="spacer"></li>
             <li class="storage"><img><div class="flex"><button>CLEAR</button><button>SAVE</button></div></li>
         </ul>
-        <ul class="menu_L" id="menu-groups">
-            <li onclick="ui.clearAllMenus('left')"><i class="material-icons">exit_to_app</i> <span>COLOR GROUPS</span></li>
+        <ul class="menu_L panel" id="menu-groups">
             <li class="category">HIDE</li>
             <li><button onclick="tool.toolSelector('isolate_color')" class="tool_isolate_color">Isolate Color</button></li>
             <li><button onclick="tool.toolSelector('hide_color')" class="tool_hide_color">Hide By Color</button></li>
@@ -700,7 +681,7 @@
     <div id="axisview-hitbox" onclick="camera.frame()"></div>
     <!-- dynamic -->
     <div id="pathtracer">
-        <canvas id="canvas_pt"></canvas>
+        <canvas id="canvas_render"></canvas>
         <div id="info_render"><span>0</span> | SL <span>0</span> / <span>0</span> | <span>0</span> | BOUNCE <span>0</span></div>
     </div>
     <div id="marquee"></div>

@@ -1,3 +1,6 @@
+// Aug 2019 https://nimadez.github.io/
+// Voxel Builder Electron
+
 if (!require('electron').app.requestSingleInstanceLock())
     require('electron').app.exit(0);
 

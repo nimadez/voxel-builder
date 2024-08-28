@@ -3,31 +3,22 @@
     @nimadez
 */
 
-import * as THREE from 'three';
-import { OrbitControls } from '../../libs/addons/OrbitControls.js';
-import { FullScreenQuad } from '../../libs/addons/Pass.js';
-import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
-import { RGBELoader } from '../../libs/addons/RGBELoader.js';
-
+import { BufferGeometry, Mesh } from 'three';
 import {
-    MeshBVHUniformStruct, //MeshBVH
-    computeBoundsTree, disposeBoundsTree, acceleratedRaycast,
-    FloatVertexAttributeTexture, //UIntVertexAttributeTexture,
-    shaderStructs, shaderIntersectFunction, //shaderDistanceFunction,
-    //CENTER, SAH
+    computeBoundsTree, disposeBoundsTree, acceleratedRaycast
 } from '../../libs/three-mesh-bvh.module.js';
 
-THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-THREE.Mesh.prototype.raycast = acceleratedRaycast;
+BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+Mesh.prototype.raycast = acceleratedRaycast;
 
+export * as THREE from 'three';
+export { OrbitControls } from '../../libs/addons/OrbitControls.js';
+export { FullScreenQuad } from '../../libs/addons/Pass.js';
+export { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
+export { RGBELoader } from '../../libs/addons/RGBELoader.js';
 export {
-    THREE,
-    OrbitControls,
-    FullScreenQuad,
-    mergeGeometries,
-    RGBELoader,
-    MeshBVHUniformStruct,
-    FloatVertexAttributeTexture,
-    shaderStructs, shaderIntersectFunction
-}
+    MeshBVHUniformStruct, //MeshBVH, CENTER, SAH
+    FloatVertexAttributeTexture, //UIntVertexAttributeTexture
+    shaderStructs, shaderIntersectFunction //shaderDistanceFunction
+} from '../../libs/three-mesh-bvh.module.js';

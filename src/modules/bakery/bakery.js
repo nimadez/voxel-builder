@@ -23,7 +23,7 @@ const nearPositions = [
     new BABYLON.Vector3(0, 0, -1)
 ];
 
-export function baker(name, voxels, isAddCap = true) {
+export function bakery(name, voxels, isAddCap = true) {
     const planes = [];
     
     function constructFace(index, position, nearby, rotX, rotY) {

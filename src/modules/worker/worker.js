@@ -2,67 +2,57 @@
     Dec 2023
     @nimadez
 
-    Web worker
+    Web worker processor
 */
 
-class WebWorker {
-    constructor() {
-        this.worker = new Worker("src/modules/worker/processor.js", { type: "module" });
-    }
+import { parseMagicaVoxel } from '../loaders/magicavoxel.js';
 
-    start(id, data, onmessage, onerror) {
-        engine.displayLoadingUI();
-        
-        this.worker.postMessage({
-            id: id,
-            data: data
-        });
-        
-        this.worker.onmessage = (ev) => {
-            onmessage(ev.data);
-            engine.hideLoadingUI();
-        };
-    
-        this.worker.onerror = (err) => {
-            onerror(err);
-            console.log(err);
-            engine.hideLoadingUI();
-        };
-    }
+let arr = [];
 
-    startBackground(id, data, onmessage, onerror) {
-        this.worker.postMessage({
-            id: id,
-            data: data
-        });
-        
-        this.worker.onmessage = (ev) => {
-            onmessage(ev.data);
-        };
-    
-        this.worker.onerror = (err) => {
-            onerror(err);
-            console.log(err);
-        };
-    }
+onmessage = (ev) => {
+    switch (ev.data.id) {
 
-    async startAsync(id, data) {
-        return new Promise((resolve, reject) => {
-            this.worker.postMessage({
-                id: id,
-                data: data
-            });
-            
-            this.worker.onmessage = (ev) => {
-                resolve(ev.data);
-            };
-        
-            this.worker.onerror = (err) => {
-                reject(err);
-                console.log(err);
-            };
-        });
+        case 'init':
+            console.log('worker initialized.');
+            break;
+
+        case 'findInnerVoxels':
+            arr = [];
+            const idx = [];
+            for (let i = 0; i < ev.data.data[0].length; i++) {
+                const pos = ev.data.data[0][i].position;
+                idx[0] = ev.data.data[1][`${pos._x + 1}_${pos._y}_${pos._z}`];
+                idx[1] = ev.data.data[1][`${pos._x - 1}_${pos._y}_${pos._z}`];
+                idx[2] = ev.data.data[1][`${pos._x}_${pos._y + 1}_${pos._z}`];
+                idx[3] = ev.data.data[1][`${pos._x}_${pos._y - 1}_${pos._z}`];
+                idx[4] = ev.data.data[1][`${pos._x}_${pos._y}_${pos._z + 1}`];
+                idx[5] = ev.data.data[1][`${pos._x}_${pos._y}_${pos._z - 1}`];
+                if (idx[0] > -1 && idx[1] > -1 && idx[2] > -1 && idx[3] > -1 && idx[4] > -1 && idx[5] > -1)
+                    continue;
+                else
+                    arr.push(ev.data.data[0][i]);
+            }
+            postMessage(arr);
+            arr = [];
+            break;
+
+        case 'parseMagicaVoxel':
+            const chunks = parseMagicaVoxel(ev.data.data);
+            if (!chunks) {
+                throw new TypeError("Parse MagicaVoxel, chunk not found.");
+            }
+            arr = [];
+            for (let i = 0; i < chunks[0].data.length; i+=4) {
+                const x = chunks[0].data[ i + 0 ];
+                const y = chunks[0].data[ i + 1 ];
+                const z = chunks[0].data[ i + 2 ];
+                const c = chunks[0].data[ i + 3 ];
+                const hex = chunks[0].palette[ c ];
+                const color = '#' + ("000000" + (((hex & 0xFF) << 16) + (hex & 0xFF00) + ((hex >> 16) & 0xFF)).toString(16)).slice(-6);
+                arr.push({ x: x, y: z, z: -y, color: color.toUpperCase() });
+            }
+            postMessage(arr);
+            arr = [];
+            break;
     }
 }
-
-export const worker = new WebWorker();

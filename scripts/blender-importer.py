@@ -1,7 +1,7 @@
-"""
-    # Blender 4.x.x
-    # Run script inside Blender and select .JSON file
-"""
+#!/usr/bin/env python3
+#
+# Blender 4.x.x
+# Run script inside Blender and select .JSON file
 
 import os
 import json
