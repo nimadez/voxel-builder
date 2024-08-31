@@ -81,7 +81,7 @@
         #loadingscreen { z-index: 5000; background: #181b22CC; position: absolute; width: 100%; height: 100%; }
         #loadingscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 24px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -12px; text-align: center; }
         #loadingscreen .logo :first-child { font-weight: normal; color: var(--white); }
-        #loadingscreen .progress { animation: progress 8s infinite; background: orange; width: 0; max-width: 200px; height: 1px; left: 50%; top: 50%; margin-left: -100px; margin-top: -10px; position: fixed; text-align: center; }
+        #loadingscreen .progress { animation: progress 10s infinite; background: orange; width: 0; max-width: 200px; height: 1px; left: 50%; top: 50%; margin-left: -100px; margin-top: -10px; position: fixed; text-align: center; }
         #canvas { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(180deg, #434b5c 0%, #313544 100%); }
         #canvas_render { image-rendering: pixelated; width: 100%; height: 100%; cursor: cell;
             background-color: #363d46;
@@ -113,20 +113,19 @@
         .menu_L li div i { color: var(--cat-color); margin-top: 3px; }
         .menu_L li div:hover i { color: steelblue; }
         #toolbar_top { z-index: 500; width: 200px; left: 50%; margin-left: -100px; top: 0; text-align: center; position: fixed; }
-        #toolbar_C { display: flex; }
-        #toolbar_C li { color: var(--btn-color); width: 100%; padding: 8px 0 6px 0; letter-spacing: 0.05em; border: 1px var(--borders); border-radius: 0; border-top: none; cursor: pointer; }
+        #toolbar_C { display: flex; opacity: 0.9; }
+        #toolbar_C li { width: 100%; padding: 6px 0 6px 0; letter-spacing: 0.05em; background: var(--btn-bg); color: var(--btn-color); border: solid 1px var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C li:hover { background: var(--btn-bg); color: orange; }
-        #toolbar_C li:nth-child(1) { border-right: solid 1px var(--borders); }
-        #toolbar_C li:nth-child(3) { border-left: solid 1px var(--borders); }
-        #toolbar_C li.mode_select { background: var(--btn-bg); color: orange; }
-        #toolbar_C_mem { display: flex; }
-        #toolbar_C_mem li { width: 100%; font-size: 11px; padding: 5px 0 5px 0; background: #3e4558EE; color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
+        #toolbar_C li:nth-child(1) { border-right: none; border-radius: 0; border-bottom-left-radius: 3px; border-top-left-radius: 3px; }
+        #toolbar_C li:nth-child(2) { border-radius: 0; }
+        #toolbar_C li:nth-child(3) { border-left: none; border-radius: 0; border-bottom-right-radius: 3px; border-top-right-radius: 3px; }
+        #toolbar_C li.mode_select { color: orange; }
+        #toolbar_C_mem { display: flex; opacity: 0.9; margin-bottom: 2px; }
+        #toolbar_C_mem li { width: 100%; font-size: 11px; padding: 7px 0 7px 0; background: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C_mem li:hover { color: orange; }
-        #toolbar_C_mem :nth-child(1) { border-bottom-left-radius: 2px; border-right-width: 0; }
-        #toolbar_C_mem :nth-child(2) { border-bottom-right-radius: 2px; }
-        #toolbar_C_mem :nth-child(3) { padding: 0 2px 0 2px; width: 0; background: none; border: none; }
-        #toolbar_C_mem :nth-child(4) { border-bottom-left-radius: 2px; }
-        #toolbar_C_mem :nth-child(5) { border-bottom-right-radius: 2px; border-left-width: 0; }
+        #toolbar_C_mem :nth-child(1) { border-right: none; border-bottom-left-radius: 3px; }
+        #toolbar_C_mem :nth-child(3) { padding: 0 1px 0 1px; width: 0; background: none; border: none; }
+        #toolbar_C_mem :nth-child(5) { border-left: none; border-bottom-right-radius: 3px; }
         #toolbar_R { z-index: 1000; opacity: 0.95; width: 75px; position: absolute; right: 0; top: 0; }
         #toolbar_R li { display: unset; background: none; border: none; padding: 0; }
         #toolbar_R li:nth-child(1) button { padding: 4px 0 4px 10px; }
@@ -155,9 +154,9 @@
         #hover li.hover_disabled { opacity: 0; pointer-events: none; }
         #hover li .material-icons { font-size: 18px; }
         #pathtracer { z-index: 10; display: none; width: 100%; height: 100%; position: fixed; }
-        #palette { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 153px; bottom: 216px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
+        #palette { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 153px; bottom: 218px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
         #bakerylist { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 153px; bottom: 2px; overflow-y: scroll; overflow-x: hidden; }
-        #bakerylist .item_name { background: #3e4558cc; width: 62px; font-size: 10px; padding: 2px; margin-bottom: 1px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
+        #bakerylist .item_name { background: #3e4558cc; width: 62px; font-size: 10px; padding: 5px 2px 5px 2px; margin-bottom: 1px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
         #bakerylist .item_name:hover { background: var(--btn-bg); color: orange; }
         #bakerylist .item_name.bakery_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: absolute; }
@@ -172,9 +171,9 @@
         #btn-symm-axis-x:hover { background: var(--input-bg); }
         #btn-symm-axis-y:hover { background: var(--input-bg); }
         #btn-symm-axis-z:hover { background: var(--input-bg); }
-        #menu-inscreen-left { z-index: 500; display: flex; flex-direction: column; gap: 3px; position: fixed; left: 4px; bottom: 120px; }
+        #menu-inscreen-left { z-index: 500; display: flex; flex-direction: column; gap: 2px; position: fixed; left: 4px; bottom: 125px; }
         #menu-inscreen-left button { width: 40px; height: 28px; }
-        #menu-inscreen-right { z-index: 9; display: flex; flex-direction: column; gap: 3px; position: fixed; right: 4px; bottom: 110px; }
+        #menu-inscreen-right { z-index: 9; display: flex; flex-direction: column; gap: 2px; position: fixed; right: 4px; bottom: 110px; }
         #menu-inscreen-right button { width: 40px; height: 28px; }
         #menu-inscreen-right :first-child { font-size: 20px; background: none; border: none; }
         #menu-inscreen-right :first-child:hover { background: transparent; }
@@ -186,7 +185,7 @@
         #axisview-hitbox { z-index: 500; display: none; width: 40px; height: 40px; position: absolute; right: 30px; bottom: 30px; }
         #info { z-index: 9; background: #2c313a60; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 0; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: var(--white); letter-spacing: 0.05em; }
-        #info_tool { z-index: 9; display: none; color: #97a5b890; letter-spacing: 0.05em; font-size: 11px; position: absolute; padding: 2px; width: auto; top: 60px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
+        #info_tool { z-index: 9; display: none; color: #97a5b890; letter-spacing: 0.05em; font-size: 11px; position: absolute; padding: 2px; width: auto; top: 70px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info_render { z-index: 100; background: #2c313a60; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 0; text-align: center; pointer-events: none; }
         #info_render span { color: var(--white); letter-spacing: 0.05em; }
         #progressbar { z-index: 1500; background: linear-gradient(90deg, steelblue, steelblue, steelblue, white); width: 0; max-width: 100%; height: 2px; bottom: 0; position: fixed; }
@@ -194,7 +193,7 @@
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
         #confirm button { width: 48%; padding: 4px; font-size: var(--font-size); text-transform: uppercase; }
         #confirmblocker { z-index: 2400; display: none; opacity: 0.4; background: #181b22; position: absolute; width: 100%; height: 100%; }
-        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aCC; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 85px; transform: translateX(-50%); padding: 3px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
+        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aCC; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 95px; transform: translateX(-50%); padding: 3px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_status { font-size: 11px; color: indianred; }
         .spacer { height: 3px; }
         .row { display: flex; width: 100%; align-items: center; }
@@ -216,9 +215,9 @@
             input[type=color] { height: 18px; }
             input[type=color]::-moz-color-swatch { border: none; }
             select { text-indent: 2px; }
-            #palette { top: 158px; bottom: 215px; scrollbar-color: steelblue transparent; }
+            #palette { top: 158px; bottom: 220px; scrollbar-color: steelblue transparent; }
             #bakerylist { top: 158px; scrollbar-color: steelblue transparent; }
-            #bakerylist .item_name { width: 55px; }
+            #bakerylist .item_name { width: 65px; }
             #menu-inscreen-bottom { bottom: 22px; }
         }
     </style>
@@ -233,7 +232,7 @@
             </li>
             <li><button id="toolbar_btn_file">FILE</button></li>
             <li><button id="toolbar_btn_create">CREATE</button></li>
-            <li><button id="toolbar_btn_voxelize">VOXELIZE</button></li>
+            <li><button id="toolbar_btn_import">IMPORT</button></li>
             <li title="Symmetry"><button id="toolbar_btn_symm">SYMM.</button></li>
             <li><button id="toolbar_btn_model">MODEL</button></li>
             <li><button id="toolbar_btn_paint">PAINT</button></li>
@@ -255,17 +254,17 @@
             <li title="Color Groups"><button id="toolbar_btn_groups">GROUPS</button></li>
         </ul>
         <div id="toolbar_top">
-            <ul id="toolbar_C">
-                <li onclick="ui.setMode(0)" class="mode mode_select">MODEL</li>
-                <li onclick="ui.setMode(1)" id="btn-render" class="mode">RENDER</li>
-                <li onclick="ui.setMode(2)" class="mode">EXPORT</li>
-            </ul>
             <ul id="toolbar_C_mem">
                 <li><b>SAVE</b></li>
                 <li><b>LOAD</b></li>
                 <li>&nbsp;</li>
                 <li onclick="memory.undo()"><b>UNDO</b></li>
                 <li onclick="memory.redo()"><b>REDO</b></li>
+            </ul>
+            <ul id="toolbar_C">
+                <li onclick="ui.setMode(0)" class="mode mode_select">MODEL</li>
+                <li onclick="ui.setMode(1)" id="btn-render" class="mode">RENDER</li>
+                <li onclick="ui.setMode(2)" class="mode">EXPORT</li>
             </ul>
         </div>
         <ul class="menu_R panel" id="menu-about">
@@ -301,7 +300,7 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus();">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.3.5 Beta 2024
+                4.3.6 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
@@ -339,8 +338,6 @@
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">Import Voxels</button></li>
             <li><button onclick="document.getElementById('openfile_import_bakes').click()">Import Bakes</button></li>
-            <li class="spacer"></li>
-            <li><button onclick="document.getElementById('openfile_vox').click()">Load<br>MagicaVoxel</button></li>
             <li class="category">EXPORT</li>
             <li class="row">
                 <label>Format</label>&nbsp;&nbsp;<select id="input-export-format">
@@ -388,8 +385,10 @@
                 <button onclick="generator.createTerrain()">Terrain</button>
             </li>
         </ul>
-        <ul class="menu_R panel" id="menu-voxelize">
-            <li class="category">3D MODELS</li>
+        <ul class="menu_R panel" id="menu-import">
+            <li class="category">MAGICAVOXEL</li>
+            <li><button onclick="document.getElementById('openfile_vox').click()">Upload VOX</button></li>
+            <li class="category">MODELS</li>
             <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1" max="1000"></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
@@ -471,12 +470,12 @@
             <li onclick="builder.reduceVoxels()"><button>Reduce Voxels</button></li>
         </ul>
         <ul class="menu_R panel" id="menu-bakery">
-            <li class="category">ADD BAKE</li>
-            <li><button onclick="bakery.newBake()">New Bake All</button></li>
-            <li><button onclick="tool.toolSelector('bake_color');ui.setMode(0);" class="tool_bake_color">New Bake Color</button></li>
-            <li class="category">BATCH BAKE</li>
+            <li class="category">CREATE BAKE</li>
+            <li><button onclick="bakery.newBake()">Add Bake</button></li>
+            <li><button onclick="tool.toolSelector('bake_color');ui.setMode(0);" class="tool_bake_color">Add Bake By<br>Color Group</button></li>
+            <li class="category">BATCH CREATE</li>
             <li><button onclick="bakery.bakeAll()">Bake All</button></li>
-            <li><button onclick="bakery.bakeAllColors()">Bake<br>Color Groups</button></li>
+            <li><button onclick="bakery.bakeAllColors()">Bake All<br>Color Groups</button></li>
             <li class="category">OPTIONS<li>
             <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
             <li class="spacer"></li>
@@ -493,7 +492,6 @@
             <li><button onclick="bakery.mergeAll()">Merge All</button></li>
             <li class="category">UNBAKE<li>
             <li><button onclick="voxelizer.voxelizeBake()">Voxelize</button></li>
-            <li><input type="checkbox" id="input-unbake-clear" checked> <label for="input-unbake-clear">New Scene</label></li>
             <li class="category">CLEAR</li>
             <li><button onclick="bakery.resetRotation()">Reset Rotation</button></li>
             <li title="DEL"><button onclick="bakery.deleteSelected()">Delete Selected</button></li>
@@ -558,8 +556,11 @@
         </ul>
         <ul class="menu_L panel" id="menu-camera">
             <li class="category">VIEW</li>
-            <li><button id="btn-ortho" onclick="camera.switchOrtho()">Perspective</button></li>
             <li><button onclick="camera.frame()">Frame</button></li>
+            <li><button onclick="tool.toolSelector('frame_color')" class="tool_frame_color">Frame Color</button></li>
+            <li><button onclick="tool.toolSelector('frame_voxels')" class="tool_frame_voxels">Frame Voxels</button></li>
+            <li class="spacer"></li>
+            <li><button id="btn-ortho" onclick="camera.switchOrtho()">Perspective</button></li>
             <li class="category">SETTINGS</li>
             <li class="row"><label style="min-width: 50%">FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01" oninput="camera.setFov(this.value)"></li>
             <li class="row"><label style="min-width: 50%">Aperture</label> <input type="number" id="input-camera-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>

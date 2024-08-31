@@ -1,8 +1,20 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.6
+- Update three.js to r168
+- New camera frame tools (frame to color group or selected voxels)
+- Improve snapshots (prevent accidental touch)
+- Voxel transformation preserves the floor plane when xforming all voxels
+- Reduce the chance of accidental topbar touch
+- Remove partial unbake due to impossible bug (will return after meeting the conditions)
+- The space key works like the alt key to avoid conflict
+  - This is also good for firefox because it interferes with the alt key (menu)
+
+> - The gap between babylon.js releases and our library update was extended.
+
 ## 4.3.5
 - ~~Update to babylonjs 7.22.3~~
-  - The update was rolled back, serious bug (no mouseover on Z axis)
+  - The update was rolled back (breaking bug: no mouseover on Z axis)
 - New detachable floating panels!
 - Review and improve menus (faster and more managable)
 - Improve websockets client and server

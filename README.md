@@ -5,7 +5,7 @@
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.5 Beta```<br>
+```Version 4.3.6 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -83,8 +83,8 @@ python3 update.py
 - Google Chrome
 - Mozilla Firefox
 > - PWA A2HS-ready *(add to home screen)*
-> - Tablets with a stylus or Wacom recommended for best experience
-> - Voxel Builder has not been fully tested on mobile devices
+> - For the best experience, a tablet with pen or Wacom is recommended
+> - Voxel Builder is not designed for mobile devices with small screens
 
 ## Known Issues
 Higher than 512K is not recommended

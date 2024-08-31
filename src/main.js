@@ -99,7 +99,7 @@ const workplaneWhiteList = [
     'box_add', 'box_remove', 'box_paint',
     'transform_box', 'transform_rect',
     'rect_add', 'rect_remove', 'rect_paint',
-    'measure_volume'
+    'measure_volume', 'frame_voxels'
 ];
 
 const bvhWhiteList = [
@@ -295,7 +295,7 @@ function createAxisViewScene(engine, mainScene) {
     axisHelper.zAxis.parent = cube;
 
     const viewAxes = [];
-    const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.65, segments: 5 }, scene);
+    const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.65, segments: 6 }, scene);
     for (let i = 0; i < 6; i++) {
         const a = axis.clone();
         a.renderOverlay = true;
@@ -448,6 +448,18 @@ function Camera() {
         }
     }
 
+    this.frameColor = function(hex) {
+        ghost.createThin(builder.getVoxelsByColor(hex));
+        this.frameTarget(ghost.thin);
+        ghost.disposeThin();
+    }
+
+    this.frameVoxels = function(voxels) {
+        ghost.createThin(voxels);
+        this.frameTarget(ghost.thin);
+        ghost.disposeThin();
+    }
+
     this.frameTarget = function(mesh) {
         if (MODE == 0)
             this.setFramingBehavior(this.camera0, mesh);
@@ -459,7 +471,7 @@ function Camera() {
         animator(cam, 'target', cam.target.clone(), f.target);
     }
 
-    this.getFramed = function(mesh, offset = 2.0) {
+    this.getFramed = function(mesh, offset = 2.2) {
         if (!mesh) return;
         mesh.computeWorldMatrix(true);
         const bounds = mesh.getBoundingInfo();
@@ -468,8 +480,8 @@ function Camera() {
         const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
         const radiusWithoutFraming = BABYLON.Vector3.Distance(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld) * 0.5;
         
-        if (radiusWithoutFraming > 20) offset = 1.2; // for larger scene
-        if (radiusWithoutFraming < 2)  offset = 3.0; // for smaller scene
+        if (radiusWithoutFraming > 20) offset = 1.0; // for larger scene
+        if (radiusWithoutFraming < 2)  offset = 3.5; // for smaller scene
         const radius = radiusWithoutFraming * offset;
         const distanceForHorizontalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeX * frustumSlopeX));
         const distanceForVerticalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeY * frustumSlopeY));
@@ -1103,7 +1115,7 @@ function Builder(scene) {
         this.mesh = this.voxel.clone();
     }
 
-    this.create = function() {
+    this.create = function(updateFloor = true) {
         if (this.voxels.length == 0)
             generator.newBox(1, COL_ICE);
 
@@ -1124,8 +1136,8 @@ function Builder(scene) {
         
         setTimeout(() => {
             palette.create();
-            helper.setFloor();
             helper.setSymmPivot();
+            if (updateFloor) helper.setFloor();
 
             client.sendMessage(this.voxels, 'get');
         }, 10);
@@ -1761,7 +1773,7 @@ function Transformers() {
         }
 
         if (!ui.domTransformClone.checked)
-            builder.create();
+            builder.create(false);
 
         this.isActive = true;
     }
@@ -1856,9 +1868,9 @@ function Transformers() {
 
 
 function Palette() {
-    const W = 28;
-    const H = 28;
-    const pad = 4;
+    const W = 30;
+    const H = 30;
+    const pad = 2;
     const ctx = canvasPalette.getContext('2d', { willReadFrequently: true });
     this.uniqueColors = [];
 
@@ -2566,6 +2578,13 @@ function Tool(scene) {
             case 'bake_color':
                 bakery.bakeColor(builder.voxels[index].color);
                 break;
+            case 'frame_color':
+                camera.frameColor(builder.voxels[index].color);
+                break;
+            case 'frame_voxels':
+                this.addNoHelper(pos); // allow 1 voxel
+                startBox = pos;
+                break;
         }
     }
 
@@ -2633,6 +2652,10 @@ function Tool(scene) {
                     this.rectSelect(startRect);
                 break;
             case 'measure_volume':
+                if (startBox)
+                    this.boxSelect(startBox, pos, posNorm, COL_ORANGE_RGB);
+                break;
+            case 'frame_voxels':
                 if (startBox)
                     this.boxSelect(startBox, pos, posNorm, COL_ORANGE_RGB);
                 break;
@@ -2729,6 +2752,12 @@ function Tool(scene) {
                     (this.selected.length == 1) ? 
                         ui.notification(`X: ${ this.selected[0]._x }, Y: ${ this.selected[0]._y }, Z: ${ this.selected[0]._z }`, 10000):
                         ui.notification(`${ this.selected.length } Voxels`, 8000);
+                break;
+            case 'frame_voxels':
+                if (this.selected.length > 0) {
+                    tmp = builder.createArrayFromPositions(this.selected, false);
+                    camera.frameVoxels(tmp);
+                }
                 break;
         }
     }
@@ -3170,18 +3199,12 @@ function Voxelizer(scene) {
 
     this.voxelizeBake = async function() {
         if (bakery.selected) {
-            const isClear = document.getElementById('input-unbake-clear').checked;
-            if (isClear && !await ui.showConfirm('clear and replace all voxels?')) return;
+            if (!await ui.showConfirm('clear and replace all voxels?')) return;
 
             const data = window.voxelizeBake(bakery.selected);
             ui.setMode(0);
-
-            if (isClear) {
-                builder.setDataFromArray(data);
-                builder.normalizeVoxelPositions();
-            } else {
-                xformer.beginNewObject(data, false);
-            }
+            builder.setDataFromArray(data);
+            builder.normalizeVoxelPositions();
             clearScene();
         } else {
             ui.notification('select a bake');
@@ -4085,13 +4108,14 @@ function Snapshot(scene) {
             if (data) img.src = data;
 
             clear.addEventListener("click", async () => {
-                if (!await ui.showConfirm('delete snapshot?')) return;
+                if (img.src !== SNAPSHOT && !await ui.showConfirm('delete snapshot?')) return;
                 img.src = SNAPSHOT;
                 snapshot.delStorage(strVoxSnap + img.id);
                 snapshot.delStorage(strVoxSnapImage + img.id);
             }, false);
 
-            save.addEventListener("click", () => {
+            save.addEventListener("click", async () => {
+                if (img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
                 createScreenshotBasic(img.clientWidth, img.clientHeight, (data) => {
                     img.src = data;
                     snapshot.setStorageVoxels(strVoxSnap + img.id);
@@ -4099,7 +4123,8 @@ function Snapshot(scene) {
                 });
             }, false);
 
-            img.addEventListener("click", () => {
+            img.addEventListener("click", async () => {
+                if (img.src !== SNAPSHOT && !await ui.showConfirm('load snapshot?')) return;
                 snapshot.getStorageVoxels(strVoxSnap + img.id);
             }, false);
 
@@ -4166,7 +4191,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.3.5",
+            version: "Voxel Builder 4.3.6",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4283,6 +4308,7 @@ function Project(scene) {
         
         builder.create();
         builder.update();
+        clearScene();
     }
 
     this.importBakes = function(data) {
@@ -4457,6 +4483,7 @@ function UserInterface(scene) {
     this.domCameraFocalLength = document.getElementById('input-camera-focal');
     this.domRenderBtn = document.getElementById('btn-render');
     this.domTransformClone = document.getElementById('input-transform-clone');
+    this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
     this.domBakeryBackFace = document.getElementById('input-bakery-backface');
     this.domAutoRotation = document.getElementById('input-autorotate');
     this.domAutoRotationCCW = document.getElementById('input-autorotate-ccw');
@@ -4603,7 +4630,7 @@ function UserInterface(scene) {
             uix.unbindTransformGizmo();
             ghost.disposePointCloud();
         } else if (mode == 1) {
-            if (!hdri.isLoaded) // forced reload if user hits Render within 1 second of launch!
+            if (!hdri.isLoaded) // force reload if user hits Render within 1 second of launch!
                 hdri.loadHDR(ENVMAP)
         } else if (mode == 2) {
             builder.setMeshVisibility(false);
@@ -4656,7 +4683,7 @@ function UserInterface(scene) {
             this.domHover.style.display = 'none';
             this.domToolbarR.children[1].style.display = 'none'; // FILE
             this.domToolbarR.children[2].style.display = 'none'; // GENERATOR
-            this.domToolbarR.children[3].style.display = 'none'; // VOXELIZER
+            this.domToolbarR.children[3].style.display = 'none'; // IMPORT
             this.domToolbarR.children[4].style.display = 'none'; // SYMMETRY
             this.domToolbarR.children[5].style.display = 'none'; // MODEL
             this.domToolbarR.children[6].style.display = 'none'; // PAINT
@@ -4673,7 +4700,7 @@ function UserInterface(scene) {
             this.domBakeryList.style.display = 'unset';
             this.domHover.style.display = 'none';
             this.domToolbarR.children[2].style.display = 'none'; // GENERATOR
-            this.domToolbarR.children[3].style.display = 'none'; // VOXELIZER
+            this.domToolbarR.children[3].style.display = 'none'; // IMPORT
             this.domToolbarR.children[4].style.display = 'none'; // SYMMETRY
             this.domToolbarR.children[5].style.display = 'none'; // MODEL
             this.domToolbarR.children[6].style.display = 'none'; // PAINT
@@ -4734,10 +4761,13 @@ function UserInterface(scene) {
     this.setMenuModes = function(mode) {
         if (mode == 0) {
             excluded = [ 10, 14, 15 ];
+            this.domToolBakeColor.disabled = false;
         } else if (mode == 1) {
             excluded = [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15, 16, 17 ];
         } else if (mode == 2) {
             excluded = [ 3, 4, 5, 6, 7, 8, 16, 17 ];
+            this.domToolBakeColor.disabled = true;
+            tool.toolSelector('camera');
         }
 
         this.panels.forEach((panel) => {
@@ -4748,7 +4778,7 @@ function UserInterface(scene) {
     }
 
     this.registerToolbarButtons = function() {
-        // find and match a toolbar button for a panel by id name
+        // find and match a toolbar button for a panel by id
         const toolbarButtons = document.querySelectorAll("button[id^='toolbar_btn_']");
         for (let i = 0; i < this.panels.length; i++) {
             for (let b = 0; b < toolbarButtons.length; b++) {
@@ -5078,8 +5108,8 @@ function UserInterfaceAdvanced(scene) {
 
     this.createAdvancedColorPicker = function() {
         const panel = new BABYLON.GUI.StackPanel();
-        panel.width = "116px";
-        panel.height = "116px";
+        panel.width = "120px";
+        panel.height = "120px";
         panel.isVertical = true;
         panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
         panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
@@ -5087,8 +5117,8 @@ function UserInterfaceAdvanced(scene) {
 
         this.colorPicker = new BABYLON.GUI.ColorPicker();
         this.colorPicker.value = BABYLON.Color3.FromHexString(currentColor);
-        this.colorPicker.height = "110px";
-        this.colorPicker.width = "110px";
+        this.colorPicker.height = "115px";
+        this.colorPicker.width = "115px";
         this.colorPicker.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
         this.colorPicker.verticalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_TOP;
         this.colorPicker.onValueChangedObservable.add((color3) => {
@@ -5459,7 +5489,7 @@ document.addEventListener("keydown", (ev) => {
     if (scene.debugLayer.isVisible()) return;
 
     if (MODE == 0 && !tool.last && !tool.isMouseDown) {
-        if (ev.altKey) {
+        if (ev.altKey || ev.key == ' ') {
             tool.last = tool.name;
             tool.toolSelector('camera');
             return;
@@ -5470,9 +5500,6 @@ document.addEventListener("keydown", (ev) => {
         case 'enter':
             if (ev.target instanceof HTMLButtonElement) return;
             if (MODE == 0) xformer.apply();
-            break;
-        case ' ':
-            if (MODE == 0) tool.toolSelector('camera', true);
             break;
         case '`':
             if (MODE == 0) tool.toolSelector('camera', true);
@@ -5505,7 +5532,11 @@ document.addEventListener("keydown", (ev) => {
             if (MODE == 0) symmetry.switchAxis();
             break;
         case 'c':
-            if (MODE == 2) bakery.cloneSelected();
+            if (MODE == 0) {
+                tool.toolSelector('camera', true);
+            } else if (MODE == 2) {
+                bakery.cloneSelected();
+            }
             break;
         case 'delete':
             if (MODE == 2) bakery.deleteSelected();
