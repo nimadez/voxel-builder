@@ -1,5 +1,10 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.7
+- New directory structure
+  - Improve project management and speed up the build time of github pages
+  - Everything updated accordingly, includes the update.py script
+
 ## 4.3.6
 - Update three.js to r168
 - New camera frame tools (frame to color group or selected voxels)

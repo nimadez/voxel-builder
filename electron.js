@@ -20,7 +20,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile('src/index.html');
     mainWindow.removeMenu();
 
     const reload = () => mainWindow.reload();

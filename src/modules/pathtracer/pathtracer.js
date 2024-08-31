@@ -546,13 +546,13 @@ export const pt = new Pathtracer();
 // Load assets
 
 
-await loadFile('src/modules/pathtracer/shaders/image.fs').then(data => {
+await loadFile('modules/pathtracer/shaders/image.fs').then(data => {
     imageFragment = `
         precision mediump samplerCube;
         ` + data;
 });
 
-await loadFile('src/modules/pathtracer/shaders/render.fs').then(data => {
+await loadFile('modules/pathtracer/shaders/render.fs').then(data => {
     renderFragment = `
         precision highp isampler2D;
         precision highp usampler2D;

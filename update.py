@@ -10,7 +10,7 @@ from zipfile import ZipFile
 
 
 VBUILDER = 'https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip'
-EXCLUDE = [ "voxel-builder-main", "electron", "user.backup" ]
+EXCLUDE = [ "voxel-builder-main", "electron", ".user_backup" ]
 run_bat = """@echo off
 title Voxel Builder
 start "" electron\electron .
@@ -22,15 +22,14 @@ cwd = os.getcwd()
 def main():
     DIR_SRC = cwd + '/voxel-builder-main'
     DIR_DST = cwd
-    DIR_USR = cwd + '/user'
-    DIR_BKP = DIR_USR + '.backup'
+    DIR_USR = cwd + '/src/user'
+    DIR_BKP = cwd + '/.user_backup'
 
     remove_directory(DIR_SRC)
 
     try:
         print("Connecting to GitHub...")
         downloadZip(VBUILDER, DIR_DST)
-        os.system("cls")
     except:
         input("Error: Unable to fetch GitHub repository, check your internet connection.")
         sys.exit(0)

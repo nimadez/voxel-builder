@@ -4191,7 +4191,7 @@ function Memory() {
 function Project(scene) {
     function serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.3.6",
+            version: "Voxel Builder 4.3.7",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,

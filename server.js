@@ -10,10 +10,10 @@ const PORT = 8011;
 
 http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
-    let filePath = `.${parsedUrl.pathname}`;
+    let filePath = `src${parsedUrl.pathname}`;
 
     if (parsedUrl.pathname == '/')
-        filePath = './index.html';
+        filePath = 'src/index.html';
 
     fs.readFile(filePath, (err, data) => {
         if (err) {
