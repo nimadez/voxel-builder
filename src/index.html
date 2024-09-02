@@ -113,14 +113,14 @@
         .menu_L li div i { color: var(--cat-color); margin-top: 3px; }
         .menu_L li div:hover i { color: steelblue; }
         #toolbar_top { z-index: 500; width: 200px; left: 50%; margin-left: -100px; top: 0; text-align: center; position: fixed; }
-        #toolbar_C { display: flex; opacity: 0.9; }
+        #toolbar_C { display: flex; }
         #toolbar_C li { width: 100%; padding: 6px 0 6px 0; letter-spacing: 0.05em; background: var(--btn-bg); color: var(--btn-color); border: solid 1px var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C li:hover { background: var(--btn-bg); color: orange; }
         #toolbar_C li:nth-child(1) { border-right: none; border-radius: 0; border-bottom-left-radius: 3px; border-top-left-radius: 3px; }
         #toolbar_C li:nth-child(2) { border-radius: 0; }
         #toolbar_C li:nth-child(3) { border-left: none; border-radius: 0; border-bottom-right-radius: 3px; border-top-right-radius: 3px; }
         #toolbar_C li.mode_select { color: orange; }
-        #toolbar_C_mem { display: flex; opacity: 0.9; margin-bottom: 2px; }
+        #toolbar_C_mem { display: flex; margin-bottom: 2px; }
         #toolbar_C_mem li { width: 100%; font-size: 11px; padding: 7px 0 7px 0; background: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C_mem li:hover { color: orange; }
         #toolbar_C_mem :nth-child(1) { border-right: none; border-bottom-left-radius: 3px; }
@@ -156,7 +156,7 @@
         #pathtracer { z-index: 10; display: none; width: 100%; height: 100%; position: fixed; }
         #palette { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 153px; bottom: 218px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
         #bakerylist { z-index: 400; display: none; background: #31394b30; position: absolute; left: 2px; top: 153px; bottom: 2px; overflow-y: scroll; overflow-x: hidden; }
-        #bakerylist .item_name { background: #3e4558cc; width: 62px; font-size: 10px; padding: 5px 2px 5px 2px; margin-bottom: 1px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
+        #bakerylist .item_name { background: #3e4558; width: 62px; font-size: 10px; padding: 5px 2px 5px 2px; margin-bottom: 1px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
         #bakerylist .item_name:hover { background: var(--btn-bg); color: orange; }
         #bakerylist .item_name.bakery_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: absolute; }
@@ -195,6 +195,12 @@
         #confirmblocker { z-index: 2400; display: none; opacity: 0.4; background: #181b22; position: absolute; width: 100%; height: 100%; }
         #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aCC; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 95px; transform: translateX(-50%); padding: 3px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_status { font-size: 11px; color: indianred; }
+        #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 360px; height: 50%; transform: translate(-50%,-50%); position: fixed; }
+        #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
+        #shortcuts tr { font-size: 13px; border: solid 1px var(--cat-border); background: var(--cat-bg); }
+        #shortcuts tr :first-child { width: 120px; text-align: center; }
+        #shortcuts tr :last-child { text-indent: 5px; }
+        #shortcuts th, td { width: 380px; padding: 4px 0 4px 0; }
         .spacer { height: 3px; }
         .row { display: flex; width: 100%; align-items: center; }
         .row_panel { display: flex; width: 100%; align-items: center; gap: 11px; text-indent: 6px; }
@@ -242,8 +248,8 @@
         </ul>
         <ul id="toolbar_L">
             <li>
-                <button title="Fullscreen" onclick="toggleFullscreen()"><i class="material-icons">view_in_ar</i></button>
-                <button title="Frame Camera" onclick="camera.frame()"><i class="material-icons">center_focus_weak</i></button>
+                <button title="Fullscreen" id="fullscreen"><i class="material-icons">view_in_ar</i></button>
+                <button title="Frame Camera" id="frame_camera"><i class="material-icons">center_focus_weak</i></button>
             </li>
             <li><button id="toolbar_btn_render">RENDER</button></li>
             <li><button id="toolbar_btn_camera">CAMERA</button></li>
@@ -258,18 +264,19 @@
                 <li><b>SAVE</b></li>
                 <li><b>LOAD</b></li>
                 <li>&nbsp;</li>
-                <li onclick="memory.undo()"><b>UNDO</b></li>
-                <li onclick="memory.redo()"><b>REDO</b></li>
+                <li><b>UNDO</b></li>
+                <li><b>REDO</b></li>
             </ul>
             <ul id="toolbar_C">
-                <li onclick="ui.setMode(0)" class="mode mode_select">MODEL</li>
-                <li onclick="ui.setMode(1)" id="btn-render" class="mode">RENDER</li>
-                <li onclick="ui.setMode(2)" class="mode">EXPORT</li>
+                <li id="tab-model" class="mode mode_select">MODEL</li>
+                <li id="tab-render" class="mode">RENDER</li>
+                <li id="tab-export" class="mode">EXPORT</li>
             </ul>
         </div>
         <ul class="menu_R panel" id="menu-about">
             <li class="category">HELP</li>
-            <li><button onclick="window.open('https://github.com/nimadez/voxel-builder/wiki', '_blank').focus();">Documentation</button></li>
+            <li><button id="about_docs" onclick="window.open('https://github.com/nimadez/voxel-builder/wiki', '_blank').focus()">Documentation</button></li>
+            <li><button id="about_shortcuts">Shortcuts</button></li>
             <li class="category">EXAMPLES</li>
             <li>
                 <select onchange="project.loadFromUrl(this.options[this.selectedIndex].value)">
@@ -295,12 +302,12 @@
                 </select>
             </li>
             <li class="category">EXTRAS</li>
-            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus();">Asset Viewer</button></li>
-            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus();">Pixel Monk</button></li>
-            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus();">VI²XEL</button></li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus()">Asset Viewer</button></li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus()">Pixel Monk</button></li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.3.7 Beta 2024
+                4.3.8 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
@@ -309,33 +316,33 @@
         </ul>
         <ul class="menu_R panel" id="menu-prefs">
             <li class="category">GENERAL</li>
-            <li><input type="checkbox" id="pref_nohover" onclick="preferences.setNoHover(this.checked)"> <label for="pref_nohover">No Hover Menu</label></li>
-            <li><input type="checkbox" id="pref_floorplane" onclick="preferences.setFloorPlane(this.checked)"> <label for="pref_floorplane">Floor Plane</label></li>
-            <li><input type="checkbox" id="pref_pointcloud" onclick="preferences.setPointCloud(this.checked)"> <label for="pref_pointcloud">Point Cloud</label></li>
-            <li class="row"><label>Palette</label>&nbsp;&nbsp;<input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1" oninput="palette.expand(this.value)"></li>
+            <li><input type="checkbox" id="pref_startup"> <label for="pref_startup">User Startup</label></li>
+            <li><input type="checkbox" id="pref_nohover"> <label for="pref_nohover">No Hover Menu</label></li>
+            <li><input type="checkbox" id="pref_floorplane"> <label for="pref_floorplane">Floor Plane</label></li>
+            <li><input type="checkbox" id="pref_pointcloud"> <label for="pref_pointcloud">Point Cloud</label></li>
+            <li class="row"><label>Palette</label>&nbsp;&nbsp;<input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1"></li>
             <li class="category">SYSTEM</li>
-            <li><input type="checkbox" id="pref_startup" onclick="preferences.setStartup(this.checked)"> <label for="pref_startup">User Startup</label></li>
-            <li><input type="checkbox" id="pref_powersaver" onclick="preferences.setPowerSaver(this.checked)"> <label for="pref_powersaver" title="Reduced PT Bounces/FPS and Tool FPS">Power Saver</label></li>
+            <li><input type="checkbox" id="pref_powersaver"> <label for="pref_powersaver" title="Reduced PT Bounces/FPS and Tool FPS">Power Saver</label></li>
             <li class="spacer"></li>
-            <li><button onclick="ui.hoverTranslate(ui.domHover, 0, 0, 0)">Reset Hover</button></li>
-            <li><button onclick="clearCache(this)">Clear Cache</button></li>
+            <li><button id="reset_hover">Reset Hover</button></li>
+            <li><button id="clear_cache">Clear Cache</button></li>
             <li class="category">WEBSOCKETS</li>
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>            
             <li class="spacer"></li>
-            <li class="row"><label>Status:</label>&nbsp;<div id="ws_status">Disconnected</div></li>
+            <li class="row"><label>Server:</label>&nbsp;<div id="ws_status">Disconnected</div></li>
             <li class="spacer"></li>
-            <li><button onclick="client.connect()">Reconnect</button></li>
+            <li><button id="ws_connect">Reconnect</button></li>
         </ul>
         <ul class="menu_R panel" id="menu-file">
             <li class="category">PROJECT</li>
             <li><input id="input-project-name" type="text" class="ignorekeys" value="null" minlength="3" maxlength="100" spellcheck="false" placeholder="Project Name"></li>
             <li class="spacer"></li>
-            <li><button onclick="project.newProject()">New</button></li>
+            <li><button id="new_project">New</button></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_json').click()">Load</button></li>
-            <li><button onclick="project.save()">Save</button></li>
-            <li class="spacer"></li>
+            <li><button id="save_project">Save</button></li>
+            <li class="category">IMPORT</li>
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">Import Voxels</button></li>
             <li><button onclick="document.getElementById('openfile_import_bakes').click()">Import Bakes</button></li>
             <li class="category">EXPORT</li>
@@ -349,10 +356,10 @@
             </li>
             <li><input type="checkbox" id="input-export-selbake"> <label for="input-export-selbake">Selected Mesh</label></li>
             <li class="spacer"></li>
-            <li><button onclick="project.exportVoxels()">Export Voxels</button></li>
-            <li><button onclick="project.exportBakes()">Export Bakes</button></li>
+            <li><button id="export_voxels">Export Voxels</button></li>
+            <li><button id="export_bakes">Export Bakes</button></li>
             <li class="category">CAPTURE</li>
-            <li><button onclick="createScreenshot()">Screenshot</button></li>
+            <li><button id="screenshot">Screenshot</button></li>
         </ul>
         <ul class="menu_R panel" id="menu-create">
             <li class="category">BOX</li>
@@ -363,17 +370,17 @@
                 <input type="checkbox" id="input-grid-fill" checked> <label for="input-grid-fill">Fill Box</label><br>
                 <input type="checkbox" id="input-grid-new" checked> <label for="input-grid-new">New Scene</label>
                 <div class="flex">
-                    <button onclick="generator.createBox()">Box</button>
-                    <button onclick="generator.createBox(true)">Plane</button>
+                    <button id="create_box">Box</button>
+                    <button id="create_plane">Plane</button>
                 </div>
-                <button onclick="generator.createIsometric()">Isometric</button>
+                <button id="create_isometric">Isometric</button>
             </li>
             <li class="category">SPHERE</li>
             <li>
                 <div class="row">&nbsp;<label style="margin-right: 12px">Size</label>&nbsp;<input id="input-sphere-size" type="number" class="ignorekeys" value="20" min="3" max="100"></div>
                 <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="input-sphere-inner" type="number" class="ignorekeys" value="19" min="0" max="100"></div>
                 <input type="checkbox" id="input-sphere-new" checked> <label for="input-sphere-new">New Scene</label><br>
-                <button onclick="generator.createSphere()">Sphere</button>
+                <button id="create_sphere">Sphere</button>
             </li>
             <li class="category">TERRAIN</li>
             <li>
@@ -382,7 +389,7 @@
                 <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="input-terrain-z" type="number" class="ignorekeys" value="40" min="3" max="500"></div>
                 <input type="checkbox" id="input-terrain-grad" checked> <label for="input-terrain-grad">Height Gradient</label><br>
                 <input type="checkbox" id="input-terrain-new" checked> <label for="input-terrain-new">New Scene</label><br>
-                <button onclick="generator.createTerrain()">Terrain</button>
+                <button id="create_terrain">Terrain</button>
             </li>
         </ul>
         <ul class="menu_R panel" id="menu-import">
@@ -394,107 +401,107 @@
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
             <li class="row" style="margin: 2px 0 0 2px">
                 <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" title="GLB OBJ" spellcheck="false">
-                <button onclick="voxelizer.loadFromUrl(this.previousElementSibling.value)" style="max-width: 28%"> > </button>
+                <button id="import_mesh_url" style="max-width: 28%"> > </button>
             </li>
             <li class="category">IMAGES</li>
             <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" max="20" step="0.1"></li>
             <li><input type="checkbox" id="input-voxelizer-yup" checked> <label for="input-voxelizer-yup">Y-Up</label></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer_img').click()">Upload Image</button></li>
-            <li><button onclick="voxelizer.pasteBase64Image()">Paste Base64</button></li>
+            <li><button id="import_image_paste">Paste Base64</button></li>
             <li class="row" style="margin: 2px 0 0 2px">
                 <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" title="PNG JPG SVG" spellcheck="false">
-                <button onclick="voxelizer.loadFromUrlImage(this.previousElementSibling.value)" style="max-width: 28%"> > </button>
+                <button id="import_image_url" style="max-width: 28%"> > </button>
             </li>
         </ul>
         <ul class="menu_R panel" id="menu-symm">
             <li class="category">AXIS</li>
             <li class="row">
-                <button id="btn-symm-axis-s" onclick="symmetry.switchAxisByNum(-1)">S</button>
-                <button id="btn-symm-axis-x" onclick="symmetry.switchAxisByNum(0)" style="font-weight: bold;">X</button>
-                <button id="btn-symm-axis-y" onclick="symmetry.switchAxisByNum(1)" style="font-weight: bold;">Y</button>
-                <button id="btn-symm-axis-z" onclick="symmetry.switchAxisByNum(2)" style="font-weight: bold;">Z</button>
+                <button id="btn-symm-axis-s">S</button>
+                <button id="btn-symm-axis-x" style="font-weight: bold;">X</button>
+                <button id="btn-symm-axis-y" style="font-weight: bold;">Y</button>
+                <button id="btn-symm-axis-z" style="font-weight: bold;">Z</button>
             </li>
             <li class="category">SYMMETRIZE</li>
-            <li onclick="symmetry.symmetrizeVoxels(1)"><button>Pos (+) > Neg (-)</button></li>
-            <li onclick="symmetry.symmetrizeVoxels(-1)"><button>Neg (-) > Pos (+)</button></li>
+            <li id="symm_p2n"><button>Pos (+) > Neg (-)</button></li>
+            <li id="symm_n2p"><button>Neg (-) > Pos (+)</button></li>
             <li class="category">MIRROR</li>
-            <li onclick="symmetry.mirrorVoxels()"><button>Mirror</button></li>
+            <li id="symm_mirror"><button>Mirror</button></li>
             <li class="category">DELETE HALF</li>
-            <li onclick="symmetry.deleteHalfVoxels(-1)"><button>Positive Half</button></li>
-            <li onclick="symmetry.deleteHalfVoxels(1)"><button>Negative Half</button></li>
+            <li id="symm_p_half"><button>Positive Half</button></li>
+            <li id="symm_n_half"><button>Negative Half</button></li>
             <li class="category">PIVOT CENTER</li>
-            <li><input type="checkbox" id="input-symm-center" onclick="helper.setSymmPivot()"> <label for="input-symm-center">World Center</label></li>
+            <li><input type="checkbox" id="input-symm-center"> <label for="input-symm-center">World Center</label></li>
         </ul>
         <ul class="menu_R panel" id="menu-model">
             <li class="category">FREEFORM</li>
-            <li><button onclick="tool.toolSelector('add')" class="tool_add">Add</button></li>
-            <li><button onclick="tool.toolSelector('remove')" class="tool_remove">Remove</button></li>
+            <li><button id="btn_tool_add" class="tool_add">Add</button></li>
+            <li><button id="btn_tool_remove" class="tool_remove">Remove</button></li>
             <li class="category">BOX SHAPE</li>
-            <li><button onclick="tool.toolSelector('box_add')" class="tool_box_add">Box Add</button></li>
+            <li><button id="btn_tool_box_add" class="tool_box_add">Box Add</button></li>
             <li class="spacer"></li>
             <li class="row"><label style="margin-right: 5px">Height</label>&nbsp;<input id="input-boxtool-height" type="number" class="ignorekeys" value="1" min="1" max="100"></li>
             <li class="spacer"></li>
-            <li><button onclick="tool.toolSelector('box_remove')" class="tool_box_remove">Box Remove</button></li>
+            <li><button id="btn_tool_box_remove" class="tool_box_remove">Box Remove</button></li>
             <li class="category">RECTANGLE</li>
-            <li><button onclick="tool.toolSelector('rect_add')" class="tool_rect_add">Rect Add</button></li>
-            <li><button onclick="tool.toolSelector('rect_remove')" class="tool_rect_remove">Rect Remove</button></li>
+            <li><button id="btn_tool_rect_add" class="tool_rect_add">Rect Add</button></li>
+            <li><button id="btn_tool_rect_remove" class="tool_rect_remove">Rect Remove</button></li>
             <li class="category">COORDINATE</li>
-            <li><input id="input-newbox-coord" type="text" onkeypress="generator.newBoxPosition(event, document.getElementById('input-newbox-coord'))" class="ignorekeys" placeholder="X, Y, Z"></li>
+            <li><input id="input-newbox-coord" type="text" class="ignorekeys" placeholder="X, Y, Z"></li>
         </ul>
         <ul class="menu_R panel" id="menu-paint">
             <li class="category">PAINT COLOR</li>
-            <li><button onclick="tool.toolSelector('paint')" class="tool_paint">Freeform</button></li>
-            <li><button onclick="tool.toolSelector('box_paint')" class="tool_box_paint">Box Paint</button></li>
-            <li><button onclick="tool.toolSelector('rect_paint')" class="tool_rect_paint">Rect Paint</button></li>
+            <li><button id="btn_tool_paint" class="tool_paint">Freeform</button></li>
+            <li><button id="btn_tool_box_paint" class="tool_box_paint">Box Paint</button></li>
+            <li><button id="btn_tool_rect_paint" class="tool_rect_paint">Rect Paint</button></li>
             <li class="category">FILL COLOR</li>
-            <li><button onclick="tool.toolSelector('bucket')" class="tool_bucket">Bucket</button></li>
-            <li><button onclick="builder.setAllColorsAndUpdate()">Paint All</button></li>
+            <li><button id="btn_tool_bucket" class="tool_bucket">Bucket</button></li>
+            <li><button id="paint_all">Paint All</button></li>
             <li class="category">PICK COLOR</li>
-            <li><button onclick="tool.toolSelector('eyedrop')" class="tool_eyedrop">Eyedropper</button></li>
-            <li><button onclick="ui.activateEyedropper()" id="pixeleyedrop" disabled>Pixel Eyedropper</button></li>
+            <li><button id="btn_tool_eyedrop" class="tool_eyedrop">Eyedropper</button></li>
+            <li><button id="activate_pixeleyedrop" disabled>Pixel Eyedropper</button></li>
         </ul>
         <ul class="menu_R panel" id="menu-voxels">
             <li class="category">TRANSFORM</li>
-            <li><button onclick="tool.toolSelector('transform_box')" class="tool_transform_box">Box Shape</button></li>
-            <li><button onclick="tool.toolSelector('transform_rect')" class="tool_transform_rect">Rectangle</button></li>
-            <li><button onclick="tool.toolSelector('transform_group')" class="tool_transform_group">Color Group</button></li>
-            <li><button onclick="tool.toolSelector('transform_visible')" class="tool_transform_visible">Visible Voxels</button></li>
+            <li><button id="btn_tool_transform_box" class="tool_transform_box">Box Shape</button></li>
+            <li><button id="btn_tool_transform_rect" class="tool_transform_rect">Rectangle</button></li>
+            <li><button id="btn_tool_transform_group" class="tool_transform_group">Color Group</button></li>
+            <li><button id="btn_tool_transform_visible" class="tool_transform_visible">Visible Voxels</button></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone</label></li>
             <li class="spacer"></li>
-            <li onclick="builder.normalizeVoxelPositions(true)"><button>Normalize<br>Positions</button></li>
+            <li id="normalize_voxels"><button>Normalize<br>Positions</button></li>
             <li class="category">MEASUREMENT</li>
-            <li><button onclick="tool.toolSelector('measure_volume')" class="tool_measure_volume">By Volume</button></li>
-            <li><button onclick="tool.toolSelector('measure_color')" class="tool_measure_color">By Color Group</button></li>
+            <li><button id="btn_tool_measure_volume" class="tool_measure_volume">By Volume</button></li>
+            <li><button id="btn_tool_measure_color" class="tool_measure_color">By Color Group</button></li>
             <li class="category">CLEANUP</li>
-            <li onclick="builder.reduceVoxels()"><button>Reduce Voxels</button></li>
+            <li id="reduce_voxels"><button>Reduce Voxels</button></li>
         </ul>
         <ul class="menu_R panel" id="menu-bakery">
             <li class="category">CREATE BAKE</li>
-            <li><button onclick="bakery.newBake()">Add Bake</button></li>
-            <li><button onclick="tool.toolSelector('bake_color');ui.setMode(0);" class="tool_bake_color">Add Bake By<br>Color Group</button></li>
-            <li class="category">BATCH CREATE</li>
-            <li><button onclick="bakery.bakeAll()">Bake All</button></li>
-            <li><button onclick="bakery.bakeAllColors()">Bake All<br>Color Groups</button></li>
+            <li><button id="bake_add">Add Bake</button></li>
+            <li><button id="btn_tool_bakecolor" class="tool_bake_color">Add Bake by<br>Color Group</button></li>
+            <li class="category">CREATE ALL</li>
+            <li><button id="bake_all">Bake All</button></li>
+            <li><button id="bake_allcolors">Bake<br>Color Groups</button></li>
             <li class="category">OPTIONS<li>
             <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
             <li class="spacer"></li>
-            <li><button onclick="bakery.clearBakes(true)">Clear All</button></li>
+            <li><button id="clear_bakes">Clear All</button></li>
         </ul>
         <ul class="menu_R panel" id="menu-meshes">
             <li class="category">REPLICATE</li>
-            <li title="C"><button onclick="bakery.cloneSelected()">Clone</button></li>
+            <li><button id="clone_bake">Clone</button></li>
             <li class="category">MERGE</li>
-            <li><button class="tool_merge" onclick="toolBakery.toolSelector('merge')">Pick</button></li>
-            <li><button onclick="toolBakery.mergeBakes()">Merge Selected</button></li>
-            <li><button onclick="toolBakery.cancelSelection()">Cancel</button></li>
+            <li><button id="merge_bakes_pick" class="tool_merge">Pick</button></li>
+            <li><button id="merge_bakes_merge">Merge Selected</button></li>
+            <li><button id="merge_bakes_cancel">Cancel</button></li>
             <li class="spacer"></li>
-            <li><button onclick="bakery.mergeAll()">Merge All</button></li>
+            <li><button id="merge_all_bakes">Merge All</button></li>
             <li class="category">UNBAKE<li>
-            <li><button onclick="voxelizer.voxelizeBake()">Voxelize</button></li>
+            <li><button id="voxelize_bake">Voxelize</button></li>
             <li class="category">CLEAR</li>
-            <li><button onclick="bakery.resetRotation()">Reset Rotation</button></li>
-            <li title="DEL"><button onclick="bakery.deleteSelected()">Delete Selected</button></li>
+            <li><button id="reset_bake_rotation">Reset Rotation</button></li>
+            <li><button id="delete_bake">Delete Selected</button></li>
         </ul>
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
@@ -506,7 +513,7 @@
                 </select>
             </li>
             <li class="row"><label>Samples</label>&nbsp;&nbsp;<input type="number" id="input-pt-maxsamples" class="ignorekeys" value="4096" min="8" max="8192" step="8"></li>
-            <li class="spacer"></li>
+            <li class="category">DISPLAY</li>
             <li class="row">
                 <select id="input-pt-bounces" title="Bounces">
                     <option value="6">6</option>
@@ -556,23 +563,23 @@
         </ul>
         <ul class="menu_L panel" id="menu-camera">
             <li class="category">VIEW</li>
-            <li><button onclick="camera.frame()">Frame</button></li>
-            <li><button onclick="tool.toolSelector('frame_color')" class="tool_frame_color">Frame Color</button></li>
-            <li><button onclick="tool.toolSelector('frame_voxels')" class="tool_frame_voxels">Frame Voxels</button></li>
-            <li class="spacer"></li>
-            <li><button id="btn-ortho" onclick="camera.switchOrtho()">Perspective</button></li>
+            <li><button id="camera_frame">Frame</button></li>
+            <li><button id="btn_tool_frame_color" class="tool_frame_color">Frame Color</button></li>
+            <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li class="category">SETTINGS</li>
+            <li><button id="btn-ortho">Perspective</button></li>
+            <li class="spacer"></li>
             <li class="row"><label style="min-width: 50%">FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01" oninput="camera.setFov(this.value)"></li>
             <li class="row"><label style="min-width: 50%">Aperture</label> <input type="number" id="input-camera-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>
             <li class="row"><label style="min-width: 50%">Focal Len.</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="50" min="0" max="500" step="0.05"></li>
             <li class="category">ANIMATION</li>
-            <li><input type="checkbox" id="input-autorotate" onclick="camera.toggleCameraAutoRotation()"> <label for="input-autorotate">Auto Rotate</label></li>
-            <li><input type="checkbox" id="input-autorotate-ccw" onclick="camera.updateCameraAutoRotation()"> <label for="input-autorotate-ccw">CCW</label></li>
+            <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
+            <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-env">
             <li class="category">BACKGROUND</li>
             <li>
-                <input type="checkbox" id="input-env-bgcheck" onclick="scene.autoClear = this.checked" title="Enable Background Color"> <label for="input-env-bgcheck">Enabled</label>
+                <input type="checkbox" id="input-env-bgcheck" title="Enable Background Color"> <label for="input-env-bgcheck">Enabled</label>
                 <input type="color" id="input-env-background" value="#222222">
             </li>
             <li class="category">HDRI</li>
@@ -588,8 +595,8 @@
                 </select>
             </li>
             <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
-            <li><button onclick="hdri.unloadHDR(true)">Unload</button></li>
-            <li><input type="checkbox" id="input-hdri-toggle" onclick="hdri.toggleSkybox(this.checked)"> <label for="input-hdri-toggle">Display</label></li>
+            <li><button id="unload_hdri">Unload</button></li>
+            <li><input type="checkbox" id="input-hdri-toggle"> <label for="input-hdri-toggle">Display</label></li>
             <li><input type="range" id="input-hdri-blur" value="0" min="0" max="1" step="0.01" oninput="hdri.setBlurAmount(this.value)"></li>
             <li class="category">DIRECT LIGHT</li>
             <li class="row">
@@ -598,7 +605,7 @@
             </li>
             <li class="spacer"></li>
             <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.8" min="0" max="3" step="0.01" oninput="light.updateIntensity(this.value)"></li>
-            <li><input type="checkbox" id="input-light-shadows" onclick="light.enableShadows(this.checked)" checked> <label for="input-light-shadows">Shadows</label></li>
+            <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-material">
             <li class="category">COLORS</li>
@@ -618,11 +625,11 @@
             <li class="category">PATTERNS</li>
             <li>
                 <div class="flex">
-                    <button onclick="material.setPBRTexture(0); bakery.replaceTexture()">Solid</button>
-                    <button onclick="material.setPBRTexture(1); bakery.replaceTexture()">Outline</button>
+                    <button id="bake_tex_solid">Solid</button>
+                    <button id="bake_tex_outline">Outline</button>
                 </div> <div class="flex">
-                    <button onclick="material.setPBRTexture(2); bakery.replaceTexture()">Grid</button>
-                    <button onclick="material.setPBRTexture(3); bakery.replaceTexture()">Checker</button>
+                    <button id="bake_tex_grid">Grid</button>
+                    <button id="bake_tex_checker">Checker</button>
                 </div>
             </li>
             <li class="category">IMPORT</li>
@@ -644,42 +651,42 @@
         </ul>
         <ul class="menu_L panel" id="menu-groups">
             <li class="category">HIDE</li>
-            <li><button onclick="tool.toolSelector('isolate_color')" class="tool_isolate_color">Isolate Color</button></li>
-            <li><button onclick="tool.toolSelector('hide_color')" class="tool_hide_color">Hide By Color</button></li>
+            <li><button id="btn_tool_isolate_color" class="tool_isolate_color">Isolate Color</button></li>
+            <li><button id="btn_tool_hide_color" class="tool_hide_color">Hide By Color</button></li>
             <li class="category">UNHIDE</li>
-            <li><button onclick="builder.invertVisibilityAndUpdate()">Invert Visibility</button>
-            <li><button onclick="builder.setAllVisibilityAndUpdate(true)">Unhide All</button>
+            <li><button id="invert_visibility">Invert Visibility</button>
+            <li><button id="unhide_all">Unhide All</button>
             <li class="category">DELETE</li>
-            <li><button onclick="tool.toolSelector('delete_color')" class="tool_delete_color">Delete By Color</button></li>
-            <li><button onclick="builder.deleteHiddenAndUpdate()">Delete Hidden</button>
+            <li><button id="btn_tool_delete_color" class="tool_delete_color">Delete By Color</button></li>
+            <li><button id="delete_hidden">Delete Hidden</button>
         </ul>
     </div>
     <ul id="hover" class="panel">
-        <li class="tool_camera" onclick="tool.toolSelector('camera')" onpointerdown="ui.dragElement(0, this, this.parentElement)"><i class="material-icons">control_camera</i></li>
-        <li class="tool_box_paint" onclick="tool.toolSelector('box_paint')"><i class="material-icons">imagesearch_roller</i></li>
-        <li class="tool_box_add" onclick="tool.toolSelector('box_add')"><i class="material-icons">add</i></li>
-        <li class="tool_box_remove" onclick="tool.toolSelector('box_remove')"><i class="material-icons">remove</i></li>
-        <li class="tool_bucket hover_disabled" onclick="tool.toolSelector('bucket')"><i class="material-icons">format_color_fill</i></li>
-        <li class="tool_remove hover_disabled" onclick="tool.toolSelector('remove')"><i class="material-icons">clear</i></li>
-        <li class="tool_paint hover_disabled" onclick="tool.toolSelector('paint')"><i class="material-icons">brush</i></li>
-        <li class="tool_add hover_disabled" onclick="tool.toolSelector('add')"><i class="material-icons">create</i></li>
-        <li class="tool_eyedrop" onclick="tool.toolSelector('eyedrop')"><i class="material-icons">colorize</i></li>
+        <li class="tool_camera"><i class="material-icons">control_camera</i></li>
+        <li class="tool_box_paint"><i class="material-icons">imagesearch_roller</i></li>
+        <li class="tool_box_add"><i class="material-icons">add</i></li>
+        <li class="tool_box_remove"><i class="material-icons">remove</i></li>
+        <li class="tool_bucket hover_disabled"><i class="material-icons">format_color_fill</i></li>
+        <li class="tool_remove hover_disabled"><i class="material-icons">clear</i></li>
+        <li class="tool_paint hover_disabled"><i class="material-icons">brush</i></li>
+        <li class="tool_add hover_disabled"><i class="material-icons">create</i></li>
+        <li class="tool_eyedrop"><i class="material-icons">colorize</i></li>
     </ul>
     <ul id="menu-inscreen-left">
         <li id="colorpicker"><input type="color" id="input-color" value="#4988CA"></li>
-        <li><button title="Color Bucket Tool" onclick="tool.toolSelector('bucket')" class="tool_bucket"><i class="material-icons">format_color_fill</i></button></li>
-        <li><button title="Material Switch" id="material-switch" onclick="material.switchMaterial()">CEL</button></li>
+        <li><button title="Color Bucket Tool" id="btn_tool_bucket_inscreen" class="tool_bucket"><i class="material-icons">format_color_fill</i></button></li>
+        <li><button title="Material Switch" id="material-switch">CEL</button></li>
     </ul>
     <ul id="menu-inscreen-right">
-        <li><button id="btn-inscreen-symmetry" title="Symmetry" onclick="symmetry.switchAxis()">S</button></li>
+        <li><button id="btn-inscreen-symmetry" title="Symmetry">S</button></li>
     </ul>
     <ul id="menu-inscreen-bottom">
-        <div id="btn-inscreen-gridplane" title="Grid Plane" onclick="helper.toggleWorkplane(0)"><i class="material-icons">grid_4x4</i></div>
-        <div id="btn-inscreen-workplane" title="Workplane 3D" onclick="helper.toggleWorkplane(1)"><i class="material-icons">grid_on</i></div>
-        <div id="btn-inscreen-lightlocator" title="Light Locator" onclick="uix.toggleLightLocator()"><i class="material-icons">tungsten</i></div>
-        <div id="btn-inscreen-ortho" title="Camera View" onclick="camera.switchOrtho()">P</div>
+        <div id="btn-inscreen-gridplane" title="Grid Plane"><i class="material-icons">grid_4x4</i></div>
+        <div id="btn-inscreen-workplane" title="Workplane 3D"><i class="material-icons">grid_on</i></div>
+        <div id="btn-inscreen-lightlocator" title="Light Locator"><i class="material-icons">tungsten</i></div>
+        <div id="btn-inscreen-ortho" title="Camera View">P</div>
     </ul>
-    <div id="axisview-hitbox" onclick="camera.frame()"></div>
+    <div id="axisview-hitbox"></div>
     <!-- dynamic -->
     <div id="pathtracer">
         <canvas id="canvas_render"></canvas>
@@ -706,13 +713,42 @@
     <input style="display: none" type="file" id="openfile_tex" accept=".jpg,.png" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_hdr" accept=".hdr" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_pt_hdr" accept=".hdr" onclick="this.value = null">
+    <!-- help -->
+    <div id="shortcuts">
+        <table>
+            <tr><th>Shortcut</th> <th>Description</th></tr>
+            <tr><td>SPACE / ALT</td> <td>Toggle Free Camera Tool (MODEL)</td></tr>
+            <tr><td>ENTER</td> <td>Apply Voxel Transforms (MODEL)</td></tr>
+            <tr><td>DEL</td> <td>Delete Selected Voxels (Transform)</td></tr>
+            <tr><td>DEL</td> <td>Delete Selected Bake (EXPORT)</td></tr>
+            <tr><td>`</td> <td>Free Camera Tool (MODEL)</td></tr>
+            <tr><td>C</td> <td>Free Camera Tool (MODEL)</td></tr>
+            <tr><td>C</td> <td>Clone Selected Bake (EXPORT)</td></tr>
+            <tr><td>F</td> <td>Frame Camera</td></tr>
+            <tr><td>F</td> <td>Frame Voxels (Transform)</td></tr>
+            <tr><td>O</td> <td>Toggle Orthographic View</td></tr>
+            <tr><td>R</td> <td>Toggle Renderer - Path Tracer</td></tr>
+            <tr><td>S</td> <td>Switch Symmetry Axis (MODEL)</td></tr>
+            <tr><td>T</td> <td>Transform Box Tool</td></tr>
+            <tr><td>1</td> <td>Add Voxel Tool</td></tr>
+            <tr><td>2</td> <td>Remove Voxel Tool</td></tr>
+            <tr><td>3</td> <td>Box Add Tool</td></tr>
+            <tr><td>4</td> <td>Box Remove Tool</td></tr>
+            <tr><td>5</td> <td>Paint Voxel Tool</td></tr>
+            <tr><td>6</td> <td>Box Paint Tool</td></tr>
+            <tr><td>7</td> <td>Paint Bucket Tool</td></tr>
+            <tr><td>8</td> <td>Color Eyedropper Tool</td></tr>
+            <tr><td>CTRL + L</td> <td>Load JSON Project</td></tr>
+            <tr><td>CTRL + Z</td> <td>Undo (MODEL)</td></tr>
+            <tr><td>CTRL + X</td> <td>Redo (MODEL)</td></tr>
+            <tr><td>/</td> <td>Toggle Debug Layer (Dev Mode)</td></tr>
+          </table>
+    </div>
 
 <script src="libs/babylon.js"></script>
 <script src="libs/babylon.gui.min.js"></script>
 <script src="libs/babylonjs.materials.min.js"></script>
 <script src="libs/babylonjs.loaders.min.js"></script>
-<!-- <script src="libs/babylonjs.serializers.min.js"></script> -->
-<!-- <script src="libs/babylon.inspector.bundle.js"></script> -->
 <script type="importmap">
 {
     "imports": {

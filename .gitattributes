@@ -2,5 +2,3 @@
 *.js linguist-vendored=false
 *.py linguist-vendored=false
 * text=auto
-libs/*.js binary
-samples/*.vbx binary

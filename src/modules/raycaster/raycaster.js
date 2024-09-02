@@ -2,7 +2,7 @@
     Nov 2023
     @nimadez
 
-    BVH Raycaster
+    BVH-Raycaster and Voxelizer
 */
 
 import { THREE } from '../three.js';
@@ -113,78 +113,82 @@ class Raycaster {
     }
 }
 
-export const rc = new Raycaster();
+class RaycasterVoxelizer {
 
-export function voxelizeMesh(mesh, scale, color) {
-    const rcv = new Raycaster();
+    mesh_voxel(mesh, scale, color) {
+        const rcv = new Raycaster();
+        
+        rcv.createFromData(
+            mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
+            mesh.getIndices()
+        );
     
-    rcv.createFromData(
-        mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
-        mesh.getIndices()
-    );
-
-    const data = [];
-    const size = scale * 2;
-
-    for (let x = 0; x < size; x++) {
-        for (let y = 0; y < size; y++) {
-            for (let z = 0; z < size; z++) {
-                if (rcv.boxHit(x, y, z)) {
-                    data.push({
-                        position: new BABYLON.Vector3(x, y, z),
-                        color: color,
-                        visible: true
-                    });
+        const data = [];
+        const size = scale * 2;
+    
+        for (let x = 0; x < size; x++) {
+            for (let y = 0; y < size; y++) {
+                for (let z = 0; z < size; z++) {
+                    if (rcv.boxHit(x, y, z)) {
+                        data.push({
+                            position: new BABYLON.Vector3(x, y, z),
+                            color: color,
+                            visible: true
+                        });
+                    }
                 }
             }
         }
+        
+        rcv.dispose();
+        return data;
     }
     
-    rcv.dispose();
-    return data;
-}
-
-export function voxelizeBake(mesh) {
-    const rcv = new Raycaster();
-
-    rcv.createFromDataWithColor(
-        mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
-        mesh.getVerticesData(BABYLON.VertexBuffer.ColorKind),
-        mesh.getIndices()
-    );
-
-    const size = new THREE.Vector3();
-    rcv.geom.boundingBox.getSize(size);
-    size.x = (size.x / 2) - 0.5;
-    size.y = (size.y / 2) - 0.5;
-    size.z = (size.z / 2) - 0.5;
-
-    const color = new THREE.Color();
-    const data = [];
-
-    for (let x = -size.x; x <= size.x; x++) {
-        for (let y = -size.y; y <= size.y; y++) {
-            for (let z = -size.z; z <= size.z; z++) {
-                
-                const res = rcv.raycastOmni(x, y, z);
-                if (res && res.face.normal.dot(rcv.ray.direction) > 0) {
+    mesh_bake(mesh) {
+        const rcv = new Raycaster();
+    
+        rcv.createFromDataWithColor(
+            mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
+            mesh.getVerticesData(BABYLON.VertexBuffer.ColorKind),
+            mesh.getIndices()
+        );
+    
+        const size = new THREE.Vector3();
+        rcv.geom.boundingBox.getSize(size);
+        size.x = (size.x / 2) - 0.5;
+        size.y = (size.y / 2) - 0.5;
+        size.z = (size.z / 2) - 0.5;
+    
+        const color = new THREE.Color();
+        const data = [];
+    
+        for (let x = -size.x; x <= size.x; x++) {
+            for (let y = -size.y; y <= size.y; y++) {
+                for (let z = -size.z; z <= size.z; z++) {
                     
-                    const hex = color.fromBufferAttribute(rcv.geom.attributes.color, res.face.a)
-                        .getHexString(THREE.SRGBColorSpace).toUpperCase();
-
-                    data.push({
-                        position: new BABYLON.Vector3(
-                            mesh.position.x + x,
-                            mesh.position.y + y,
-                            mesh.position.z + z),
-                        color: '#' + hex,
-                        visible: true
-                    });
+                    const res = rcv.raycastOmni(x, y, z);
+                    if (res && res.face.normal.dot(rcv.ray.direction) > 0) {
+                        
+                        const hex = color.fromBufferAttribute(rcv.geom.attributes.color, res.face.a)
+                            .getHexString(THREE.SRGBColorSpace).toUpperCase();
+    
+                        data.push({
+                            position: new BABYLON.Vector3(
+                                mesh.position.x + x,
+                                mesh.position.y + y,
+                                mesh.position.z + z),
+                            color: '#' + hex,
+                            visible: true
+                        });
+                    }
                 }
             }
         }
-    }
-    
-    rcv.dispose();
-    return data;
+        
+        rcv.dispose();
+        return data;
+    }    
 }
+
+export const rc = new Raycaster();
+export const rcv = new RaycasterVoxelizer();

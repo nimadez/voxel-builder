@@ -8,10 +8,10 @@
 
 import {
     THREE,
+    RGBELoader,
     OrbitControls,
     FullScreenQuad,
     mergeGeometries,
-    RGBELoader,
     MeshBVHUniformStruct,
     FloatVertexAttributeTexture,
 	shaderStructs, shaderIntersectFunction
@@ -27,6 +27,33 @@ const LIGHT_POWER = 16.0 * 16.0;
 let imageFragment = null;
 let renderFragment = null;
 let noiseTexture = null;
+
+
+await loadFile('modules/pathtracer/shaders/image.fs').then(data => {
+    imageFragment = `
+        precision mediump samplerCube;
+        ` + data;
+});
+
+await loadFile('modules/pathtracer/shaders/render.fs').then(data => {
+    renderFragment = `
+        precision highp isampler2D;
+        precision highp usampler2D;
+        precision mediump samplerCube;
+        ${ shaderStructs }
+        ${ shaderIntersectFunction }
+        ` + data;
+});
+
+await loadTexture('assets/bluenoise256.png').then(tex => {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.format = THREE.RGBAFormat;
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    noiseTexture = tex;
+});
 
 
 class Pathtracer {
@@ -86,6 +113,8 @@ class Pathtracer {
         this.RTTA.texture.generateMipmaps = false;
         this.RTTB.texture.generateMipmaps = false;
         this.CRTT.texture.generateMipmaps = false;
+
+        console.log('load pathtracer');
     }
 
     create() {
@@ -370,8 +399,8 @@ class Pathtracer {
 
     async updateHDR(url) {
         if (!this.uniRender) return;
+        if (this.envTexture) this.envTexture.dispose();
         await loadRGBE(url).then(tex => {
-            if (this.envTexture) this.envTexture.dispose();
             tex.minFilter = THREE.LinearFilter;
             tex.magFilter = THREE.LinearFilter;
             tex.generateMipmaps = false;
@@ -540,37 +569,6 @@ class Pathtracer {
 }
 
 export const pt = new Pathtracer();
-
-
-// -------------------------------------------------------
-// Load assets
-
-
-await loadFile('modules/pathtracer/shaders/image.fs').then(data => {
-    imageFragment = `
-        precision mediump samplerCube;
-        ` + data;
-});
-
-await loadFile('modules/pathtracer/shaders/render.fs').then(data => {
-    renderFragment = `
-        precision highp isampler2D;
-        precision highp usampler2D;
-        precision mediump samplerCube;
-        ${ shaderStructs }
-        ${ shaderIntersectFunction }
-        ` + data;
-});
-
-await loadTexture('assets/bluenoise256.png').then(tex => {
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    tex.format = THREE.RGBAFormat;
-    tex.minFilter = THREE.NearestFilter;
-    tex.magFilter = THREE.NearestFilter;
-    tex.generateMipmaps = false;
-    noiseTexture = tex;
-});
 
 
 // -------------------------------------------------------

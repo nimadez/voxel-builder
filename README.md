@@ -5,7 +5,7 @@
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.7 Beta```<br>
+```Version 4.3.8 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -26,7 +26,7 @@ Voxel-based 3D modeling application<br>
 - Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
 - Symmetric drawing and painting
 - Color groups and voxel transform tools
-- High performance GPU picking system *(the second inventor)*
+- High performance GPU picking system
 
 **Rendering**
 - High performance voxel engine
@@ -50,7 +50,7 @@ Voxel-based 3D modeling application<br>
 - Blender importer script
 
 **More**
-- Unique handcrafted user-interface woven into the code
+- Unique handcrafted user-interface
 - Minimum dependency, portable, online and offline
 - Ad-free, no miners and trackers, no logging
 - Extras [?](https://github.com/nimadez/voxel-builder/wiki/Extras)

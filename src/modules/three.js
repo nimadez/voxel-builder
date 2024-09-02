@@ -15,10 +15,12 @@ Mesh.prototype.raycast = acceleratedRaycast;
 export * as THREE from 'three';
 export { OrbitControls } from '../libs/addons/OrbitControls.js';
 export { FullScreenQuad } from '../libs/addons/Pass.js';
-export { mergeGeometries } from '../libs/addons/BufferGeometryUtils.js';
 export { RGBELoader } from '../libs/addons/RGBELoader.js';
+export { mergeGeometries } from '../libs/addons/BufferGeometryUtils.js';
 export {
     MeshBVHUniformStruct, //MeshBVH, CENTER, SAH
     FloatVertexAttributeTexture, //UIntVertexAttributeTexture
     shaderStructs, shaderIntersectFunction //shaderDistanceFunction
 } from '../libs/three-mesh-bvh.module.js';
+
+console.log('load three.js');

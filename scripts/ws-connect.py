@@ -7,7 +7,7 @@
 
 import os, sys, json, random, time, asyncio
 
-sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/libs')
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + '/src/libs')
 from websockets.server import serve
 
 if __import__('platform').system == 'Windows': # fix [WinError 10054]

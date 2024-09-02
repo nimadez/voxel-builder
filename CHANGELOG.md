@@ -1,5 +1,14 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.8
+- Add keyboard shortcuts map (see about menu)
+- Delete key can delete voxels during transforms
+- Fix the debug layer, make it useful!
+- Improve all the modules
+- ~~HDR loader managed by three.js~~ (rolled back)
+  - This improves many things include 1 second startup freeze, but also makes PBR and bakery problematic.
+- Prepare dom for complete ES6
+
 ## 4.3.7
 - New directory structure
   - Improve project management and speed up the build time of github pages
