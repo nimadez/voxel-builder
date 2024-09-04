@@ -23,4 +23,4 @@ export {
     shaderStructs, shaderIntersectFunction //shaderDistanceFunction
 } from '../libs/three-mesh-bvh.module.js';
 
-console.log('load three.js');
+console.log('load three.js addons');

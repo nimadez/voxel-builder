@@ -193,7 +193,7 @@
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
         #confirm button { width: 48%; padding: 4px; font-size: var(--font-size); text-transform: uppercase; }
         #confirmblocker { z-index: 2400; display: none; opacity: 0.4; background: #181b22; position: absolute; width: 100%; height: 100%; }
-        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aCC; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 95px; transform: translateX(-50%); padding: 3px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
+        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aCC; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 98px; transform: translateX(-50%); padding: 3px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_status { font-size: 11px; color: indianred; }
         #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 360px; height: 50%; transform: translate(-50%,-50%); position: fixed; }
         #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
@@ -229,7 +229,7 @@
     </style>
 </head>
 <body>
-    <canvas id="canvas" ondrop="dropHandler(event)" ondragover="dragHandler(event)" ondragleave="dragLeaveHandler(event)"></canvas>
+    <canvas id="canvas"></canvas>
     <div id="menus">
         <ul id="toolbar_R">
             <li>
@@ -279,7 +279,7 @@
             <li><button id="about_shortcuts">Shortcuts</button></li>
             <li class="category">EXAMPLES</li>
             <li>
-                <select onchange="project.loadFromUrl(this.options[this.selectedIndex].value)">
+                <select id="about_examples">
                     <option value="">Examples</option>
                     <option value="user/startup.json">User Startup</option>
                     <option value="examples/model_menger.json">Menger Sponge</option>
@@ -293,7 +293,7 @@
                     <option value="examples/startup_v4.json">Startup v4</option>
                     <option value="examples/startup_legacy.json">Startup (legacy)</option>
                 </select>
-                <select onchange="project.loadFromUrl(this.options[this.selectedIndex].value)">
+                <select id="about_examples_vox">
                     <option value="">MagicaVoxel</option>
                     <option value="examples/mv_charactercat_ephtracy.json">Character Cat @ephtracy</option>
                     <option value="examples/mv_tankdestroyer_arsgametm.json">Tank Destroyer @arsgametm</option>
@@ -307,7 +307,7 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.3.8 Beta 2024
+                4.3.9 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
@@ -569,7 +569,7 @@
             <li class="category">SETTINGS</li>
             <li><button id="btn-ortho">Perspective</button></li>
             <li class="spacer"></li>
-            <li class="row"><label style="min-width: 50%">FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01" oninput="camera.setFov(this.value)"></li>
+            <li class="row"><label style="min-width: 50%">FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01"></li>
             <li class="row"><label style="min-width: 50%">Aperture</label> <input type="number" id="input-camera-aperture" class="ignorekeys" value="0" min="0" max="100" step="0.01"></li>
             <li class="row"><label style="min-width: 50%">Focal Len.</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="50" min="0" max="500" step="0.05"></li>
             <li class="category">ANIMATION</li>
@@ -584,7 +584,7 @@
             </li>
             <li class="category">HDRI</li>
             <li>
-                <select onchange="hdri.loadHDR(this.options[this.selectedIndex].value)" style="text-align: left;">
+                <select id="hdri_dropdown" style="text-align: left;">
                     <option value="assets/snow_field_2_puresky_1k.hdr">Default (local)</option>
                     <option value="assets/black.hdr">Black (local)</option>
                     <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/main/footprint_court.hdr">DLC: Footprint Court</option>
@@ -597,14 +597,14 @@
             <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
             <li><button id="unload_hdri">Unload</button></li>
             <li><input type="checkbox" id="input-hdri-toggle"> <label for="input-hdri-toggle">Display</label></li>
-            <li><input type="range" id="input-hdri-blur" value="0" min="0" max="1" step="0.01" oninput="hdri.setBlurAmount(this.value)"></li>
+            <li><input type="range" id="input-hdri-blur" value="0" min="0" max="1" step="0.01"></li>
             <li class="category">DIRECT LIGHT</li>
             <li class="row">
                 <button id="btn-light-defaultsun" style="padding: 2px">SUN</button>
                 <input type="color" id="input-light-color" value="#DCDCDC" style="width: 150%">
             </li>
             <li class="spacer"></li>
-            <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.8" min="0" max="3" step="0.01" oninput="light.updateIntensity(this.value)"></li>
+            <li><label>Intensity</label><input type="range" id="input-light-intensity" value="0.8" min="0" max="3" step="0.01"></li>
             <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-material">
@@ -612,12 +612,12 @@
             <li class="row"><label style="margin-right: 20px">Albedo</label> <input type="color" id="input-material-albedo" value="#FFFFFF"></li>
             <li class="row"><label style="margin-right: 10px">Emissive</label> <input type="color" id="input-material-emissive" value="#000000"></li>
             <li class="category">PROPERTIES</li>
-            <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-material-roughness" type="number" value="1" min="0" max="1" step="0.01" oninput="bakery.setMaterial('roughness'); document.getElementById('input-material-roughness-range').value = this.value"></li>
-            <li><input type="range" id="input-material-roughness-range" value="1" min="0" max="1" step="0.01" oninput="document.getElementById('input-material-roughness').value = this.value; bakery.setMaterial('roughness')"></li>
-            <li class="row"><label style="margin-right: 21px">Metallic</label> <input id="input-material-metallic" type="number" value="1" min="0" max="1" step="0.01" oninput="bakery.setMaterial('metallic'); document.getElementById('input-material-metallic-range').value = this.value"></li>
-            <li><input type="range" id="input-material-metallic-range" value="1" min="0" max="1" step="0.01" oninput="document.getElementById('input-material-metallic').value = this.value; bakery.setMaterial('metallic')"></li>
-            <li class="row"><label style="margin-right: 32px">Alpha</label> <input id="input-material-alpha" type="number" value="1" min="0.1" max="1" step="0.01" oninput="bakery.setMaterial('alpha'); document.getElementById('input-material-alpha-range').value = this.value"></li>
-            <li><input type="range" id="input-material-alpha-range" value="1" min="0.1" max="1" step="0.01" oninput="document.getElementById('input-material-alpha').value = this.value; bakery.setMaterial('alpha')"></li>
+            <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-material-roughness" type="number" value="1" min="0" max="1" step="0.01"></li>
+            <li><input type="range" id="input-material-roughness-range" value="1" min="0" max="1" step="0.01"></li>
+            <li class="row"><label style="margin-right: 21px">Metallic</label> <input id="input-material-metallic" type="number" value="1" min="0" max="1" step="0.01"></li>
+            <li><input type="range" id="input-material-metallic-range" value="1" min="0" max="1" step="0.01"></li>
+            <li class="row"><label style="margin-right: 32px">Alpha</label> <input id="input-material-alpha" type="number" value="1" min="0.1" max="1" step="0.01"></li>
+            <li><input type="range" id="input-material-alpha-range" value="1" min="0.1" max="1" step="0.01"></li>
             <li class="category">VERTEX COLORS<li>
             <li><input type="color" id="input-vertex-color" value="#899AAE"></li>
         </ul>
@@ -633,7 +633,7 @@
                 </div>
             </li>
             <li class="category">IMPORT</li>
-            <li><button onclick="document.getElementById('openfile_tex').click()">Add Texture</button></li>
+            <li><button id="add_texture" onclick="document.getElementById('openfile_tex').click()">Add Texture</button></li>
             <li class="spacer" style="height:8px"></li>
             <li id="texturepresets"></li>
         </ul>
@@ -756,7 +756,6 @@
     }
 }
 </script>
-<script src="modules/modules.js" type="module"></script>
-<script src="main.js"></script>
+<script src="main.js" type="module"></script>
 </body>
 </html>

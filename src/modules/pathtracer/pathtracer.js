@@ -17,13 +17,21 @@ import {
 	shaderStructs, shaderIntersectFunction
 } from '../three.js';
 
+import {
+    engine, ui,
+    camera, light, hdri,
+    builder, bakery,
+    FPS
+} from '../../main.js';
 
-const DPR = 1;
+
+const canvasRender = document.getElementById('canvas_render');
 const DPR_FASTMODE = 0.6;
 const CAM_FAR = 1000;
 const MAXWHITE = 0.86;
 const GRAY = MAXWHITE / 2;
 const LIGHT_POWER = 16.0 * 16.0;
+const RAD2DEG_STATIC = 180 / Math.PI;
 let imageFragment = null;
 let renderFragment = null;
 let noiseTexture = null;
@@ -85,9 +93,13 @@ class Pathtracer {
     }
 
     init() {
-        this.renderer = new THREE.WebGLRenderer({ canvas: canvasRender, antialias: false, preserveDrawingBuffer: true });
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: canvasRender,
+            antialias: false,
+            preserveDrawingBuffer: true
+        });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio * DPR);
+        this.renderer.setPixelRatio(window.devicePixelRatio * 1);
         this.renderer.setClearColor(0x000000, 0);
 
         this.scene = new THREE.Scene();
@@ -126,7 +138,7 @@ class Pathtracer {
 
         // restore previous states
         this.update();
-        this.updateHDR(hdri.hdrMap.url);
+        this.updateHDR();
         this.updateUniformMaxSamples(this.maxSamples);
         this.updateUniformBounces(ui.domRenderBounces.value);
         this.updateUniformRenderPassId(ui.domRenderPasses.value);
@@ -397,17 +409,21 @@ class Pathtracer {
         this.resetSamples();
     }
 
-    async updateHDR(url) {
-        if (!this.uniRender) return;
+    updateHDR() {
+        if (!this.uniRender || !hdri.hdrMapRender) return;
         if (this.envTexture) this.envTexture.dispose();
+        this.envTexture = this.CRTT.fromEquirectangularTexture(this.renderer, hdri.hdrMapRender).texture;
+        this.uniRender['uCubeMap'].value = this.envTexture;
+        this.resetSamples();
+    }
+
+    async loadHDR(url, callback) {
         await loadRGBE(url).then(tex => {
             tex.minFilter = THREE.LinearFilter;
             tex.magFilter = THREE.LinearFilter;
             tex.generateMipmaps = false;
             tex.flipY = false;
-            this.envTexture = this.CRTT.fromEquirectangularTexture(this.renderer, tex).texture;
-            this.uniRender['uCubeMap'].value = this.envTexture;
-            this.resetSamples();
+            callback(tex);
         });
     }
 
@@ -420,11 +436,11 @@ class Pathtracer {
         if (this.isProgressing) {
             ui.domRenderPause.innerHTML = 'Pause';
             ui.domRenderPause.classList.remove('btn_select_pt');
-            canvasRender.style.pointerEvents = 'unset';
+            this.renderer.domElement.style.pointerEvents = 'unset';
         } else {
             ui.domRenderPause.innerHTML = 'Continue';
             ui.domRenderPause.classList.add('btn_select_pt');
-            canvasRender.style.pointerEvents = 'none';
+            this.renderer.domElement.style.pointerEvents = 'none';
         }
     }
 
@@ -484,7 +500,7 @@ class Pathtracer {
         }
     }
 
-    resize(ratio = DPR) {
+    resize(ratio = 1) {
         if (this.isFastMode) ratio = DPR_FASTMODE;
 
         const w = window.innerWidth;
@@ -530,13 +546,13 @@ class Pathtracer {
     activate() {
         if (this.isLoaded) return; // avoid overdraw
 
-        isRendering = false;
+        engine.isRendering = false;
 
         this.isProgressing = true;
         this.create();
 
         ui.domPathtracer.style.display = 'unset';
-        canvasRender.style.pointerEvents = 'unset';
+        this.renderer.domElement.style.pointerEvents = 'unset';
     }
 
     deactivate() {
@@ -554,13 +570,13 @@ class Pathtracer {
         this.isProgressing = false;
         cancelAnimationFrame(pt.animate);
         
-        isRendering = true;
+        engine.isRendering = true;
         ui.domProgressBar.style.width = 0;
 
         ui.domRenderPause.innerHTML = 'Pause';
         ui.domRenderPause.classList.remove('btn_select_pt');
         ui.domPathtracer.style.display = 'none';
-        canvasRender.style.pointerEvents = 'none';
+        this.renderer.domElement.style.pointerEvents = 'none';
     }
 
     dispose() {
@@ -569,126 +585,6 @@ class Pathtracer {
 }
 
 export const pt = new Pathtracer();
-
-
-// -------------------------------------------------------
-// Register events
-
-
-ui.domRenderSource.onchange = () => {
-    if (pt.isLoaded) {
-        pt.createGeometry();
-        pt.resetSamples();
-    }
-};
-
-ui.domRenderMaxSamples.onchange = (ev) => {
-    if (ev.target.value < 8) ev.target.value = 8;
-    if (pt.isLoaded) {
-        pt.update();
-        pt.updateUniformMaxSamples(ev.target.value);
-    }
-};
-
-ui.domRenderPasses.onchange = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformRenderPassId(ev.target.value);
-};
-
-ui.domRenderBounces.onchange = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformBounces(ev.target.value);
-};
-
-ui.domRenderEnvPower.onchange = (ev) => {
-    if (ev.target.value < 1) ev.target.value = 1;
-    if (pt.isLoaded)
-        pt.updateUniformEnvPower(ev.target.value);
-};
-
-ui.domRenderEnvPower.onwheel = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformEnvPower(ev.target.value);
-};
-
-ui.domRenderDirectLight.oninput = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformDirectLight(ev.target.checked);
-};
-
-ui.domRenderBackground.oninput = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformBackground(ev.target.checked);
-};
-
-ui.domRenderMaterial.onchange = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformMaterialId(ev.target.value);
-};
-
-ui.domRenderEmissive.oninput = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformMaterialEmissive(ev.target.value);
-};
-
-ui.domRenderRoughness.oninput = (ev) => {
-    if (pt.isLoaded && ev.target.value > 0)
-        pt.updateUniformMaterialRoughness(ev.target.value);
-};
-
-ui.domRenderGrid.oninput = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformGrid(ev.target.checked);
-};
-
-ui.domRenderShade.oninput = () => {
-    if (pt.isLoaded)
-        pt.updateAttributeColors();
-};
-
-ui.domRenderFloor.oninput = () => {
-    if (pt.isLoaded)
-        pt.createGeometry(false);
-};
-
-ui.domRenderPause.onclick = () => {
-    if (pt.isLoaded)
-        pt.pause();
-};
-
-ui.domRenderShot.onclick = () => {
-    if (pt.isLoaded)
-        pt.shot();
-};
-
-ui.domRenderFast.onclick = () => {
-    pt.fastMode();
-};
-
-ui.domCameraAperture.onchange = (ev) => {
-    if (pt.isLoaded && ev.target.value > 0)
-        pt.updateUniformCameraAperture(ev.target.value);
-};
-
-ui.domCameraFocalLength.onchange = (ev) => {
-    if (pt.isLoaded && ev.target.value > 0)
-        pt.updateUniformCameraFocalLength(ev.target.value);
-};
-
-ui.domColorPickerLightColor.oninput = (ev) => {
-    if (pt.isLoaded)
-        pt.updateUniformLightCol(ev.target.value);
-};
-
-ui.domLightIntensity.onchange = () => {
-    if (pt.isLoaded)
-        pt.updateUniformLightCol(ui.domColorPickerLightColor.value);
-};
-
-window.addEventListener('resize', () => {
-    if (pt.isLoaded)
-        pt.resize();
-}, false);
 
 
 // -------------------------------------------------------
@@ -711,4 +607,26 @@ async function loadRGBE(url) {
     return new Promise(resolve => {
         new RGBELoader().load(url, resolve);
     });
+}
+
+function timeFormat(t) {
+    const sec_num = parseInt(t, 10);
+    let h = Math.floor(sec_num / 3600);
+    let m = Math.floor((sec_num - (h * 3600)) / 60);
+    let s = sec_num - (h * 3600) - (m * 60);
+    if (h < 10) { h = "0" + h; }
+    if (m < 10) { m = "0" + m; }
+    if (s < 10) { s = "0" + s; }
+    return h + ':' + m + ':' + s;
+}
+
+function downloadImage(imgSrc, filename) {
+    const a = document.createElement("a");
+    a.href = imgSrc;
+    a.download = filename;
+    a.click();
+}
+
+function randomRangeInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
 }

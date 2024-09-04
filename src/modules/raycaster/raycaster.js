@@ -5,6 +5,7 @@
     BVH-Raycaster and Voxelizer
 */
 
+import { builder } from '../../main.js';
 import { THREE } from '../three.js';
 
 const nullMaterial = new THREE.MeshBasicMaterial();

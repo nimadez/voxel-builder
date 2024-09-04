@@ -5,6 +5,9 @@
     Bake voxels to mesh
 */
 
+import { scene, builder } from '../../main.js';
+
+const PIH = Math.PI / 2;
 const facePositions = [
     new BABYLON.Vector3(0.5, 0, 0),
     new BABYLON.Vector3(-0.5, 0, 0),
@@ -114,6 +117,14 @@ class Bakery {
         vertexData.applyToMesh(mesh);
         return mesh;
     }    
+}
+
+function hexToRgbFloat(hex, gamma = 2.2) { // 1 / 0.4545
+    return {
+        r: Math.pow(parseInt(hex.substring(1, 3), 16) / 255, gamma),
+        g: Math.pow(parseInt(hex.substring(3, 5), 16) / 255, gamma),
+        b: Math.pow(parseInt(hex.substring(5, 7), 16) / 255, gamma)
+    }
 }
 
 export const bakery = new Bakery();

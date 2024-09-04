@@ -1,13 +1,27 @@
 All notable changes to this project will be documented in this file.
 
+## 4.3.9 ES6
+- Load main.js as module
+  - Faster startup avg. 0.4s (it loads faster than most corporate websites!)
+- Manage and prepare axisview scene
+  - Fix pointerdown conflict with the main scene when workplanes are active
+- Isolate the babylon.js engine (prepare for webgpu)
+- Functions to classes from bottom to top!
+- Terrain generator uses height-gradient when 'New Scene' unchecked
+- Window is no longer used to transfer modules
+- Remove setMenuModes, not force closing menus in certain modes
+
+> - I have generally used ES6 in the code, the only problem was loading main as a module, which was solved by transferring 200 events to the main.
+> - Babylon will not be imported as a module, I will never use webpack, react, typescript etc. I don't have a corporation forcing me to use corporate crap.
+
 ## 4.3.8
 - Add keyboard shortcuts map (see about menu)
 - Delete key can delete voxels during transforms
 - Fix the debug layer, make it useful!
 - Improve all the modules
 - ~~HDR loader managed by three.js~~ (rolled back)
-  - This improves many things include 1 second startup freeze, but also makes PBR and bakery problematic.
-- Prepare dom for complete ES6
+  - This improves many things include startup freeze, but also makes PBR and bakery problematic.
+- Prepare for ES6 (cleanup the dom)
 
 ## 4.3.7
 - New directory structure

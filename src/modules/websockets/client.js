@@ -8,6 +8,8 @@
     $ python3 scripts/ws-connect.py
 */
 
+import { MODE, preferences, ui, builder } from '../../main.js';
+
 class WebsocketClient {
     constructor() {
         this.ws = undefined;

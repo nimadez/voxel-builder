@@ -5,7 +5,7 @@
 Voxel-based 3D modeling application<br>
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.8 Beta```<br>
+```Version 4.3.9 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -128,7 +128,7 @@ How to run Blender importer script?
 
 ## History
 ```
-↑ New directory structure (x1.5 faster startup)
+↑ ES6 + x1.5 faster startup
 ↑ Linux and Firefox ready
 ↑ Voxel engine updated to thin-instances (64k to 1M boost)
 ↑ Cut half precision (new scene)
