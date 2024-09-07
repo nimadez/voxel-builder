@@ -1,32 +1,50 @@
 All notable changes to this project will be documented in this file.
 
+## 4.4.1 Unlocked
+- Remove fullscreen engine-based loading screen
+- Add universal progressbar at bottom
+- Remove unnecessary camera framing behaviors
+- New 'Async Bake' option (three.js worker, try 'bake color groups' to see the effect)
+- Encapsulate BABYLON (90% done)
+- Viewaxis-box frame voxel selection on transforms
+- Fix PT not taking screenshot
+- Fix bakery not respect the first voxel at 0,0,0
+- Fix (almost) a few hundred milliseconds of startup lag (BABYLON.HDRCubeTexture locks the main thread - see 4.3.4)
+- Animate the sandbox camera framing behavior similar to babylon.js
+
+> - BABYLON.Quaternion.RotationAxis bug (the update of the babylon.js has been stopped, see 'setOverlayPlane()')
+
+## 4.4.0 Sandbox
+- Generator moved to modules
+- Voxelizer moved to modules
+- Less complex user-interface (no more hide-and-seek ui)
+- Merge cameras for less confusion
+- Officially multi-engine (new three.js sandbox tab)
+- Match the sandbox hdri, camera and materials to babylon's PBR shader
+
+> - The new three.js tab doesn't replace the current functionality, it's a new world and I won't reveal what it's for!
+
 ## 4.3.9 ES6
 - Load main.js as module
-  - Faster startup avg. 0.4s (it loads faster than most corporate websites!)
 - Manage and prepare axisview scene
-  - Fix pointerdown conflict with the main scene when workplanes are active
-- Isolate the babylon.js engine (prepare for webgpu)
+- Encapsulate the babylon.js engine (prepare for webgpu)
 - Functions to classes from bottom to top!
-- Terrain generator uses height-gradient when 'New Scene' unchecked
 - Window is no longer used to transfer modules
-- Remove setMenuModes, not force closing menus in certain modes
+- Terrain generator uses height-gradient when 'New Scene' unchecked
+- Fix pointerdown conflict with the main scene when workplanes are active
 
-> - I have generally used ES6 in the code, the only problem was loading main as a module, which was solved by transferring 200 events to the main.
-> - Babylon will not be imported as a module, I will never use webpack, react, typescript etc. I don't have a corporation forcing me to use corporate crap.
+> - Babylon will not be imported as a module, I will not use webpack, react, typescript and other corporate stuff.
 
 ## 4.3.8
-- Add keyboard shortcuts map (see about menu)
+- Add keyboard shortcuts (see about menu)
 - Delete key can delete voxels during transforms
 - Fix the debug layer, make it useful!
-- Improve all the modules
-- ~~HDR loader managed by three.js~~ (rolled back)
-  - This improves many things include startup freeze, but also makes PBR and bakery problematic.
 - Prepare for ES6 (cleanup the dom)
 
 ## 4.3.7
 - New directory structure
-  - Improve project management and speed up the build time of github pages
-  - Everything updated accordingly, includes the update.py script
+- Improve project management and speed up the build time of github pages
+- Update the update.py script
 
 ## 4.3.6
 - Update three.js to r168
@@ -36,7 +54,6 @@ All notable changes to this project will be documented in this file.
 - Reduce the chance of accidental topbar touch
 - Remove partial unbake due to impossible bug (will return after meeting the conditions)
 - The space key works like the alt key to avoid conflict
-  - This is also good for firefox because it interferes with the alt key (menu)
 
 > - The gap between babylon.js releases and our library update was extended.
 
@@ -44,15 +61,12 @@ All notable changes to this project will be documented in this file.
 - ~~Update to babylonjs 7.22.3~~
   - The update was rolled back (breaking bug: no mouseover on Z axis)
 - New detachable floating panels!
-- Review and improve menus (faster and more managable)
 - Improve websockets client and server
 - Standalone node.js server (Electron alternative)
 - Improve three.js module (less memory, faster load time)
 - Fix camera-related visual artifacts (fov 0.1 issue)
-- Improve modules and pathtracer code
-- Add three.js WorkerPool library (more stable)
+- Add three.js WorkerPool library
 
-> - You shouldn't notice a change unless you move the panel
 > - The left button moves the panel, the center button hides the panel and the right button resets the panel to its original position and close it.
 
 ## 4.3.4 x1.5
@@ -78,16 +92,16 @@ All notable changes to this project will be documented in this file.
 - Fix a bug where you can't select the first voxel at 0,0,0
 
 > - Please clear your browser cache or force reload voxel-builder
-> - BABYLON.HDRCubeTexture seems to be responsible for the potential startup delay/freeze, but other optimizations were done to reach 0.5 second.
+> - BABYLON.HDRCubeTexture seems to be responsible for the potential startup lag/freeze, but other optimizations were done to reach 0.5 second.
 
 ## 4.3.3
 - Update three-mesh-bvh to 0.7.6
 - Update three to r167
 - Update to babylonjs 7.17.0
 - Prevent frame camera on quickload voxels (holds the camera for further changes)
-- Remove showSaveFilePicker, this experimental technology is not ready for production<br>
-  Fix save file functionality in electron and mobile<br>
-  Fix save format from .txt to .json in mobile
+- Remove showSaveFilePicker, this experimental technology is not ready for production
+  - Fix save file functionality in electron and mobile
+  - Fix save format from .txt to .json in mobile
 
 ## 4.3.2
 - Update to babylonjs 7.13.1
@@ -98,9 +112,9 @@ All notable changes to this project will be documented in this file.
 
 ## 4.3.1
 - Add merge-selected to export tab
-- Add render source to PT (render baked meshes from export tab)<br>
-  Fix multiple camera conflict, camera position returns to the selected source<br>
-  Shortcut R respect selected source
+- Add render source to PT (render baked meshes from export tab)
+  - Fix multiple camera conflict, camera position returns to the selected source
+  - Shortcut R respect selected source
 - Add max-samples to PT (8-8192, 4096 default)
 - Firefox optimization (fix save file, css styles, palette right-click)
 - Update to babylonjs 7.10.0
@@ -109,7 +123,7 @@ All notable changes to this project will be documented in this file.
 - Fix baked meshes visible in model tab under certain conditions
 - Remove deprecated ini format to save resources
 
-## 4.3.0 nightly
+## 4.3.0 Nightly
 > This version is a breath of fresh air after the SPS fallout
 - Add tool indicator, display the name of the selected tool
 - Add import voxels and bakes from json file

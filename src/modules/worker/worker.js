@@ -5,9 +5,12 @@
     Web worker processor
 */
 
+
 import { parseMagicaVoxel } from '../loaders/magicavoxel.js';
 
+
 let arr = [];
+
 
 onmessage = (ev) => {
     switch (ev.data.id) {

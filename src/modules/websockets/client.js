@@ -8,7 +8,10 @@
     $ python3 scripts/ws-connect.py
 */
 
+
+import { Vector3 } from '../babylon.js';
 import { MODE, preferences, ui, builder } from '../../main.js';
+
 
 class WebsocketClient {
     constructor() {
@@ -44,7 +47,7 @@ class WebsocketClient {
                 this.data = [];
                 for (let i = 0; i < this.parsed.voxels.length; i++) {
                     this.data.push({
-                        position: new BABYLON.Vector3(
+                        position: Vector3(
                             this.parsed.voxels[i].position.x,
                             this.parsed.voxels[i].position.y,
                             this.parsed.voxels[i].position.z),

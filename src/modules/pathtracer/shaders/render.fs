@@ -80,13 +80,13 @@ vec3 cosineDirection(vec3 n, float seed) {
     return n + dir;
 }
 
-vec3 background(vec3 rd) { // equalized to bjs skybox
-    rd.y = -rd.y;
+vec3 background(vec3 rd) {
+    //rd.y = -rd.y; // equalized to bjs skybox, no more
     return pow(texture(uCubeMap, rd).rgb, vec3(0.4545));
 }
 
 vec3 ibl(vec3 rd, float k) {
-    rd.y = -rd.y;
+    //rd.y = -rd.y;
     return k * clamp(texture(uCubeMap, rd).rgb, 0.0,1.0);
 }
 

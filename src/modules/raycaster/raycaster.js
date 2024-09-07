@@ -5,18 +5,27 @@
     BVH-Raycaster and Voxelizer
 */
 
-import { builder } from '../../main.js';
+
 import { THREE } from '../three.js';
+
+import {
+    Vector3,
+    PositionKind, ColorKind
+} from '../babylon.js';
+
+import { builder } from '../../main.js';
+
 
 const nullMaterial = new THREE.MeshBasicMaterial();
 const directions = [
-    new THREE.Vector3(1,0,0),
-    new THREE.Vector3(0,1,0),
-    new THREE.Vector3(0,0,1),
-    new THREE.Vector3(-1,0,0),
-    new THREE.Vector3(0,-1,0),
-    new THREE.Vector3(0,0,-1)
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, 0, 1),
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, -1)
 ];
+
 
 class Raycaster {
     constructor() {
@@ -120,7 +129,7 @@ class RaycasterVoxelizer {
         const rcv = new Raycaster();
         
         rcv.createFromData(
-            mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
+            mesh.getVerticesData(PositionKind),
             mesh.getIndices()
         );
     
@@ -132,7 +141,7 @@ class RaycasterVoxelizer {
                 for (let z = 0; z < size; z++) {
                     if (rcv.boxHit(x, y, z)) {
                         data.push({
-                            position: new BABYLON.Vector3(x, y, z),
+                            position: Vector3(x, y, z),
                             color: color,
                             visible: true
                         });
@@ -149,8 +158,8 @@ class RaycasterVoxelizer {
         const rcv = new Raycaster();
     
         rcv.createFromDataWithColor(
-            mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind),
-            mesh.getVerticesData(BABYLON.VertexBuffer.ColorKind),
+            mesh.getVerticesData(PositionKind),
+            mesh.getVerticesData(ColorKind),
             mesh.getIndices()
         );
     
@@ -174,7 +183,7 @@ class RaycasterVoxelizer {
                             .getHexString(THREE.SRGBColorSpace).toUpperCase();
     
                         data.push({
-                            position: new BABYLON.Vector3(
+                            position: Vector3(
                                 mesh.position.x + x,
                                 mesh.position.y + y,
                                 mesh.position.z + z),

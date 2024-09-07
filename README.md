@@ -2,10 +2,14 @@
 
 ![screenshot](media/screenshot.png?raw=true "Screenshot")
 
-Voxel-based 3D modeling application<br>
+**Voxel-based 3D modeling application**<br>
+The most featured and leading open source multi-engine voxel-based modeling software on the web, Written in pure JavaScript, Powered by Babylon.js and Three.js with three-mesh-bvh library.
+
+*"They call it the Hall of Fame"* -dev
+
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.3.9 Beta```<br>
+```Version 4.4.1 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -128,21 +132,23 @@ How to run Blender importer script?
 
 ## History
 ```
-↑ ES6 + x1.5 faster startup
-↑ Linux and Firefox ready
+↑ Officially multi-engine (three.js is hardwired internally)
+↑ ES6 + x1.5 faster startup + Linux and Firefox ready
 ↑ Voxel engine updated to thin-instances (64k to 1M boost)
 ↑ Cut half precision (new scene)
 ↑ Real-time GPU path tracing
 ↑ Introducing ES modules
 ↑ Stable beta release
 ↑ Advancing to the next level (bakery)
-↑ Major code rewrite (functions to classes)
 ↑ Features and uix overhaul
 ↑ New SPS particles to build the world
-↑ I wrote a playground for learning Babylon.js
+↑ 2019 - I wrote a playground for learning Babylon.js
 
 "I don't mean to compete, GL is nostalgic for me."
 ```
+
+Version 4.3.9 *(BJS 7 - Three r168)*<br>
+<img src="media/devshot_43.jpg" width="581">
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
 ![screenshot](media/devshots.jpg?raw=true "Screenshot")
