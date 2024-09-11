@@ -5,9 +5,10 @@
     Generate voxels
 */
 
+import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 
-import { SimplexNoise } from '../three.js';
 import { Vector3 } from '../babylon.js';
+
 import {
     ui, builder, xformer,
     clearScene,

@@ -2,17 +2,11 @@
     Nov 2023
     @nimadez
 
-    BVH-Raycaster and Voxelizer
+    Raycasters and Voxelizers
 */
 
-
 import { THREE } from '../three.js';
-
-import {
-    Vector3,
-    PositionKind, ColorKind
-} from '../babylon.js';
-
+import { Vector3, PositionKind, ColorKind } from '../babylon.js';
 import { builder } from '../../main.js';
 
 
@@ -27,22 +21,122 @@ const directions = [
 ];
 
 
+// Raycast Voxels
+
 class Raycaster {
     constructor() {
-        this.geom = undefined;
+        this.mesh = undefined;
+        this.batchedMesh = undefined;
+        this.ray = new THREE.Ray();
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.firstHitOnly = true;
+        this.boxGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
+        this.boxMesh = new THREE.Mesh(this.boxGeo, nullMaterial);
+    }
+
+    create() {
+        if (this.mesh) {
+            this.mesh.geometry.boundsTree.geometry.dispose();
+            this.mesh.geometry.dispose();
+        }
+
+        builder.fillArrayBuffers();
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
+        geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
+
+        this.buildBvh(geom);
+        this.mesh = new THREE.Mesh(geom, nullMaterial);
+    }
+
+    /* createBatchedMesh() {
+        this.batchedMesh = new THREE.BatchedMesh(
+            builder.voxels.length,
+            builder.vPositions.length, builder.vIndices.length,
+            nullMaterial);
+        const boxGeoId = this.batchedMesh.addGeometry(this.boxGeo);
+        for (let i = 0; i < builder.voxels.length; i++) {
+            const boxInst = this.batchedMesh.addInstance(boxGeoId);
+            this.batchedMesh.setMatrixAt(boxInst, builder.bufferWorld[i]);
+        }
+        this.buildBvhBatched(this.batchedMesh);
+    } */
+
+    buildBvh(geometry, maxDepth = 40) {
+        geometry.computeBoundsTree({
+            //strategy: CENTER,
+            maxDepth: maxDepth, // def: 40
+            maxLeafTris: 10,    // def: 10
+            indirect: true
+        });
+    }
+
+    buildBvhBatched(batchedMesh, maxDepth = 40) {
+        batchedMesh.computeBoundsTree(-1, {
+            maxDepth: maxDepth,
+            maxLeafTris: 10,
+            indirect: false
+        });
+    }
+
+    raycast(ox, oy, oz, dx, dy, dz) {
+        this.ray.origin.set(ox, oy, oz);
+        this.ray.direction.set(dx, dy, dz);
+        return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
+    }
+
+    raycastToPoint(ox, oy, oz, px, py, pz) {
+        this.ray.origin.set(ox, oy, oz);
+        this.ray.direction = new THREE.Vector3(px, py, pz).sub(this.ray.origin).normalize();
+        return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
+    }
+
+    raycastNormalPicking(ox, oy, oz, dx, dy, dz, px, py, pz) {
+        this.boxMesh.position.set(px, py, pz);
+        this.boxMesh.updateMatrixWorld(true);
+        this.ray.origin.set(ox, oy, oz);
+        this.ray.direction.set(dx, dy, dz);
+        this.raycaster.set(this.ray.origin, this.ray.direction);
+        const res = this.raycaster.intersectObject(this.boxMesh, false);
+        if (res && res.length > 0)
+            return res[0];
+        return undefined;
+    }
+
+    raycastBatchedMesh(ox, oy, oz, dx, dy, dz) {
+        this.ray.origin.set(ox, oy, oz);
+        this.ray.direction.set(dx, dy, dz);
+        this.raycaster.set(this.ray.origin, this.ray.direction);
+        const res = this.raycaster.intersectObject(this.batchedMesh, false);
+        if (res && res.length > 0)
+            return res[0];
+        return undefined;
+    }
+
+    dispose() {
+        if (this.ray) {
+            this.mesh.geometry.boundsTree.geometry.dispose();
+            this.mesh.geometry.dispose();
+            this.mesh = null;
+            this.ray = null;
+            this.raycaster.dispose();
+            this.raycaster = null;
+            this.boxMesh.geometry.dispose();
+            this.boxMesh = null;
+        }
+    }
+}
+
+
+// Raycast Meshes
+
+class RaycasterMesh {
+    constructor() {
         this.mesh = undefined;
         this.ray = new THREE.Ray();
         this.box = new THREE.Box3();
         this.position = new THREE.Vector3();
         this.invMat = new THREE.Matrix4();
-    }
-
-    create() {
-        builder.fillArrayBuffers();
-        this.geom = new THREE.BufferGeometry();
-        this.geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
-        this.geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
-        this.buildBvh(this.geom, 25);
     }
 
     createFromData(positions, indices) {
@@ -54,40 +148,28 @@ class Raycaster {
     }
 
     buildGeometry(positions, indices, colors = null) {
-        if (this.geom) {
-            this.geom.boundsTree.geometry.dispose();
-            this.geom.dispose();
+        if (this.mesh) {
+            this.mesh.geometry.boundsTree.geometry.dispose();
+            this.mesh.geometry.dispose();
         }
 
-        this.geom = new THREE.BufferGeometry();
-        this.geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        if (colors) this.geom.setAttribute('color', new THREE.BufferAttribute(colors, 4));
-        this.geom.setIndex(new THREE.BufferAttribute(indices, 1));
-        this.buildBvh(this.geom);
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        if (colors) geom.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+        geom.setIndex(new THREE.BufferAttribute(indices, 1));
 
-        this.mesh = new THREE.Mesh(this.geom, nullMaterial);
+        this.buildBvh(geom);
+
+        this.mesh = new THREE.Mesh(geom, nullMaterial);
         this.invMat.copy(this.mesh.matrixWorld).invert();
     }
 
     buildBvh(geometry, maxDepth = 40) {
         geometry.computeBoundsTree({
-            //strategy: CENTER,
-            maxDepth: maxDepth, // def: 40
-            maxLeafTris: 10,    // def: 10
+            maxDepth: maxDepth,
+            maxLeafTris: 10,
             indirect: true
         });
-    }
-
-    raycast(ox, oy, oz, dx, dy, dz) {
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction.set(dx, dy, dz);
-        return this.geom.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
-    }
-
-    raycastToPoint(ox, oy, oz, px, py, pz) {
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction = new THREE.Vector3(px, py, pz).sub(this.ray.origin).normalize();
-        return this.geom.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
     }
 
     raycastOmni(x, y, z) {
@@ -95,7 +177,7 @@ class Raycaster {
         let res = null;               // workaround for bakery cap-face-direction issue
         for (let i = 0; i < 6; i++) { // the first two directions will return the result
             this.ray.direction = directions[i]; // but in problematic cases, more is needed
-            res = this.geom.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
+            res = this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
             if (res && res.face.normal.dot(this.ray.direction) > 0)
                 break;
         }
@@ -106,14 +188,13 @@ class Raycaster {
         this.position.set(x, y, z);
         this.box.min.setScalar(-0.5).add(this.position);
         this.box.max.setScalar(0.5).add(this.position);
-        return this.geom.boundsTree.intersectsBox(this.box, this.invMat);
+        return this.mesh.geometry.boundsTree.intersectsBox(this.box, this.invMat);
     }
 
     dispose() {
-        if (this.geom) {
-            this.geom.boundsTree.geometry.dispose();
-            this.geom.dispose();
-            this.geom = null;
+        if (this.mesh) {
+            this.mesh.geometry.boundsTree.geometry.dispose();
+            this.mesh.geometry.dispose();
             this.mesh = null;
             this.ray = null;
             this.box = null;
@@ -123,12 +204,16 @@ class Raycaster {
     }
 }
 
+
+// Voxelize Meshes
+
 class RaycasterVoxelizer {
+    constructor() {}
 
     mesh_voxel(mesh, scale, color) {
-        const rcv = new Raycaster();
+        const rcm = new RaycasterMesh();
         
-        rcv.createFromData(
+        rcm.createFromData(
             mesh.getVerticesData(PositionKind),
             mesh.getIndices()
         );
@@ -139,7 +224,7 @@ class RaycasterVoxelizer {
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    if (rcv.boxHit(x, y, z)) {
+                    if (rcm.boxHit(x, y, z)) {
                         data.push({
                             position: Vector3(x, y, z),
                             color: color,
@@ -150,21 +235,21 @@ class RaycasterVoxelizer {
             }
         }
         
-        rcv.dispose();
+        rcm.dispose();
         return data;
     }
     
     mesh_bake(mesh) {
-        const rcv = new Raycaster();
+        const rcm = new RaycasterMesh();
     
-        rcv.createFromDataWithColor(
+        rcm.createFromDataWithColor(
             mesh.getVerticesData(PositionKind),
             mesh.getVerticesData(ColorKind),
             mesh.getIndices()
         );
     
         const size = new THREE.Vector3();
-        rcv.geom.boundingBox.getSize(size);
+        rcm.mesh.geometry.boundingBox.getSize(size);
         size.x = (size.x / 2) - 0.5;
         size.y = (size.y / 2) - 0.5;
         size.z = (size.z / 2) - 0.5;
@@ -176,10 +261,10 @@ class RaycasterVoxelizer {
             for (let y = -size.y; y <= size.y; y++) {
                 for (let z = -size.z; z <= size.z; z++) {
                     
-                    const res = rcv.raycastOmni(x, y, z);
-                    if (res && res.face.normal.dot(rcv.ray.direction) > 0) {
+                    const res = rcm.raycastOmni(x, y, z);
+                    if (res && res.face.normal.dot(rcm.ray.direction) > 0) {
                         
-                        const hex = color.fromBufferAttribute(rcv.geom.attributes.color, res.face.a)
+                        const hex = color.fromBufferAttribute(rcm.mesh.geometry.attributes.color, res.face.a)
                             .getHexString(THREE.SRGBColorSpace).toUpperCase();
     
                         data.push({
@@ -195,7 +280,7 @@ class RaycasterVoxelizer {
             }
         }
         
-        rcv.dispose();
+        rcm.dispose();
         return data;
     }    
 }

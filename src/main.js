@@ -3,47 +3,46 @@
     @nimadez
 
     [ Code Map ]
-    01. Engine
-    02. Render Target
-    03. Light
-    04. Main Scene
-    05. Axis View Scene
-    06. Camera
-    07. HDRI and Skybox
-    08. Material
-    09. Builder
-    10. Transformers
-    11. Ghosts
-    12. Palette
-    13. Helper
-    14. Tool
-    15. Tool Mesh
-    16. Symmetry
-    17. Voxelizer
-    19. Mesh Pool
-    20. Snapshot
-    21. Memory
-    22. Project
-    23. Preferences
-    24. UserInterface
-    25. UserInterfaceAdvanced
-    26. Initialize
-    27. Events
-    28. Events File
-    29. Events Dom
-    30. Utils
+    01. Render Target
+    02. Light
+    03. Main Scene
+    04. Axis View Scene
+    05. Camera
+    06. HDRI and Skybox
+    07. Material
+    08. Builder
+    09. Transformers
+    10. Ghosts
+    11. Palette
+    12. Helper
+    13. Tool
+    14. Tool Mesh
+    15. Symmetry
+    16. Voxelizer
+    17. Mesh Pool
+    18. Snapshot
+    19. Memory
+    20. Project
+    21. Preferences
+    22. UserInterface
+    23. UserInterfaceAdvanced
+    24. Initialize
+    25. Events
+    26. Events File
+    27. Events Dom
+    28. Utils
 */
 
 
 import {
+    engine,
     PositionKind, NormalKind, UVKind, ColorKind,
     DOUBLESIDE, FRONTSIDE, BACKSIDE,
     AXIS_X, AXIS_Y, AXIS_Z,
     Vector3, Color3, Color4,
     Vector3Distance, Vector3TransformCoordinates, Vector3Project,
     MatrixIdentity, MatrixTranslation, MatrixScaling,
-    MergeMeshes,
-    VEC6_ONE,
+    MergeMeshes, animator
 } from './modules/babylon.js';
 
 import * as modules from './modules/modules.js';
@@ -62,16 +61,6 @@ const TEX_PATTERNS = [
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MkU4REU5Qjk4OTRDMTFFRTg2QjBFRjM0QzQ0QkI4QkMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MkU4REU5Qjg4OTRDMTFFRTg2QjBFRjM0QzQ0QkI4QkMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7JL+VyAAAABlBMVEXu7u7///8o06qaAAABNUlEQVR42uzQAQEAAAgCIPt/ugUuECaQAMy7SQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBDQAgBGvQADACdQ7GV7QTbFAAAAAElFTkSuQmCC",
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MzUzQjBCN0M4OTRDMTFFRTg4NDlFNEZFOTAyNkI3NUUiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MzUzQjBCN0I4OTRDMTFFRTg4NDlFNEZFOTAyNkI3NUUiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7S7fDaAAAABlBMVEXu7u7///8o06qaAAABP0lEQVR42uzdMQ0AAAgDQfBvmgkNJeHeQJNbGKmSpPd1puT2zgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArgFIku/zziAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAkCSnjYCDAD0EOLiNtloaAAAAABJRU5ErkJggg==",
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6M0I0Q0RBQzE4OTRDMTFFRTlDRDBFNzEwQzg2ODU2M0IiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6M0I0Q0RBQzA4OTRDMTFFRTlDRDBFNzEwQzg2ODU2M0IiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7DbGeBAAAACVBMVEXu7u719fX////A386gAAABQElEQVR42uzUwQkAQAgDQb3+ixauiQjONhCYR6ok6Xyd6W+/WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAlQCSdLrkDXcsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYCeAJB1tBBgACnlUY660frcAAAAASUVORK5CYII=",
-];
-const TEX_PRESETS = [
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3QTVDRTc3NTg5NEUxMUVFQTQyRjk0OTNFMjM5QTAyNSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3QTVDRTc3Njg5NEUxMUVFQTQyRjk0OTNFMjM5QTAyNSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjdBNUNFNzczODk0RTExRUVBNDJGOTQ5M0UyMzlBMDI1IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjdBNUNFNzc0ODk0RTExRUVBNDJGOTQ5M0UyMzlBMDI1Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+ZrHTDQAAAYBQTFRFsoBYm3FOkmZDXkMstIFamm5LkWhHk2tKY0kwi2RFc1pAsX5XfVU3jGlHf1c4bk01elo7cmpkonVRYkgvdlM4gFs+km5KsX9YrXxWfFw8eVU6fFc8Vj4pl21LeVpCf1k9elY7iWJDmnNTlWtJj2xHjmZGimZLjGVHZkcwc1E3Wz4qglw/fVg9Y0UvdVY4eFQ4pHhSd1Q5nnhPdFE4hl9BhV5Bg1xAelU7dVE3cE82hF1Aa0oypHdSelY8d1I2rHtVclVBmGpGi2lFjWVFaEgxgF8+aUoyfGA9bE86iYF6kWxOtoNcoXRPsINXoHNQeXRyj2lBf2NFlHBJo3pZsn1Ts4VatH5TtH5Vf1o9f18+roVXZEYvkG1HdVI4fFw7uYRbjWZFg2FHj2dGels7flk+hH14f1o+Xkktd15DfFxEfHx0imNEqn1VbVA8dVU4i2dDdlc5aEkyhGJIYkEpcFI8pXdRmnFHpndRp3dSVTkmdVI3dlE0YUc0j2hIj29IlG9I5IEEBgAAAQpJREFUeNpczHlDwWAcAOBfO16TyrWZ7cU2RmgaljC6jO77LulS0q1Td1+9/3s+wAMz3nt1reIlmUOB6bia++CX+07mQjrF53lKUswg1LBjIWzDZmSaXjYaxwdQEVtoIFp8z1gWbolPTaidknktmfr4zGH2iAr1wx6Sedjt2r6ATxEb572gGhrdpYiYO0wnyOtHBobrljxYduSei1LDaW4uQdOuj01mptB4yVNlJ8pZWBdLfi1wW92BUYUbQir4pLc0cbkS6vGIGEXYAKgFEy1S9ph7nijUoxwJd3EFf79sj8wmTMNpwhYI/9OgHvefJZ0PPOQUzCEEP8JNerV91X7NdoRfn+viT4ABAPBYMWcJ3TV8AAAAAElFTkSuQmCC",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3RTVFOUVFRTg5NEUxMUVFOEU2NEE0Qjc2Mzk1NUNDQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3RTVFOUVFRjg5NEUxMUVFOEU2NEE0Qjc2Mzk1NUNDQSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjdFNUU5RUVDODk0RTExRUU4RTY0QTRCNzYzOTU1Q0NBIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjdFNUU5RUVEODk0RTExRUU4RTY0QTRCNzYzOTU1Q0NBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+Q7KkWwAAAYBQTFRFebdOibtaf75UYKA2e7RMd7NJbqxEbKQ8YqI4e7JNb7BGc7FIbatCaapAdLRKaak/b69FdrZMZaU7eblPd7dNebNKbq5EaKk+drRLaqg/ZqQ7erpQe7tRZ6c9cLBGX581b6g/dbVLa6lAa6xCcKlAcbBHaao/ZKQ6grtSZ6Y9bqQ9drBHc7NJdrVLc6pDbqZAcLFGeLhOfbZNY6Q5Z6g9capBc7JJd7hNertQcqxHbq9FaqE7eLlOdLVKdLJJZ585fLROYqE3ZaY7Xp40grVTg7RTZaY8ZqU8d7VMcbNIebRKfLxSdK9FZqA3aqtAd6ZFfa9Nbq9EcLFHcbBGbKpBZKU6b6hDcqlCdqlBdrdMfLtSerxRhLZVdq1IdLNKbp08fLVMc6tFf7hPZ6E4ebpQcK5Fc61EebBJXZ0zg7VUdbZLZqY8e65GZqc8gbhRfrBPXZ80b6dBbK1Cba5Db61Ec7JIcatCfrVNcqpEcbFHcrJIbKxCba1DaqpAa6tBaKg+a6amewAAAQtJREFUeNoEwYVCwlAUANALgoLgkhrNyI0GGwsVW+xO7O7a24tf9xx4yt306KVaLrVa0vVf2z5gD21WrGaXFOE3rlvpRbBxUdONYyxUpUwLIjt4hU14bfpFPnzVW3+mS5AvIHObf5CJkQYxwf3AhS/kezOF+o4/uA7DvnPIIzMiZYqHLGaqBGVrEG/3S4ZfaanTAqJRcglxNFGU8Z0S9vCEOhwpsLtmv4ekR8dcKIu5TGQAVowgY9RT7T41GFsQvbBH2p/jRx+aZWus4r53eeFFlPvCgRli5TAOKEYHboVCUrV8VUbpQeCYJBvAoglZG1w2qhxWlXmEYe1vqjxi6zgb5ZPdSef72b8AAwDzxT2brEwSywAAAABJRU5ErkJggg==",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpBNkZDN0E5Qzg5NEUxMUVFQjBBQ0U1OTdFMzdCMkEwRCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpBNkZDN0E5RDg5NEUxMUVFQjBBQ0U1OTdFMzdCMkEwRCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkE2RkM3QTlBODk0RTExRUVCMEFDRTU5N0UzN0IyQTBEIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkE2RkM3QTlCODk0RTExRUVCMEFDRTU5N0UzN0IyQTBEIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+LrswbAAAAAxQTFRFYVVdsqqqin2C////hF6/cgAAAAR0Uk5T////AEAqqfQAAAArSURBVHjaYmBkQgEMDNgEGBjAGERBBZgZGZhBmHHICTAxMoIQGGP6FiDAANEgAYipPYnfAAAAAElFTkSuQmCC",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpBQzM1QzM5Mjg5NEUxMUVFQTQ0MzkwMTQ5QkI4NUY1MCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpBQzM1QzM5Mzg5NEUxMUVFQTQ0MzkwMTQ5QkI4NUY1MCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkFDMzVDMzkwODk0RTExRUVBNDQzOTAxNDlCQjg1RjUwIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkFDMzVDMzkxODk0RTExRUVBNDQzOTAxNDlCQjg1RjUwIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+B07fYwAAAA9QTFRFMCAsSTxFsqqqYVVdin2CUV37cQAAAFBJREFUeNpsT1sSACEIMvH+Z84U2cfED8agkHl8ALsISJyxqIR8pa+pBSceofdHSEPU/vFMCkzD8PJ3LO2KBUspBYSEX7HqFaTL53SA2AIMAMYjA0rfbk99AAAAAElFTkSuQmCC",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpCM0JCOTdDRTg5NEUxMUVFODJBQ0E1MzkxMEY4NDg4QiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpCM0JCOTdDRjg5NEUxMUVFODJBQ0E1MzkxMEY4NDg4QiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkIzQkI5N0NDODk0RTExRUU4MkFDQTUzOTEwRjg0ODhCIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkIzQkI5N0NEODk0RTExRUU4MkFDQTUzOTEwRjg0ODhCIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+C4NGngAAABVQTFRFXSQkNBAcTRwgpmFFjkEwdTAsw4JVdUvSTwAAAGVJREFUeNpcj1EOAEEEQzHV+x95lR3Jbn+k9Qjmbh4Wpaohl4dnpOoWeXIFWgcLgD2yDMEw66ARcEZYAZGyImIImfwHH4Ic5i5FiXdp9yUFfQdaCdw7uFLg03whjejpeT/kHgEGAPaVA8rZyt7zAAAAAElFTkSuQmCC",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpCRDNGMzIxRjg5NEUxMUVFQjg5MEFFRjY1MkZEMkVFQSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpCRDNGMzIyMDg5NEUxMUVFQjg5MEFFRjY1MkZEMkVFQSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkJEM0YzMjFEODk0RTExRUVCODkwQUVGNjUyRkQyRUVBIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkJEM0YzMjFFODk0RTExRUVCODkwQUVGNjUyRkQyRUVBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+66c1EQAAAAlQTFRFu+3wq97mo8zWUDKPggAAADZJREFUeNpiYGRkQgKMjAxMTAyMCC6QB2PASAaYHEwrAxYzGHGZwUCRGQykuIMBnztwmAEQYADs4AG9BDDWBAAAAABJRU5ErkJggg==",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo5MDA5ODRDRjg5NEUxMUVFOUUyOUE0OTQxMDJCQjJENCIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo5MDA5ODREMDg5NEUxMUVFOUUyOUE0OTQxMDJCQjJENCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjkwMDk4NENEODk0RTExRUU5RTI5QTQ5NDEwMkJCMkQ0IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjkwMDk4NENFODk0RTExRUU5RTI5QTQ5NDEwMkJCMkQ0Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+BrevQwAAAA9QTFRF9+vjaZo819tx////mrpRUPR6PAAAAFtJREFUeNpsT0EOwCAMosj/3zxK42LcOFgDSBHrAlapUZxhQhQ2QTWh9hSUSwgLcbQ1BCwVkbBxWCxOam8xUPYEJhhoBv6e7FAfONYia3UUI95id/XP5y48AgwAikAC5rlAar4AAAAASUVORK5CYII=",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo5N0FGQjBBMjg5NEUxMUVFOENENEIwRjFFNjE3NzY0QSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo5N0FGQjBBMzg5NEUxMUVFOENENEIwRjFFNjE3NzY0QSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjk3QUZCMEEwODk0RTExRUU4Q0Q0QjBGMUU2MTc3NjRBIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjk3QUZCMEExODk0RTExRUU4Q0Q0QjBGMUU2MTc3NjRBIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+lZLONgAAABJQTFRFupp5gmFZz66CspJ1jnFhooJpmRnR4QAAAHdJREFUeNo0j8ERADEIAkG0/5YPNJePQ0YXwLBK7aeq5gxYAqbb39KQsJ4ZtvVOdAZ9MqsbakuFQxpX0ISHnb4PMAsIcDnRXgmRywH3PsANYluvO0eAOg5ejlrM5TjOXQHxfzn0athWuj64QH+PLOD3z0jhT4ABAJa7Av1CV1nPAAAAAElFTkSuQmCC"
 ];
 
 const CSS_ROOT = document.querySelector(':root');
@@ -99,6 +88,15 @@ const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
 const RAD2DEG_STATIC = 180 / Math.PI;
 
+const VEC6_ONE = [
+    new BABYLON.Vector3(1, 0, 0),
+    new BABYLON.Vector3(-1, 0, 0),
+    new BABYLON.Vector3(0, 1, 0),
+    new BABYLON.Vector3(0, -1, 0),
+    new BABYLON.Vector3(0, 0, 1),
+    new BABYLON.Vector3(0, 0, -1)
+];
+
 const MAX_VOXELS = 512000;
 const MAX_VOXELS_DRAW = 64000;
 const WORKPLANE_SIZE = 120;
@@ -111,7 +109,7 @@ const isMobile = isMobileDevice();
 const canvas = document.getElementById('canvas');
 const canvasPalette = document.getElementById('canvas_palette');
 
-export let MODE = 0; // model|render|export|sandbox
+export let MODE = 0; // model|render|export
 export let FPS = 1000 / 60;
 let isRenderAxisView = true;
 let currentColor = document.getElementById('input-color').value.toUpperCase();
@@ -129,36 +127,6 @@ const workplaneWhiteList = [
 const bvhWhiteList = [
     'rect_add'
 ];
-
-
-// -------------------------------------------------------
-// Engine
-
-
-class Engine {
-    constructor() {
-        this.webgl = undefined;
-        this.webgpu = undefined;
-        this.isRendering = false;
-
-        this.init();
-    }
-
-    init() {
-        this.webgl = new BABYLON.Engine(canvas, true, {});
-        this.webgl.disablePerformanceMonitorInBackground = true;
-        this.webgl.preserveDrawingBuffer = false;
-        this.webgl.premultipliedAlpha = false;
-        this.webgl.enableOfflineSupport = false;
-        this.webgl.doNotHandleContextLost = true;
-
-        this.isRendering = true;
-    }
-
-    getFps() {
-        return ~~this.webgl.getFps();
-    }
-}
 
 
 // -------------------------------------------------------
@@ -487,6 +455,8 @@ class Camera {
         //this.camera0.minZ = 0.01;
         //this.camera0.maxZ = 2000;
         this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
+        
+        this.camera0.attachControl(canvas, true);
     }
 
     frame() {
@@ -495,7 +465,7 @@ class Camera {
                 camera.setFramingBehavior(camera.camera0, ghosts.thin) :
                 this.setFramingBehavior(this.camera0, builder.mesh);
         } else if (MODE == 1) {
-            modules.pt.frameCamera();
+            modules.sandbox.frameCamera();
         } else if (MODE == 2) {
             if (pool.meshes.length > 0) {
                 if (pool.selected) { // frame to selected mesh
@@ -508,8 +478,6 @@ class Camera {
             } else {
                 this.setFramingBehavior(this.camera0, builder.mesh);
             }
-        } else if (MODE == 3) {
-            modules.sandbox.frameCamera();
         }
     }
 
@@ -531,7 +499,7 @@ class Camera {
         animator(cam, 'target', cam.target.clone(), f.target);
     }
 
-    getFramed(mesh, offset = 1.8) {
+    getFramed(mesh, offset = 1.5) {
         if (mesh) {
             mesh.computeWorldMatrix(true);
             const bounds = mesh.getBoundingInfo();
@@ -540,6 +508,10 @@ class Camera {
             const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
             const radiusWithoutFraming = Vector3Distance(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld) * 0.5;
             
+            if (radiusWithoutFraming < 10) offset = 3;
+            if (radiusWithoutFraming > 10) offset = 2;
+            if (radiusWithoutFraming > 20) offset = 1.5;
+            if (radiusWithoutFraming > 30) offset = 1.1;
             const radius = radiusWithoutFraming * offset;
             const distanceForHorizontalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeX * frustumSlopeX));
             const distanceForVerticalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeY * frustumSlopeY));
@@ -663,7 +635,7 @@ class HDRI {
             scene.environmentTexture = this.hdrMap;
         });
 
-        modules.pt.loadHDR(ENVMAP, (tex) => {
+        modules.sandbox.loadHDR(ENVMAP, (tex) => {
             this.hdrMapRender = tex;
         });
     }
@@ -686,10 +658,10 @@ class HDRI {
             this.isLoaded = true;
         });
 
-        modules.pt.loadHDR(url, (tex) => {
+        modules.sandbox.loadHDR(url, (tex) => {
             this.hdrMapRender = tex;
-            if (modules.pt.isActive())
-                modules.pt.updateHDR();
+            if (modules.sandbox.isActive())
+                modules.sandbox.updateHDR();
         });
     }
 
@@ -706,8 +678,7 @@ class HDRI {
         this.skybox.material.disableLighting = true;
         this.skybox.material.twoSidedLighting = true;
         this.skybox.material.backFaceCulling = false;
-        this.skybox.layerMask = 0x00000000;
-        this.skybox.isVisible = true;
+        this.skybox.isVisible = false;
         this.skybox.isPickable = false;
         this.skybox.rotation.y = -Math.PI / 2;
         this.skybox.infiniteDistance = true;
@@ -719,10 +690,7 @@ class HDRI {
     }
 
     showSkybox(isShow) {
-        if (this.skybox)
-            (isShow) ?
-                this.skybox.layerMask = 0x0FFFFFFF :
-                this.skybox.layerMask = 0x00000000;
+        this.skybox.isVisible = isShow;
     }
 
     setBlurAmount(num) {
@@ -755,9 +723,6 @@ class Material {
     init() {
         for (let i = 0; i < TEX_PATTERNS.length; i++)
             this.textures.push(this.createTexture('texpat'+i, TEX_PATTERNS[i], BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR));
-
-        for (let i = 0; i < TEX_PRESETS.length; i++)
-            this.addTexture(TEX_PRESETS[i]);
 
         this.texId = 3; // checker
         this.tex_pbr = this.textures[this.texId];
@@ -894,28 +859,6 @@ class Material {
         this.createPBRMaterial(ui.domBakeryBackFace.checked);
     }
 
-    addTexture(data) {
-        this.textures.push(this.createTexture('texpbr_user', data));
-        const idx = this.textures.length - 1;
-        this.setPBRTexture(idx);
-        const li = document.createElement("li");
-        li.classList.add("img");
-        li.innerHTML = `<img data-bind="${ idx }" src="${ data }">`;
-        li.addEventListener("pointerdown", () => {
-            if (pool.selected) {
-                for (const i of ui.domTexturePresets.children)  // unselect presets
-                    i.firstChild.style.borderColor = '#6b798d';
-                li.firstChild.style.borderColor = COL_ORANGE;   // select preset
-
-                this.setPBRTexture(idx);
-                pool.replaceTexture();
-            } else {
-                ui.notification('select a mesh');
-            }
-        }, false);
-        ui.domTexturePresets.appendChild(li);
-    }
-
     switchMaterial() {
         if (this.mode == 'CEL') {
             this.mode = 'PBR';
@@ -1000,14 +943,11 @@ class Material {
                 float spp = max(dot(reflect(-lightDir, normal), viewDir), 0.0);
 		        float spc = pow(spp, 8.0);
 
-                if (dot(normal, lightDir) < 0.0)
-                    amb *= 2.0;
-
                 vec3 brdf = vec3(0);
-                brdf += 0.5 * amb * vec3(1);
+                brdf += 0.8 * amb * vec3(1);
                 brdf += 1.0 * dif * uLightCol;
-                brdf += 0.4 * inv * uLightCol;
-                brdf += 0.6 * spc * vec3(1);
+                brdf += 0.5 * inv * vec3(1);
+                brdf += 0.8 * spc * vec3(1);
 
                 vec3 col = pow(vColor.rgb * vColor.rgb, vec3(0.4545));
                 col = mix(col, vec3(0), line * 0.16);
@@ -1023,7 +963,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uCamMatrix", "uLightPos", "uLightCol" ],
+                              "uCamMatrix", "uEnvPower", "uLightPos", "uLightCol" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             }
@@ -1037,10 +977,11 @@ class Material {
             this.mat_cel.setMatrix("uCamMatrix", camera.camera0.getWorldMatrix());
             this.mat_cel.setVector3("uLightPos", light.directional.position);
             this.mat_cel.setColor3("uLightCol", Color3(
-                light.directional.diffuse.r * light.directional.intensity,
-                light.directional.diffuse.g * light.directional.intensity,
-                light.directional.diffuse.b * light.directional.intensity
+                (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
+                (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
+                (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity
             ));
+            this.mat_cel.setFloat("uLightInt", light.directional.intensity);
             //this.mat_cel.setTexture("uTexture", this.textures[3]);
         }
     }
@@ -1186,18 +1127,17 @@ class Builder {
         this.bufferMatrix = [];
     }
 
-    fillArrayBuffers() { // for raycaster, pathtracer and export
+    fillArrayBuffers() { // for pathtracer and raw export
         this.positions = new Float32Array(this.vPositions.length * this.voxels.length);
         this.uvs = new Float32Array(this.vUvs.length * this.voxels.length);
         this.colors = new Float32Array(this.vUvs.length * 2 * this.voxels.length);
         this.indices = new Uint32Array(this.vIndices.length * this.voxels.length);
 
-        const lenC = this.vUvs.length * 2;
         const p = Vector3();
-        let v = 0;
+        const lenC = this.vUvs.length * 2;
 
         for (let i = 0; i < this.voxels.length; i++) {
-            for (v = 0; v < this.vPositions.length; v += 3) {
+            for (let v = 0; v < this.vPositions.length; v += 3) {
                 p.x = this.vPositions[v];
                 p.y = this.vPositions[v + 1];
                 p.z = this.vPositions[v + 2];
@@ -1211,7 +1151,7 @@ class Builder {
                 this.positions[i * this.vPositions.length + v + 2] = rz * rw;
             }
 
-            for (v = 0; v < this.vUvs.length; v += 2) {
+            for (let v = 0; v < this.vUvs.length; v += 2) {
                 this.uvs[i * this.vUvs.length + v] = this.vUvs[v];
                 this.uvs[i * this.vUvs.length + v + 1] = this.vUvs[v + 1];
                 this.colors[i * lenC + v * 2] = this.bufferColors[i * 4];
@@ -1222,9 +1162,24 @@ class Builder {
 
             const lenI = this.vPositions.length / 3;
             const len = i * this.vIndices.length;
-            for (v = 0; v < this.vIndices.length; v++) {
+            for (let v = 0; v < this.vIndices.length; v++) {
                 this.indices[len + v] = this.vIndices[v] + i * lenI;
             }
+        }
+    }
+
+    async asyncFillArrayBuffers() { // slower
+        const msg = await modules.workerPool.postMessage({
+            id: 'fillArrayBuffers',
+            data: [ this.voxels.length,
+                    this.vPositions, this.vUvs, this.vIndices,
+                    this.bufferWorld, this.bufferColors
+                 ] });
+        if (msg) {
+            this.positions = msg.data[0];
+            this.uvs = msg.data[1];
+            this.colors = msg.data[2];
+            this.indices = msg.data[3];
         }
     }
 
@@ -1264,7 +1219,7 @@ class Builder {
         );
     }
 
-    getIndexAtPointer() {       // GPU color-picking method
+    getIndexAtPointer() { // GPU color-picking method
         const x = Math.round(scene.pointerX);   // translated from Three.js by @kikoshoung
         const y = engine.webgl.getRenderHeight() - Math.round(scene.pointerY);
         const pixels = readTexturePixels(engine.webgl._gl, renderTarget.pickTexture._texture._hardwareTexture.underlyingResource, x, y, 1, 1);
@@ -1694,19 +1649,10 @@ class Transformers {
             this.finish();
             this.finishNewObject();
             
-            this.isActive = false;
-            this.isNewObject = false;
-
             builder.create();
             builder.update();
 
-            uix.unbindVoxelGizmo();
-            
-            ghosts.thin.setParent(null);
-            ghosts.disposeThin();
-            
-            this.origins = [];
-            this.indexes = [];
+            this.dispose();
         }
     }
 
@@ -2218,7 +2164,6 @@ class Helper {
         //console.log(this.overlayPlane.rotationQuaternion);
         
         // workaround for the bug
-        // we have a similar workaround for a bug in pickWorkplane() !!
         /* if (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == 1) {
             this.overlayPlane.rotationQuaternion = new BABYLON.Quaternion(0, 0,0,1);
         } else if (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == -1) {
@@ -2279,6 +2224,7 @@ class Tool {
         this.selected = [];
         this.isMouseDown = false;
 
+        this.normal = null;
         this.isSymmetry = false;
         this.isWorkplane = false;
         this.startBox = null;
@@ -2485,24 +2431,23 @@ class Tool {
 
     rectSelectFirst(start, norm, pick) {
         this.tmp = this.getVoxelsFromRectangleSelection(start);
+        this.tmp = this.tmp.filter((i) => i.visible);
 
         this.selected = [];
         for (let i = 0; i < this.tmp.length; i++) {
-            if (this.tmp[i].visible) {
-                const pos = this.tmp[i].position.add(norm);
+            const pos = this.tmp[i].position.add(norm);
 
-                if (!modules.rc.raycast(
-                        pos.x, pos.y, pos.z,
-                        -pick.ray.direction.x,
-                        -pick.ray.direction.y,
-                        -pick.ray.direction.z)) {
+            if (!modules.rc.raycast(
+                    pos.x, pos.y, pos.z,
+                    -pick.ray.direction.x,
+                    -pick.ray.direction.y,
+                    -pick.ray.direction.z)) {
 
-                    this.selected.push({
-                        position: pos,
-                        color: currentColor,
-                        visible: this.tmp[i].visible
-                    });
-                }
+                this.selected.push({
+                    position: pos,
+                    color: currentColor,
+                    visible: this.tmp[i].visible
+                });
             }
         }
 
@@ -2810,24 +2755,27 @@ class Tool {
 
     handleToolDown(pickInfo) {
         this.isMouseDown = true;
-        if (this.name !== 'camera' && !camera.isCameraChange() && !builder.isWorking) {
+        if (this.name !== 'camera' && !builder.isWorking) {
             scene.activeCamera.attachControl(canvas, true);
             this.setPickInfo(pickInfo, (p) => {
                 scene.stopAnimation(camera.camera0);
-                scene.activeCamera.detachControl(canvas);
-                this.onToolDown(p);
+                if (!camera.isCameraChange()) {
+                    scene.activeCamera.detachControl(canvas);
+                    this.onToolDown(p);
+                }
             });
         }
     }
 
     handleToolMove(pickInfo) {
-        if (this.name !== 'camera' && !camera.isCameraChange() && !builder.isWorking) {
+        if (this.name !== 'camera' && !builder.isWorking) {
             this.now = performance.now();
             this.elapsed = this.now - this.then;
             if (this.elapsed > FPS) {
                 this.then = this.now - (this.elapsed % FPS);
                 this.setPickInfo(pickInfo, (p) => {
-                    this.onToolMove(p);
+                    if (!camera.isCameraChange())
+                        this.onToolMove(p);
                 });
             }
         }
@@ -2869,43 +2817,26 @@ class Tool {
         return mesh == ghosts.sps.mesh;
     }
 
-    // invented an unusual method to find picking-normal with a magnetic probe
-    normalProbe(p) {
-        let norm = undefined;
-        this.tmpsps = [];
-
-        this.tmpsps.push({ position: p, color: COL_RED, visible: true });
-        for (let i = 0; i < VEC6_ONE.length; i++) {
-            const pos = p.add(VEC6_ONE[i]);
-            const idx = builder.getIndexAtPosition(pos);
-            if (idx > -1)
-                this.tmpsps.push({ position: pos, color: COL_RED, visible: builder.voxels[idx].visible });
-        }
-
-        ghosts.createSPS(this.tmpsps);
-        const pick = scene.pick(scene.pointerX, scene.pointerY, this.predicateSPS);
-        if (pick && pick.hit)
-            norm = pick.getNormal(true);
-        ghosts.disposeSPS();
-        
-        this.tmpsps = [];
-        return norm;
+    normalProbe(pick, pos) {
+        return modules.rc.raycastNormalPicking(
+            pick.ray.origin.x, pick.ray.origin.y, pick.ray.origin.z,
+            pick.ray.direction.x, pick.ray.direction.y, pick.ray.direction.z,
+            pos.x, pos.y, pos.z);
     }
 
     setPickInfo(pick, onHit) {
         const index = builder.getIndexAtPointer();
-
         if (index > -1) {
-            const norm = this.normalProbe(builder.voxels[index].position);
+            const norm = this.normalProbe(pick, builder.voxels[index].position);
             if (norm) {
                 pick.INDEX = index;
-                pick.NORMAL = norm;
+                pick.NORMAL = Vector3(norm.face.normal.x, norm.face.normal.y, norm.face.normal.z);
                 pick.WORKPLANE = false;
                 onHit(pick);
             } else {
                 helper.clearOverlays();
+
                 pick = scene.pick(scene.pointerX, scene.pointerY, this.predicateWorkplane);
-                
                 if (pick && pick.hit) {
                     pick.INDEX = pick.faceId;
                     pick.NORMAL = pick.getNormal(true);
@@ -2915,6 +2846,8 @@ class Tool {
                     helper.clearOverlays();
                 }
             }
+        } else {
+            helper.clearOverlays();
         }
     }
 
@@ -2931,8 +2864,8 @@ class Tool {
         for (let i = 0; i < elems.length; i++)
             elems[i].classList.add("tool_selector");
 
-        scene.activeCamera.attachControl(canvas, true);
-        helper.clearOverlays();
+        if (this.name == 'camera')
+            scene.activeCamera.attachControl(canvas, true);
 
         if (finishTransforms)
             xformer.apply();
@@ -2940,6 +2873,7 @@ class Tool {
         if (bvhWhiteList.includes(this.name))
             modules.rc.create();
 
+        helper.clearOverlays();
         ui.domInfoTool.innerHTML = `[ ${ this.name.replace('_', ' ').toUpperCase() } ]`;
     }
 }
@@ -3465,11 +3399,8 @@ class MeshPool {
         if (this.selected) {
             currentColorBake = this.selected.material.albedoColor.toHexString();
             ui.domRoughness.value = this.selected.material.roughness;
-            ui.domRoughnessRange.value = this.selected.material.roughness;
             ui.domMetallic.value = this.selected.material.metallic;
-            ui.domMetallicRange.value = this.selected.material.metallic;
             ui.domAlpha.value = this.selected.material.alpha;
-            ui.domAlphaRange.value = this.selected.material.alpha;
             ui.domColorPickerAlbedo.value = this.selected.material.albedoColor.toHexString();
             ui.domColorPickerEmissive.value = this.selected.material.emissiveColor.toHexString();
         } else {
@@ -3830,7 +3761,7 @@ class Project {
 
     serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.4.1",
+            version: "Voxel Builder 4.4.3",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4124,17 +4055,15 @@ class Preferences {
         this.initPrefCheck(KEY_POWERSAVER, (chk) => {
             if (chk) {
                 FPS = 1000 / 30;
-                ui.domRenderBounces.value = 3;
             } else {
                 FPS = 1000 / 60;
-                ui.domRenderBounces.value = 4;
             }
-            if (modules.pt.isActive())
-                modules.pt.updateUniformBounces(ui.domRenderBounces.value);
+            if (modules.sandbox.isActive())
+                modules.sandbox.pathTracer.update();
         });
 
         this.initPrefCheck(KEY_WEBSOCKET, (chk) => {
-            (chk && !modules.pt.isActive()) ? modules.ws_client.connect() : modules.ws_client.disconnect();
+            (chk && !modules.sandbox.isActive()) ? modules.ws_client.connect() : modules.ws_client.disconnect();
         });
 
         this.initPref(KEY_WEBSOCKET_URL);
@@ -4145,10 +4074,8 @@ class Preferences {
 
         if (this.getPowerSaver()) {
             FPS = 1000 / 30;
-            ui.domRenderBounces.value = 3;
         } else {
             FPS = 1000 / 60;
-            ui.domRenderBounces.value = 4;
         }
         palette.expand(this.getPaletteSize());
         ui.toggleHover(!this.getNoHover());
@@ -4301,6 +4228,7 @@ class UserInterface {
         this.domInScreenGridPlane = document.getElementById('btn-inscreen-gridplane');
         this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
         this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
+        this.domSandboxRender = document.getElementById('sandbox_render');
         this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
         this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
         this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
@@ -4315,7 +4243,7 @@ class UserInterface {
         this.domHdriToggle = document.getElementById('input-hdri-toggle');
         this.domHdriBlur = document.getElementById('input-hdri-blur');
         this.domCameraFov = document.getElementById('input-camera-fov');
-        this.domCameraAperture = document.getElementById('input-camera-aperture');
+        this.domCameraFStop = document.getElementById('input-camera-fstop');
         this.domCameraFocalLength = document.getElementById('input-camera-focal');
         this.domRenderBtn = document.getElementById('tab-render');
         this.domTransformClone = document.getElementById('input-transform-clone');
@@ -4327,8 +4255,6 @@ class UserInterface {
         this.domBakeryBackFace = document.getElementById('input-bakery-backface');
         this.domAutoRotation = document.getElementById('input-autorotate');
         this.domAutoRotationCCW = document.getElementById('input-autorotate-ccw');
-        this.domTexturePresets = document.getElementById('texturepresets');
-        this.domTextureAdd = document.getElementById('add_texture');
         this.domRoughness = document.getElementById('input-material-roughness');
         this.domRoughnessRange = document.getElementById('input-material-roughness-range');
         this.domMetallic = document.getElementById('input-material-metallic');
@@ -4349,23 +4275,20 @@ class UserInterface {
         this.domExportFormat = document.getElementById('input-export-format');
         this.domExportSelectedBake = document.getElementById('input-export-selbake');
         this.domOrthoBtn = document.getElementById('btn-ortho');
-        this.domRenderSource = document.getElementById('input-pt-source');
         this.domRenderShade = document.getElementById('input-pt-shade');
         this.domRenderPause = document.getElementById('btn-pt-pause');
         this.domRenderShot = document.getElementById('btn-pt-shot');
         this.domRenderFast = document.getElementById('btn-pt-fast');
         this.domRenderMaxSamples = document.getElementById('input-pt-maxsamples');
-        this.domRenderPasses = document.getElementById('input-pt-passes');
         this.domRenderBounces = document.getElementById('input-pt-bounces');
+        this.domRenderDPR = document.getElementById('input-pt-dpr');
         this.domRenderEnvPower = document.getElementById('input-pt-envpower');
-        this.domRenderDirectLight = document.getElementById('input-pt-directlight');
+        this.domRenderAutoRender = document.getElementById('input-sandbox-autorender');
         this.domRenderBackground = document.getElementById('input-pt-background');
-        this.domRenderMaterial = document.getElementById('input-pt-material');
-        this.domRenderEmissive = document.getElementById('input-pt-emissive');
-        this.domRenderRoughness = document.getElementById('input-pt-roughness');
-        this.domRenderFloor = document.getElementById('input-pt-floor');
-        this.domRenderFloorColor = document.getElementById('input-pt-floorcolor');
         this.domRenderGrid = document.getElementById('input-pt-grid');
+        this.domRenderMaterialRoughness = document.getElementById('input-pt-roughness');
+        this.domRenderMaterialMetalness = document.getElementById('input-pt-metalness');
+        this.domRenderMaterialTransmission = document.getElementById('input-pt-transmission');
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
         this.domNotifier = document.getElementById('notifier');
@@ -4402,7 +4325,6 @@ class UserInterface {
         if (preferences.isInitialized && MODE == mode) return;
         MODE = mode;
 
-        modules.pt.deactivate();
         modules.sandbox.deactivate();
 
         if (mode == 0) {
@@ -4412,9 +4334,14 @@ class UserInterface {
             uix.unbindTransformGizmo();
             ghosts.disposePointCloud();
         } else if (mode == 1) {
-            if (!hdri.isLoaded) // if the user clicks 1 second after launch!
+            if (!hdri.isLoaded) { // if the user clicks 1 second after launch!
                 hdri.loadHDR(ENVMAP);
-            modules.pt.activate();
+                setTimeout(() => {
+                    modules.sandbox.activate();
+                }, 500);
+            } else {
+                modules.sandbox.activate();
+            }
         } else if (mode == 2) {
             builder.setMeshVisibility(false);
             pool.setPoolVisibility(true);
@@ -4425,9 +4352,7 @@ class UserInterface {
             toolMesh.toolSelector('select');
             if (preferences.getPointCloud())
                 ghosts.createPointCloud();
-        } else if (mode == 3) {
-            modules.sandbox.activate();
-        }
+        } 
 
         this.setInterfaceMode(mode);
     }
@@ -4443,8 +4368,8 @@ class UserInterface {
         this.domHover.style.display = 'unset';
         this.domMenuInScreenLeft.style.display = 'flex';
         this.domMenuInScreenRight.style.display = 'none';
+        this.domSandboxRender.style.display = 'none';
         this.domInfoTool.style.display = 'none';
-        this.domTextureAdd.disabled = true;
 
         for (const i of this.domToolbarL.children) {
             i.style.display = 'unset';
@@ -4457,7 +4382,6 @@ class UserInterface {
             this.domInfoTool.style.display = 'unset';
             this.domToolbarL.children[14].firstChild.disabled = true; // MESHES
             this.domToolbarL.children[15].firstChild.disabled = true; // MATERIAL
-            this.domToolbarL.children[16].firstChild.disabled = true; // TEXTURE
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
             this.domHover.style.display = 'none';
@@ -4472,8 +4396,8 @@ class UserInterface {
             this.domToolbarL.children[13].style.display = 'none'; // BAKERY
             this.domToolbarL.children[14].style.display = 'none'; // MESHES
             this.domToolbarL.children[15].style.display = 'none'; // MATERIAL
-            this.domToolbarL.children[16].style.display = 'none'; // TEXTURE
             this.domMenuInScreenLeft.style.display = 'none';
+            this.domSandboxRender.style.display = 'flex';
         } else if (mode == 2) {
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
@@ -4485,11 +4409,7 @@ class UserInterface {
             this.domToolbarL.children[10].firstChild.disabled = true; // PAINT
             this.domToolbarL.children[11].firstChild.disabled = true; // VOXELS
             this.domToolbarL.children[12].firstChild.disabled = true; // GROUPS
-            this.domTextureAdd.disabled = false;
             uix.colorPicker.isVisible = false;
-        } else if (mode == 3) {
-            this.domHover.style.display = 'none';
-            this.domMenuInScreenLeft.style.display = 'none';
         }
 
         for (const i of this.domModes)
@@ -4510,10 +4430,10 @@ class UserInterface {
             this.domToolbarC_mem.children[3].innerHTML = 'UNDO';
             this.domToolbarC_mem.children[4].innerHTML = 'REDO';
         } else if (mode == 1) {
-            this.domToolbarC_mem.children[0].onclick = () => { modules.pt.fastMode() };
-            this.domToolbarC_mem.children[1].onclick = () => { this.domRenderShade.checked = !this.domRenderShade.checked; modules.pt.updateAttributeColors() };
-            this.domToolbarC_mem.children[3].onclick = () => { modules.pt.pause() };
-            this.domToolbarC_mem.children[4].onclick = () => { modules.pt.shot() };
+            this.domToolbarC_mem.children[0].onclick = () => { modules.sandbox.fastMode() };
+            this.domToolbarC_mem.children[1].onclick = () => { modules.sandbox.shadeMode() };
+            this.domToolbarC_mem.children[3].onclick = () => { modules.sandbox.pause() };
+            this.domToolbarC_mem.children[4].onclick = () => { modules.sandbox.shot() };
             this.domToolbarC_mem.children[0].innerHTML = 'FAST';
             this.domToolbarC_mem.children[1].innerHTML = 'SHADE';
             this.domToolbarC_mem.children[3].innerHTML = 'PAUSE';
@@ -4527,15 +4447,6 @@ class UserInterface {
             this.domToolbarC_mem.children[1].innerHTML = 'LOAD';
             this.domToolbarC_mem.children[3].innerHTML = 'BAKE';
             this.domToolbarC_mem.children[4].innerHTML = 'GET';
-        } else if (mode == 3) {
-            this.domToolbarC_mem.children[0].onclick = () => { modules.sandbox.create() };
-            this.domToolbarC_mem.children[1].onclick = () => { modules.sandbox.toggleHdri() };
-            this.domToolbarC_mem.children[3].onclick = () => {  };
-            this.domToolbarC_mem.children[4].onclick = () => {  };
-            this.domToolbarC_mem.children[0].innerHTML = 'RELOAD';
-            this.domToolbarC_mem.children[1].innerHTML = 'HDRI';
-            this.domToolbarC_mem.children[3].innerHTML = '-';
-            this.domToolbarC_mem.children[4].innerHTML = '-';
         }
     }
 
@@ -4634,7 +4545,8 @@ class UserInterface {
         this.panels[idx].elem.style.borderRadius = '3px';
         this.panels[idx].elem.style.borderTopLeftRadius = '0';
         this.panels[idx].elem.style.borderTopRightRadius = '0';
-        this.switchPanel(this.panels[idx]);
+        this.panels[idx].elem.style.display = 'none';
+        this.panels[idx].button.style.textDecoration = 'none';
     }
 
     toggleHover(isEnabled) {
@@ -5010,6 +4922,7 @@ class UserInterfaceAdvanced {
         this.sunGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
         this.sunGizmoUp.dragBehavior.onDragObservable.add(() => {
             light.updateHeight(light.location.y / this.sunNode.scaling.x);
+            modules.sandbox.updateLight();
         });
 
         this.sunGizmoNews = new BABYLON.PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
@@ -5018,6 +4931,7 @@ class UserInterfaceAdvanced {
         this.sunGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
         this.sunGizmoNews.dragBehavior.onDragObservable.add(() => {
             light.updateAngle(this.sunNode.rotation.y * 180 / Math.PI);
+            modules.sandbox.updateLight();
         });
     }
 
@@ -5055,7 +4969,6 @@ class UserInterfaceAdvanced {
 // Initialize
 
 
-export const engine = new Engine();
 export const camera = new Camera();
 export const scene = new MainScene().create();
 const axisView = new AxisViewScene();
@@ -5124,7 +5037,6 @@ scene.registerAfterRender(() => {
 scene.onPointerObservable.add((pInfo) => {
     switch (pInfo.type) {
         case BABYLON.PointerEventTypes.POINTERDOWN:
-            if (pInfo.event.button > 0) break;
             if (!axisView.registerEvent()) {
                 if (MODE == 0) tool.handleToolDown(pInfo.pickInfo);
                 if (MODE == 2) toolMesh.handleToolDown();
@@ -5214,11 +5126,7 @@ document.addEventListener("keydown", (ev) => {
             camera.switchOrtho();
             break;
         case 'r':
-            if (modules.pt.isActive()) {
-                (ui.domRenderSource.value == 'model') ? ui.setMode(0) : ui.setMode(2);
-            } else {
-                ui.setMode(1);
-            }
+            (modules.sandbox.isActive()) ? ui.setMode(0) : ui.setMode(1);
             break;
     }
 
@@ -5257,10 +5165,7 @@ window.addEventListener("resize", () => {
     axisView.updateViewport();
     ui.offscreenCheck();
 
-    if (MODE == 1 && modules.pt.isLoaded)
-        modules.pt.resize();
-
-    if (MODE == 3 && modules.sandbox.isLoaded)
+    if (modules.sandbox.isActive())
         modules.sandbox.resize();
 }, false);
 
@@ -5303,11 +5208,6 @@ document.getElementById('openfile_voxelizer_img').addEventListener("change", (ev
         fileHandler(ev.target.files[0]);
 }, false);
 
-document.getElementById('openfile_tex').addEventListener("change", (ev) => {
-    if (ev.target.files.length > 0)
-        fileHandler(ev.target.files[0]);
-}, false);
-
 document.getElementById('openfile_hdr').addEventListener("change", (ev) => {
     if (ev.target.files.length > 0)
         fileHandler(ev.target.files[0]);
@@ -5324,9 +5224,8 @@ function fileHandler(file) {
         if (ext == 'vox') project.loadMagicaVoxel(reader.result);
         if (ext == 'hdr') hdri.loadHDR(url);
         if (MODE == 0) {
-            if (['jpg','png','svg'].includes(ext)) modules.voxelizer.voxelize2D(reader.result);
-        } else if (MODE == 2) {
-            if (['jpg','png'].includes(ext)) material.addTexture(reader.result);
+            if (['jpg','png','svg'].includes(ext))
+                modules.voxelizer.voxelize2D(reader.result);
         }
         URL.revokeObjectURL(url);
     }
@@ -5415,6 +5314,12 @@ ui.domInScreenOrtho.onclick = () => {
     camera.switchOrtho();
 };
 
+ui.domSandboxRender.children[0].onclick = () => {
+    if (!ui.domRenderAutoRender.checked)
+        modules.sandbox.toggleRender();
+};
+
+
 ui.domColorPicker.oninput = (ev) => {
     currentColor = ev.target.value.toUpperCase();
     uix.colorPicker.value = color3FromHex(currentColor);
@@ -5442,139 +5347,137 @@ ui.domColorPickerBackground.oninput = (ev) => {
 
 ui.domColorPickerLightColor.oninput = (ev) => {
     light.updateColor(ev.target.value);
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformLightCol(ev.target.value);
+    modules.sandbox.updateLight();
 };
 
-ui.domCameraFov.onchange = (ev) => {
-    if (ev.target.value > 0) {
-        scene.activeCamera.fov = ev.target.value;
-        if (modules.pt.isActive()) {
-            modules.pt.camera.fov = ev.target.value * RAD2DEG_STATIC;
-            modules.pt.camera.updateProjectionMatrix();
-            modules.pt.resetSamples();
-        }
-    }
+ui.domPixelEyedropper.onclick = () => {
+    ui.activateEyedropper();
 };
 
-ui.domRenderSource.onchange = () => {
-    if (modules.pt.isLoaded) {
-        modules.pt.createGeometry();
-        modules.pt.resetSamples();
+
+ui.domRenderAutoRender.oninput = (ev) => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.startPathTracer(ev.target.checked);
+        modules.sandbox.updateBackground(ui.domRenderBackground.checked);
     }
 };
 
 ui.domRenderMaxSamples.onchange = (ev) => {
     if (ev.target.value < 8) ev.target.value = 8;
-    if (modules.pt.isLoaded) {
-        modules.pt.update();
-        modules.pt.updateUniformMaxSamples(ev.target.value);
-    }
-};
-
-ui.domRenderPasses.onchange = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformRenderPassId(ev.target.value);
+    if (modules.sandbox.isActive())
+        modules.sandbox.pathTracer.updateMaxSamples(ev.target.value);
 };
 
 ui.domRenderBounces.onchange = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformBounces(ev.target.value);
+    if (modules.sandbox.isActive())
+        modules.sandbox.pathTracer.updateBounces(ev.target.value);
 };
+
+ui.domRenderDPR.onchange = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.pathTracer.updateRenderScale(ev.target.value);
+};
+
 
 ui.domRenderEnvPower.onchange = (ev) => {
     if (ev.target.value < 1) ev.target.value = 1;
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformEnvPower(ev.target.value);
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateEnvironmentIntensity(ev.target.value);
 };
 
 ui.domRenderEnvPower.onwheel = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformEnvPower(ev.target.value);
-};
-
-ui.domRenderDirectLight.oninput = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformDirectLight(ev.target.checked);
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateEnvironmentIntensity(ev.target.value);
 };
 
 ui.domRenderBackground.oninput = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformBackground(ev.target.checked);
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateBackground(ev.target.checked);
 };
 
-ui.domRenderMaterial.onchange = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformMaterialId(ev.target.value);
-};
-
-ui.domRenderEmissive.oninput = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformMaterialEmissive(ev.target.value);
-};
-
-ui.domRenderRoughness.oninput = (ev) => {
-    if (modules.pt.isLoaded && ev.target.value > 0)
-        modules.pt.updateUniformMaterialRoughness(ev.target.value);
-};
-
-ui.domRenderGrid.oninput = (ev) => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformGrid(ev.target.checked);
-};
-
-ui.domRenderShade.oninput = () => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateAttributeColors();
-};
-
-ui.domRenderFloor.oninput = () => {
-    if (modules.pt.isLoaded)
-        modules.pt.createGeometry(false);
-};
 
 ui.domRenderPause.onclick = () => {
-    if (modules.pt.isLoaded)
-        modules.pt.pause();
+    if (modules.sandbox.isActiveRender())
+        modules.sandbox.pause();
 };
 
 ui.domRenderShot.onclick = () => {
-    if (modules.pt.isLoaded)
-        modules.pt.shot();
+    if (modules.sandbox.isActive())
+        modules.sandbox.shot();
 };
 
 ui.domRenderFast.onclick = () => {
-    modules.pt.fastMode();
+    if (modules.sandbox.isActive())
+        modules.sandbox.fastMode();
 };
 
-ui.domCameraAperture.onchange = (ev) => {
-    if (modules.pt.isLoaded && ev.target.value > 0)
-        modules.pt.updateUniformCameraAperture(ev.target.value);
+ui.domRenderShade.oninput = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.shadeMode();
 };
 
-ui.domCameraFocalLength.onchange = (ev) => {
-    if (modules.pt.isLoaded && ev.target.value > 0)
-        modules.pt.updateUniformCameraFocalLength(ev.target.value);
+ui.domRenderMaterialRoughness.onchange = (ev) => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.meshes[0].material.roughness = ev.target.value;
+        modules.sandbox.pathTracer.updateMaterials();
+    }
 };
 
-ui.domLightIntensity.onchange = () => {
-    if (modules.pt.isLoaded)
-        modules.pt.updateUniformLightCol(ui.domColorPickerLightColor.value);
+ui.domRenderMaterialMetalness.onchange = (ev) => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.meshes[0].material.metalness = ev.target.value;
+        modules.sandbox.pathTracer.updateMaterials();
+    }
 };
 
-document.getElementById('btn-light-defaultsun').onclick = () => {
-    ui.domColorPickerLightColor.value = '#EDD59E';
-    light.updateColor('#EDD59E');
-    if (modules.pt.isActive())
-        modules.pt.updateUniformLightCol('#EDD59E');
+ui.domRenderMaterialTransmission.onchange = (ev) => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.meshes[0].material.transmission = ev.target.value;
+        modules.sandbox.pathTracer.updateMaterials();
+    }
 };
+
+ui.domRenderGrid.oninput = (ev) => {
+    if (modules.sandbox.isActive()) {
+        if (ev.target.checked) {
+            modules.sandbox.meshes[0].material.map = modules.sandbox.tex_grid;
+        } else {
+            modules.sandbox.meshes[0].material.map = null;
+        }
+        modules.sandbox.meshes[0].material.needsUpdate = true;
+        modules.sandbox.pathTracer.updateMaterials();
+    }
+};
+
 
 ui.domOrthoBtn.onclick = () => {
     camera.switchOrtho();
 };
 
 ui.domCameraFov.oninput = (ev) => {
-    camera.setFov(ev.target.value);
+    if (ev.target.value > 0)
+        camera.setFov(ev.target.value);
+};
+
+ui.domCameraFov.onchange = (ev) => {
+    if (ev.target.value > 0) {
+        if (modules.sandbox.isActive())
+            modules.sandbox.updateCamera(false);
+    }
+};
+
+ui.domCameraFStop.onchange = (ev) => {
+    if (modules.sandbox.isActive() && ev.target.value > 0) {
+        modules.sandbox.camera.fStop = ev.target.value;
+        modules.sandbox.pathTracer.updateCamera();
+    }
+};
+
+ui.domCameraFocalLength.onchange = (ev) => {
+    if (modules.sandbox.isActive() && ev.target.value > 0) {
+        modules.sandbox.camera.focusDistance = ev.target.value;
+        modules.sandbox.pathTracer.updateCamera();
+    }
 };
 
 ui.domAutoRotation.onclick = () => {
@@ -5585,9 +5488,6 @@ ui.domAutoRotationCCW.onclick = () => {
     camera.updateCameraAutoRotation();
 };
 
-ui.domBackgroundCheck.onclick = (ev) => {
-    scene.autoClear = ev.target.checked;
-};
 
 ui.domSymmAxisS.onclick = () => {
     symmetry.switchAxisByNum(-1);
@@ -5609,8 +5509,9 @@ ui.domSymmCenter.onclick = () => {
     helper.setSymmPivot();
 };
 
-ui.domPixelEyedropper.onclick = () => {
-    ui.activateEyedropper();
+
+ui.domBackgroundCheck.onclick = (ev) => {
+    scene.autoClear = ev.target.checked;
 };
 
 ui.domHdriToggle.onclick = (ev) => {
@@ -5621,13 +5522,21 @@ ui.domHdriBlur.oninput = (ev) => {
     hdri.setBlurAmount(ev.target.value);
 };
 
+
 ui.domLightIntensity.oninput = (ev) => {
     light.updateIntensity(ev.target.value);
+    modules.sandbox.light.intensity = ev.target.value;
+    if (modules.sandbox.isActive())
+        modules.sandbox.pathTracer.updateLights();
 };
 
 ui.domLightShadows.onclick = (ev) => {
     light.enableShadows(ev.target.checked);
+    modules.sandbox.light.castShadow = ev.target.checked;
+    if (modules.sandbox.isActive())
+        modules.sandbox.pathTracer.updateLights();
 };
+
 
 ui.domMaterialSwitch.onclick = () => {
     material.switchMaterial();
@@ -5635,33 +5544,16 @@ ui.domMaterialSwitch.onclick = () => {
 
 ui.domRoughness.oninput = (ev) => {
     pool.setMaterial('roughness');
-    ui.domRoughnessRange.value = ev.target.value;
-};
-
-ui.domRoughnessRange.oninput = (ev) => {
-    ui.domRoughness.value = ev.target.value;
-    pool.setMaterial('roughness');
 };
 
 ui.domMetallic.oninput = (ev) => {
-    pool.setMaterial('metallic');
-    ui.domMetallicRange.value = ev.target.value;
-};
-
-ui.domMetallicRange.oninput = (ev) => {
-    ui.domMetallic.value = ev.target.value;
     pool.setMaterial('metallic');
 };
 
 ui.domAlpha.oninput = (ev) => {
     pool.setMaterial('alpha');
-    ui.domAlphaRange.value = ev.target.value;
 };
 
-ui.domAlphaRange.oninput = (ev) => {
-    ui.domAlpha.value = ev.target.value;
-    pool.setMaterial('alpha');
-};
 
 document.getElementById('bake_tex_solid').onclick = () => {
     material.setPBRTexture(0);
@@ -5683,11 +5575,11 @@ document.getElementById('bake_tex_checker').onclick = () => {
     pool.replaceTexture();
 };
 
+
 document.getElementById('fullscreen').onclick = () =>               { toggleFullscreen() };
 document.getElementById('tab-model').onclick = () =>                { ui.setMode(0) };
 document.getElementById('tab-render').onclick = () =>               { ui.setMode(1) };
 document.getElementById('tab-export').onclick = () =>               { ui.setMode(2) };
-document.getElementById('tab-sandbox').onclick = () =>              { ui.setMode(3) };
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
@@ -5793,15 +5685,6 @@ function clearSceneAndReset() {
     ui.domBackgroundCheck.checked = false;
 }
 
-const easingFunction = new BABYLON.CubicEase();
-easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-function animator(target, property, from, to, fps=2, frames=1, callback=null) {
-    BABYLON.Animation.CreateAndStartAnimation('animator',
-        target, property, fps, frames, from, to, 
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
-        easingFunction, callback);
-}
-
 function highlightOverlayMesh(mesh, color3, alpha = 0.5) {
     mesh.renderOverlay = true;
     mesh.overlayAlpha = alpha;
@@ -5846,8 +5729,8 @@ function resetPivot(mesh) {
 
 function createScreenshot(scale = 4) {
     // take shot larger to improve pixel density
-    if (modules.pt.isActive()) {
-        modules.pt.shot();
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.shot();
     } else {
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;

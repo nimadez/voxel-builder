@@ -19,6 +19,13 @@ function createWindow() {
         }
     });
 
+    // Enable SharedArrayBuffer for three-gpu-pathtracer setSceneAsync()
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+        details.responseHeaders['Cross-Origin-Opener-Policy'] = ['same-origin'];
+        details.responseHeaders['Cross-Origin-Embedder-Policy'] = ['require-corp'];
+        callback({ responseHeaders: details.responseHeaders });
+    });
+
     mainWindow.loadFile('src/index.html');
     mainWindow.removeMenu();
 

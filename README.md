@@ -2,14 +2,13 @@
 
 ![screenshot](media/screenshot.png?raw=true "Screenshot")
 
-**Voxel-based 3D modeling application**<br>
-The most featured and leading open source multi-engine voxel-based modeling software on the web, Written in pure JavaScript, Powered by Babylon.js and Three.js with three-mesh-bvh library.
+**Voxel-based 3D Modeling Application**
 
-*"They call it the Hall of Fame"* -dev
+**Model . Render . Export**
 
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.4.1 Beta```<br>
+```Version 4.4.3 Beta```<br>
 [Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
@@ -34,7 +33,7 @@ The most featured and leading open source multi-engine voxel-based modeling soft
 
 **Rendering**
 - High performance voxel engine
-- Real-time GPU path tracing [?](https://github.com/nimadez/voxel-builder/wiki/render)
+- Real-time GPU path tracing [~~?~~](https://github.com/nimadez/voxel-builder/wiki/render)
 
 **Voxelization**
 - Fast BVH voxelization method
@@ -132,6 +131,7 @@ How to run Blender importer script?
 
 ## History
 ```
+↑ Path Tracing was left to three-gpu-pathtracer
 ↑ Officially multi-engine (three.js is hardwired internally)
 ↑ ES6 + x1.5 faster startup + Linux and Firefox ready
 ↑ Voxel engine updated to thin-instances (64k to 1M boost)
@@ -160,6 +160,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [Babylon.js](https://www.babylonjs.com/)
 - [Three.js](https://threejs.org/)
 - [Three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh)
+- [Three-gpu-pathtracer](https://github.com/gkjohnson/three-gpu-pathtracer)
 - [Electron](https://www.electronjs.org/)
 - [MagicaVoxel](https://ephtracy.github.io/)
 - [Google Material Icons](https://github.com/google/material-design-icons)

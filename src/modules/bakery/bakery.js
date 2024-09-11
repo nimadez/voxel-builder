@@ -5,7 +5,6 @@
     Bake voxels to mesh
 */
 
-import { VEC6_ONE, VEC6_HALF } from '../babylon.js';
 import { builder, pool } from '../../main.js';
 
 
@@ -14,11 +13,27 @@ const indices = [ 0,1,2, 0,2,3 ];
 const positions = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
 const normals = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ]; // right handed
 const uvs = [ 0,1, 1,1, 1,0, 0,0 ];
+const VEC6_ONE = [
+    new BABYLON.Vector3(1, 0, 0),
+    new BABYLON.Vector3(-1, 0, 0),
+    new BABYLON.Vector3(0, 1, 0),
+    new BABYLON.Vector3(0, -1, 0),
+    new BABYLON.Vector3(0, 0, 1),
+    new BABYLON.Vector3(0, 0, -1)
+];
+const VEC6_HALF = [
+    new BABYLON.Vector3(0.5, 0, 0),
+    new BABYLON.Vector3(-0.5, 0, 0),
+    new BABYLON.Vector3(0, 0.5, 0),
+    new BABYLON.Vector3(0, -0.5, 0),
+    new BABYLON.Vector3(0, 0, 0.5),
+    new BABYLON.Vector3(0, 0, -0.5)
+];
 
 
 class Bakery {
     constructor() {
-        this.ADD_CAP = true;
+        this._cap = true;
         this.planes = [];
     }
 
@@ -70,7 +85,7 @@ class Bakery {
             plane.rotation.y = rotY;
             this.planes.push(plane);
         } else { // + test by color (add cap)
-            if (this.ADD_CAP) {
+            if (this._cap) {
                 if (voxel.color !== builder.voxels[idx].color) {
                     const plane = pool.constructPlane(positions, normals, uvs, indices, voxel.color);
                     plane.position = voxel.position.add(position);

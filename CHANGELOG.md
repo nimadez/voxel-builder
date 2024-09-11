@@ -1,5 +1,32 @@
 All notable changes to this project will be documented in this file.
 
+## 4.4.3 Debug
+- Improve CEL shader
+- Export: Free resources
+  - Remove texture presets (they are heavy on startup)
+  - Remove import texture (per-face texturing is a Moiré heaven)
+  - Texture menu merged with material menu
+- Improve render sandbox
+- Remove all the range sliders (it doesn't work well in recent chromium updates)
+- Rolled back the batchedmesh raycasting for further investigation
+- ~~Transfer face-normal probe to batchedmesh raycaster~~ (slower)
+- Transfer picking face-normal probe to three raycaster
+  - Fix random camera jumps by improving accuracy
+- ~~Transfer fillArrayBuffers() to worker~~ (unlocks the thread but creates a delay because the function runs faster)
+- Update in progress ...
+
+## 4.4.2 Renderer
+- Manage memory to free up some space
+- Manage and improve three scenes
+- Merge sandbox and pathtracer
+- Path Tracing was left to three-gpu-pathtracer (demo is live!)
+- three-mesh-bvh 0.7.7 has been released with BatchedMesh support, we just convert the babylon matrices to three batchedmesh with no performance penalty
+- Speed up the raycast-based tools (e.g. Rect Add)
+- Most of the features were ported to three-gpu-pathtracer and work as before
+
+> - Startup time: avg. 0.35s (-0.05s)
+> - Asterisked items (*) support the render section
+
 ## 4.4.1 Unlocked
 - Remove fullscreen engine-based loading screen
 - Add universal progressbar at bottom
@@ -33,7 +60,7 @@ All notable changes to this project will be documented in this file.
 - Terrain generator uses height-gradient when 'New Scene' unchecked
 - Fix pointerdown conflict with the main scene when workplanes are active
 
-> - Babylon will not be imported as a module, I will not use webpack, react, typescript and other corporate stuff.
+> - Babylon will not be imported as a module
 
 ## 4.3.8
 - Add keyboard shortcuts (see about menu)

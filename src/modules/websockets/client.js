@@ -8,7 +8,6 @@
     $ python3 scripts/ws-connect.py
 */
 
-
 import { Vector3 } from '../babylon.js';
 import { MODE, preferences, ui, builder } from '../../main.js';
 

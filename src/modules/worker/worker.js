@@ -5,7 +5,6 @@
     Web worker processor
 */
 
-
 import { parseMagicaVoxel } from '../loaders/magicavoxel.js';
 
 
@@ -56,6 +55,55 @@ onmessage = (ev) => {
             }
             postMessage(arr);
             arr = [];
+            break;
+
+        case 'fillArrayBuffers':
+            const voxelsLen = ev.data.data[0];
+            const vPositions = ev.data.data[1];
+            const vUvs = ev.data.data[2];
+            const vIndices = ev.data.data[3];
+            const bufferWorld = ev.data.data[4];
+            const bufferColors = ev.data.data[5];
+
+            const positions = new Float32Array(vPositions.length * voxelsLen);
+            const uvs = new Float32Array(vUvs.length * voxelsLen);
+            const colors = new Float32Array(vUvs.length * 2 * voxelsLen);
+            const indices = new Uint32Array(vIndices.length * voxelsLen);
+
+            const p = { x: 0, y: 0, z: 0 };
+            const lenC = vUvs.length * 2;
+
+            for (let i = 0; i < voxelsLen; i++) {
+                for (let v = 0; v < vPositions.length; v += 3) {
+                    p.x = vPositions[v];
+                    p.y = vPositions[v + 1];
+                    p.z = vPositions[v + 2];
+                    const m = bufferWorld[i]._m; // Vector3TransformCoordinates
+                    const rx = p.x * m[0] + p.y * m[4] + p.z * m[8] + m[12];  // multiply matrix to
+                    const ry = p.x * m[1] + p.y * m[5] + p.z * m[9] + m[13];  // get the scaling
+                    const rz = p.x * m[2] + p.y * m[6] + p.z * m[10] + m[14]; // to support visibility
+                    const rw = 1 / (p.x * m[3] + p.y * m[7] + p.z * m[11] + m[15]);
+                    positions[i * vPositions.length + v] = rx * rw;
+                    positions[i * vPositions.length + v + 1] = ry * rw;
+                    positions[i * vPositions.length + v + 2] = rz * rw;
+                }
+
+                for (let v = 0; v < vUvs.length; v += 2) {
+                    uvs[i * vUvs.length + v] = vUvs[v];
+                    uvs[i * vUvs.length + v + 1] = vUvs[v + 1];
+                    colors[i * lenC + v * 2] = bufferColors[i * 4];
+                    colors[i * lenC + v * 2 + 1] = bufferColors[i * 4 + 1];
+                    colors[i * lenC + v * 2 + 2] = bufferColors[i * 4 + 2];
+                    colors[i * lenC + v * 2 + 3] = 1;
+                }
+
+                const lenI = vPositions.length / 3;
+                const len = i * vIndices.length;
+                for (let v = 0; v < vIndices.length; v++) {
+                    indices[len + v] = vIndices[v] + i * lenI;
+                }
+            }
+            postMessage([ positions, uvs, colors, indices ]);
             break;
     }
 }

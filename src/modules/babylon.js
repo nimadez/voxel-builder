@@ -21,23 +21,36 @@ export const AXIS_X = new BABYLON.Vector3(1, 0, 0);
 export const AXIS_Y = new BABYLON.Vector3(0, 1, 0);
 export const AXIS_Z = new BABYLON.Vector3(0, 0, 1);
 
-export const VEC6_ONE = [
-    new BABYLON.Vector3(1, 0, 0),
-    new BABYLON.Vector3(-1, 0, 0),
-    new BABYLON.Vector3(0, 1, 0),
-    new BABYLON.Vector3(0, -1, 0),
-    new BABYLON.Vector3(0, 0, 1),
-    new BABYLON.Vector3(0, 0, -1)
-];
 
-export const VEC6_HALF = [
-    new BABYLON.Vector3(0.5, 0, 0),
-    new BABYLON.Vector3(-0.5, 0, 0),
-    new BABYLON.Vector3(0, 0.5, 0),
-    new BABYLON.Vector3(0, -0.5, 0),
-    new BABYLON.Vector3(0, 0, 0.5),
-    new BABYLON.Vector3(0, 0, -0.5)
-];
+class Engine {
+    constructor() {
+        this.webgl = undefined;
+        this.webgpu = undefined;
+        this.isRendering = false;
+
+        this.canvas = document.getElementById('canvas');
+
+        this.init();
+    }
+
+    init() {
+        this.webgl = new BABYLON.Engine(this.canvas, true, {});
+        this.webgl.disablePerformanceMonitorInBackground = true;
+        this.webgl.preserveDrawingBuffer = false;
+        this.webgl.premultipliedAlpha = false;
+        this.webgl.enableOfflineSupport = false;
+        this.webgl.doNotHandleContextLost = true;
+
+        this.isRendering = true;
+    }
+
+    getFps() {
+        return ~~this.webgl.getFps();
+    }
+}
+
+export const engine = new Engine();
+
 
 export function Color3(r, g, b) {
     return new BABYLON.Color3(r, g, b);
@@ -86,10 +99,19 @@ export function MergeMeshes(arr, disposeSource, allow32BitsIndices) {
 }
 
 export function LoadAssetContainerAsync(url, dotExt, scene, onLoad, onError) {
-    BABYLON.SceneLoader.LoadAssetContainerAsync(url, "", scene, null, dotExt)
+    BABYLON.SceneLoader.LoadAssetContainerAsync(url, "", scene, undefined, dotExt)
         .then((container) => {
             onLoad(container);
         }).catch((err) => {
             onError(err.message);
         });
+}
+
+const easingFunction = new BABYLON.CubicEase();
+easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
+export function animator(target, property, from, to, fps=2, frames=1, callback=undefined) {
+    BABYLON.Animation.CreateAndStartAnimation('animator',
+        target, property, fps, frames, from, to, 
+        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+        easingFunction, callback);
 }
