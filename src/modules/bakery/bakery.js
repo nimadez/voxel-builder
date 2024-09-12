@@ -85,14 +85,12 @@ class Bakery {
             plane.rotation.y = rotY;
             this.planes.push(plane);
         } else { // + test by color (add cap)
-            if (this._cap) {
-                if (voxel.color !== builder.voxels[idx].color) {
-                    const plane = pool.constructPlane(positions, normals, uvs, indices, voxel.color);
-                    plane.position = voxel.position.add(position);
-                    plane.rotation.x = rotX;
-                    plane.rotation.y = rotY;
-                    this.planes.push(plane);
-                }
+            if (this._cap && voxel.color !== builder.voxels[idx].color) {
+                const plane = pool.constructPlane(positions, normals, uvs, indices, voxel.color);
+                plane.position = voxel.position.add(position);
+                plane.rotation.x = rotX;
+                plane.rotation.y = rotY;
+                this.planes.push(plane);
             }
         }
     }

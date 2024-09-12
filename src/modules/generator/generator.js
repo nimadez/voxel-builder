@@ -11,8 +11,7 @@ import { Vector3 } from '../babylon.js';
 
 import {
     ui, builder, xformer,
-    clearScene,
-    hexToRgbFloat, rgbFloatToHex,
+    clearScene, hexToRgbFloat, rgbFloatToHex,
     COL_ICE
 } from '../../main.js';
 

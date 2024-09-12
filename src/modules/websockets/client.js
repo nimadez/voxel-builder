@@ -103,7 +103,7 @@ class WebsocketClient {
         if (this.ws && this.ws.readyState === WebSocket.OPEN)
             this.ws.close();
         this.ws = undefined;
-        ui.domWebSocketStatus.innerHTML = 'Disconnected';
+        ui.domWebSocketStatus.innerHTML = 'Disconnect';
         ui.domWebSocketStatus.style.color = 'indianred';
     }
 }

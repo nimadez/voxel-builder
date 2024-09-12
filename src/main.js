@@ -42,6 +42,7 @@ import {
     Vector3, Color3, Color4,
     Vector3Distance, Vector3TransformCoordinates, Vector3Project,
     MatrixIdentity, MatrixTranslation, MatrixScaling,
+    CreateBox, CreatePlane, CreateSphere, CreateLine,
     MergeMeshes, animator
 } from './modules/babylon.js';
 
@@ -276,13 +277,14 @@ class MainScene {
         ambient.groundColor = Color3(0.2, 0.2, 0.2);
         ambient.intensity = 0.4;
         
-        const shadowcatcher = BABYLON.MeshBuilder.CreateGround("shadowcatcher", { width: 1000, height: 1000 }, scene);
+        const shadowcatcher = CreatePlane("shadowcatcher", 1000, BACKSIDE, scene);
         shadowcatcher.material = new BABYLON.ShadowOnlyMaterial('shadowcatcher', scene);
         shadowcatcher.material.shadowColor = color3FromHex('#0D1117');
         //shadowcatcher.material.activeLight = light.directional; // define later
         shadowcatcher.material.backFaceCulling = true;
         shadowcatcher.material.alpha = 0.1;
         shadowcatcher.position.y = -0.5;
+        shadowcatcher.rotation.x = -PIH;
         shadowcatcher.receiveShadows = true;
         shadowcatcher.isPickable = false;
         shadowcatcher.doNotSyncBoundingInfo = true;
@@ -336,7 +338,7 @@ class AxisViewScene {
         cam.alpha = scene.activeCamera.alpha;
         cam.beta = scene.activeCamera.beta;
 
-        this.viewCube = BABYLON.MeshBuilder.CreateBox("viewcube", { size: 0.55 }, this.scene);
+        this.viewCube = CreateBox("viewcube", 0.55, FRONTSIDE, this.scene);
         this.viewCube.material = new BABYLON.NormalMaterial("viewcube", this.scene);
         this.viewCube.material.backFaceCulling = true;
         this.viewCube.material.freeze();
@@ -353,7 +355,7 @@ class AxisViewScene {
         axisHelper.yAxis.parent = this.viewCube;
         axisHelper.zAxis.parent = this.viewCube;
 
-        const axis = BABYLON.MeshBuilder.CreateSphere("viewaxes", { diameter: 0.66, segments: 6 }, this.scene);
+        const axis = CreateSphere("viewaxes", 0.66, 6, FRONTSIDE, this.scene);
         for (let i = 0; i < 6; i++) {
             const a = axis.clone();
             a.renderOverlay = true;
@@ -670,7 +672,7 @@ class HDRI {
     }
 
     createSkybox(tex, blur, dist = 10000) {
-        this.skybox = BABYLON.MeshBuilder.CreateBox('skybox', { size: dist }, scene);
+        this.skybox = CreateBox('skybox', dist, BACKSIDE, scene);
         this.skybox.material = new BABYLON.PBRMaterial("skybox", scene);
         this.skybox.material.reflectionTexture = tex;
         this.skybox.material.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
@@ -942,15 +944,15 @@ class Material {
                 float inv = max(dot(normal, -lightDir), 0.0);
                 float spp = max(dot(reflect(-lightDir, normal), viewDir), 0.0);
 		        float spc = pow(spp, 8.0);
-
+                
                 vec3 brdf = vec3(0);
-                brdf += 0.8 * amb * vec3(1);
-                brdf += 1.0 * dif * uLightCol;
+                brdf += 0.9 * amb * vec3(1);
+                brdf += 0.8 * dif * vColor.rgb * uLightCol;
                 brdf += 0.5 * inv * vec3(1);
-                brdf += 0.8 * spc * vec3(1);
+                brdf += 0.5 * spc * vec3(1);
 
                 vec3 col = pow(vColor.rgb * vColor.rgb, vec3(0.4545));
-                col = mix(col, vec3(0), line * 0.16);
+                col = mix(col, vec3(0), line * 0.18);
                 col *= brdf;
                 col = pow(col, vec3(0.4545));
 
@@ -977,11 +979,10 @@ class Material {
             this.mat_cel.setMatrix("uCamMatrix", camera.camera0.getWorldMatrix());
             this.mat_cel.setVector3("uLightPos", light.directional.position);
             this.mat_cel.setColor3("uLightCol", Color3(
-                (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
-                (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
-                (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity
+                light.directional.diffuse.r * light.directional.intensity,
+                light.directional.diffuse.g * light.directional.intensity,
+                light.directional.diffuse.b * light.directional.intensity
             ));
-            this.mat_cel.setFloat("uLightInt", light.directional.intensity);
             //this.mat_cel.setTexture("uTexture", this.textures[3]);
         }
     }
@@ -1031,7 +1032,7 @@ class Builder {
     }
 
     init() {
-        this.voxel = BABYLON.MeshBuilder.CreateBox("voxel", { size: 1, updatable: false }, scene);
+        this.voxel = CreateBox("voxel", 1, FRONTSIDE, scene);
         this.voxel.isVisible = false;
         this.voxel.isPickable = false;
         this.voxel.receiveShadows = true;
@@ -1127,7 +1128,9 @@ class Builder {
         this.bufferMatrix = [];
     }
 
-    fillArrayBuffers() { // for pathtracer and raw export
+    // for pathtracer and raw export
+    // this function is running faster than in a worker (90ms/480ms)
+    fillArrayBuffers() {
         this.positions = new Float32Array(this.vPositions.length * this.voxels.length);
         this.uvs = new Float32Array(this.vUvs.length * this.voxels.length);
         this.colors = new Float32Array(this.vUvs.length * 2 * this.voxels.length);
@@ -1168,21 +1171,6 @@ class Builder {
         }
     }
 
-    async asyncFillArrayBuffers() { // slower
-        const msg = await modules.workerPool.postMessage({
-            id: 'fillArrayBuffers',
-            data: [ this.voxels.length,
-                    this.vPositions, this.vUvs, this.vIndices,
-                    this.bufferWorld, this.bufferColors
-                 ] });
-        if (msg) {
-            this.positions = msg.data[0];
-            this.uvs = msg.data[1];
-            this.colors = msg.data[2];
-            this.indices = msg.data[3];
-        }
-    }
-
     createMesh() { // for export only
         this.fillArrayBuffers();
         this.normals = new Float32Array(this.vNormals.length * this.voxels.length);
@@ -1220,7 +1208,7 @@ class Builder {
     }
 
     getIndexAtPointer() { // GPU color-picking method
-        const x = Math.round(scene.pointerX);   // translated from Three.js by @kikoshoung
+        const x = Math.round(scene.pointerX); // translated from Three.js by @kikoshoung
         const y = engine.webgl.getRenderHeight() - Math.round(scene.pointerY);
         const pixels = readTexturePixels(engine.webgl._gl, renderTarget.pickTexture._texture._hardwareTexture.underlyingResource, x, y, 1, 1);
         const colorId = `${pixels[0]}_${pixels[1]}_${pixels[2]}`;
@@ -1702,7 +1690,7 @@ class Ghosts {
     }
 
     init() {
-        this.voxel = BABYLON.MeshBuilder.CreateBox("ghost_voxel", { size: 1, updatable: false }, scene);
+        this.voxel = CreateBox("ghost_voxel", 1, FRONTSIDE, scene);
         this.voxel.isVisible = false;
         this.voxel.isPickable = false;
         this.voxel.receiveShadows = false;
@@ -1929,14 +1917,14 @@ class Palette {
 
 class Helper {
     constructor() {
-        this.floorPlane = BABYLON.MeshBuilder.CreatePlane("floorplane", { width: 4, height: 4, sideOrientation: DOUBLESIDE, updatable: false }, scene);
-        this.gridPlane = BABYLON.MeshBuilder.CreatePlane("gridplane", { size: 2500, sideOrientation: BACKSIDE, updatable: false }, scene);
-        this.workplane = BABYLON.MeshBuilder.CreatePlane("workplane", { size: WORKPLANE_SIZE, sideOrientation: BACKSIDE, updatable: false }, scene);
-        this.axisPlane = BABYLON.MeshBuilder.CreatePlane("axisplane", { size: 1.15, sideOrientation: DOUBLESIDE, updatable: false }, axisView.scene);
-        this.overlayPlane = BABYLON.MeshBuilder.CreatePlane("overlay_plane", { sideOrientation: DOUBLESIDE, updatable: false }, scene);
-        this.overlayCube = BABYLON.MeshBuilder.CreateBox("overlay_cube", { size: 1, sideOrientation: FRONTSIDE, updatable: false }, scene);
-        this.boxShape = BABYLON.MeshBuilder.CreateBox("boxshape", { size: 1, sideOrientation: FRONTSIDE, updatable: false }, scene);
-        this.boxShapeSymm = BABYLON.MeshBuilder.CreateBox("boxshapesymm", { size: 1, sideOrientation: FRONTSIDE, updatable: false }, scene);
+        this.floorPlane = CreatePlane("floorplane", 4, DOUBLESIDE, scene);
+        this.gridPlane = CreatePlane("gridplane", 2500, BACKSIDE, scene);
+        this.workplane = CreatePlane("workplane", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.axisPlane = CreatePlane("axisplane", 1.15, DOUBLESIDE, axisView.scene);
+        this.overlayPlane = CreatePlane("overlay_plane", 1, DOUBLESIDE, scene);
+        this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
+        this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
+        this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
         this.symmPivot = undefined;
         this.isWorkplaneActive = false;
         this.isFloorPlaneActive = false;
@@ -2048,7 +2036,7 @@ class Helper {
             [ COL_AXIS_Y_RGBA, COL_AXIS_Y_RGBA ],
             [ COL_AXIS_Z_RGBA, COL_AXIS_Z_RGBA ]
         ];
-        this.symmPivot = BABYLON.MeshBuilder.CreateLineSystem("symmpivot", { lines: axisLines, colors: axisColors, useVertexAlpha: true, updatable: false }, uix.utilLayer.utilityLayerScene);
+        this.symmPivot = CreateLine("symmpivot", axisLines, axisColors, uix.utilLayer.utilityLayerScene);
         this.symmPivot.isVisible = false;
         this.symmPivot.doNotSerialize = true;
     }
@@ -2154,21 +2142,17 @@ class Helper {
     setOverlayPlane(pos, normAxis) {
         this.overlayPlane.isVisible = true;
         this.overlayPlane.position = pos;
-        
-        // TODO: BABYLON.Quaternion.RotationAxis bug, this return NaN on Z axis in v7.21.0+
-        // This is the cause of a bug mentioned in 4.3.5, no mouseover on Z axis,
-        // the update was rolled back, and babylon.js library update is on await...
-        this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-            BABYLON.Vector3.Cross(BABYLON.Axis.Z, normAxis),            // axis
-            Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z)));  // angle
-        //console.log(this.overlayPlane.rotationQuaternion);
-        
-        // workaround for the bug
-        /* if (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == 1) {
-            this.overlayPlane.rotationQuaternion = new BABYLON.Quaternion(0, 0,0,1);
-        } else if (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == -1) {
-            this.overlayPlane.rotationQuaternion = new BABYLON.Quaternion(0, 0,0,-1);
-        } */
+
+        if ((normAxis.x == 0 && normAxis.y == 0 && normAxis.z == 1) ||
+            (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == -1)) {
+            this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                BABYLON.Axis.X,
+                Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z)));
+        } else {
+            this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+                BABYLON.Vector3.Cross(BABYLON.Axis.Z, normAxis), // axis
+                Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z))); // angle
+        }
     }
 
     setOverlayCube(pos, color = COL_ORANGE_RGB) {
@@ -2817,20 +2801,43 @@ class Tool {
         return mesh == ghosts.sps.mesh;
     }
 
-    normalProbe(pick, pos) {
-        return modules.rc.raycastNormalPicking(
-            pick.ray.origin.x, pick.ray.origin.y, pick.ray.origin.z,
-            pick.ray.direction.x, pick.ray.direction.y, pick.ray.direction.z,
-            pos.x, pos.y, pos.z);
+    // An unusual method to find picking-normal with a magnetic probe
+    // Since the voxel engine jumped to thin-instances, the main problem has
+    // been picking face-normal.
+    // - babylon.js is slower on mouseover when picking thin-instances
+    // - three-mesh-bvh is slower on mesh generation
+    // - three-mesh-bvh (batchedmesh) is slower on mouseover
+    // - three raycaster works, but also failed in certain conditions
+    // So this method is still more suitable in terms of speed and accuracy.
+    normalProbe(p) {
+        this.normal = undefined;
+        this.tmpsps = [];
+
+        this.tmpsps.push({ position: p, color: COL_RED, visible: true });
+        for (let i = 0; i < VEC6_ONE.length; i++) {
+            const pos = p.add(VEC6_ONE[i]);
+            const idx = builder.getIndexAtPosition(pos);
+            if (idx > -1)
+                this.tmpsps.push({ position: pos, color: COL_RED, visible: builder.voxels[idx].visible });
+        }
+
+        ghosts.createSPS(this.tmpsps);
+        const pick = scene.pick(scene.pointerX, scene.pointerY, this.predicateSPS);
+        if (pick && pick.hit)
+            this.normal = pick.getNormal(true);
+        ghosts.disposeSPS();
+
+        this.tmpsps = [];
+        return this.normal;
     }
 
     setPickInfo(pick, onHit) {
         const index = builder.getIndexAtPointer();
         if (index > -1) {
-            const norm = this.normalProbe(pick, builder.voxels[index].position);
+            const norm = this.normalProbe(builder.voxels[index].position);
             if (norm) {
                 pick.INDEX = index;
-                pick.NORMAL = Vector3(norm.face.normal.x, norm.face.normal.y, norm.face.normal.z);
+                pick.NORMAL = norm;
                 pick.WORKPLANE = false;
                 onHit(pick);
             } else {
@@ -3180,9 +3187,6 @@ class MeshPool {
     
     async bakeToMesh(voxels = builder.voxels) {
         ui.showProgress(1);
-
-        if (ui.domBakeryAsync.checked)
-            voxels = await builder.getReduceVoxels(voxels);
 
         const planes = modules.bakery.bake(voxels);
         const baked = MergeMeshes(planes, true, true);
@@ -3583,6 +3587,25 @@ class MeshPool {
         this.meshes = [];
     }
 
+    normalizeMesh(mesh, scale) {
+        const bounds = mesh.getBoundingInfo();
+        const size = Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z)
+        );
+    
+        const scaleFactor = Math.min(scale / size.x, scale / size.y, scale / size.z);
+        const scaleMatrix = MatrixScaling(scaleFactor, scaleFactor, scaleFactor);
+    
+        const nX = (-bounds.maximum.x + (size.x / 2)) + (size.x / 2);
+        const nY = ((size.y / 2) - bounds.boundingBox.center.y);
+        const nZ = (-bounds.maximum.z + (size.z / 2)) + (size.z / 2);
+        const transMatrix = MatrixTranslation(nX, nY, nZ);
+    
+        mesh.bakeTransformIntoVertices(transMatrix.multiply(scaleMatrix));
+    }
+
     normalizeMeshGLTF(mesh, material) {
         mesh.setParent(null);
         mesh.metadata = null;
@@ -3761,7 +3784,7 @@ class Project {
 
     serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.4.3",
+            version: "Voxel Builder 4.4.4",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4251,7 +4274,6 @@ class UserInterface {
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerYup = document.getElementById('input-voxelizer-yup');
         this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
-        this.domBakeryAsync = document.getElementById('input-bakery-async');
         this.domBakeryBackFace = document.getElementById('input-bakery-backface');
         this.domAutoRotation = document.getElementById('input-autorotate');
         this.domAutoRotationCCW = document.getElementById('input-autorotate-ccw');
@@ -4487,6 +4509,9 @@ class UserInterface {
             div_move.innerHTML = '<i class="material-icons">open_with</i>';
             div_hide.innerHTML = '<i class="material-icons">remove_red_eye</i>';
             div_reset.innerHTML = '<i class="material-icons">exit_to_app</i>';
+            div_move.title = 'Move';
+            div_hide.title = 'Hide';
+            div_reset.title = 'Reset';
             div_move.onpointerdown = (ev) => {
                 elem.style.borderRadius = '6px';
                 elem.style.borderTop = 'solid 1px steelblue';
@@ -4494,7 +4519,10 @@ class UserInterface {
                 this.dragElement(idx, ev.target, elem);
                 this.lastIndex += 1;
             };
-            div_hide.onclick = () => { this.switchPanel(this.panels[idx]) };
+            div_hide.onclick = () => {
+                this.panels[idx].elem.style.display = 'none';
+                this.panels[idx].button.style.textDecoration = 'none';
+            };
             div_reset.onclick = () => { this.resetPanel(idx) };
             li.appendChild(div_move);
             li.appendChild(div_hide);
@@ -4502,6 +4530,10 @@ class UserInterface {
             
             elem.classList.add('panel');
             elem.insertBefore(li, elem.firstChild);
+            elem.onpointerdown = () => {
+                elem.style.zIndex = this.lastIndex + 1;
+                this.lastIndex += 1;
+            };
         } 
     }
 

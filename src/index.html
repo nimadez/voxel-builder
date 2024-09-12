@@ -141,7 +141,7 @@
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: fixed; }
-        #menu-about .about { font-size: 13px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 5px 5px 0 5px; }
+        #menu-about .about { font-size: 13px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 6px; }
         #menu-about .about h1 { font-size: 13px; font-weight: normal; color: #98a1ac; letter-spacing: 1px; }
         #menu-storage img { object-fit: contain; background: #2b334190; border: dotted 1px #1e1f24; width: 115px; height: 60px; margin-left: 1px; cursor: pointer; }
         #menu-storage li div button { font-size: 11px; letter-spacing: 0.05em; width: 59px; padding: 5px 0 5px 0; }
@@ -282,11 +282,10 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.4.3 Beta 2024
+                4.4.4 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
-                <br><span style="color: slategray;">Made with</span> <a title="LOG" href="https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md" target="_blank"><i style="color: #e25555; font-size: 14px; margin-bottom: 0;" class="material-icons">favorite</i></a>
             </li>
         </ul>
         <ul class="menu_L panel" id="menu-prefs">
@@ -306,7 +305,7 @@
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>            
             <li class="spacer"></li>
-            <li class="row"><label>Server:</label>&nbsp;<div id="ws_status">Disconnected</div></li>
+            <li class="row"><label>Server:</label>&nbsp;<div id="ws_status">Disconnect</div></li>
             <li class="spacer"></li>
             <li><button id="ws_connect">Reconnect</button></li>
         </ul>
@@ -457,10 +456,9 @@
             <li><button id="bake_add">Add All Voxels</button></li>
             <li><button id="btn_tool_bakecolor" class="tool_bake_color">Add Selected Color</button></li>
             <li class="category">BAKE ALL</li>
-            <li><button id="bake_all">Clear & Bake All</button></li>
             <li><button id="bake_allcolors">Bake Color Groups</button></li>
+            <li><button id="bake_all">Clear & Bake All</button></li>
             <li class="category">OPTIONS<li>
-            <li><input type="checkbox" id="input-bakery-async" checked> <label for="input-bakery-async">Async Bake</label></li>
             <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
             <li class="spacer"></li>
             <li><button id="clear_bakes">Clear All</button></li>

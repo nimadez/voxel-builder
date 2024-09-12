@@ -8,8 +8,7 @@
 
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
-```Version 4.4.3 Beta```<br>
-[Changelog](https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md)
+```Version 4.4.4 Beta```
 
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
 [Documentation](https://github.com/nimadez/voxel-builder/wiki)<br>
@@ -131,8 +130,7 @@ How to run Blender importer script?
 
 ## History
 ```
-↑ Path Tracing was left to three-gpu-pathtracer
-↑ Officially multi-engine (three.js is hardwired internally)
+↑ Rendering was left to three and three-gpu-pathtracer
 ↑ ES6 + x1.5 faster startup + Linux and Firefox ready
 ↑ Voxel engine updated to thin-instances (64k to 1M boost)
 ↑ Cut half precision (new scene)
@@ -143,8 +141,6 @@ How to run Blender importer script?
 ↑ Features and uix overhaul
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
-
-"I don't mean to compete, GL is nostalgic for me."
 ```
 
 Version 4.3.9 *(BJS 7 - Three r168)*<br>
