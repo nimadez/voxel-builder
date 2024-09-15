@@ -1683,13 +1683,14 @@ class Builder {
 
         for (let i = 0; i < positions.length; i++) {
             const idx = this.getIndexAtPosition(positions[i]);
-            if (idx > -1)
+            if (idx > -1) {
                 tmparr.push(builder.voxels[idx]);
 
-            if (isSymmetry) {
-                const idx = this.getIndexAtPosition(symmetry.invertPos(positions[i]));
-                if (idx > -1)
-                    tmparr.push(builder.voxels[idx]);
+                if (isSymmetry) {
+                    const idx = this.getIndexAtPosition(symmetry.invertPos(positions[i]));
+                    if (idx > -1)
+                        tmparr.push(builder.voxels[idx]);
+                }
             }
         }
         return tmparr;
@@ -3977,7 +3978,7 @@ class Project {
 
     serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.4.4",
+            version: "Voxel Builder 4.4.5",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4539,6 +4540,7 @@ class UserInterface {
                 }
             });
         }
+        this.lastIndex = 1000;
     }
 
     switchPanel(panel) {

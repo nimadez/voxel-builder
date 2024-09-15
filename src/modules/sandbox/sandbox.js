@@ -26,7 +26,7 @@ import {
 
 
 const DPR_FAST = 0.6;
-const TILE = 1;
+const TILE = 3;
 const CAM_FAR = 1000;
 
 
