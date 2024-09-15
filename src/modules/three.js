@@ -32,4 +32,4 @@ const renderer = new THREE.WebGLRenderer({
 
 export { THREE, renderer };
 
-console.log('load three.js modules');
+console.log('load three.js');

@@ -10,6 +10,7 @@
 
 ```Version 4.4.4 Beta```
 
+[Changelog](https://github.com/nimadez/voxel-builder/releases)<br>
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
 [Documentation](https://github.com/nimadez/voxel-builder/wiki)<br>
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
@@ -24,18 +25,20 @@
 - Local storages, snapshots, quicksave, undo
 
 **Model and Paint**
+- High performance voxel engine
+- High performance GPU picking system
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
 - Symmetric drawing and painting
-- Color groups and voxel transform tools
-- High performance GPU picking system
+- Color groups and voxel transforms
 
 **Rendering**
-- High performance voxel engine
-- Real-time GPU path tracing [~~?~~](https://github.com/nimadez/voxel-builder/wiki/render)
+- Three.js sandbox
+- Three.js GPU path tracer
+- Basic PBR rendering
 
 **Voxelization**
-- Fast BVH voxelization method
+- Fast BVH voxelization
 - 3D model voxelizer [?](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
 - Image voxelizer
 
@@ -52,29 +55,31 @@
 - Blender importer script
 
 **More**
+- Average startup time 344 ms
 - Unique handcrafted user-interface
 - Minimum dependency, portable, online and offline
-- Ad-free, no miners and trackers, no logging
-- Extras [?](https://github.com/nimadez/voxel-builder/wiki/Extras)
+- Ad-free, no trackers, no logging, no loading screens
 
 ## Installation
-Install [Electron](https://github.com/electron/electron/releases) for Linux or Windows *(optional)*
+Install [Electron](https://github.com/electron/electron/releases) *(recommended)*
 ```
 electron-v*-linux-x64.zip
 electron-v*-win32-x64.zip
 ```
-Get and run Voxel Builder
+Clone
 ```
-git clone https://github.com/nimadez/voxel-builder.git
+git clone https://github.com/nimadez/voxel-builder
 cd voxel-builder
-
+```
+Run
+```
 # Start with Electron:
 electron .
 
 # Start with Node.js:
 node server.js
 ```
-Update to the latest version
+Update
 ```
 cd voxel-builder
 python3 update.py
@@ -94,8 +99,7 @@ Higher than 512K is not recommended
 Electron is recommended for working with a large number of voxels
 
 Higher values can have the following problems:
-- Unable to quick-save baked meshes (DOMException: exceeded the quota)
-- Intolerable delay when starting the real-time renderer
+- Intolerable delay when starting the renderer
 - Chrome tab may freeze or crash
 
 Of course, the number of voxels is unlimited,
@@ -131,14 +135,16 @@ How to run Blender importer script?
 ## History
 ```
 ↑ Rendering was left to three and three-gpu-pathtracer
-↑ ES6 + x1.5 faster startup + Linux and Firefox ready
-↑ Voxel engine updated to thin-instances (64k to 1M boost)
-↑ Cut half precision (new scene)
+↑ ES6 (the original index.html playground was moved)
+↑ x1.5 faster startup (2s to 350ms)
+↑ Migrating to Linux: Firefox ready
+↑ High performance GPU picking system
+↑ Voxel engine updated to thin-instances (64k to 512k)
+↑ Cut half precision (from 0.0 center to 0.5 center to avoid -0.5/+0.5)
 ↑ Real-time GPU path tracing
 ↑ Introducing ES modules
-↑ Stable beta release
 ↑ Advancing to the next level (bakery)
-↑ Features and uix overhaul
+↑ Changed default handiness to right-handed coordinate
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
 ```

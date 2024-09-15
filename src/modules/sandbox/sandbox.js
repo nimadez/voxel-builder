@@ -136,7 +136,7 @@ class Sandbox {
         //this.tex_grid.magFilter = THREE.LinearFilter;
 
         // overrided
-        this.mat_shade = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xAAAAAA), side: THREE.BackSide, precision: "mediump" });
+        this.mat_shade = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x999999), side: THREE.BackSide, precision: "mediump" });
         this.mat_pbr = new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.BackSide });
         this.mat_pbr.specularIntensity = 1;
         this.mat_pbr.roughness = 1;
@@ -262,7 +262,7 @@ class Sandbox {
     }
 
     updateEnvironmentIntensity(val) {
-        this.scene.environmentIntensity = parseFloat(val) / 11;
+        this.scene.environmentIntensity = parseFloat(val) / 20;
         this.pathTracer.updateEnvironment();
     }
 
@@ -315,11 +315,21 @@ class Sandbox {
         }
     }
 
-    shadeMode() { // TODO
+    shadeMode() {
         this.isShadeMode = !this.isShadeMode;
         ui.domRenderShade.checked = this.isShadeMode;
-        //this.scene.overrideMaterial
         this.updateMeshes();
+        //this.scene.overrideMaterial
+    }
+
+    setGrid(isEnabled) {
+        for (let i = 0; i < this.meshes.length; i++) {
+            (isEnabled) ?
+                this.meshes[i].material.map = this.tex_grid :
+                this.meshes[i].material.map = null;
+            this.meshes[i].material.needsUpdate = true;
+        }
+        this.pathTracer.updateMaterials();
     }
 
     animate() {
@@ -356,6 +366,7 @@ class Sandbox {
                 sandbox.flagUpdateScene = 0;
                 setTimeout(() => {
                     sandbox.pathTracer.create(sandbox.scene, sandbox.camera);
+                    sandbox.isProgressing = true;
                 });
             }
         }
@@ -432,8 +443,8 @@ class Sandbox {
             this.pathTracer.updateBounces(ui.domRenderBounces.value);
             this.pathTracer.updateMaxSamples(ui.domRenderMaxSamples.value);
             this.flagUpdateScene = 1;
-            this.isProgressing = true;
 
+            ui.domRenderShade.disabled = true;
             ui.domInfoRender.style.display = 'unset';
             ui.domSandboxRender.children[0].firstChild.innerHTML = 'stop';
         } else {
@@ -449,6 +460,7 @@ class Sandbox {
             this.scene.add(this.shadowGround);
             this.isProgressing = false;
 
+            ui.domRenderShade.disabled = false;
             ui.domInfoRender.style.display = 'none';
             ui.domSandboxRender.children[0].firstChild.innerHTML = 'play_arrow';
             ui.domRenderPause.innerHTML = 'Pause';
@@ -526,9 +538,6 @@ class Sandbox {
 
 class PathTracer {
     constructor() {
-        this.pt = undefined;
-        this.maxSamples = 0;
-
         this.pt = new WebGLPathTracer(renderer);
         this.pt.bounces = 1;
         this.pt.renderDelay = 300;
@@ -540,6 +549,8 @@ class PathTracer {
         this.pt.dynamicLowRes = true;
         this.pt.lowResScale = DPR_FAST;
         this.pt.updateCamera();
+
+        this.maxSamples = 0;
     }
 
     create(scene, camera) { // TODO: Async

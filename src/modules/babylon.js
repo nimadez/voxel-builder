@@ -114,18 +114,50 @@ export function MergeMeshes(arr, disposeSource, allow32BitsIndices) {
     return BABYLON.Mesh.MergeMeshes(arr, disposeSource, allow32BitsIndices);
 }
 
-export function LoadAssetContainerAsync(url, dotExt, scene, onLoad, onError) {
+export function LoadAssetContainerAsync(url, dotExt, scene, onLoaded, onError) {
     BABYLON.SceneLoader.LoadAssetContainerAsync(url, '', scene, undefined, dotExt)
-        .then((container) => {
-            onLoad(container);
+        .then(container => {
+            onLoaded(container);
         }).catch((err) => {
             onError(err.message);
         });
 }
 
+export function LoadAssetContainerAsyncFromData(data, dotExt, scene, onLoaded, onError) {
+    BABYLON.SceneLoader.LoadAssetContainerAsync('', data, scene, undefined, dotExt)
+        .then(container => {
+            onLoaded(container);
+        }).catch((err) => {
+            onError(err.message);
+        });
+}
+
+export function ExportGLB(scene, filename, exportOptions, isDownload, onLoaded) {
+    BABYLON.GLTF2Export.GLBAsync(scene, filename, exportOptions).then(data => {
+        if (isDownload)
+            data.downloadFiles();
+        onLoaded(data);
+    });
+}
+
+export function ExportGLTF(scene, filename, exportOptions, onLoaded) {
+    BABYLON.GLTF2Export.GLTFAsync(scene, filename, exportOptions).then(data => {
+        data.downloadFiles();
+        onLoaded(data);
+    });
+}
+
+export function ExportOBJ(meshes) {
+    return BABYLON.OBJExport.OBJ(meshes, false, 'material', true);
+}
+
+export function ExportSTL(meshes, filename) {
+    return BABYLON.STLExport.CreateSTL(meshes, true, filename, false, false, true);
+}
+
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-export function animator(target, property, from, to, fps = 2, frames = 1, callback = undefined) {
+export function Animator(target, property, from, to, fps = 2, frames = 1, callback = undefined) {
     BABYLON.Animation.CreateAndStartAnimation('animator',
         target, property, fps, frames, from, to, 
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,

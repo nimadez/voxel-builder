@@ -5,6 +5,7 @@
     Bake voxels to mesh
 */
 
+import { Vector3 } from '../babylon.js';
 import { builder, pool } from '../../main.js';
 
 
@@ -14,20 +15,20 @@ const positions = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
 const normals = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ]; // right handed
 const uvs = [ 0,1, 1,1, 1,0, 0,0 ];
 const VEC6_ONE = [
-    new BABYLON.Vector3(1, 0, 0),
-    new BABYLON.Vector3(-1, 0, 0),
-    new BABYLON.Vector3(0, 1, 0),
-    new BABYLON.Vector3(0, -1, 0),
-    new BABYLON.Vector3(0, 0, 1),
-    new BABYLON.Vector3(0, 0, -1)
+    Vector3(1, 0, 0),
+    Vector3(-1, 0, 0),
+    Vector3(0, 1, 0),
+    Vector3(0, -1, 0),
+    Vector3(0, 0, 1),
+    Vector3(0, 0, -1)
 ];
 const VEC6_HALF = [
-    new BABYLON.Vector3(0.5, 0, 0),
-    new BABYLON.Vector3(-0.5, 0, 0),
-    new BABYLON.Vector3(0, 0.5, 0),
-    new BABYLON.Vector3(0, -0.5, 0),
-    new BABYLON.Vector3(0, 0, 0.5),
-    new BABYLON.Vector3(0, 0, -0.5)
+    Vector3(0.5, 0, 0),
+    Vector3(-0.5, 0, 0),
+    Vector3(0, 0.5, 0),
+    Vector3(0, -0.5, 0),
+    Vector3(0, 0, 0.5),
+    Vector3(0, 0, -0.5)
 ];
 
 

@@ -99,7 +99,7 @@ class Raycaster {
         this.raycaster.set(this.ray.origin, this.ray.direction);
         const res = this.raycaster.intersectObject(this.boxMesh, false);
         if (res && res.length > 0)
-            return res[0];
+            return res[0].face.normal;
         return undefined;
     }
 
