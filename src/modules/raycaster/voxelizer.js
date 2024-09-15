@@ -9,14 +9,13 @@ import { rcv } from './raycaster.js';
 
 import {
     Vector3,
-    MatrixTranslation, MatrixScaling,
-    MergeMeshes, LoadAssetContainerAsync
+    MergeMeshes,
+    LoadAssetContainerAsync
 } from '../babylon.js';
 
 import {
     scene, ui, builder, pool,
-    clearScene,
-    rgbIntToHex,
+    clearScene, resetPivot, rgbIntToHex,
     COL_ICE
 } from '../../main.js';
 
@@ -28,9 +27,9 @@ class Voxelizer {
         ui.showProgress(1);
         const scale = parseInt(ui.domVoxelizerScale.value);
 
-        normalizeMesh(mesh, scale);
+        pool.normalizeMesh(mesh, scale);
 
-        const data = rcv.mesh_voxel(mesh, scale, COL_ICE);
+        const data = rcv.mesh_voxel(mesh, COL_ICE);
         builder.setDataFromArray(data);
         clearScene();
         ui.showProgress(0);
@@ -44,11 +43,27 @@ class Voxelizer {
             
             const data = rcv.mesh_bake(pool.selected);
             builder.setDataFromArray(data);
-            builder.normalizeVoxelPositions();
             clearScene();
             ui.showProgress(0);
         } else {
-            ui.notification('select a bake');
+            ui.notification('select a mesh');
+        }
+    }
+
+    async voxelizeBakeAll() {
+        if (pool.meshes.length > 0) {
+            if (!await ui.showConfirm('clear and replace all voxels?')) return;
+            ui.showProgress(1);
+            ui.setMode(0);
+
+            const mesh = MergeMeshes(pool.meshes, false, true);
+            resetPivot(mesh);
+            const data = rcv.mesh_bake(mesh);
+            mesh.dispose();
+
+            builder.setDataFromArray(data);
+            clearScene();
+            ui.showProgress(0);
         }
     }
 
@@ -101,7 +116,7 @@ class Voxelizer {
             }
 
             builder.setDataFromArray(data);
-            builder.normalizeVoxelPositions();
+            builder.normalizeVoxelPositions(false);
             clearScene();
             ui.showProgress(0);
         }
@@ -197,25 +212,6 @@ class Voxelizer {
 
 export const voxelizer = new Voxelizer();
 
-
-function normalizeMesh(mesh, scale) {
-    const bounds = mesh.getBoundingInfo();
-    const size = Vector3(
-        Math.abs(bounds.minimum.x - bounds.maximum.x),
-        Math.abs(bounds.minimum.y - bounds.maximum.y),
-        Math.abs(bounds.minimum.z - bounds.maximum.z)
-    );
-
-    const scaleFactor = Math.min(scale / size.x, scale / size.y, scale / size.z);
-    const scaleMatrix = MatrixScaling(scaleFactor, scaleFactor, scaleFactor);
-
-    const nX = (-bounds.maximum.x + (size.x / 2)) + (size.x / 2);
-    const nY = ((size.y / 2) - bounds.boundingBox.center.y);
-    const nZ = (-bounds.maximum.z + (size.z / 2)) + (size.z / 2);
-    const transMatrix = MatrixTranslation(nX, nY, nZ);
-
-    mesh.bakeTransformIntoVertices(transMatrix.multiply(scaleMatrix));
-}
 
 function aspectRatioFit(srcW, srcH, maxW, maxH) {
     const ratio = Math.min(maxW / srcW, maxH / srcH);

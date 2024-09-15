@@ -19,10 +19,9 @@ function createWindow() {
         }
     });
 
-    // Enable SharedArrayBuffer for three-gpu-pathtracer setSceneAsync()
     mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
         details.responseHeaders['Cross-Origin-Opener-Policy'] = ['same-origin'];
-        details.responseHeaders['Cross-Origin-Embedder-Policy'] = ['require-corp'];
+        details.responseHeaders['Cross-Origin-Embedder-Policy'] = ['require-corp', 'credentialless'];
         callback({ responseHeaders: details.responseHeaders });
     });
 

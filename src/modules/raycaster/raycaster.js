@@ -30,7 +30,7 @@ class Raycaster {
         this.ray = new THREE.Ray();
         this.raycaster = new THREE.Raycaster();
         this.raycaster.firstHitOnly = true;
-        this.boxGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
+        this.boxGeo = new THREE.BoxGeometry(1, 1, 1);
         this.boxMesh = new THREE.Mesh(this.boxGeo, nullMaterial);
     }
 
@@ -93,13 +93,13 @@ class Raycaster {
 
     raycastNormalPicking(ox, oy, oz, dx, dy, dz, px, py, pz) {
         this.boxMesh.position.set(px, py, pz);
-        this.boxMesh.updateMatrixWorld(true);
+        this.boxMesh.updateMatrixWorld();
         this.ray.origin.set(ox, oy, oz);
         this.ray.direction.set(dx, dy, dz);
         this.raycaster.set(this.ray.origin, this.ray.direction);
         const res = this.raycaster.intersectObject(this.boxMesh, false);
         if (res && res.length > 0)
-            return res[0];
+            return res[0].face.normal;
         return undefined;
     }
 
@@ -210,20 +210,23 @@ class RaycasterMesh {
 class RaycasterVoxelizer {
     constructor() {}
 
-    mesh_voxel(mesh, scale, color) {
+    mesh_voxel(mesh, color) {
         const rcm = new RaycasterMesh();
         
         rcm.createFromData(
             mesh.getVerticesData(PositionKind),
             mesh.getIndices()
         );
+
+        const size = new THREE.Vector3();
+        rcm.mesh.geometry.boundingBox.getSize(size);
+        size.addScalar(0.5);
     
         const data = [];
-        const size = scale * 2;
     
-        for (let x = 0; x < size; x++) {
-            for (let y = 0; y < size; y++) {
-                for (let z = 0; z < size; z++) {
+        for (let x = 0; x < size.x; x++) {
+            for (let y = 0; y < size.y; y++) {
+                for (let z = 0; z < size.z; z++) {
                     if (rcm.boxHit(x, y, z)) {
                         data.push({
                             position: Vector3(x, y, z),

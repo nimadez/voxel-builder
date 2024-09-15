@@ -51,13 +51,13 @@
         body { text-rendering: optimizeSpeed; background: white; font-family: var(--font); font-size: var(--font-size); color: silver; position: fixed; width: 100%; height: 100%; cursor: default; }
         a { font-family: var(--font); font-size: var(--font-size); color: steelblue; text-decoration: none; }
         a:hover { color: orange; text-decoration: none; }
-        input[type=number] { font-family: var(--font); font-size: var(--font-size); width: 100%; height: 12px; padding: 4px 0 4px 0; text-indent: 5px; background: var(--input-bg); color: var(--input-color); border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
+        input[type=number] { font-family: var(--font); font-size: 13px; width: 100%; height: 12px; padding: 4px 0 4px 0; text-indent: 5px; background: var(--input-bg); color: var(--input-color); border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
         input[type=number]:hover { color: steelblue; border: solid 1px #43495a; }
         input[type=number]:disabled { opacity: 0.5; }
         input[type=number] { appearance: textfield; }
-        input[type=text] { font-family: var(--font); font-size: var(--font-size); width: 98%; background: var(--input-bg); color: var(--input-color); padding: 4px 0 4px 0; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
+        input[type=text] { font-family: var(--font); font-size: 13px; width: 98%; background: var(--input-bg); color: var(--input-color); padding: 4px 0 4px 0; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
         input[type=text]:hover { color: steelblue; border: solid 1px #43495a; cursor: text; }
-        input[type=url] { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--input-bg); color: var(--input-color); padding: 4px 0 4px 0; margin-left: -2px; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
+        input[type=url] { font-family: var(--font); font-size: 13px; width: 100%; background: var(--input-bg); color: var(--input-color); padding: 4px 0 4px 0; margin-left: -2px; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
         input[type=url]:hover { color: steelblue; border: solid 1px #43495a; cursor: text; }
         input[type=range] { accent-color: steelblue; width: 100%; height: 2px; margin: 0 0 7px 0; }
         input[type=range]::-webkit-slider-thumb { transform: scale(0.7); }
@@ -101,16 +101,16 @@
         .menu_L :first-child { cursor: pointer; }
         .menu_L li div i { color: var(--cat-color); margin-top: 3px; }
         .menu_L li div:hover i { color: steelblue; }
-        #toolbar_top { z-index: 500; width: 210px; left: 50%; margin-left: -105px; top: 0; text-align: center; position: fixed; }
+        #toolbar_top { z-index: 500; width: 220px; left: 50%; margin-left: -110px; top: 0; text-align: center; position: fixed; }
         #toolbar_C { display: flex; }
         #toolbar_C li { width: 100%; padding: 8px 0 8px 0; font-size: 11px; letter-spacing: 0.05em; background: var(--btn-bg); color: var(--btn-color); border: solid 1px var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C li:hover { background: var(--btn-bg); color: orange; }
         #toolbar_C li:nth-child(1) { border-right: none; border-radius: 0; border-bottom-left-radius: 3px; border-top-left-radius: 3px; }
         #toolbar_C li:nth-child(2) { border-radius: 0; }
-        #toolbar_C li:nth-child(3) { padding-right: 2px; border-left: none; border-radius: 0; border-bottom-right-radius: 3px; border-top-right-radius: 3px; }
+        #toolbar_C li:nth-child(3) { padding-right: 3px; border-left: none; border-radius: 0; border-bottom-right-radius: 3px; border-top-right-radius: 3px; }
         #toolbar_C li.mode_select { color: orange; }
         #toolbar_C_mem { display: flex; margin-bottom: 2px; }
-        #toolbar_C_mem li { width: 100%; font-size: 11px; padding: 8px 0 8px 0; background: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
+        #toolbar_C_mem li { width: 100%; font-size: 10px; letter-spacing: 0.03em; padding: 8px 0 8px 0; background: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--borders); border-radius: 0; cursor: pointer; }
         #toolbar_C_mem li:hover { color: orange; }
         #toolbar_C_mem :nth-child(1) { border-right: none; border-bottom-left-radius: 3px; }
         #toolbar_C_mem :nth-child(3) { padding: 0 1px 0 1px; width: 0; background: none; border: none; }
@@ -141,7 +141,7 @@
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: fixed; }
-        #menu-about .about { font-size: 13px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 5px 5px 0 5px; }
+        #menu-about .about { font-size: 13px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 6px; }
         #menu-about .about h1 { font-size: 13px; font-weight: normal; color: #98a1ac; letter-spacing: 1px; }
         #menu-storage img { object-fit: contain; background: #2b334190; border: dotted 1px #1e1f24; width: 115px; height: 60px; margin-left: 1px; cursor: pointer; }
         #menu-storage li div button { font-size: 11px; letter-spacing: 0.05em; width: 59px; padding: 5px 0 5px 0; }
@@ -166,7 +166,7 @@
         #sandbox_render button i { font-size: 30px; }
         #info { z-index: 2; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: var(--white); letter-spacing: 0.05em; }
-        #info_tool { z-index: 2; display: none; color: #97a5b890; letter-spacing: 0.05em; font-size: 11px; position: absolute; padding: 2px; width: auto; top: 75px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
+        #info_tool { z-index: 2; display: none; color: #97a5b890; letter-spacing: 0.05em; font-size: 11px; position: absolute; padding: 2px; width: auto; top: 78px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info_render { z-index: 301; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #info_render span { color: var(--white); letter-spacing: 0.05em; }
         #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
@@ -174,7 +174,7 @@
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
         #confirm button { width: 48%; padding: 4px; font-size: var(--font-size); text-transform: uppercase; }
         #confirmblocker { z-index: 2400; display: none; opacity: 0.2; background: #181b22; position: absolute; width: 100%; height: 100%; }
-        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aCC; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 102px; transform: translateX(-50%); padding: 3px 4px 2px 4px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
+        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 110px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_status { font-size: 11px; color: indianred; }
         #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 360px; height: 50%; transform: translate(-50%,-50%); position: fixed; }
         #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
@@ -184,6 +184,8 @@
         #shortcuts th, td { width: 380px; padding: 4px 0 4px 0; }
         .spacer { height: 3px; }
         .row { display: flex; width: 100%; align-items: center; }
+        .row_input { display: flex; width: 100%; gap: 5px; align-items: center; }
+        .row_input :first-child { width: 100%; }
         .row_panel { display: flex; width: 100%; height: 25px; align-items: center; gap: 11px; text-indent: 6px; }
         .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 16px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
         ::placeholder { color: #45515c; }
@@ -223,8 +225,8 @@
             <li><button id="toolbar_btn_camera">CAMERA</button></li>
             <li title="Environment"><button id="toolbar_btn_env">ENV.</button><br><br></li>
             <li><button id="toolbar_btn_storage">STORAGE</button></li>
-            <li><button id="toolbar_btn_create">CREATE</button></li>
             <li><button id="toolbar_btn_import">IMPORT</button></li>
+            <li><button id="toolbar_btn_create">CREATE</button></li>
             <li title="Symmetry"><button id="toolbar_btn_symm">SYMM.</button></li>
             <li><button id="toolbar_btn_model">MODEL</button></li>
             <li><button id="toolbar_btn_paint">PAINT</button></li>
@@ -282,11 +284,12 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.4.3 Beta 2024
+                4.4.4 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
+                <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
-                <br><span style="color: slategray;">Made with</span> <a title="LOG" href="https://github.com/nimadez/voxel-builder/blob/main/CHANGELOG.md" target="_blank"><i style="color: #e25555; font-size: 14px; margin-bottom: 0;" class="material-icons">favorite</i></a>
+                <br><input type="checkbox" id="devmode"> <label for="devmode">Dev mode</label>
             </li>
         </ul>
         <ul class="menu_L panel" id="menu-prefs">
@@ -295,7 +298,7 @@
             <li><input type="checkbox" id="pref_nohover"> <label for="pref_nohover">No Hover Menu</label></li>
             <li><input type="checkbox" id="pref_floorplane"> <label for="pref_floorplane">Floor Plane</label></li>
             <li><input type="checkbox" id="pref_pointcloud"> <label for="pref_pointcloud">Point Cloud</label></li>
-            <li class="row"><label>Palette</label>&nbsp;&nbsp;<input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1"></li>
+            <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1"></li>
             <li class="category">SYSTEM</li>
             <li><input type="checkbox" id="pref_powersaver"> <label for="pref_powersaver" title="Reduced PT Bounces/FPS and Tool FPS">Power Saver</label></li>
             <li class="spacer"></li>
@@ -306,7 +309,7 @@
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>            
             <li class="spacer"></li>
-            <li class="row"><label>Server:</label>&nbsp;<div id="ws_status">Disconnected</div></li>
+            <li class="row"><label>Server:</label>&nbsp;<div id="ws_status">Disconnect</div></li>
             <li class="spacer"></li>
             <li><button id="ws_connect">Reconnect</button></li>
         </ul>
@@ -322,8 +325,8 @@
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">Import Voxels</button></li>
             <li><button onclick="document.getElementById('openfile_import_bakes').click()">Import Bakes</button></li>
             <li class="category">EXPORT</li>
-            <li class="row">
-                <label>Format</label>&nbsp;&nbsp;<select id="input-export-format">
+            <li class="row_input">
+                <label style="width: 60%;">Format</label><select id="input-export-format">
                     <option value="glb">GLB</option>
                     <option value="gltf">GLTF</option>
                     <option value="obj">OBJ</option>
@@ -416,7 +419,7 @@
             <li class="category">BOX SHAPE</li>
             <li><button id="btn_tool_box_add" class="tool_box_add">Box Add</button></li>
             <li class="spacer"></li>
-            <li class="row"><label style="margin-right: 5px">Height</label>&nbsp;<input id="input-boxtool-height" type="number" class="ignorekeys" value="1" min="1" max="100"></li>
+            <li class="row_input"><label>Height</label> <input id="input-boxtool-height" type="number" class="ignorekeys" value="1" min="1" max="100"></li>
             <li class="spacer"></li>
             <li><button id="btn_tool_box_remove" class="tool_box_remove">Box Remove</button></li>
             <li class="category">RECTANGLE</li>
@@ -445,36 +448,38 @@
             <li><button id="btn_tool_transform_visible" class="tool_transform_visible">Visible Voxels</button></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone</label></li>
             <li class="spacer"></li>
-            <li id="normalize_voxels"><button>Normalize<br>Positions</button></li>
+            <li><button id="normalize_voxels">Normalize<br>Positions</button></li>
             <li class="category">MEASUREMENT</li>
             <li><button id="btn_tool_measure_volume" class="tool_measure_volume">By Volume</button></li>
             <li><button id="btn_tool_measure_color" class="tool_measure_color">By Color Group</button></li>
             <li class="category">CLEANUP</li>
-            <li id="reduce_voxels"><button>Reduce Voxels</button></li>
+            <li><button id="reduce_voxels">Reduce Voxels</button></li>
         </ul>
         <ul class="menu_L panel" id="menu-bakery">
-            <li class="category">BAKE</li>
-            <li><button id="bake_add">Add All Voxels</button></li>
-            <li><button id="btn_tool_bakecolor" class="tool_bake_color">Add Selected Color</button></li>
-            <li class="category">BAKE ALL</li>
-            <li><button id="bake_all">Clear & Bake All</button></li>
-            <li><button id="bake_allcolors">Bake Color Groups</button></li>
-            <li class="category">OPTIONS<li>
-            <li><input type="checkbox" id="input-bakery-async" checked> <label for="input-bakery-async">Async Bake</label></li>
-            <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
+            <li class="category">BAKERY</li>
+            <li><button id="bakery_bake">Bake</button></li>
             <li class="spacer"></li>
+            <li><input type="checkbox" id="input-bakery-split" checked> <label for="input-bakery-split">Split Color Groups</label></li>
+            <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
+            <li><input type="checkbox" id="input-bakery-clear" checked> <label for="input-bakery-clear">Clear Meshes</label></li>
+            <li class="category">INTERACTIVE</li>
+            <li><button id="btn_tool_bakecolor" class="tool_bake_color">Selected Color</button></li>
+            <li class="category">OPTIONS<li>
             <li><button id="clear_bakes">Clear All</button></li>
         </ul>
         <ul class="menu_L panel" id="menu-meshes">
             <li class="category">REPLICATE</li>
             <li><button id="clone_bake">Clone</button></li>
-            <li class="category">MERGE</li>
-            <li><button id="merge_bakes_pick" class="tool_merge">Pick</button></li>
+            <li class="category">SELECT & MERGE</li>
+            <li class="row">
+                <button id="merge_bakes_cancel">Cancel</button>
+                <button id="merge_bakes_pick" class="tool_merge">Pick</button>
+            </li>
             <li><button id="merge_bakes_merge">Merge Selected</button></li>
-            <li><button id="merge_bakes_cancel">Cancel</button></li>
-            <li class="spacer"></li>
+            <li class="category">RE-MESH</li>
             <li><button id="merge_all_bakes">Merge All</button></li>
             <li class="category">UNBAKE<li>
+            <li><button id="voxelize_bake_all">Voxelize All</button></li>
             <li><button id="voxelize_bake">Voxelize</button></li>
             <li class="category">CLEAR</li>
             <li><button id="reset_bake_rotation">Reset Rotation</button></li>
@@ -484,9 +489,10 @@
             <li class="category">SETTINGS</li>
             <li><input id="input-sandbox-autorender" type="checkbox"></input> <label for="input-sandbox-autorender">Auto Start Render</label></li>
             <li class="spacer"></li>
-            <li class="row"><label>Samples</label>&nbsp;&nbsp;<input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" max="8192" step="8"></li>
-            <li class="row"><label>Bounces</label>&nbsp;&nbsp;<input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
-            <li class="row"><label>DPR</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="number" id="input-pt-dpr" class="ignorekeys" value="1" min="1" max="1" step="1"></li>
+            <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" max="8192" step="8"></li>
+            <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
+            <li class="row_input"><label>Max DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="1" min="1" max="1" step="1"></li>
+            <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="1" min="1" step="1"></li>
             <li class="spacer"></li>
             <li><button id="btn-pt-pause">Pause</button></li>
             <li class="row">
@@ -506,12 +512,12 @@
                 </select>
             </li>
             <li class="spacer"></li>
-            <li class="row"><label style="min-width: 53%">Intensity</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="8.0" min="0.01" max="100" step="0.01"></li>
+            <li class="row"><label style="min-width: 53%">Intensity</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="15.0" min="0.01" max="100" step="0.01"></li>
             <li><input id="input-pt-background" type="checkbox"></input> <label for="input-pt-background">Background</label></li>
             <li class="category">MATERIAL</li>
-            <li class="row"><label for="input-pt-roughness">Roughness</label>&nbsp;&nbsp;<input id="input-pt-roughness" class="ignorekeys" type="number" value="0.98" min="0" max="1" step="0.01"></input></li>
-            <li class="row"><label for="input-pt-metalness">Metalness</label>&nbsp;&nbsp;&nbsp;<input id="input-pt-metalness" class="ignorekeys" type="number" value="0.01" min="0" max="1" step="0.01"></input></li>
-            <li class="row"><label for="input-pt-transmission">Transmiss.</label>&nbsp;&nbsp;<input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.98" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0.01" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-transmission">Transmiss.</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
             <li class="spacer"></li>
             <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
             <li><input id="input-pt-grid" type="checkbox" checked></input> <label for="input-pt-grid">Grid Texture</label></li>
@@ -542,12 +548,12 @@
             <li><button id="unload_hdri">Unload</button></li>
             <li><input type="checkbox" id="input-hdri-toggle"> <label for="input-hdri-toggle">Background</label></li>
             <li class="spacer"></li>
-            <li class="row"><label>Blur</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="number" id="input-hdri-blur" value="0" min="0" max="1" step="0.01"></li>
+            <li class="row_input"><label>Blur</label> <input type="number" id="input-hdri-blur" value="0" min="0" max="1" step="0.01"></li>
             <li class="category">DIRECT LIGHT</li>
             <li><input type="color" id="input-light-color" value="#DCDCDC"></li>
             <li class="spacer"></li>
-            <li class="row"><label>Intensity *</label>&nbsp;&nbsp;&nbsp;<input style="width: 45%;" type="number" id="input-light-intensity" value="0.8" min="0" max="3" step="0.01"></li>
-            <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows *</label></li>
+            <li class="row_input"><label>Intensity</label> <input type="number" id="input-light-intensity" value="1.0" min="0" step="0.01"></li>
+            <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-material">
             <li class="category">TEXTURE</li>
@@ -642,7 +648,6 @@
     <input style="display: none" type="file" id="openfile_voxelizer" accept=".obj,.glb" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_voxelizer_img" accept=".jpg,.png,.svg" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_hdr" accept=".hdr" onclick="this.value = null">
-    <input style="display: none" type="file" id="openfile_pt_hdr" accept=".hdr" onclick="this.value = null">
     <!-- help -->
     <div id="shortcuts">
         <table>

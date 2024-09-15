@@ -1,12 +1,14 @@
 /* 
     Nov 2023
     @nimadez
-*/
 
+    Three.js
+*/
 
 import * as THREE from 'three';
 import {
-    computeBoundsTree, disposeBoundsTree, acceleratedRaycast,
+    acceleratedRaycast,
+    computeBoundsTree, disposeBoundsTree,
     computeBatchedBoundsTree, disposeBatchedBoundsTree,
 } from '../libs/three-mesh-bvh.js';
 
@@ -22,7 +24,6 @@ THREE.BatchedMesh.prototype.disposeBoundsTree = disposeBatchedBoundsTree;
 
 const renderer = new THREE.WebGLRenderer({
     canvas: document.getElementById('canvas_three'),
-    //precision: "mediump",
     preserveDrawingBuffer: true,
     antialias: true,
     alpha: true
@@ -31,4 +32,4 @@ const renderer = new THREE.WebGLRenderer({
 
 export { THREE, renderer };
 
-console.log('load three.js modules');
+console.log('load three.js');

@@ -2,10 +2,7 @@
     Sep 2024
     @nimadez
 
-    BABYLON
-
-    After MATH was removed from the OpenGL,
-    we all had to write our own matrices.
+    Babylon.js
 */
 
 export const PositionKind = BABYLON.VertexBuffer.PositionKind;
@@ -27,7 +24,6 @@ class Engine {
         this.webgl = undefined;
         this.webgpu = undefined;
         this.isRendering = false;
-
         this.canvas = document.getElementById('canvas');
 
         this.init();
@@ -60,6 +56,7 @@ export function Color4(r, g, b, a) {
     return new BABYLON.Color4(r, g, b, a);
 }
 
+
 export function Vector3(x, y, z) {
     return new BABYLON.Vector3(x, y, z);
 }
@@ -82,6 +79,7 @@ export function Vector3Project(target, scene, camera) {
             scene.getEngine().getRenderHeight()));
 }
 
+
 export function MatrixIdentity() {
     return BABYLON.Matrix.Identity();
 }
@@ -94,22 +92,72 @@ export function MatrixScaling(x, y, z) {
     return BABYLON.Matrix.Scaling(x, y, z);
 }
 
+
+export function CreateBox(name, size, side, scene) {
+    return BABYLON.MeshBuilder.CreateBox(name, { size: size, sideOrientation: side }, scene);
+}
+
+export function CreatePlane(name, size, side, scene) {
+    return BABYLON.MeshBuilder.CreatePlane(name, { size: size, sideOrientation: side, updatable: false }, scene);
+}
+
+export function CreateSphere(name, diameter, segments, side, scene) {
+    return BABYLON.MeshBuilder.CreateSphere(name, { diameter: diameter, segments: segments, sideOrientation: side }, scene);
+}
+
+export function CreateLine(name, lines, colors, scene) {
+    return BABYLON.MeshBuilder.CreateLineSystem(name, { lines: lines, colors: colors, useVertexAlpha: true, updatable: false }, scene);
+}
+
+
 export function MergeMeshes(arr, disposeSource, allow32BitsIndices) {
     return BABYLON.Mesh.MergeMeshes(arr, disposeSource, allow32BitsIndices);
 }
 
-export function LoadAssetContainerAsync(url, dotExt, scene, onLoad, onError) {
-    BABYLON.SceneLoader.LoadAssetContainerAsync(url, "", scene, undefined, dotExt)
-        .then((container) => {
-            onLoad(container);
+export function LoadAssetContainerAsync(url, dotExt, scene, onLoaded, onError) {
+    BABYLON.SceneLoader.LoadAssetContainerAsync(url, '', scene, undefined, dotExt)
+        .then(container => {
+            onLoaded(container);
         }).catch((err) => {
             onError(err.message);
         });
 }
 
+export function LoadAssetContainerAsyncFromData(data, dotExt, scene, onLoaded, onError) {
+    BABYLON.SceneLoader.LoadAssetContainerAsync('', data, scene, undefined, dotExt)
+        .then(container => {
+            onLoaded(container);
+        }).catch((err) => {
+            onError(err.message);
+        });
+}
+
+export function ExportGLB(scene, filename, exportOptions, isDownload, onLoaded) {
+    BABYLON.GLTF2Export.GLBAsync(scene, filename, exportOptions).then(data => {
+        if (isDownload)
+            data.downloadFiles();
+        onLoaded(data);
+    });
+}
+
+export function ExportGLTF(scene, filename, exportOptions, onLoaded) {
+    BABYLON.GLTF2Export.GLTFAsync(scene, filename, exportOptions).then(data => {
+        data.downloadFiles();
+        onLoaded(data);
+    });
+}
+
+export function ExportOBJ(meshes) {
+    return BABYLON.OBJExport.OBJ(meshes, false, 'material', true);
+}
+
+export function ExportSTL(meshes, filename) {
+    return BABYLON.STLExport.CreateSTL(meshes, true, filename, false, false, true);
+}
+
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-export function animator(target, property, from, to, fps=2, frames=1, callback=undefined) {
+export function Animator(target, property, from, to, fps = 2, frames = 1, callback = undefined) {
     BABYLON.Animation.CreateAndStartAnimation('animator',
         target, property, fps, frames, from, to, 
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
