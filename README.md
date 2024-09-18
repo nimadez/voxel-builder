@@ -113,8 +113,19 @@ Wacom tablet crashes randomly and throws warning on Linux (GNOME)
 Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.
 This problem is related to Babylon.js and nothing can be done.
 ```
+Error: Exceeded the quota
+```
+Browser storage can handle 6 snapshots with 32x32x32 voxels
+(use Electron for much higher capacity - 1 million)
+```
 
 ## FAQ
+How to go back to the previous version?
+```
+cd voxel-builder
+git log -2 (copy the hash of the previous commit)
+git reset --hard $HASH
+```
 How to merge vertices after export to GLB?
 ```
 1- Open exported GLB file in Blender

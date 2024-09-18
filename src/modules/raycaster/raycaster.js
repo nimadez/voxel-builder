@@ -31,7 +31,6 @@ class Raycaster {
         this.raycaster = new THREE.Raycaster();
         this.raycaster.firstHitOnly = true;
         this.boxGeo = new THREE.BoxGeometry(1, 1, 1);
-        this.boxMesh = new THREE.Mesh(this.boxGeo, nullMaterial);
     }
 
     create() {
@@ -91,18 +90,6 @@ class Raycaster {
         return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
     }
 
-    raycastNormalPicking(ox, oy, oz, dx, dy, dz, px, py, pz) {
-        this.boxMesh.position.set(px, py, pz);
-        this.boxMesh.updateMatrixWorld();
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction.set(dx, dy, dz);
-        this.raycaster.set(this.ray.origin, this.ray.direction);
-        const res = this.raycaster.intersectObject(this.boxMesh, false);
-        if (res && res.length > 0)
-            return res[0].face.normal;
-        return undefined;
-    }
-
     raycastBatchedMesh(ox, oy, oz, dx, dy, dz) {
         this.ray.origin.set(ox, oy, oz);
         this.ray.direction.set(dx, dy, dz);
@@ -121,8 +108,6 @@ class Raycaster {
             this.ray = null;
             this.raycaster.dispose();
             this.raycaster = null;
-            this.boxMesh.geometry.dispose();
-            this.boxMesh = null;
         }
     }
 }

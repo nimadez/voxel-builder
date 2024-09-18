@@ -162,7 +162,7 @@
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
         #sandbox_render { z-index: 301; display: none; flex-direction: column; left: 5px; top: 150px; position: fixed; }
-        #sandbox_render button { width: 65px; padding: 5px; }
+        #sandbox_render button { width: 65px; height: 50px; }
         #sandbox_render button i { font-size: 30px; }
         #info { z-index: 2; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: var(--white); letter-spacing: 0.05em; }
@@ -284,7 +284,7 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.4.4 Beta 2024
+                4.4.5 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -300,8 +300,6 @@
             <li><input type="checkbox" id="pref_pointcloud"> <label for="pref_pointcloud">Point Cloud</label></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1"></li>
             <li class="category">SYSTEM</li>
-            <li><input type="checkbox" id="pref_powersaver"> <label for="pref_powersaver" title="Reduced PT Bounces/FPS and Tool FPS">Power Saver</label></li>
-            <li class="spacer"></li>
             <button id="fullscreen">Fullscreen</button>
             <li><button id="reset_hover">Reset Hover</button></li>
             <li><button id="clear_cache">Clear Cache</button></li>
@@ -487,33 +485,20 @@
         </ul>
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
-            <li><input id="input-sandbox-autorender" type="checkbox"></input> <label for="input-sandbox-autorender">Auto Start Render</label></li>
+            <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start Render</label></li>
+            <li><input id="input-pt-fast" type="checkbox"></input> <label for="input-pt-fast">Fast DPR</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" max="8192" step="8"></li>
             <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
             <li class="row_input"><label>Max DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="1" min="1" max="1" step="1"></li>
             <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="1" min="1" step="1"></li>
             <li class="spacer"></li>
-            <li><button id="btn-pt-pause">Pause</button></li>
             <li class="row">
                 <button id="btn-pt-shot">Shot</button>
-                <button id="btn-pt-fast">Fast</button>
+                <button id="btn-pt-pause">Pause</button>
             </li>
             <li class="category">ENVIRONMENT</li>
-            <li>
-                <select id="hdri_dropdown" style="text-align: left;">
-                    <option value="assets/snow_field_2_puresky_1k.hdr">Default (local)</option>
-                    <option value="assets/black.hdr">Black (local)</option>
-                    <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/main/footprint_court.hdr">DLC: Footprint Court</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">DLC: Venice Sunset</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/pedestrian_overpass_1k.hdr">DLC: Pedestrian Overpass</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/blouberg_sunrise_2_1k.hdr">DLC: Blouberg Sunrise</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/quarry_01_1k.hdr">DLC: Quarry</option>
-                </select>
-            </li>
-            <li class="spacer"></li>
             <li class="row"><label style="min-width: 53%">Intensity</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="15.0" min="0.01" max="100" step="0.01"></li>
-            <li><input id="input-pt-background" type="checkbox"></input> <label for="input-pt-background">Background</label></li>
             <li class="category">MATERIAL</li>
             <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.98" min="0" max="1" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0.01" min="0" max="1" step="0.01"></input></li>
@@ -544,15 +529,27 @@
                 <input type="color" id="input-env-background" value="#222222">
             </li>
             <li class="category">HDRI</li>
+            <li>
+                <select id="hdri_dropdown" style="text-align: left;">
+                    <option value="assets/snow_field_2_puresky_1k.hdr">Default (local)</option>
+                    <option value="assets/black.hdr">Black (local)</option>
+                    <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/main/footprint_court.hdr">DLC: Footprint Court</option>
+                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">DLC: Venice Sunset</option>
+                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/pedestrian_overpass_1k.hdr">DLC: Pedestrian Overpass</option>
+                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/blouberg_sunrise_2_1k.hdr">DLC: Blouberg Sunrise</option>
+                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/quarry_01_1k.hdr">DLC: Quarry</option>
+                </select>
+            </li>
             <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
             <li><button id="unload_hdri">Unload</button></li>
-            <li><input type="checkbox" id="input-hdri-toggle"> <label for="input-hdri-toggle">Background</label></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Blur</label> <input type="number" id="input-hdri-blur" value="0" min="0" max="1" step="0.01"></li>
+            <li><input type="checkbox" id="input-hdri-background"> <label for="input-hdri-background">Background *</label></li>
+            <li class="spacer"></li>
+            <li class="row_input"><label>Blur *</label> <input type="number" id="input-hdri-blur" value="0.1" min="0" max="1" step="0.01"></li>
             <li class="category">DIRECT LIGHT</li>
             <li><input type="color" id="input-light-color" value="#DCDCDC"></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Intensity</label> <input type="number" id="input-light-intensity" value="1.0" min="0" step="0.01"></li>
+            <li class="row_input"><label>Intensity *</label> <input type="number" id="input-light-intensity" value="1.0" min="0" step="0.01"></li>
             <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-material">

@@ -5,6 +5,35 @@
     Babylon.js
 */
 
+
+class Engine {
+    constructor() {
+        this.engine = undefined;
+        this.isRendering = false;
+        this.canvas = document.getElementById('canvas');
+
+        this.init();
+    }
+
+    init() {
+        this.engine = new BABYLON.Engine(this.canvas, true, {});
+        this.engine.disablePerformanceMonitorInBackground = true;
+        this.engine.preserveDrawingBuffer = false;
+        this.engine.premultipliedAlpha = false;
+        this.engine.enableOfflineSupport = false;
+        this.engine.doNotHandleContextLost = true;
+
+        this.isRendering = true;
+    }
+
+    getFps() {
+        return ~~this.engine.getFps();
+    }
+}
+
+export const engine = new Engine();
+
+
 export const PositionKind = BABYLON.VertexBuffer.PositionKind;
 export const NormalKind = BABYLON.VertexBuffer.NormalKind;
 export const UVKind = BABYLON.VertexBuffer.UVKind;
@@ -17,35 +46,6 @@ export const FRONTSIDE = BABYLON.Mesh.FRONTSIDE;
 export const AXIS_X = new BABYLON.Vector3(1, 0, 0);
 export const AXIS_Y = new BABYLON.Vector3(0, 1, 0);
 export const AXIS_Z = new BABYLON.Vector3(0, 0, 1);
-
-
-class Engine {
-    constructor() {
-        this.webgl = undefined;
-        this.webgpu = undefined;
-        this.isRendering = false;
-        this.canvas = document.getElementById('canvas');
-
-        this.init();
-    }
-
-    init() {
-        this.webgl = new BABYLON.Engine(this.canvas, true, {});
-        this.webgl.disablePerformanceMonitorInBackground = true;
-        this.webgl.preserveDrawingBuffer = false;
-        this.webgl.premultipliedAlpha = false;
-        this.webgl.enableOfflineSupport = false;
-        this.webgl.doNotHandleContextLost = true;
-
-        this.isRendering = true;
-    }
-
-    getFps() {
-        return ~~this.webgl.getFps();
-    }
-}
-
-export const engine = new Engine();
 
 
 export function Color3(r, g, b) {

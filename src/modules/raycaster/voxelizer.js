@@ -156,9 +156,9 @@ class Voxelizer {
     }
 
     loadFromUrl(url) {
-        if (url == "") return;
+        if (url === '') return;
         fetch(url).then(res => {
-            if (res.status == 200) {
+            if (res.status === 200) {
                 if (url.toLowerCase().includes('.obj') || url.endsWith('.obj')) {
                     this.importMeshOBJ(url);
                 } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
@@ -175,18 +175,19 @@ class Voxelizer {
     }
 
     loadFromUrlImage(url) {
-        if (url == "") return;
-        fetch(url).then(async res => {
-            if (res.status == 200) {
-                const data = await res.blob();
-                if (data.type &&
-                    (data.type == 'image/png'  ||
-                     data.type == 'image/jpeg' ||
-                     data.type == 'image/svg+xml')) {
-                        this.voxelize2D(url);
-                } else {
-                    ui.notification("unsupported file format");
-                }
+        if (url === '') return;
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                res.blob().then(data => {
+                    if (data.type &&
+                        (data.type == 'image/png'  ||
+                         data.type == 'image/jpeg' ||
+                         data.type == 'image/svg+xml')) {
+                            this.voxelize2D(url);
+                    } else {
+                        ui.notification("unsupported file format");
+                    }
+                });
             } else {
                 ui.notification("unable to read url");
             }

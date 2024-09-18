@@ -88,13 +88,14 @@ const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
 
 const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
+const VEC3_TWO = Vector3(2, 2, 2);
 const VEC6_ONE = [
-    new BABYLON.Vector3(1, 0, 0),
-    new BABYLON.Vector3(-1, 0, 0),
-    new BABYLON.Vector3(0, 1, 0),
-    new BABYLON.Vector3(0, -1, 0),
-    new BABYLON.Vector3(0, 0, 1),
-    new BABYLON.Vector3(0, 0, -1)
+    Vector3(1, 0, 0),
+    Vector3(-1, 0, 0),
+    Vector3(0, 1, 0),
+    Vector3(0, -1, 0),
+    Vector3(0, 0, 1),
+    Vector3(0, 0, -1)
 ];
 
 const MAX_VOXELS = 512000;
@@ -110,7 +111,7 @@ const canvas = document.getElementById('canvas');
 const canvasPalette = document.getElementById('canvas_palette');
 
 export let MODE = 0; // model|render|export
-export let FPS = 1000 / 60;
+const FPS_TOOL = 1000 / 30;
 let isRenderAxisView = true;
 let currentColor = document.getElementById('input-color').value.toUpperCase();
 let currentColorBake = document.getElementById('input-material-albedo').value.toUpperCase();
@@ -138,7 +139,6 @@ const KEY_NOHOVER = "pref_nohover";
 const KEY_PALETTE_SIZE = "pref_palette_size";
 const KEY_FLOORPLANE = "pref_floorplane";
 const KEY_POINTCLOUD = "pref_pointcloud";
-const KEY_POWERSAVER = "pref_powersaver";
 const KEY_WEBSOCKET = "pref_websocket";
 const KEY_WEBSOCKET_URL = "pref_websocket_url";
 
@@ -153,7 +153,6 @@ class Preferences {
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_FLOORPLANE).checked = true;
         document.getElementById(KEY_POINTCLOUD).checked = true;
-        document.getElementById(KEY_POWERSAVER).checked = isMobile;
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
 
@@ -175,16 +174,6 @@ class Preferences {
             (chk && MODE == 2) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
         });
 
-        this.initPrefCheck(KEY_POWERSAVER, (chk) => {
-            if (chk) {
-                FPS = 1000 / 30;
-            } else {
-                FPS = 1000 / 60;
-            }
-            if (modules.sandbox.isActive())
-                modules.sandbox.pathTracer.update();
-        });
-
         this.initPrefCheck(KEY_WEBSOCKET, (chk) => {
             (chk && !modules.sandbox.isActive()) ? modules.ws_client.connect() : modules.ws_client.disconnect();
         });
@@ -195,11 +184,6 @@ class Preferences {
     finish() {
         console.log('load preferences');
 
-        if (this.getPowerSaver()) {
-            FPS = 1000 / 30;
-        } else {
-            FPS = 1000 / 60;
-        }
         palette.expand(this.getPaletteSize());
         ui.toggleHover(!this.getNoHover());
         helper.floorPlane.isVisible = this.getFloorPlane();
@@ -290,14 +274,6 @@ class Preferences {
         return document.getElementById(KEY_POINTCLOUD).checked;
     }
 
-    setPowerSaver(isEnabled) {
-        localStorage.setItem(KEY_POWERSAVER, isEnabled);
-    }
-
-    getPowerSaver() {
-        return document.getElementById(KEY_POWERSAVER).checked;
-    }
-
     getWebsocket() {
         return document.getElementById(KEY_WEBSOCKET).checked;
     }
@@ -343,13 +319,13 @@ class Camera {
 
         this.camera0.setPosition(Vector3(100, 100, 100));
         this.camera0.setTarget(Vector3(0, 0, 0));
-        this.camera0.lowerRadiusLimit = 1;
+        this.camera0.lowerRadiusLimit = 2;
         this.camera0.upperRadiusLimit = 1500;
         this.camera0.lowerBetaLimit = 0.0001;   // fix ortho Y inaccuracy
         this.camera0.upperBetaLimit = Math.PI - 0.0001;
         this.camera0.wheelPrecision = 3;        // def 3
         this.camera0.pinchPrecision = 30;       // def 12
-        this.camera0.panningSensibility = 300;  // def 1000
+        this.camera0.panningSensibility = 200;  // def 1000
         this.camera0.inertia = 0.9;             // def 0.9
         //this.camera0.minZ = 0.01;
         //this.camera0.maxZ = 2000;
@@ -367,12 +343,10 @@ class Camera {
             modules.sandbox.frameCamera();
         } else if (MODE == 2) {
             if (pool.meshes.length > 0) {
-                if (pool.selected) { // frame to selected mesh
+                if (pool.selected) {
                     this.setFramingBehavior(this.camera0, pool.selected);
                 } else {
-                    const mesh = MergeMeshes(pool.meshes, false, true);
-                    this.setFramingBehavior(this.camera0, mesh);
-                    mesh.dispose();
+                    this.setFramingBehavior(this.camera0, builder.mesh);
                 }
             } else {
                 this.setFramingBehavior(this.camera0, builder.mesh);
@@ -394,34 +368,36 @@ class Camera {
 
     setFramingBehavior(cam, mesh) {
         const f = this.getFramed(mesh);
-        Animator(cam, 'radius', cam.radius, f.radius);
-        Animator(cam, 'target', cam.target.clone(), f.target);
+        if (f) {
+            Animator(cam, 'radius', cam.radius, f.radius);
+            Animator(cam, 'target', cam.target.clone(), f.target);
+        }
     }
 
     getFramed(mesh, offset = 1.5) {
-        if (mesh) {
-            mesh.computeWorldMatrix(true);
-            const bounds = mesh.getBoundingInfo();
+        if (!mesh) return undefined;
 
-            const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
-            const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
-            const radiusWithoutFraming = Vector3Distance(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld) * 0.5;
-            
-            if (radiusWithoutFraming < 10) offset = 3.0; // TODO
-            if (radiusWithoutFraming > 10) offset = 2.0;
-            if (radiusWithoutFraming > 20) offset = 1.5;
-            if (radiusWithoutFraming > 30) offset = 1.1;
-            const radius = radiusWithoutFraming * offset;
-            const distanceForHorizontalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeX * frustumSlopeX));
-            const distanceForVerticalFrustum = radius * Math.sqrt(1 + 1 / (frustumSlopeY * frustumSlopeY));
-            
-            const lowerRadius = Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
-            const radiusWorld = bounds.boundingBox.maximumWorld.subtract(bounds.boundingBox.minimumWorld).scale(0.5);
-            return {
-                radius: lowerRadius,
-                target: bounds.boundingBox.minimumWorld.add(radiusWorld)
-            };
-        }
+        mesh.computeWorldMatrix(true);
+        const { minimumWorld, maximumWorld } = mesh.getBoundingInfo().boundingBox;
+
+        const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
+        const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
+        
+        // TODO
+        const radiusWithoutFraming = Vector3Distance(minimumWorld, maximumWorld) * 0.5;
+        if (radiusWithoutFraming < 10) offset = 2.5;
+        if (radiusWithoutFraming > 10) offset = 2.0;
+        if (radiusWithoutFraming > 20) offset = 1.5;
+        if (radiusWithoutFraming > 30) offset = 1.1;
+
+        const radius = radiusWithoutFraming * offset;
+        const distanceForHorizontalFrustum = radius / frustumSlopeX;
+        const distanceForVerticalFrustum = radius / frustumSlopeY;
+
+        const distance = offset + Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
+        const target = minimumWorld.add(maximumWorld).scale(0.5);
+
+        return { radius: distance, target: target };
     }
 
     toggleCameraAutoRotation() {
@@ -525,7 +501,7 @@ class MainScene {
     constructor() {}
 
     create() {
-        const scene = new BABYLON.Scene(engine.webgl);
+        const scene = new BABYLON.Scene(engine.engine);
         scene.clearColor = COL_CLEAR_RGBA;
         scene.autoClear = false;
         scene.autoClearDepthAndStencil = false;
@@ -700,14 +676,16 @@ class AxisViewScene {
 class RenderTarget {
     constructor() {
         this.pickTexture = undefined;
-        this.reflectionProbe = undefined;
+        this.frameBuffer = undefined;
+        this.pixels = undefined;
+        this.pointer = { x: 0, y: 0 };
 
         this.init();
     }
 
     init() {
         this.pickTexture = new BABYLON.RenderTargetTexture('pickTexture', {
-            useSRGBBuffer: false, width: engine.webgl.getRenderWidth(), height: engine.webgl.getRenderHeight() },
+            useSRGBBuffer: false, width: engine.engine.getRenderWidth(), height: engine.engine.getRenderHeight() },
             scene, false, undefined, BABYLON.Constants.TEXTURETYPE_UNSIGNED_INT, false, BABYLON.Constants.TEXTURE_NEAREST_NEAREST);
 
         this.pickTexture.clearColor = COL_CLEAR_RGBA;
@@ -723,14 +701,43 @@ class RenderTarget {
                 builder.mesh.thinInstanceSetBuffer("color", builder.bufferColors, 4, true);
         }
 
-        this.reflectionProbe = new BABYLON.ReflectionProbe('reflectionProbe', 512, scene);
-        this.reflectionProbe.attachToMesh(new BABYLON.TransformNode('reflectionProbe'));
+        this.frameBuffer = engine.engine._gl.createFramebuffer();
+
+        const w = engine.engine.getRenderWidth();
+        const h = engine.engine.getRenderHeight();
+        const bufferSize = engine.engine.isWebGPU ? (4 * w * h + 255) & ~255 : 4 * w * h;
+        this.pixels = new Uint8Array(bufferSize);
     }
 
-    captureProbe(mesh) {
-        this.reflectionProbe.renderList = [ mesh ];
-        this.reflectionProbe.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
-        return this.reflectionProbe.cubeTexture.clone();
+    read() {
+        this.pointer.x = Math.round(scene.pointerX);
+        this.pointer.y = engine.engine.getRenderHeight() - Math.round(scene.pointerY);
+        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource, this.pointer.x, this.pointer.y, 1, 1);
+        return `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+    }
+    
+    readTexturePixels(gl, texture, x, y, w, h) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+        gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+    }
+
+    numToColor(num) {
+        return [ 
+            (num & 0xff0000) >> 16,
+            (num & 0x00ff00) >>  8,
+            (num & 0x0000ff) >>  0
+        ];
+    }
+
+    resize() {
+        const w = engine.engine.getRenderWidth();
+        const h = engine.engine.getRenderHeight();
+        
+        this.pickTexture.resize({ width: w, height: h });
+
+        const bufferSize = engine.engine.isWebGPU ? (4 * w * h + 255) & ~255 : 4 * w * h;
+        this.pixels = new Uint8Array(bufferSize);
     }
 }
 
@@ -763,7 +770,7 @@ class HDRI {
             this.hdrMap.dispose();
 
         this.hdrMap = new BABYLON.HDRCubeTexture(url, scene, 512, false, false, false, undefined, () => {            
-            this.showSkybox(ui.domHdriToggle.checked);
+            this.showSkybox(ui.domHdriBackground.checked);
 
             if (this.skybox.material.reflectionTexture)
                 this.skybox.material.reflectionTexture.dispose();
@@ -854,18 +861,19 @@ class Light {
 
     updateShadowMap() {
         this.directional.getShadowGenerator().getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
-        material.updateCelMaterial();
     }
     
     updateAngle(angle) {
         this.setLightPositionByAngle(angle, this.location.x);
         this.updateShadowMap();
+        material.updateCelMaterial();
     }
     
     updateHeight(posY) {
         this.directional.position.y = posY;
         this.directional.setDirectionToTarget(Vector3(0, 0, 0));
         this.updateShadowMap();
+        material.updateCelMaterial();
     }
     
     updateIntensity(value) {
@@ -1144,10 +1152,10 @@ class Material {
 		        float spc = pow(spp, 8.0);
                 
                 vec3 brdf = vec3(0);
-                brdf += 0.9 * amb * vec3(1);
-                brdf += 0.8 * dif * vColor.rgb * uLightCol;
+                brdf += 0.8 * amb * vec3(1);
+                brdf += 0.9 * dif * vColor.rgb * uLightCol;
                 brdf += 0.5 * inv * vec3(1);
-                brdf += 0.5 * spc * vec3(1);
+                brdf += 0.3 * spc * vec3(1);
 
                 vec3 col = pow(vColor.rgb * vColor.rgb, vec3(0.4545));
                 col = mix(col, vec3(0), line * 0.18);
@@ -1226,6 +1234,9 @@ class Builder {
         this.rttColorsMap = [];
         this.positionsMap = [];
 
+        this.rgbIndex = [];
+        this.rgbBuffer = undefined;
+
         this.init();
     }
 
@@ -1252,64 +1263,63 @@ class Builder {
 
         this.isWorking = true;
         
-        this.createThinInstances().then(mesh => {
-            renderTarget.pickTexture.renderList = [ mesh ];
-            renderTarget.pickTexture.setMaterialForRendering(mesh, material.mat_white);
-            
-            light.addMesh(mesh);
-            light.updateShadowMap();
-
+        this.createThinInstances().then(() => {            
             setTimeout(() => {
+                this.isWorking = false;
+
                 if (bvhWhiteList.includes(tool.name))
                     modules.rc.create();
-                this.isWorking = false;
             });
             
             setTimeout(() => {
+                if (updateFloor)
+                    helper.setFloor();
                 palette.create();
                 helper.setSymmPivot();
                 modules.ws_client.sendMessage(this.voxels, 'get');
             }, 100);
         });
-
-        if (updateFloor) helper.setFloor();
     }
 
-    async createThinInstances(voxels = this.voxels) {
+    async createThinInstances() {
         return new Promise(resolve => {
-            this.bufferMatrix = new Float32Array(16 * voxels.length);
-            this.bufferColors = new Float32Array(4 * voxels.length);
-            this.rttColors = new Float32Array(4 * voxels.length);
-            this.rttColorsMap = new Array(voxels.length);
-            this.positionsMap = new Array(voxels.length);
+            this.bufferMatrix = new Float32Array(16 * this.voxels.length);
+            this.bufferColors = new Float32Array(4 * this.voxels.length);
+            this.rttColors = new Float32Array(4 * this.voxels.length);
+            this.rttColorsMap = new Array(this.voxels.length);
+            this.positionsMap = new Array(this.voxels.length);
 
-            for (let i = 0; i < voxels.length; i++) {
-                if (this.getIndexAtPosition(voxels[i].position) > -1) {
-                    voxels[i].position = RECYCLEBIN;
-                    voxels[i].visible = false;
+            for (let i = 0; i < this.voxels.length; i++) {
+                this.voxels[i].idx = i;
+
+                const voxel = this.voxels[i];
+
+                if (this.getIndexAtPosition(voxel.position) > -1) {
+                    this.voxels[i].position = RECYCLEBIN;
+                    this.voxels[i].visible = false;
                     duplicateFlag = 1;
                 }
-                
-                this.tMatrix = MatrixTranslation(voxels[i].position.x, voxels[i].position.y, voxels[i].position.z);
-                if (!voxels[i].visible)
-                    this.tMatrix = this.tMatrix.multiply(MatrixScaling(0, 0, 0));
+
+                this.tMatrix.m[12] = voxel.position.x;
+                this.tMatrix.m[13] = voxel.position.y;
+                this.tMatrix.m[14] = voxel.position.z;
+                this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxel.visible) ? 1 : 0;
                 this.tMatrix.copyToArray(this.bufferMatrix, i * 16);
 
-                const col = hexToRgbFloat(voxels[i].color, 2.2);
-                this.bufferColors[i * 4] = col.r;
-                this.bufferColors[i * 4 + 1] = col.g;
-                this.bufferColors[i * 4 + 2] = col.b;
+                this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
+                this.bufferColors[i * 4] = this.rgbBuffer.r;
+                this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+                this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
                 this.bufferColors[i * 4 + 3] = 1;
 
-                const [rttR, rttG, rttB] = numToColor(i);
-                this.rttColors[i * 4] = rttR / 255;
-                this.rttColors[i * 4 + 1] = rttG / 255;
-                this.rttColors[i * 4 + 2] = rttB / 255;
+                this.rgbIndex = renderTarget.numToColor(i);
+                this.rttColors[i * 4] = this.rgbIndex[0] / 255;
+                this.rttColors[i * 4 + 1] = this.rgbIndex[1] / 255;
+                this.rttColors[i * 4 + 2] = this.rgbIndex[2] / 255;
                 this.rttColors[i * 4 + 3] = 1;
-                this.rttColorsMap[`${rttR}_${rttG}_${rttB}`] = i;
 
-                this.voxels[i].idx = i;
-                this.positionsMap[`${voxels[i].position.x}_${voxels[i].position.y}_${voxels[i].position.z}`] = i;
+                this.rttColorsMap[`${this.rgbIndex[0]}_${this.rgbIndex[1]}_${this.rgbIndex[2]}`] = i;
+                this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
             }
         
             this.mesh.dispose();
@@ -1322,9 +1332,16 @@ class Builder {
             this.mesh.doNotSyncBoundingInfo = false;
             this.mesh.material = material.getMaterial();
             this.mesh.name = "thin";
+            //this.mesh.thinInstanceRefreshBoundingInfo(); super expensive task
+
+            renderTarget.pickTexture.renderList = [ this.mesh ];
+            renderTarget.pickTexture.setMaterialForRendering(this.mesh, material.mat_white);
+            resolve();
+            
+            light.addMesh(this.mesh);
+            light.updateShadowMap();
 
             this.bufferMatrix = [];
-            resolve(this.mesh);
         });
     }
 
@@ -1337,22 +1354,27 @@ class Builder {
         this.colors = new Float32Array(this.vUvs.length * 2 * this.voxels.length);
         this.indices = new Uint32Array(this.vIndices.length * this.voxels.length);
 
-        const p = Vector3();
         const lenC = this.vUvs.length * 2;
+        const lenI = this.vPositions.length / 3;
 
         for (let i = 0; i < this.voxels.length; i++) {
+            const m = this.bufferWorld[i].m;
+
             for (let v = 0; v < this.vPositions.length; v += 3) {
-                p.x = this.vPositions[v];
-                p.y = this.vPositions[v + 1];
-                p.z = this.vPositions[v + 2];
-                const m = this.bufferWorld[i].m; // Vector3TransformCoordinates
-                const rx = p.x * m[0] + p.y * m[4] + p.z * m[8] + m[12];  // multiply matrix to
-                const ry = p.x * m[1] + p.y * m[5] + p.z * m[9] + m[13];  // get the scaling
-                const rz = p.x * m[2] + p.y * m[6] + p.z * m[10] + m[14]; // to support visibility
-                const rw = 1 / (p.x * m[3] + p.y * m[7] + p.z * m[11] + m[15]);
-                this.positions[i * this.vPositions.length + v] = rx * rw;
-                this.positions[i * this.vPositions.length + v + 1] = ry * rw;
-                this.positions[i * this.vPositions.length + v + 2] = rz * rw;
+                const p = [
+                    this.vPositions[v],
+                    this.vPositions[v + 1],
+                    this.vPositions[v + 2]
+                ];
+                const transformed = [ // support visibility
+                    p[0] * m[0] + p[1] * m[4] + p[2] * m[8] + m[12],
+                    p[0] * m[1] + p[1] * m[5] + p[2] * m[9] + m[13],
+                    p[0] * m[2] + p[1] * m[6] + p[2] * m[10] + m[14]
+                ];
+                const rw = 1 / (p[0] * m[3] + p[1] * m[7] + p[2] * m[11] + m[15]);
+                this.positions[i * this.vPositions.length + v] = transformed[0] * rw;
+                this.positions[i * this.vPositions.length + v + 1] = transformed[1] * rw;
+                this.positions[i * this.vPositions.length + v + 2] = transformed[2] * rw;
             }
 
             for (let v = 0; v < this.vUvs.length; v += 2) {
@@ -1364,7 +1386,6 @@ class Builder {
                 this.colors[i * lenC + v * 2 + 3] = 1;
             }
 
-            const lenI = this.vPositions.length / 3;
             const len = i * this.vIndices.length;
             for (let v = 0; v < this.vIndices.length; v++) {
                 this.indices[len + v] = this.vIndices[v] + i * lenI;
@@ -1374,6 +1395,7 @@ class Builder {
 
     createMesh() { // for export only
         this.fillArrayBuffers();
+        
         this.normals = new Float32Array(this.vNormals.length * this.voxels.length);
         BABYLON.VertexData.ComputeNormals(this.positions, this.indices, this.normals);
 
@@ -1392,17 +1414,14 @@ class Builder {
     }
 
     getCenter() {
-        this.mesh.thinInstanceRefreshBoundingInfo();
         return this.mesh.getBoundingInfo().boundingSphere.centerWorld;
     }
 
     getRadius() {
-        this.mesh.thinInstanceRefreshBoundingInfo();
         return this.mesh.getBoundingInfo().boundingSphere.radius;
     }
 
     getSize() {
-        this.mesh.thinInstanceRefreshBoundingInfo();
         const bounds = this.mesh.getBoundingInfo();
         return Vector3(
             Math.abs(bounds.minimum.x - bounds.maximum.x),
@@ -1412,11 +1431,7 @@ class Builder {
     }
 
     getIndexAtPointer() {
-        const x = Math.round(scene.pointerX);
-        const y = engine.webgl.getRenderHeight() - Math.round(scene.pointerY);
-        const pixels = readTexturePixels(engine.webgl._gl, renderTarget.pickTexture._texture._hardwareTexture.underlyingResource, x, y, 1, 1);
-        const colorId = `${pixels[0]}_${pixels[1]}_${pixels[2]}`;
-        return this.rttColorsMap[colorId];
+        return this.rttColorsMap[ renderTarget.read() ];
     }
 
     getIndexAtPosition(pos) {
@@ -1584,7 +1599,7 @@ class Builder {
             this.update();
             ui.notification(`${ last - this.voxels.length } voxels removed`);
         } else {
-            ui.notification('unable to reduce voxels');
+            ui.errorMessage('unable to reduce voxels');
         }
         ui.showProgress(0);
     }
@@ -1594,15 +1609,15 @@ class Builder {
        
         const bounds = this.mesh.getBoundingInfo();
         const size = getMeshSize(bounds);
-        const center = bounds.boundingBox.center;
-        const nX = (-bounds.maximum.x + (size.x / 2)) + (size.x / 2) - 0.5;
-        const nY = ((size.y / 2) - center.y) - 0.5;
-        const nZ = (-bounds.maximum.z + (size.z / 2)) + (size.z / 2) - 0.5;
-        for (let i = 0; i < this.voxels.length; i++) {
+        const centerX = (-bounds.boundingBox.center.x + size.x / 2) - 0.5;
+        const centerY = (size.y / 2 - bounds.boundingBox.center.y) - 0.5;
+        const centerZ = (-bounds.boundingBox.center.z + size.z / 2) - 0.5;
+        const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
+
+        for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].position = Vector3TransformCoordinates(
-                this.voxels[i].position,
-                MatrixTranslation(nX, nY, nZ));
-        }
+                this.voxels[i].position, tMatrix);
+
         this.create();
 
         if (isRecordMem) {
@@ -1679,41 +1694,42 @@ class Builder {
     }
 
     createArrayFromPositions(positions, isSymmetry) {
-        const tmparr = [];
+        const arr = [];
 
         for (let i = 0; i < positions.length; i++) {
             const idx = this.getIndexAtPosition(positions[i]);
-            if (idx > -1)
-                tmparr.push(builder.voxels[idx]);
+            if (idx > -1 && builder.voxels[idx].visible) {
+                arr.push(builder.voxels[idx]);
 
-            if (isSymmetry) {
-                const idx = this.getIndexAtPosition(symmetry.invertPos(positions[i]));
-                if (idx > -1)
-                    tmparr.push(builder.voxels[idx]);
+                if (isSymmetry) {
+                    const idx = this.getIndexAtPosition(symmetry.invertPos(positions[i]));
+                    if (idx > -1 && builder.voxels[idx].visible)
+                        arr.push(builder.voxels[idx]);
+                }
             }
         }
-        return tmparr;
+        return arr;
     }
 
     createArrayFromNewPositions(positions, hex, isSymmetry) {
-        const tmparr = [];
+        const arr = [];
 
         for (let i = 0; i < positions.length; i++) {
-            tmparr.push({
+            arr.push({
                 position: positions[i],
                 color: hex,
                 visible: true
             });
 
             if (isSymmetry) {
-                tmparr.push({
+                arr.push({
                     position: symmetry.invertPos(positions[i]),
                     color: hex,
                     visible: true
                 });
             }
         }
-        return tmparr;
+        return arr;
     }
 
     update() {
@@ -1753,8 +1769,7 @@ class Transformers {
         for (let i = 0; i < voxels.length; i++) {
             if (this.indexes.indexOf(voxels[i].idx) == -1) { // duplicates broke transform
                 this.indexes.push(voxels[i].idx);
-                if (!ui.domTransformClone.checked)
-                    builder.voxels[ voxels[i].idx ].visible = false;
+                builder.voxels[ voxels[i].idx ].visible = ui.domTransformClone.checked;
             }
         }
 
@@ -1871,15 +1886,15 @@ class Transformers {
 
 class Ghosts {
     constructor() {
-        this.voxel = null;
-        this.voxelPick = null;
-        this.thin = null;
-        this.sps = null;
-        this.spsPick = null;
-        this.cloud = null;
+        this.voxel = undefined;
+        this.voxelPick = undefined;
+        this.thin = undefined;
+        this.sps = undefined;
+        this.spsPick = undefined;
+        this.cloud = undefined;
+        this.tMatrix = MatrixIdentity();
         this.bufferMatrix = [];
         this.bufferColors = [];
-        this.tMatrix = MatrixIdentity();
 
         this.init();
     }
@@ -1914,9 +1929,10 @@ class Ghosts {
         this.bufferColors = new Float32Array(4 * voxels.length);
 
         for (let i = 0; i < voxels.length; i++) {
-            this.tMatrix = MatrixTranslation(voxels[i].position.x, voxels[i].position.y, voxels[i].position.z);
-            if (!voxels[i].visible)
-                this.tMatrix = this.tMatrix.multiply(MatrixScaling(0, 0, 0));
+            this.tMatrix.m[12] = voxels[i].position.x;
+            this.tMatrix.m[13] = voxels[i].position.y;
+            this.tMatrix.m[14] = voxels[i].position.z;
+            this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxels[i].visible) ? 1 : 0;
             this.tMatrix.copyToArray(this.bufferMatrix, i * 16);
         }
 
@@ -2281,11 +2297,13 @@ class Helper {
     }
 
     setFloor() {
-        const r = camera.getFramed(builder.mesh).radius;
-        this.floorPlane.scaling.x = r;
-        this.floorPlane.scaling.y = r;
-        this.floorPlane.scaling.z = 1;
-        this.floorPlane.material.gridRatio = 1 / r;
+        const f = camera.getFramed(builder.mesh);
+        if (f) {
+            this.floorPlane.scaling.x = f.radius;
+            this.floorPlane.scaling.y = f.radius;
+            this.floorPlane.scaling.z = 1;
+            this.floorPlane.material.gridRatio = 1 / f.radius;
+        }
     }
 
     enableFloorPlane(isEnabled) {
@@ -2421,7 +2439,7 @@ class Helper {
         fixEdgesWidth(this.boxShapeSymm);
     }
 
-    updateBoxShape(hex) {
+    setBoxShapeColor(hex) {
         this.boxShape.overlayColor = color3FromHex(hex);
     }
 
@@ -2676,13 +2694,15 @@ class Tool {
     }
 
     remove(pos) {
-        this.selected.push(pos);
-        ghosts.addThin(pos, COL_RED);
-
-        if (this.isSymmetry) {
-            pos = symmetry.invertPos(pos);
+        if (this.selected.indexOf(pos) == -1) {
             this.selected.push(pos);
             ghosts.addThin(pos, COL_RED);
+
+            if (this.isSymmetry) {
+                pos = symmetry.invertPos(pos);
+                this.selected.push(pos);
+                ghosts.addThin(pos, COL_RED);
+            }
         }
     }
 
@@ -2718,65 +2738,34 @@ class Tool {
         uix.colorPicker.value = color3FromHex(currentColor);
     }
 
+    calculateBoundingBox(start, end) {
+        this.box.sX = Math.min(start.x, end.x);
+        this.box.eX = Math.max(start.x, end.x);
+        this.box.sY = Math.min(start.y, end.y);
+        this.box.eY = Math.max(start.y, end.y);
+        this.box.sZ = Math.min(start.z, end.z);
+        this.box.eZ = Math.max(start.z, end.z);
+    }
+
     boxShape(start, end, color) {
-        if (end.x <= start.x && end.y <= start.y && end.z <= start.z) {
-            this.box.sX = end.x;      this.box.eX = start.x;
-            this.box.sY = end.y;      this.box.eY = start.y;
-            this.box.sZ = end.z;      this.box.eZ = start.z;
-        }
-        else if (start.x <= end.x && start.y <= end.y && start.z <= end.z) {
-            this.box.sX = start.x;    this.box.eX = end.x;
-            this.box.sY = start.y;    this.box.eY = end.y;
-            this.box.sZ = start.z;    this.box.eZ = end.z;
-        }
+        this.calculateBoundingBox(start, end);
 
-        else if (end.x <= start.x && start.y <= end.y && end.z <= start.z) {
-            this.box.sX = end.x;      this.box.eX = start.x;
-            this.box.sY = start.y;    this.box.eY = end.y;
-            this.box.sZ = end.z;      this.box.eZ = start.z;
-        }
-        else if (start.x <= end.x && end.y <= start.y && start.z <= end.z) {
-            this.box.sX = start.x;    this.box.eX = end.x;
-            this.box.sY = end.y;      this.box.eY = start.y;
-            this.box.sZ = start.z;    this.box.eZ = end.z;
-        }
+        const scale = Vector3(
+            1 + this.box.eX - this.box.sX,
+            1 + this.box.eY - this.box.sY,
+            1 + this.box.eZ - this.box.sZ);
 
-        else if (start.x <= end.x && end.y <= start.y && end.z <= start.z) {
-            this.box.sX = start.x;    this.box.eX = end.x;
-            this.box.sY = end.y;      this.box.eY = start.y;
-            this.box.sZ = end.z;      this.box.eZ = start.z;
-        }
-        else if (end.x <= start.x && start.y <= end.y && start.z <= end.z) {
-            this.box.sX = end.x;      this.box.eX = start.x;
-            this.box.sY = start.y;    this.box.eY = end.y;
-            this.box.sZ = start.z;    this.box.eZ = end.z;
-        }
-
-        else if (start.x <= end.x && start.y <= end.y && end.z <= start.z) {
-            this.box.sX = start.x;    this.box.eX = end.x;
-            this.box.sY = start.y;    this.box.eY = end.y;
-            this.box.sZ = end.z;      this.box.eZ = start.z;
-        }
-        else if (end.x <= start.x && end.y <= start.y && start.z <= end.z) {
-            this.box.sX = end.x;      this.box.eX = start.x;
-            this.box.sY = end.y;      this.box.eY = start.y;
-            this.box.sZ = start.z;    this.box.eZ = end.z;
-        }
-
-        const scale = Vector3(1 + this.box.eX - this.box.sX, 1 + this.box.eY - this.box.sY, 1 + this.box.eZ - this.box.sZ);
-        const vec3_2 = Vector3(2, 2, 2);
-
-        helper.setBoxShape(start.add(end).divide(vec3_2), scale, color);
+        helper.setBoxShape(start.add(end).divide(VEC3_TWO), scale, color);
         
         if (this.isSymmetry) {
             helper.setBoxShapeSymmetry(
-                symmetry.invertPos(start).add(symmetry.invertPos(end)).divide(vec3_2),
+                symmetry.invertPos(start).add(symmetry.invertPos(end)).divide(VEC3_TWO),
                 scale, color);
         }
 
         this.boxCount = helper.boxShape.scaling.x * helper.boxShape.scaling.y * helper.boxShape.scaling.z;
         if (this.boxCount > MAX_VOXELS_DRAW)
-            helper.updateBoxShape(COL_RED);
+            helper.setBoxShapeColor(COL_RED);
     }
 
     boxSelectAdd(start, end, color) {
@@ -2821,14 +2810,17 @@ class Tool {
 
     getVoxelsFromRectangleSelection(start) {
         const end = { x: scene.pointerX, y: scene.pointerY };
-        const minX = Math.min(start.x, end.x);
-        const minY = Math.min(start.y, end.y);
-        const maxX = Math.max(start.x, end.x);
-        const maxY = Math.max(start.y, end.y);
-        ui.domMarquee.style.top = minY + 'px';
-        ui.domMarquee.style.left = minX + 'px';
-        ui.domMarquee.style.width = maxX - minX + 'px';
-        ui.domMarquee.style.height = maxY - minY + 'px';
+        const bounds = {
+            left: Math.min(start.x, end.x),
+            top: Math.min(start.y, end.y),
+            right: Math.max(start.x, end.x),
+            bottom: Math.max(start.y, end.y)
+        };
+
+        ui.domMarquee.style.top = `${bounds.top}px`;
+        ui.domMarquee.style.left = `${bounds.left}px`;
+        ui.domMarquee.style.width = `${bounds.right - bounds.left}px`;
+        ui.domMarquee.style.height = `${bounds.bottom - bounds.top}px`;
         
         return builder.voxels.filter((i) => 
             isTargetIn(start, end, i.position, camera.camera0));
@@ -2866,7 +2858,7 @@ class Tool {
     }
 
     pickWorkplane(pick, norm) {
-        norm.z = parseInt(norm.z.toFixed(1)); // fix normal precision
+        norm.z = Math.round(norm.z * 10) / 10; // fix normal Z
 
         const pos = pick.pickedPoint.add(Vector3(1, 1, 1)).subtract(Vector3(0.5, 0.5, 0.5)).floor();
 
@@ -3166,27 +3158,25 @@ class Tool {
 
     handleToolDown(pickInfo) {
         this.isMouseDown = true;
-        if (this.name !== 'camera' && !builder.isWorking) {
-            scene.activeCamera.attachControl(canvas, true);
+        if (this.name !== 'camera') {
+            if (!builder.isWorking)
+                scene.activeCamera.attachControl(canvas, true);
             this.setPickInfo(pickInfo, (p) => {
                 scene.stopAnimation(camera.camera0);
-                if (!camera.isCameraChange()) {
-                    scene.activeCamera.detachControl(canvas);
-                    this.onToolDown(p);
-                }
+                scene.activeCamera.detachControl(canvas);
+                this.onToolDown(p);
             });
         }
     }
 
     handleToolMove(pickInfo) {
-        if (this.name !== 'camera' && !builder.isWorking) {
+        if (this.name !== 'camera') {
             this.now = performance.now();
             this.elapsed = this.now - this.then;
-            if (this.elapsed > FPS) {
-                this.then = this.now - (this.elapsed % FPS);
+            if (this.elapsed > FPS_TOOL) {
+                this.then = this.now - (this.elapsed % FPS_TOOL);
                 this.setPickInfo(pickInfo, (p) => {
-                    if (!camera.isCameraChange())
-                        this.onToolMove(p);
+                    this.onToolMove(p);
                 });
             }
         }
@@ -3210,7 +3200,9 @@ class Tool {
             ghosts.disposeThin();
             ghosts.disposeSPS();
             helper.clearBoxShape();
-            setTimeout(helper.clearOverlays(), 10); // prevent last overlay in touchscreen
+            setTimeout(() => {
+                helper.clearOverlays();
+            }, 10); // prevent last overlay in touchscreen
 
             ui.domMarquee.style = "display: none; left: 0; top: 0; width: 0; height: 0;";
         }
@@ -3291,7 +3283,7 @@ class Tool {
         for (let i = 0; i < elems.length; i++)
             elems[i].classList.add("tool_selector");
 
-        if (this.name == 'camera')
+        if (this.name == 'camera' && !builder.isWorking)
             scene.activeCamera.attachControl(canvas, true);
 
         if (finishTransforms)
@@ -3753,7 +3745,7 @@ class MeshPool {
             container.removeAllFromScene();
 
             if (count == 0) {
-                ui.notification('unable to load baked meshes');
+                ui.errorMessage('unable to load baked meshes');
             } else {
                 if (MODE !== 2)
                     this.setPoolVisibility(false);
@@ -3762,7 +3754,7 @@ class MeshPool {
                 light.updateShadowMap();
             }
         }, (err) => {
-            ui.notification("unable to load bake");
+            ui.errorMessage('unable to load baked meshes');
             console.error(err);
         })
     }
@@ -3805,18 +3797,17 @@ class MeshPool {
         const size = Vector3(
             Math.abs(bounds.minimum.x - bounds.maximum.x),
             Math.abs(bounds.minimum.y - bounds.maximum.y),
-            Math.abs(bounds.minimum.z - bounds.maximum.z)
-        );
+            Math.abs(bounds.minimum.z - bounds.maximum.z));
     
         const scaleFactor = Math.min(scale / size.x, scale / size.y, scale / size.z);
         const scaleMatrix = MatrixScaling(scaleFactor, scaleFactor, scaleFactor);
     
-        const nX = (-bounds.maximum.x + (size.x / 2)) + (size.x / 2);
-        const nY = ((size.y / 2) - bounds.boundingBox.center.y);
-        const nZ = (-bounds.maximum.z + (size.z / 2)) + (size.z / 2);
-        const transMatrix = MatrixTranslation(nX, nY, nZ);
+        const centerX = -bounds.boundingBox.center.x + size.x / 2;
+        const centerY = size.y / 2 - bounds.boundingBox.center.y;
+        const centerZ = -bounds.boundingBox.center.z + size.z / 2;
+        const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
     
-        mesh.bakeTransformIntoVertices(transMatrix.multiply(scaleMatrix));
+        mesh.bakeTransformIntoVertices(tMatrix.multiply(scaleMatrix));
     }
 
     normalizeMeshGLTF(mesh, material) {
@@ -3858,7 +3849,7 @@ class Snapshot {
         try {
             localStorage.setItem(name, builder.getData());
         } catch (err) {
-            ui.notification('error: quota exceeded')
+            ui.errorMessage('error: quota exceeded')
         }
     }
 
@@ -3900,9 +3891,12 @@ class Snapshot {
             save.addEventListener("click", async () => {
                 if (MODE !== 0 || img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
                 createScreenshotBasic(img.clientWidth, img.clientHeight, (data) => {
-                    img.src = data;
                     this.setStorageVoxels(vbstoreSnapshots + img.id);
-                    localStorage.setItem(vbstoreSnapshotsImages + img.id, data);
+                    const isOk = localStorage.getItem(vbstoreSnapshots + img.id);
+                    if (isOk) {
+                        localStorage.setItem(vbstoreSnapshotsImages + img.id, data);
+                        img.src = data;
+                    }
                 });
             }, false);
 
@@ -3977,7 +3971,7 @@ class Project {
 
     serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.4.4",
+            version: "Voxel Builder 4.4.5",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -4028,7 +4022,8 @@ class Project {
             }
         }
         builder.create();
-        clearSceneAndReset();
+        clearScene();
+        ui.setMode(0);
         ui.domProjectName.value = 'untitled';
     }
 
@@ -4094,7 +4089,7 @@ class Project {
         
         builder.create();
         builder.update();
-        clearScene();
+        clearScene(true);
     }
 
     importBakes(data) {
@@ -4177,11 +4172,17 @@ class Project {
         }
     }
 
-    loadFromUrl(url, callback = undefined) {
-        if (url == '') return; // ignore first preset option
-        loadUrl(url, (data) => {
-            this.load(data);
-            if (callback) callback();
+    loadFromUrl(url, onLoad = undefined) {
+        if (url === '') return;
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                res.text().then(data => {
+                    this.load(data);
+                    if (onLoad) onLoad();
+                });
+            }
+        }).catch(err => {
+            //
         });
     }
 
@@ -4203,7 +4204,7 @@ class Project {
             ui.domProjectName.value = 'untitled';
             ui.showProgress(0);
         } else {
-            ui.notification('incompatible vox file');
+            ui.errorMessage('incompatible vox file');
             ui.showProgress(0);
         }
     }
@@ -4245,7 +4246,7 @@ class UserInterface {
         this.domHover = document.getElementById('hover');
         this.domMarquee = document.getElementById("marquee");
         this.domBoxToolHeight = document.getElementById('input-boxtool-height');
-        this.domHdriToggle = document.getElementById('input-hdri-toggle');
+        this.domHdriBackground = document.getElementById('input-hdri-background');
         this.domHdriBlur = document.getElementById('input-hdri-blur');
         this.domCameraFov = document.getElementById('input-camera-fov');
         this.domCameraFStop = document.getElementById('input-camera-fstop');
@@ -4282,16 +4283,15 @@ class UserInterface {
         this.domExportSelectedBake = document.getElementById('input-export-selbake');
         this.domOrthoBtn = document.getElementById('btn-ortho');
         this.domRenderShade = document.getElementById('input-pt-shade');
+        this.domRenderFast = document.getElementById('input-pt-fast');
         this.domRenderPause = document.getElementById('btn-pt-pause');
         this.domRenderShot = document.getElementById('btn-pt-shot');
-        this.domRenderFast = document.getElementById('btn-pt-fast');
         this.domRenderMaxSamples = document.getElementById('input-pt-maxsamples');
         this.domRenderBounces = document.getElementById('input-pt-bounces');
         this.domRenderDPR = document.getElementById('input-pt-dpr');
         this.domRenderTiles = document.getElementById('input-pt-tiles');
         this.domRenderEnvPower = document.getElementById('input-pt-envpower');
-        this.domRenderAutoRender = document.getElementById('input-sandbox-autorender');
-        this.domRenderBackground = document.getElementById('input-pt-background');
+        this.domRenderAutoStart = document.getElementById('input-pt-autostart');
         this.domRenderGrid = document.getElementById('input-pt-grid');
         this.domRenderMaterialRoughness = document.getElementById('input-pt-roughness');
         this.domRenderMaterialMetalness = document.getElementById('input-pt-metalness');
@@ -4307,6 +4307,7 @@ class UserInterface {
         this.domWebSocketStatus = document.getElementById('ws_status');
         this.domPixelEyedropper = document.getElementById('activate_pixeleyedrop');
         this.domDevMode = document.getElementById('devmode');
+        
         this.panels = [];
         this.lastIndex = 1000;
         this.notificationTimer = null;
@@ -4345,7 +4346,9 @@ class UserInterface {
         } else if (mode == 1) {
             if (!hdri.isLoaded) { // if the user clicks 1 second after launch!
                 hdri.loadHDR(ENVMAP);
-                setTimeout(modules.sandbox.activate(), 500);
+                setTimeout(() => {
+                    modules.sandbox.activate();
+                }, 500);
             } else {
                 modules.sandbox.activate();
             }
@@ -4436,12 +4439,12 @@ class UserInterface {
             this.domToolbarC_mem.children[3].innerHTML = 'UNDO';
             this.domToolbarC_mem.children[4].innerHTML = 'REDO';
         } else if (mode == 1) {
-            this.domToolbarC_mem.children[0].onclick = () => { modules.sandbox.fastMode() };
-            this.domToolbarC_mem.children[1].onclick = () => { modules.sandbox.shadeMode() };
-            this.domToolbarC_mem.children[3].onclick = () => { modules.sandbox.pause() };
+            this.domToolbarC_mem.children[0].onclick = () => { modules.sandbox.toggleAutoStart() };
+            this.domToolbarC_mem.children[1].onclick = () => { modules.sandbox.toggleFastMode() };
+            this.domToolbarC_mem.children[3].onclick = () => { modules.sandbox.togglePause() };
             this.domToolbarC_mem.children[4].onclick = () => { modules.sandbox.shot() };
-            this.domToolbarC_mem.children[0].innerHTML = 'FAST';
-            this.domToolbarC_mem.children[1].innerHTML = 'SHADE';
+            this.domToolbarC_mem.children[0].innerHTML = 'AUTO';
+            this.domToolbarC_mem.children[1].innerHTML = 'FAST';
             this.domToolbarC_mem.children[3].innerHTML = 'PAUSE';
             this.domToolbarC_mem.children[4].innerHTML = 'SHOT';
         } else if (mode == 2) {
@@ -4456,17 +4459,18 @@ class UserInterface {
         }
     }
 
+    // find and match a toolbar button for a panel by id
     registerToolbarButtons() {
-        // find and match a toolbar button for a panel by id
-        const toolbarButtons = document.querySelectorAll("button[id^='toolbar_btn_']");
-        for (let i = 0; i < this.panels.length; i++) {
-            for (let b = 0; b < toolbarButtons.length; b++) {
-                if (toolbarButtons[b].id.split('_')[2] === this.panels[i].elem.id.split('-')[1]) {
-                    toolbarButtons[b].onclick = () => { this.switchPanel(this.panels[i], toolbarButtons[b]) };
-                    this.panels[i].button = toolbarButtons[b];
+        const buttons = document.querySelectorAll("button[id^='toolbar_btn_']");
+        this.panels.forEach((panel) => {
+            const panelId = panel.elem.id.split('-')[1];
+            for (let b = 0; b < buttons.length; b++) {
+                if (buttons[b].id.split('_')[2] === panelId) {
+                    buttons[b].onclick = () => { this.switchPanel(panel, buttons[b]) };
+                    panel.button = buttons[b];
                 }
             }
-        }
+        });
     }
 
     registerPanels() {
@@ -4496,18 +4500,23 @@ class UserInterface {
             div_move.title = 'Move';
             div_hide.title = 'Hide';
             div_reset.title = 'Reset';
+
             div_move.onpointerdown = (ev) => {
                 elem.style.borderRadius = '6px';
                 elem.style.borderTop = 'solid 1px steelblue';
-                elem.style.zIndex = this.lastIndex + 1;
+                this.panels[idx].detach = true;
                 this.dragElement(idx, ev.target, elem);
-                this.lastIndex += 1;
             };
+
             div_hide.onclick = () => {
                 this.panels[idx].elem.style.display = 'none';
                 this.panels[idx].button.style.textDecoration = 'none';
             };
-            div_reset.onclick = () => { this.resetPanel(idx) };
+
+            div_reset.onclick = () => {
+                this.resetPanel(idx);
+            };
+            
             li.appendChild(div_move);
             li.appendChild(div_hide);
             li.appendChild(div_reset);
@@ -4515,30 +4524,19 @@ class UserInterface {
             elem.classList.add('panel');
             elem.insertBefore(li, elem.firstChild);
             elem.onpointerdown = () => {
-                elem.style.zIndex = this.lastIndex + 1;
-                this.lastIndex += 1;
+                this.panelToFront(this.panels[idx]);
             };
         } 
     }
 
-    clearAllPanels(exclude, isForceAll = false) {
-        if (isForceAll) {
-            this.panels.forEach((panel) => {
-                if (panel.elem !== this.domHover && panel.elem !== exclude) {
-                    panel.elem.style.display = 'none';
-                    if (panel.button)
-                        panel.button.style.textDecoration = 'none';
-                }
-            });
-        } else {
-            this.panels.forEach((panel) => {
-                if (!panel.detach && panel.elem !== this.domHover && panel.elem !== exclude) {
-                    panel.elem.style.display = 'none';
-                    if (panel.button)
-                        panel.button.style.textDecoration = 'none';
-                }
-            });
-        }
+    clearAllPanels(exclude) {
+        this.panels.forEach(panel => {
+            if (!panel.detach && panel.elem !== this.domHover && panel.elem !== exclude) {
+                panel.elem.style.display = 'none';
+                if (panel.button)
+                    panel.button.style.textDecoration = 'none';
+            }
+        });
     }
 
     switchPanel(panel) {
@@ -4549,19 +4547,30 @@ class UserInterface {
         } else {
             panel.elem.style.display = 'unset';
             panel.button.style.textDecoration = 'underline';
+            if (!panel.detach)
+                this.panelToFront(panel);
         }
     }
 
+    panelToFront(panel) {
+        panel.elem.style.zIndex = this.lastIndex + 1;
+
+        this.lastIndex += 1;
+        if (this.lastIndex > 2000)
+            this.lastIndex = 1000;
+    }
+
     resetPanel(idx) {
-        this.panels[idx].elem.style.transform = 'none';
         this.panels[idx].x = 0;
         this.panels[idx].y = 0;
         this.panels[idx].detach = false;
+        this.panels[idx].elem.style.transform = 'none';
         this.panels[idx].elem.style.borderTop = 'none';
         this.panels[idx].elem.style.borderRadius = '3px';
         this.panels[idx].elem.style.borderTopLeftRadius = '0';
         this.panels[idx].elem.style.borderTopRightRadius = '0';
         this.panels[idx].elem.style.display = 'none';
+        this.panels[idx].elem.style.zIndex = 1000;
         this.panels[idx].button.style.textDecoration = 'none';
     }
 
@@ -4586,6 +4595,18 @@ class UserInterface {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
+        this.domNotifier.style.color = getStyleRoot('--btn-color');
+        this.domNotifier.style.display = 'unset';
+        this.notificationTimer = setTimeout(() => {
+            this.domNotifier.style.display = 'none';
+        }, timeout);
+    }
+
+    errorMessage(str, timeout = 2500) {
+        if (this.notificationTimer)
+            clearTimeout(this.notificationTimer);
+        this.domNotifier.innerHTML = str.toUpperCase();
+        this.domNotifier.style.color = 'indianred';
         this.domNotifier.style.display = 'unset';
         this.notificationTimer = setTimeout(() => {
             this.domNotifier.style.display = 'none';
@@ -4714,7 +4735,6 @@ class UserInterface {
             document.body.removeEventListener("touchstart", dragStart, false);
             document.body.removeEventListener("touchend", dragEnd, false);
             document.body.removeEventListener("touchmove", drag, false);
-            ui.panels[hIndex].detach = true;
         }
 
         function drag(e) {
@@ -5012,7 +5032,7 @@ const project = new Project();
 // Events
 
 
-engine.webgl.runRenderLoop(() => {
+engine.engine.runRenderLoop(() => {
     if (engine.isRendering)
         scene.render();
 });
@@ -5036,7 +5056,7 @@ scene.registerAfterRender(() => {
         if (!tool.isMouseDown) {
             camera.lastPos = [ camera.camera0.alpha, camera.camera0.beta ];
 
-            if (!builder.isWorking && duplicateFlag == 1) {
+            if (duplicateFlag == 1 && !builder.isWorking) {
                 duplicateFlag = 0;
                 builder.removeDuplicates();
             }
@@ -5064,7 +5084,8 @@ scene.onPointerObservable.add((pInfo) => {
             if (MODE == 0) tool.handleToolUp();
             break;
         case BABYLON.PointerEventTypes.POINTERWHEEL:
-            scene.activeCamera.attachControl(canvas, true);
+            if (!builder.isWorking)
+                scene.activeCamera.attachControl(canvas, true);
             break;
     }
 });
@@ -5171,7 +5192,7 @@ document.addEventListener("keyup", () => {
 
 window.addEventListener("resize", () => {
     scene.getEngine().resize(true);
-    renderTarget.pickTexture.resize({ width: scene.getEngine().getRenderWidth(), height: scene.getEngine().getRenderHeight() });
+    renderTarget.resize();
     
     if (MODE == 0) palette.create();
     if (MODE == 2) pool.createMeshList();
@@ -5330,7 +5351,7 @@ ui.domInScreenOrtho.onclick = () => {
 };
 
 ui.domSandboxRender.children[0].onclick = () => {
-    if (!ui.domRenderAutoRender.checked)
+    if (!ui.domRenderAutoStart.checked)
         modules.sandbox.toggleRender();
 };
 
@@ -5370,11 +5391,9 @@ ui.domPixelEyedropper.onclick = () => {
 };
 
 
-ui.domRenderAutoRender.oninput = (ev) => {
-    if (modules.sandbox.isActive()) {
-        modules.sandbox.startPathTracer(ev.target.checked);
-        modules.sandbox.updateBackground(ui.domRenderBackground.checked);
-    }
+ui.domRenderAutoStart.oninput = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.setAutoStart(ev.target.checked);
 };
 
 ui.domRenderMaxSamples.onchange = (ev) => {
@@ -5410,15 +5429,10 @@ ui.domRenderEnvPower.onwheel = (ev) => {
         modules.sandbox.updateEnvironmentIntensity(ev.target.value);
 };
 
-ui.domRenderBackground.oninput = (ev) => {
-    if (modules.sandbox.isActive())
-        modules.sandbox.updateBackground(ev.target.checked);
-};
-
 
 ui.domRenderPause.onclick = () => {
     if (modules.sandbox.isActiveRender())
-        modules.sandbox.pause();
+        modules.sandbox.togglePause();
 };
 
 ui.domRenderShot.onclick = () => {
@@ -5426,14 +5440,14 @@ ui.domRenderShot.onclick = () => {
         modules.sandbox.shot();
 };
 
-ui.domRenderFast.onclick = () => {
+ui.domRenderFast.oninput = () => {
     if (modules.sandbox.isActive())
-        modules.sandbox.fastMode();
+        modules.sandbox.toggleFastMode();
 };
 
 ui.domRenderShade.oninput = () => {
     if (modules.sandbox.isActive())
-        modules.sandbox.shadeMode();
+        modules.sandbox.toggleShadeMode();
 };
 
 ui.domRenderMaterialRoughness.onchange = (ev) => {
@@ -5527,12 +5541,16 @@ ui.domBackgroundCheck.onclick = (ev) => {
     scene.autoClear = ev.target.checked;
 };
 
-ui.domHdriToggle.onclick = (ev) => {
+ui.domHdriBackground.onclick = (ev) => {
     hdri.showSkybox(ev.target.checked);
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateBackground(ev.target.checked);
 };
 
 ui.domHdriBlur.oninput = (ev) => {
     hdri.setBlurAmount(ev.target.value);
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateBackground(ui.domHdriBackground.checked);
 };
 
 
@@ -5672,7 +5690,9 @@ export function clearScene(frameCamera = true) {
     memory.clear();
     symmetry.resetAxis();
     if (frameCamera)
-        setTimeout(camera.frame(), 10);
+        setTimeout(() => {
+            camera.frame();
+        }, 10);
 }
 
 function clearSceneAndReset() {
@@ -5706,7 +5726,7 @@ function highlightOutlineMesh(mesh, color3, width = 0.05) {
     mesh.outlineWidth = width;
 }
 
-function highlightEdgesMesh(mesh, color4, width = 6) { // do not use in performance cases
+function highlightEdgesMesh(mesh, color4, width = 6) { // do not use in a loop
     mesh.edgesWidth = width;
     mesh.edgesColor = color4;
     mesh.enableEdgesRendering();
@@ -5714,17 +5734,16 @@ function highlightEdgesMesh(mesh, color4, width = 6) { // do not use in performa
 }
 
 function fixEdgesWidth(mesh) {
-    mesh.edgesWidth = scene.activeCamera.radius/8;
+    mesh.edgesWidth = scene.activeCamera.radius / 8;
     if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
-        mesh.edgesWidth /= 4;
+        mesh.edgesWidth /= 6;
 }
 
 function getMeshSize(bounds) {
     return Vector3(
         Math.abs(bounds.minimum.x - bounds.maximum.x),
         Math.abs(bounds.minimum.y - bounds.maximum.y),
-        Math.abs(bounds.minimum.z - bounds.maximum.z)
-    );
+        Math.abs(bounds.minimum.z - bounds.maximum.z));
 }
 
 export function resetPivot(mesh) {
@@ -5779,30 +5798,16 @@ function clearCache(elem) {
 
 const isTargetIn = (startPos, endPos, target, camera) => {
     const targetScreenPosition = Vector3Project(target, scene, camera);
-    if (targetScreenPosition.x >= Math.min(startPos.x, endPos.x) &&
-        targetScreenPosition.x <= Math.max(startPos.x, endPos.x) &&
-        targetScreenPosition.y >= Math.min(startPos.y, endPos.y) &&
-        targetScreenPosition.y <= Math.max(startPos.y, endPos.y)) {
-        return true;
-    }
-    return false;
-}
-
-function numToColor(num) {
-    return [ 
-        ((num & 0xff0000) >> 16),
-        ((num & 0x00ff00) >>  8),
-        ((num & 0x0000ff) >>  0)
-     ];
-}
-
-function readTexturePixels(gl, texture, x, y, w, h) {
-    const frameBuffer = gl.createFramebuffer();
-    const pixels = new Uint8Array(w * h * 4);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-    gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-    return pixels;
+    const rect = {
+        x: Math.min(startPos.x, endPos.x),
+        y: Math.min(startPos.y, endPos.y),
+        w: Math.abs(endPos.x - startPos.x),
+        h: Math.abs(endPos.y - startPos.y)
+    };
+    return targetScreenPosition.x >= rect.x &&
+           targetScreenPosition.x <= rect.x + rect.w &&
+           targetScreenPosition.y >= rect.y &&
+           targetScreenPosition.y <= rect.y + rect.h;
 }
 
 function removeDuplicatesArray(arr) {
@@ -5812,20 +5817,6 @@ function removeDuplicatesArray(arr) {
             i.position.y == value.position.y &&
             i.position.z == value.position.z
         ));
-}
-
-function loadUrl(url, callback, onerror = null) {
-    fetch(url).then((res) => {
-        if (res.status !== 200) {
-            if (onerror) onerror();
-            return;
-        }
-        res.text().then((data) => {
-            callback(data);
-        });
-    }).catch((err) => {
-        if (onerror) onerror();
-    });
 }
 
 function downloadJson(data, filename) {
@@ -5903,9 +5894,9 @@ export function rgbFloatToHex(r, g, b) { // thanks to @labris
 
 export function hexToRgbFloat(hex, gamma = 2.2) { // 1 / 0.4545
     return {
-        r: Math.pow(parseInt(hex.substring(1, 3), 16) / 255, gamma),
-        g: Math.pow(parseInt(hex.substring(3, 5), 16) / 255, gamma),
-        b: Math.pow(parseInt(hex.substring(5, 7), 16) / 255, gamma)
+        r: (parseInt(hex.substring(1, 3), 16) / 255) ** gamma,
+        g: (parseInt(hex.substring(3, 5), 16) / 255) ** gamma,
+        b: (parseInt(hex.substring(5, 7), 16) / 255) ** gamma
     }
 }
 
@@ -5917,8 +5908,7 @@ function randomHexColor() {
 
 function getCanvasColor(context, x, y) {
     const data = context.getImageData(x, y, 1, 1).data;
-    if (data[3] > 0) return rgbIntToHex(data[0], data[1], data[2]);
-    return null;
+    return (data[3] > 0) ? rgbIntToHex(data[0], data[1], data[2]) : undefined;
 }
 
 function parseBool(val) {

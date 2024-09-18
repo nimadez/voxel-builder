@@ -10,7 +10,7 @@ import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer
 import { RGBELoader } from '../../libs/addons/RGBELoader.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
 import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
-import { Tween, Easing } from '../../libs/addons/tween.esm.js';
+import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
 
 import {
     engine,
@@ -19,9 +19,8 @@ import {
 
 import {
     ui,
-    camera, hdri, light,
-    builder,
-    FPS
+    camera, scene, hdri, light,
+    builder
 } from '../../main.js';
 
 
@@ -47,8 +46,9 @@ class Sandbox {
         this.light = undefined;
         this.lightHelper = undefined;
         this.mouse = new THREE.Vector2();
-        this.tween = undefined;
-        this.then = performance.now();
+        this.tween1 = undefined;
+        this.tween2 = undefined;
+        this.tweens = new Group();
 
         this.meshes = [];
         this.pick = undefined;
@@ -70,15 +70,16 @@ class Sandbox {
     init() {
         this.scene = new THREE.Scene();
 
-        this.camera = new PhysicalCamera(45, window.innerWidth / window.innerHeight, 0.1, CAM_FAR);
+        this.camera = new PhysicalCamera(45, window.innerWidth / window.innerHeight, 1.0, CAM_FAR);
         this.camera.updateProjectionMatrix();
 
         this.controls = new OrbitControls(this.camera, renderer.domElement);
-        this.controls.minDistance = 0.1;
+        this.controls.minDistance = 2.0;
         this.controls.maxDistance = CAM_FAR;
         this.controls.zoomSpeed = 1.0;
+        this.controls.panSpeed = 0.6;
         this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.08;
+        this.controls.dampingFactor = 0.096;
         this.controls.addEventListener('change', () => {
             this.pathTracer.updateCamera();
         });
@@ -102,12 +103,12 @@ class Sandbox {
         this.light.castShadow = true;
         this.light.shadow.mapSize.width = 1024;
         this.light.shadow.mapSize.height = 1024;
-        this.light.shadow.camera.near = 0.01;
+        this.light.shadow.camera.near = 1.0;
         this.light.shadow.camera.far = 1000;
-        this.light.shadow.camera.top = 200;
-        this.light.shadow.camera.bottom = -200;
-        this.light.shadow.camera.left = -200;
-        this.light.shadow.camera.right = 200;
+        this.light.shadow.camera.top = 100;
+        this.light.shadow.camera.bottom = -100;
+        this.light.shadow.camera.left = -100;
+        this.light.shadow.camera.right = 100;
         this.light.shadow.bias = -0.0005;
         this.scene.add(this.light);
 
@@ -187,6 +188,7 @@ class Sandbox {
 
     createMeshFromBuffers() {
         builder.fillArrayBuffers();
+        
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
         geom.setAttribute('uv', new THREE.BufferAttribute(builder.uvs, 2));
@@ -249,6 +251,7 @@ class Sandbox {
         this.camera.focusDistance = ui.domCameraFocalLength.value;
         this.camera.updateProjectionMatrix();
         this.controls.update();
+
         this.pathTracer.updateCamera();
     }
 
@@ -257,7 +260,7 @@ class Sandbox {
         this.scene.environment = hdri.hdrMapRender;
         this.scene.environment.mapping = THREE.EquirectangularReflectionMapping;
         this.scene.environment.encoding = THREE.sRGBEncoding;
-        this.updateBackground(ui.domRenderBackground.checked);
+        this.updateBackground(ui.domHdriBackground.checked);
         this.pathTracer.updateEnvironment();
     }
 
@@ -268,11 +271,11 @@ class Sandbox {
 
     updateBackground(isEnabled) {
         if (isEnabled) {
-            if (ui.domRenderBackground.checked) {
+            if (ui.domHdriBackground.checked) {
                 this.scene.background = this.scene.environment;
                 this.scene.background.mapping = THREE.EquirectangularReflectionMapping;
-                this.scene.backgroundIntensity = 1.1;
-                this.scene.backgroundBlurriness = 0.01;
+                this.scene.backgroundIntensity = 0.8;
+                this.scene.backgroundBlurriness = ui.domHdriBlur.value;
             } else {
                 this.scene.background = null;
             }
@@ -291,82 +294,33 @@ class Sandbox {
         this.pathTracer.updateLights();
     }
 
-    pause() {
-        this.isProgressing = !this.isProgressing;
-        if (this.isProgressing) {
-            ui.domRenderPause.innerHTML = 'Pause';
-            ui.domRenderPause.classList.remove('btn_select_pt');
-            renderer.domElement.style.pointerEvents = 'unset';
-        } else {
-            ui.domRenderPause.innerHTML = 'Continue';
-            ui.domRenderPause.classList.add('btn_select_pt');
-            renderer.domElement.style.pointerEvents = 'none';
-        }
-    }
-
-    fastMode() {
-        this.isFastMode = !this.isFastMode;
-        if (this.isFastMode) {
-            this.pathTracer.updateRenderScale(DPR_FAST);
-            ui.domRenderFast.classList.add('btn_select_pt');
-        } else {
-            this.pathTracer.updateRenderScale(ui.domRenderDPR.value);
-            ui.domRenderFast.classList.remove('btn_select_pt');
-        }
-    }
-
-    shadeMode() {
-        this.isShadeMode = !this.isShadeMode;
-        ui.domRenderShade.checked = this.isShadeMode;
-        this.updateMeshes();
-        //this.scene.overrideMaterial
-    }
-
-    setGrid(isEnabled) {
-        for (let i = 0; i < this.meshes.length; i++) {
-            (isEnabled) ?
-                this.meshes[i].material.map = this.tex_grid :
-                this.meshes[i].material.map = null;
-            this.meshes[i].material.needsUpdate = true;
-        }
-        this.pathTracer.updateMaterials();
-    }
-
     animate() {
-        requestAnimationFrame(sandbox.animate);
         if (sandbox.isLoaded) {
-            const now = performance.now();
-            const elapsed = now - sandbox.then;
-            if (elapsed > FPS) {
-                sandbox.then = now - (elapsed % FPS);
+            requestAnimationFrame(sandbox.animate);
 
-                if (sandbox.isRendering) {
-                    if (sandbox.isProgressing && sandbox.pathTracer.pt.samples < sandbox.pathTracer.maxSamples) {
-                        sandbox.pathTracer.render();
+            if (sandbox.isRendering) {
+                if (sandbox.isProgressing && sandbox.pathTracer.pt.samples < sandbox.pathTracer.maxSamples) {
+                    sandbox.pathTracer.render();
 
-                        ui.showProgress(sandbox.pathTracer.pt.samples, sandbox.pathTracer.maxSamples);
-                        ui.domInfoRender.children[0].innerHTML = ui.domProgressBar.style.width;
-                        ui.domInfoRender.children[1].innerHTML = ~~Math.abs((sandbox.pathTracer.pt.samples/sandbox.pathTracer.maxSamples)*(sandbox.pathTracer.maxSamples));
-                        ui.domInfoRender.children[2].innerHTML = sandbox.pathTracer.maxSamples;
-                        ui.domInfoRender.children[3].innerHTML = timeFormat(sandbox.pathTracer.pt.samples);
-                        ui.domInfoRender.children[4].innerHTML = ui.domRenderBounces.value;
-                    }
-                } else {
-                    renderer.render(sandbox.scene, sandbox.camera);
+                    ui.showProgress(sandbox.pathTracer.pt.samples, sandbox.pathTracer.maxSamples);
+                    ui.domInfoRender.children[0].innerHTML = ui.domProgressBar.style.width;
+                    ui.domInfoRender.children[1].innerHTML = ~~Math.abs((sandbox.pathTracer.pt.samples/sandbox.pathTracer.maxSamples)*(sandbox.pathTracer.maxSamples));
+                    ui.domInfoRender.children[2].innerHTML = sandbox.pathTracer.maxSamples;
+                    ui.domInfoRender.children[3].innerHTML = timeFormat(sandbox.pathTracer.pt.samples);
+                    ui.domInfoRender.children[4].innerHTML = ui.domRenderBounces.value;
                 }
+            } else {
+                renderer.render(sandbox.scene, sandbox.camera);
             }
 
-            if (!sandbox.isRendering) {
-                sandbox.controls.update();
-                if (sandbox.tween)
-                    sandbox.tween.update(now);
-            }
+            sandbox.tweens.update(performance.now());
+            sandbox.controls.update();
 
             if (sandbox.flagUpdateScene == 1) {
                 sandbox.flagUpdateScene = 0;
                 setTimeout(() => {
-                    sandbox.pathTracer.create(sandbox.scene, sandbox.camera);
                     sandbox.isProgressing = true;
+                    sandbox.pathTracer.create(sandbox.scene, sandbox.camera);
                 });
             }
         }
@@ -405,62 +359,63 @@ class Sandbox {
         }
     }
 
+    cameraAnimator(position, center) {
+        if (this.tween1) {
+            this.tweens.remove(this.tween1);
+            this.tweens.remove(this.tween2);
+        }
+
+        this.tween1 = new Tween(this.camera.position).to(position, 500)
+            .easing(Easing.Cubic.InOut).start();
+
+        this.tween2 = new Tween(this.controls.target).to(center, 510)
+            .easing(Easing.Cubic.InOut)
+            .onComplete(() => {
+                this.camera.updateProjectionMatrix();
+            }).start();
+
+        this.tweens.add(this.tween1);
+        this.tweens.add(this.tween2);
+    }
+
     frameCamera() {
         const center = new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z);
         const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(this.framed.radius);
+        const position = this.camera.position.clone().copy(center).sub(direction);
 
-        if (this.isRendering) {
-            this.camera.position.copy(center).sub(direction);
-            this.camera.lookAt(center);
-            this.controls.target.copy(center);
-            this.camera.updateProjectionMatrix();
-            this.controls.update();
-        } else {
-            const position = this.camera.position.clone().copy(center).sub(direction);
-            this.tween = new Tween(this.camera.position).to(position, 600)
-                .easing(Easing.Quadratic.InOut)
-                .onUpdate(() => {
-                    this.camera.lookAt(center);
-                    this.controls.target.copy(center);
-                })
-                .onComplete(() => {
-                    this.camera.updateProjectionMatrix();
-                    this.tween = null;
-                }).start();
-        }
+        this.cameraAnimator(position, center);
     }
 
     startPathTracer(isEnabled) {
         this.isRendering = isEnabled;
+        this.controls.enableDamping = !isEnabled;
+
+        renderer.autoClearColor = !isEnabled;
+        renderer.shadowMap.enabled = !isEnabled;
+        ui.domRenderShade.disabled = isEnabled;
+
         if (isEnabled) {
             renderer.setClearColor(0x000000, 0);
-            renderer.autoClearColor = false;
             renderer.toneMapping = THREE.NoToneMapping;
-            renderer.shadowMap.enabled = false;
-
-            this.controls.enableDamping = false;
+            
             this.scene.remove(this.shadowGround);
             this.pathTracer.updateBounces(ui.domRenderBounces.value);
             this.pathTracer.updateMaxSamples(ui.domRenderMaxSamples.value);
+            this.setFastMode(ui.domRenderFast.checked);
             this.flagUpdateScene = 1;
 
-            ui.domRenderShade.disabled = true;
             ui.domInfoRender.style.display = 'unset';
             ui.domSandboxRender.children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.setClearColor(0x000000, 0);
-            renderer.autoClearColor = true;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1;
-            renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFShadowMap;
             renderer.domElement.style.pointerEvents = 'unset';
 
-            this.controls.enableDamping = true;
             this.scene.add(this.shadowGround);
             this.isProgressing = false;
 
-            ui.domRenderShade.disabled = false;
             ui.domInfoRender.style.display = 'none';
             ui.domSandboxRender.children[0].firstChild.innerHTML = 'play_arrow';
             ui.domRenderPause.innerHTML = 'Pause';
@@ -469,9 +424,62 @@ class Sandbox {
         }
     }
 
+    setAutoStart(isStart) {
+        this.startPathTracer(isStart);
+        this.updateBackground(isStart);
+    }
+
+    toggleAutoStart() {
+        ui.domRenderAutoStart.checked = !ui.domRenderAutoStart.checked;
+        this.setAutoStart(ui.domRenderAutoStart.checked);
+    }
+
     toggleRender() {
         this.isRendering = !this.isRendering;
         this.startPathTracer(this.isRendering);
+    }
+
+    togglePause() {
+        this.isProgressing = !this.isProgressing;
+        if (this.isProgressing) {
+            ui.domRenderPause.innerHTML = 'Pause';
+            ui.domRenderPause.classList.remove('btn_select_pt');
+            renderer.domElement.style.pointerEvents = 'unset';
+        } else {
+            ui.domRenderPause.innerHTML = 'Continue';
+            ui.domRenderPause.classList.add('btn_select_pt');
+            renderer.domElement.style.pointerEvents = 'none';
+        }
+    }
+
+    setFastMode(isEnabled) {
+        ui.domRenderFast.checked = isEnabled;
+        this.isFastMode = isEnabled;
+        (isEnabled) ?
+            this.pathTracer.updateRenderScale(DPR_FAST) :
+            this.pathTracer.updateRenderScale(ui.domRenderDPR.value);
+    }
+
+    toggleFastMode() {
+        this.isFastMode = !this.isFastMode;
+        this.setFastMode(this.isFastMode);
+    }
+
+    toggleShadeMode() {
+        this.isShadeMode = !this.isShadeMode;
+        ui.domRenderShade.checked = this.isShadeMode;
+        this.updateMeshes();
+        //this.scene.overrideMaterial
+    }
+
+    setGrid(isEnabled) {
+        for (let i = 0; i < this.meshes.length; i++) {
+            (isEnabled) ?
+                this.meshes[i].material.map = this.tex_grid :
+                this.meshes[i].material.map = null;
+            this.meshes[i].material.needsUpdate = true;
+        }
+        this.pathTracer.updateMaterials();
     }
 
     shot() {
@@ -492,9 +500,7 @@ class Sandbox {
 
         engine.isRendering = false;
 
-        this.isRendering = true;
-        this.controls.enabled = true;
-        this.startPathTracer(ui.domRenderAutoRender.checked);
+        this.startPathTracer(ui.domRenderAutoStart.checked);
         this.create();
         
         renderer.domElement.style.display = 'unset';
@@ -514,7 +520,6 @@ class Sandbox {
         
         this.disposePick();
         this.startPathTracer(false);
-        this.controls.enabled = false;
 
         ui.domRenderPause.innerHTML = 'Pause';
         ui.domRenderPause.classList.remove('btn_select_pt');
@@ -524,13 +529,13 @@ class Sandbox {
         ui.domInfoRender.style.display = 'none';
     }
 
-    async loadHDR(url, callback) {
+    async loadHDR(url, onLoad) {
         await loadRGBE(url).then(tex => {
             tex.mapping = THREE.EquirectangularReflectionMapping;
             tex.minFilter = THREE.LinearFilter;
             tex.magFilter = THREE.LinearFilter;
             tex.generateMipmaps = false;
-            callback(tex);
+            onLoad(tex);
         });
     }
 }
@@ -610,7 +615,7 @@ renderer.domElement.onpointerdown = (ev) => {
     sandbox.mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
     sandbox.mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
     sandbox.pathTracer.update();
-    sandbox.pickMesh();
+    //sandbox.pickMesh();
 };
 
 renderer.domElement.onpointermove = (ev) => {
