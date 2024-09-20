@@ -53,7 +53,7 @@
 - Blender importer script
 
 **More**
-- Average startup time 344 ms
+- Average startup time 300 ms
 - Unique handcrafted user-interface
 - Minimum dependency, portable, online and offline
 - Ad-free, no trackers, no logging, no loading screens
