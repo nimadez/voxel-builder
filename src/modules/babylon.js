@@ -29,6 +29,16 @@ class Engine {
     getFps() {
         return ~~this.engine.getFps();
     }
+
+    clearCache(scene, elem) {
+        this.engine.clearInternalTexturesCache();
+        scene.cleanCachedTextureBuffer();
+        BABYLON.Tools.ClearLogCache();
+        elem.innerHTML = 'Cleared';
+        setTimeout(() => {
+            elem.innerHTML = 'Clear Cache';
+        }, 800);
+    }
 }
 
 export const engine = new Engine();
@@ -77,6 +87,20 @@ export function Vector3Project(target, scene, camera) {
         camera.viewport.toGlobal(
             scene.getEngine().getRenderWidth(),
             scene.getEngine().getRenderHeight()));
+}
+
+export const isTargetIn = (startPos, endPos, target, camera, scene) => {
+    const targetScreenPosition = Vector3Project(target, scene, camera);
+    const rect = {
+        x: Math.min(startPos.x, endPos.x),
+        y: Math.min(startPos.y, endPos.y),
+        w: Math.abs(endPos.x - startPos.x),
+        h: Math.abs(endPos.y - startPos.y)
+    };
+    return targetScreenPosition.x >= rect.x &&
+           targetScreenPosition.x <= rect.x + rect.w &&
+           targetScreenPosition.y >= rect.y &&
+           targetScreenPosition.y <= rect.y + rect.h;
 }
 
 

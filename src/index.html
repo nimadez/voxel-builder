@@ -90,7 +90,7 @@
             background-size: 38px 38px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
         #canvas_palette { z-index: 1; image-rendering: pixelated; position: relative; width: 100%; height: 32000px; }
         #menus { display: none; }
-        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 276px; padding: 0 4px 4px 4px; width: 120px; height: fit-content; margin-left: -200px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
+        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 271px; padding: 0 4px 4px 4px; width: 120px; height: fit-content; margin-left: -200px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
         .menu_L li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
         .menu_L li:hover { background: none; }
         .menu_L li div.flex { display: flex; }
@@ -115,7 +115,7 @@
         #toolbar_C_mem :nth-child(1) { border-right: none; border-bottom-left-radius: 3px; }
         #toolbar_C_mem :nth-child(3) { padding: 0 1px 0 1px; width: 0; background: none; border: none; }
         #toolbar_C_mem :nth-child(5) { border-left: none; border-bottom-right-radius: 3px; }
-        #toolbar_L { z-index: 1000; opacity: 0.95; width: 75px; position: absolute; left: 0; top: 0; }
+        #toolbar_L { z-index: 1000; opacity: 0.95; width: 70px; position: absolute; left: 0; top: 0; }
         #toolbar_L li { display: inline; background: none; border: none; padding: 0; }
         #toolbar_L li:nth-child(1) button { padding: 6px 0 6px 10px; }
         #toolbar_L li:nth-child(1) :first-child { width: 50%; float: left; }
@@ -152,7 +152,7 @@
         #btn-symm-axis-z:hover { background: var(--input-bg); }
         #menu-inscreen-left { z-index: 500; display: none; flex-direction: row; gap: 0; position: fixed; left: 4px; top: 510px; }
         #menu-inscreen-left li { background: none; }
-        #menu-inscreen-left button { width: 35px; height: 28px; color: #00ffffAA; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; background: none; border: none; }
+        #menu-inscreen-left button { width: 30px; height: 28px; color: #00ffffAA; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; background: none; border: none; }
         #menu-inscreen-left button:hover { background: transparent; }
         #menu-inscreen-right { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; bottom: 135px; }
         #menu-inscreen-right button { width: 45px; height: 32px; }
@@ -178,8 +178,8 @@
         #ws_status { font-size: 11px; color: indianred; }
         #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 360px; height: 50%; transform: translate(-50%,-50%); position: fixed; }
         #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
-        #shortcuts tr { font-size: 13px; border: solid 1px var(--cat-border); background: var(--cat-bg); }
-        #shortcuts tr :first-child { width: 120px; text-align: center; }
+        #shortcuts tr { font-size: 14px; border: solid 1px var(--cat-border); background: var(--cat-bg); }
+        #shortcuts tr :first-child { width: 130px; text-align: center; }
         #shortcuts tr :last-child { text-indent: 5px; }
         #shortcuts th, td { width: 380px; padding: 4px 0 4px 0; }
         .spacer { height: 3px; }
@@ -278,19 +278,19 @@
                     <option value="examples/mv_odyssey_kluchek.json">Odyssey @kluchek</option>
                 </select>
             </li>
-            <li class="category">EXTRAS</li>
-            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus()">Asset Viewer</button></li>
-            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus()">Pixel Monk</button></li>
-            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
             <li class="about">
-                4.4.5 Beta 2024
+                4.4.6 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
                 <br><input type="checkbox" id="devmode"> <label for="devmode">Dev mode</label>
             </li>
+            <li class="category">EXTRAS</li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus()">Asset Viewer</button></li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus()">Pixel Monk</button></li>
+            <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
         </ul>
         <ul class="menu_L panel" id="menu-prefs">
             <li class="category">GENERAL</li>
@@ -298,6 +298,7 @@
             <li><input type="checkbox" id="pref_nohover"> <label for="pref_nohover">No Hover Menu</label></li>
             <li><input type="checkbox" id="pref_floorplane"> <label for="pref_floorplane">Floor Plane</label></li>
             <li><input type="checkbox" id="pref_pointcloud"> <label for="pref_pointcloud">Point Cloud</label></li>
+            <li class="spacer"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1"></li>
             <li class="category">SYSTEM</li>
             <button id="fullscreen">Fullscreen</button>
@@ -498,7 +499,7 @@
                 <button id="btn-pt-pause">Pause</button>
             </li>
             <li class="category">ENVIRONMENT</li>
-            <li class="row"><label style="min-width: 53%">Intensity</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="15.0" min="0.01" max="100" step="0.01"></li>
+            <li class="row"><label style="min-width: 53%">Intensity</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="16.0" min="0.01" max="100" step="0.01"></li>
             <li class="category">MATERIAL</li>
             <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.98" min="0" max="1" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0.01" min="0" max="1" step="0.01"></input></li>
@@ -530,7 +531,7 @@
             </li>
             <li class="category">HDRI</li>
             <li>
-                <select id="hdri_dropdown" style="text-align: left;">
+                <select id="hdr_dropdown" style="text-align: left;">
                     <option value="assets/snow_field_2_puresky_1k.hdr">Default (local)</option>
                     <option value="assets/black.hdr">Black (local)</option>
                     <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/main/footprint_court.hdr">DLC: Footprint Court</option>
@@ -540,8 +541,8 @@
                     <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/quarry_01_1k.hdr">DLC: Quarry</option>
                 </select>
             </li>
-            <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDRI</button></li>
-            <li><button id="unload_hdri">Unload</button></li>
+            <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDR</button></li>
+            <li><button id="unload_hdr">Unload</button></li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="input-hdri-background"> <label for="input-hdri-background">Background *</label></li>
             <li class="spacer"></li>
@@ -549,7 +550,7 @@
             <li class="category">DIRECT LIGHT</li>
             <li><input type="color" id="input-light-color" value="#DCDCDC"></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Intensity *</label> <input type="number" id="input-light-intensity" value="1.0" min="0" step="0.01"></li>
+            <li class="row_input"><label>Intensity *</label> <input type="number" id="input-light-intensity" value="0.5" min="0" step="0.01"></li>
             <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-material">
@@ -597,7 +598,7 @@
             <li><button id="delete_hidden">Delete Hidden</button>
         </ul>
     </div>
-    <ul id="hover" class="panel">
+    <ul id="hover">
         <li class="tool_camera"><i class="material-icons">control_camera</i></li>
         <li class="tool_box_paint"><i class="material-icons">imagesearch_roller</i></li>
         <li class="tool_box_add"><i class="material-icons">add</i></li>

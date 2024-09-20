@@ -6,12 +6,11 @@
 */
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
-
 import { Vector3 } from '../babylon.js';
 
 import {
-    ui, builder, xformer,
-    clearScene, hexToRgbFloat, rgbFloatToHex,
+    ui, builder, xformer, project,
+    hexToRgbFloat, rgbFloatToHex,
     COL_ICE
 } from '../../main.js';
 
@@ -84,7 +83,7 @@ class Generator {
 
         if (isNewScene) {
             builder.setDataFromArray(data);
-            clearScene();
+            project.clearScene();
         } else {
             xformer.beginNewObject(data);
         }
@@ -113,7 +112,7 @@ class Generator {
 
         if (isNewScene) {
             builder.setDataFromArray(data);
-            clearScene();
+            project.clearScene();
         } else {
             xformer.beginNewObject(data);
         }
@@ -160,7 +159,7 @@ class Generator {
         
         if (isNewScene) {
             builder.setDataFromArray(data);
-            clearScene();
+            project.clearScene();
         } else {
             xformer.beginNewObject(data);
         }
@@ -206,7 +205,7 @@ class Generator {
 
         if (isNewScene) {
             builder.setDataFromArray(data);
-            clearScene();
+            project.clearScene();
         } else {
             xformer.beginNewObject(data, (isHeightGrad) ? true : false);
         }

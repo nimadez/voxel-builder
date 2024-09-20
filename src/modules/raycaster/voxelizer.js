@@ -14,8 +14,8 @@ import {
 } from '../babylon.js';
 
 import {
-    scene, ui, builder, pool,
-    clearScene, resetPivot, rgbIntToHex,
+    scene, ui, builder, pool, project,
+    rgbIntToHex,
     COL_ICE
 } from '../../main.js';
 
@@ -31,7 +31,7 @@ class Voxelizer {
 
         const data = rcv.mesh_voxel(mesh, COL_ICE);
         builder.setDataFromArray(data);
-        clearScene();
+        project.clearScene();
         ui.showProgress(0);
     }
 
@@ -39,11 +39,12 @@ class Voxelizer {
         if (pool.selected) {
             if (!await ui.showConfirm('clear and replace all voxels?')) return;
             ui.showProgress(1);
-            ui.setMode(0);
             
             const data = rcv.mesh_bake(pool.selected);
+
+            ui.setMode(0); // important: after data
             builder.setDataFromArray(data);
-            clearScene();
+            project.clearScene();
             ui.showProgress(0);
         } else {
             ui.notification('select a mesh');
@@ -54,15 +55,15 @@ class Voxelizer {
         if (pool.meshes.length > 0) {
             if (!await ui.showConfirm('clear and replace all voxels?')) return;
             ui.showProgress(1);
-            ui.setMode(0);
 
             const mesh = MergeMeshes(pool.meshes, false, true);
-            resetPivot(mesh);
+            pool.resetPivot(mesh);
             const data = rcv.mesh_bake(mesh);
             mesh.dispose();
 
+            ui.setMode(0);
             builder.setDataFromArray(data);
-            clearScene();
+            project.clearScene();
             ui.showProgress(0);
         }
     }
@@ -117,7 +118,7 @@ class Voxelizer {
 
             builder.setDataFromArray(data);
             builder.normalizeVoxelPositions(false);
-            clearScene();
+            project.clearScene();
             ui.showProgress(0);
         }
     }
