@@ -8,9 +8,10 @@
 
 class Engine {
     constructor() {
-        this.engine = undefined;
-        this.isRendering = false;
         this.canvas = document.getElementById('canvas');
+
+        this.engine = undefined;
+        this.isRendering = true;
 
         this.init();
     }
@@ -22,8 +23,6 @@ class Engine {
         this.engine.premultipliedAlpha = false;
         this.engine.enableOfflineSupport = false;
         this.engine.doNotHandleContextLost = true;
-
-        this.isRendering = true;
     }
 
     getFps() {

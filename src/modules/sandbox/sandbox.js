@@ -9,6 +9,9 @@ import { THREE, renderer } from '../three.js';
 import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer.js';
 import { RGBELoader } from '../../libs/addons/RGBELoader.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
+import { EffectComposer } from '../../libs/addons/EffectComposer.js';
+import { RenderPass } from '../../libs/addons/RenderPass.js';
+import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
 import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
 
 import { engine, Vector3 } from '../babylon.js';
@@ -18,6 +21,7 @@ import { ui, camera, hdri, light, builder } from '../../main.js';
 const TILE = 1;
 const DPR_FAST = 0.6;
 const CAM_FAR = 1000;
+const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArBJREFUeF7t3UGKwkAUhOEXBMHoQlBw5f0P5UpBBHEpCoLM0Imjzhnq8wavbTr1V1Un3fF4/Cm/2BXoDofDz/1+j12ANnjXdZHzz+fzGjbA8/ms1WoVtQht5tvtNsy8Xq9rOp1Gzb/b7coGsAGcAE4AjwCPABqABiACiUAUkIQBKAAGwkA+ACOIEcQJ5ASyglnBsgBZgDAoiQILBsJAGAgDYSAMhIEwEAbCQBgIA2EgDExaAaVQpVCtYLVwtXD3AtwLcDHExRA3g9wMcjXM1bAkCiwYCANhIAyEgTAQBsJAGAgDYSAMhIEwMGgFtIK1grWCtYK1grWCtYK1grWCtYK1grWCtYKDILBcDhUHi4PFweJgcbA4WBwsDhYHi4PFweJgcXAUB8NAGAgDYSAMhIEwEAbCQBgIA2EgDISBQSugFawVrBWsFfzVCl4ul0EH4Djq9wZIG36/339OgMfjUbPZLG0Noue9Xq+1WCzGbwfbAHl74d8GaONvNpu4VbhcLsPMfd/HzX4+nz8nQJt+u91GLUI79b43wGQyiZr/dDrZADbASwM4AfpyAngEeAQkrQANQAMQgX8+AA1AA8BAGMgHSNJAfABGECOIEcQIemcBjCBGUJIEKBqABqABaAAagAZojSBOICeQE8gJ5AQmYQAKQAEoAAWgABSAAsZaOCuYFZykAVnBOoE6gTqBOoGfq2E0AA1AAyStAA1AA9AANAANMLwgQhzMCBIHi4PFwUkiWBwsDhYHi4PFweJgFCAOhoH6AF4TJwwSBiVRoEKIMEgYJAwSBgmDhEGvl0UTgUQgEZi0AkQgEUgEEoFEIBFIBKqEuRvokzEuh/pmkG8GJVFgwUAYCANhIAyEgTAQBsJAGAgDYWA4BkYx4GvYhoLtl9YFaDO32d+fj0/88808bvxf87nn25fi4GYAAAAASUVORK5CYII=";
 
 
 class Sandbox {
@@ -37,6 +41,7 @@ class Sandbox {
         this.light = undefined;
         this.lightHelper = undefined;
         this.mouse = new THREE.Vector2();
+        this.clock = new THREE.Clock();
         this.tween1 = undefined;
         this.tween2 = undefined;
         this.tweens = new Group();
@@ -46,12 +51,15 @@ class Sandbox {
         this.raycaster = new THREE.Raycaster();
 
         this.geom = undefined;
+        this.geomBox = undefined;
+        this.mat_illum = undefined;
+        this.mat_shade = undefined;
         this.mat_pbr = undefined;
-        this.tex_grid = undefined;
+        this.textures = [];
 
-        this.pathTracer = undefined;
-        this.isFastMode = false;
         this.isShadeMode = false;
+
+        this.pathTracer = undefined;        
         this.flagUpdateScene = 0;
 
         this.init();
@@ -74,6 +82,9 @@ class Sandbox {
             this.pathTracer.updateCamera();
         });
 
+        this.composer = new EffectComposer(renderer);
+        this.composer.addPass(new RenderPass(this.scene, this.camera));
+
         this.createScene();
 
         this.pathTracer = new PathTracer();
@@ -85,11 +96,11 @@ class Sandbox {
     }
 
     createScene() {
-        this.ambient = new THREE.AmbientLight(0x555555, 1);
-        this.hemisphere = new THREE.HemisphereLight(0x444444, 0x222222, 1);
+        this.ambient = new THREE.AmbientLight(0xAAAAAA, 1);
+        this.hemisphere = new THREE.HemisphereLight(0x666666, 0x333333, 1);
         this.scene.add(this.ambient, this.hemisphere);
 
-        this.light = new THREE.DirectionalLight(0xDCDCDC, 1);
+        this.light = new THREE.DirectionalLight(0xCCCCCC, 1); // overrided
         this.light.position.set(17, 100, 46);
         this.light.target.position.set(0, 0, 0);
         this.light.castShadow = true;
@@ -123,13 +134,12 @@ class Sandbox {
         this.shadowGround.updateMatrix();
         this.scene.add(this.shadowGround);
 
-        this.tex_grid = createVoxelTexture();
-        this.tex_grid.encoding = THREE.sRGBEncoding;
-        //this.tex_grid.minFilter = THREE.NearestMipmapLinearFilter;
-        //this.tex_grid.magFilter = THREE.LinearFilter;
+        this.geomBox = new THREE.BoxGeometry(1.01, 1.01, 1.01);
 
         // overrided
-        this.mat_shade = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x999999), side: THREE.BackSide, precision: "mediump" });
+        this.mat_illum = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0xC5AF5E), side: THREE.FrontSide });
+        this.mat_illum.emissiveIntensity = 20;
+        this.mat_shade = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xAAAAAA), side: THREE.BackSide, precision: "mediump" });
         this.mat_pbr = new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.BackSide });
         this.mat_pbr.specularIntensity = 1;
         this.mat_pbr.roughness = 1;
@@ -139,6 +149,10 @@ class Sandbox {
         this.mat_pbr.clearcoatRoughness = 1;
         this.mat_pbr.color.convertSRGBToLinear();
         this.mat_pbr.needsUpdate = true;
+
+        this.textures.push(null);
+        this.textures.push(createVoxelTexture());
+        this.textures.push(new THREE.TextureLoader().load(TEX_CHECKER));
     }
 
     // If batchedmesh is supported by pathtracer, we can do more!
@@ -181,8 +195,9 @@ class Sandbox {
     createMeshes() {
         this.clearMeshes();
 
-        this.mat_shade.map = (ui.domRenderGrid.checked) ? this.tex_grid : null;
-        this.mat_pbr.map = (ui.domRenderGrid.checked) ? this.tex_grid : null;
+        this.mat_illum.emissive = new THREE.Color(ui.domRenderMaterialEmissive.value);
+        this.mat_shade.map = this.textures[parseInt(ui.domRenderTexture.value)];
+        this.mat_pbr.map = this.textures[parseInt(ui.domRenderTexture.value)];
         this.mat_pbr.roughness = ui.domRenderMaterialRoughness.value;
         this.mat_pbr.metalness = ui.domRenderMaterialMetalness.value;
         this.mat_pbr.transmission = ui.domRenderMaterialTransmission.value;
@@ -199,7 +214,25 @@ class Sandbox {
         this.scene.add(mesh);
         this.meshes.push(mesh);
 
+        this.createLightSources();
+
         this.isLoaded = true;
+    }
+
+    createLightSources() {
+        const voxels = builder.getVoxelsByColor("#000000");
+        if (voxels.length > 0) {
+            let geometry = this.geomBox.clone();
+            geometry.translate(voxels[0].position.x, voxels[0].position.y, voxels[0].position.z);
+            for (let i = 1; i < voxels.length; i++) {
+                const box = this.geomBox.clone();
+                box.translate(voxels[i].position.x, voxels[i].position.y, voxels[i].position.z);
+                geometry = mergeGeometries([ geometry, box ], false);
+            }
+            const mesh = new THREE.Mesh(geometry, this.mat_illum);
+            this.scene.add(mesh);
+            this.meshes.push(mesh);
+        }
     }
 
     updateMeshes() {
@@ -245,7 +278,7 @@ class Sandbox {
     }
 
     updateEnvIntensity(val) {
-        this.scene.environmentIntensity = parseFloat(val) / 20;
+        this.scene.environmentIntensity = parseFloat(val);
         this.pathTracer.updateEnvironment();
     }
 
@@ -254,7 +287,7 @@ class Sandbox {
             if (ui.domHdriBackground.checked) {
                 this.scene.background = this.scene.environment;
                 this.scene.background.mapping = THREE.EquirectangularReflectionMapping;
-                this.scene.backgroundIntensity = 0.8;
+                this.scene.backgroundIntensity = 1.0;
                 this.scene.backgroundBlurriness = ui.domHdriBlur.value;
             } else {
                 this.scene.background = null;
@@ -269,7 +302,7 @@ class Sandbox {
         this.light.position.set(light.directional.position.x, light.directional.position.y, light.directional.position.z).multiplyScalar(3);
         this.light.target.position.set(0, 0, 0);
         this.light.color = new THREE.Color(ui.domColorPickerLightColor.value);
-        this.light.intensity = ui.domLightIntensity.value * ui.domLightIntensity.value;
+        this.light.intensity = ui.domLightIntensity.value;
         this.lightHelper.update();
         this.pathTracer.updateLights();
     }
@@ -290,7 +323,8 @@ class Sandbox {
                     ui.domInfoRender.children[4].innerHTML = ui.domRenderBounces.value;
                 }
             } else {
-                renderer.render(sandbox.scene, sandbox.camera);
+                sandbox.composer.render(sandbox.clock.getDelta());
+                //renderer.render(sandbox.scene, sandbox.camera);
             }
 
             sandbox.tweens.update(performance.now());
@@ -367,7 +401,6 @@ class Sandbox {
 
         renderer.autoClearColor = !isEnabled;
         renderer.shadowMap.enabled = !isEnabled;
-        ui.domRenderShade.disabled = isEnabled;
 
         if (isEnabled) {
             renderer.setClearColor(0x000000, 0);
@@ -376,7 +409,6 @@ class Sandbox {
             this.scene.remove(this.shadowGround);
             this.pathTracer.updateBounces(ui.domRenderBounces.value);
             this.pathTracer.updateMaxSamples(ui.domRenderMaxSamples.value);
-            this.setFastMode(ui.domRenderFast.checked);
             this.flagUpdateScene = 1;
 
             ui.domInfoRender.style.display = 'unset';
@@ -415,29 +447,18 @@ class Sandbox {
     }
 
     togglePause() {
-        this.isProgressing = !this.isProgressing;
-        if (this.isProgressing) {
-            ui.domRenderPause.innerHTML = 'Pause';
-            ui.domRenderPause.classList.remove('btn_select_pt');
-            renderer.domElement.style.pointerEvents = 'unset';
-        } else {
-            ui.domRenderPause.innerHTML = 'Continue';
-            ui.domRenderPause.classList.add('btn_select_pt');
-            renderer.domElement.style.pointerEvents = 'none';
+        if (this.isRendering) {
+            this.isProgressing = !this.isProgressing;
+            if (this.isProgressing) {
+                ui.domRenderPause.innerHTML = 'Pause';
+                ui.domRenderPause.classList.remove('btn_select_pt');
+                renderer.domElement.style.pointerEvents = 'unset';
+            } else {
+                ui.domRenderPause.innerHTML = 'Continue';
+                ui.domRenderPause.classList.add('btn_select_pt');
+                renderer.domElement.style.pointerEvents = 'none';
+            }
         }
-    }
-
-    setFastMode(isEnabled) {
-        ui.domRenderFast.checked = isEnabled;
-        this.isFastMode = isEnabled;
-        (isEnabled) ?
-            this.pathTracer.updateRenderScale(DPR_FAST) :
-            this.pathTracer.updateRenderScale(ui.domRenderDPR.value);
-    }
-
-    toggleFastMode() {
-        this.isFastMode = !this.isFastMode;
-        this.setFastMode(this.isFastMode);
     }
 
     toggleShadeMode() {
@@ -447,14 +468,14 @@ class Sandbox {
         //this.scene.overrideMaterial
     }
 
-    setGrid(isEnabled) {
-        for (let i = 0; i < this.meshes.length; i++) {
-            (isEnabled) ?
-                this.meshes[i].material.map = this.tex_grid :
-                this.meshes[i].material.map = null;
-            this.meshes[i].material.needsUpdate = true;
+    toggleBackground() {
+        if (!this.scene.background) {
+            ui.domHdriBackground.checked = true;
+            this.updateBackground(true);
+        } else {
+            ui.domHdriBackground.checked = false;
+            this.updateBackground(false);
         }
-        this.pathTracer.updateMaterials();
     }
 
     shot() {
@@ -521,6 +542,10 @@ class Sandbox {
         });
     }
 }
+
+
+// -------------------------------------------------------
+// Path Tracer
 
 
 class PathTracer {
@@ -593,6 +618,10 @@ class PathTracer {
 export const sandbox = new Sandbox();
 
 
+// -------------------------------------------------------
+// Events
+
+
 renderer.domElement.onpointerdown = (ev) => {
     sandbox.mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
     sandbox.mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
@@ -604,6 +633,10 @@ renderer.domElement.onpointermove = (ev) => {
     sandbox.mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
     sandbox.mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
 };
+
+
+// -------------------------------------------------------
+// Utils
 
 
 async function loadRGBE(url) {
@@ -630,11 +663,14 @@ function createVoxelTexture(size = 64) {
     const ctx = c.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, size, size);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.2;
     ctx.strokeStyle = '#00000090';
     //ctx.filter = 'blur(1px)';
     ctx.strokeRect(0, 0, size, size);
-    return new THREE.CanvasTexture(c);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.NearestMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    return tex;
 }
 
 function timeFormat(t) {

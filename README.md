@@ -24,7 +24,6 @@
 
 **Model and Paint**
 - High performance voxel engine
-- High performance GPU picking system
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
 - Symmetric drawing and painting

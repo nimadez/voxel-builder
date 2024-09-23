@@ -7,6 +7,7 @@
 
 import { WorkerPool } from '../libs/addons/WorkerPool.js';
 
+
 export const workerPool = new WorkerPool();
 workerPool.setWorkerCreator(() => {
     const worker = new Worker('modules/worker/worker.js', { type: "module" });
@@ -14,11 +15,15 @@ workerPool.setWorkerCreator(() => {
     return worker;
 });
 
+
+export { hover } from './interfaces/hover.js';
+export { panels } from './interfaces/panels.js';
 export { sandbox } from './sandbox/sandbox.js';
 export { generator } from './generator/generator.js';
 export { voxelizer } from './raycaster/voxelizer.js';
 export { bakery } from './bakery/bakery.js';
 export { rc } from './raycaster/raycaster.js';
 export { ws_client } from './websockets/client.js';
+
 
 console.log('load modules');

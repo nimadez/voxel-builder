@@ -58,12 +58,8 @@ const startTime = performance.now();
 
 const ENVMAP = "assets/snow_field_2_puresky_1k.hdr";
 const SNAPSHOT = "data:image/png;base64,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";
-const TEX_PATTERNS = [
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MkU4REU5Qjk4OTRDMTFFRTg2QjBFRjM0QzQ0QkI4QkMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MkU4REU5Qjg4OTRDMTFFRTg2QjBFRjM0QzQ0QkI4QkMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7JL+VyAAAABlBMVEXu7u7///8o06qaAAABNUlEQVR42uzQAQEAAAgCIPt/ugUuECaQAMy7SQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBAgQIAAAQIECBDQAgBGvQADACdQ7GV7QTbFAAAAAElFTkSuQmCC",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MzUzQjBCN0M4OTRDMTFFRTg4NDlFNEZFOTAyNkI3NUUiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MzUzQjBCN0I4OTRDMTFFRTg4NDlFNEZFOTAyNkI3NUUiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7S7fDaAAAABlBMVEXu7u7///8o06qaAAABP0lEQVR42uzdMQ0AAAgDQfBvmgkNJeHeQJNbGKmSpPd1puT2zgMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArgFIku/zziAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAkCSnjYCDAD0EOLiNtloaAAAAABJRU5ErkJggg==",
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3FpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6M0I0Q0RBQzE4OTRDMTFFRTlDRDBFNzEwQzg2ODU2M0IiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6M0I0Q0RBQzA4OTRDMTFFRTlDRDBFNzEwQzg2ODU2M0IiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmRmOTNkMWFjLTRiNmMtYjQ0Yi04M2FiLTEyMTUwYjliNWIzYyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0MjU4MTcxNi1mMzRjLWFlNDctYjBlOS00NzY4MDA2OThhMmUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7DbGeBAAAACVBMVEXu7u719fX////A386gAAABQElEQVR42uzUwQkAQAgDQb3+ixauiQjONhCYR6ok6Xyd6W+/WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAlQCSdLrkDXcsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYCeAJB1tBBgACnlUY660frcAAAAASUVORK5CYII=",
-];
+const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
+const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArBJREFUeF7t3UGKwkAUhOEXBMHoQlBw5f0P5UpBBHEpCoLM0Imjzhnq8wavbTr1V1Un3fF4/Cm/2BXoDofDz/1+j12ANnjXdZHzz+fzGjbA8/ms1WoVtQht5tvtNsy8Xq9rOp1Gzb/b7coGsAGcAE4AjwCPABqABiACiUAUkIQBKAAGwkA+ACOIEcQJ5ASyglnBsgBZgDAoiQILBsJAGAgDYSAMhIEwEAbCQBgIA2EgDExaAaVQpVCtYLVwtXD3AtwLcDHExRA3g9wMcjXM1bAkCiwYCANhIAyEgTAQBsJAGAgDYSAMhIEwMGgFtIK1grWCtYK1grWCtYK1grWCtYK1grWCtYKDILBcDhUHi4PFweJgcbA4WBwsDhYHi4PFweJgcXAUB8NAGAgDYSAMhIEwEAbCQBgIA2EgDISBQSugFawVrBWsFfzVCl4ul0EH4Djq9wZIG36/339OgMfjUbPZLG0Noue9Xq+1WCzGbwfbAHl74d8GaONvNpu4VbhcLsPMfd/HzX4+nz8nQJt+u91GLUI79b43wGQyiZr/dDrZADbASwM4AfpyAngEeAQkrQANQAMQgX8+AA1AA8BAGMgHSNJAfABGECOIEcQIemcBjCBGUJIEKBqABqABaAAagAZojSBOICeQE8gJ5AQmYQAKQAEoAAWgABSAAsZaOCuYFZykAVnBOoE6gTqBOoGfq2E0AA1AAyStAA1AA9AANAANMLwgQhzMCBIHi4PFwUkiWBwsDhYHi4PFweJgFCAOhoH6AF4TJwwSBiVRoEKIMEgYJAwSBgmDhEGvl0UTgUQgEZi0AkQgEUgEEoFEIBFIBKqEuRvokzEuh/pmkG8GJVFgwUAYCANhIAyEgTAQBsJAGAgDYWA4BkYx4GvYhoLtl9YFaDO32d+fj0/88808bvxf87nn25fi4GYAAAAASUVORK5CYII=";
 
 const COL_ORANGE = '#FFA500';
 const COL_ORANGE_RGB = color3FromHex(COL_ORANGE);
@@ -101,8 +97,6 @@ const MAX_VOXELS_DRAW = 64000;
 const WORKPLANE_SIZE = 120;
 const WORKPLANE_VISIBILITY = 0.15;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
-const DEF_BGCOLOR = document.getElementById('input-env-background').value.toUpperCase();
-const DEF_LIGHTCOLOR = document.getElementById('input-light-color').value.toUpperCase();
 const isMobile = isMobileDevice();
 
 const canvas = document.getElementById('canvas');
@@ -132,10 +126,11 @@ const bvhWhiteList = [
 
 
 const KEY_STARTUP = "pref_startup";
-const KEY_NOHOVER = "pref_nohover";
 const KEY_PALETTE_SIZE = "pref_palette_size";
 const KEY_FLOORPLANE = "pref_floorplane";
 const KEY_POINTCLOUD = "pref_pointcloud";
+const KEY_BACKGROUND_CHECK = "pref_background_check";
+const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_WEBSOCKET = "pref_websocket";
 const KEY_WEBSOCKET_URL = "pref_websocket_url";
 
@@ -146,18 +141,15 @@ class Preferences {
 
     init() {
         document.getElementById(KEY_STARTUP).checked = false;
-        document.getElementById(KEY_NOHOVER).checked = false;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_FLOORPLANE).checked = true;
         document.getElementById(KEY_POINTCLOUD).checked = true;
+        document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
+        document.getElementById(KEY_BACKGROUND_COLOR).value = "#474A52";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
 
         this.initPrefCheck(KEY_STARTUP);
-
-        this.initPrefCheck(KEY_NOHOVER, (chk) => {
-            this.setNoHover(chk);
-        });
 
         this.initPref(KEY_PALETTE_SIZE, (val) => {
             palette.expand(val);
@@ -170,6 +162,17 @@ class Preferences {
         this.initPrefCheck(KEY_POINTCLOUD, (chk) => {
             (chk && MODE == 2) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
         });
+        
+        this.initPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
+            scene.autoClear = chk;
+            if (scene.autoClear)
+                scene.clearColor = color4FromHex(document.getElementById(KEY_BACKGROUND_COLOR).value);
+        });
+
+        this.initPref(KEY_BACKGROUND_COLOR, (val) => {
+            scene.clearColor = color4FromHex(val);
+            scene.autoClear = document.getElementById(KEY_BACKGROUND_CHECK).checked;
+        });
 
         this.initPrefCheck(KEY_WEBSOCKET, (chk) => {
             (chk && !modules.sandbox.isActive()) ? modules.ws_client.connect() : modules.ws_client.disconnect();
@@ -181,6 +184,10 @@ class Preferences {
     finish() {
         console.log('load preferences');
 
+        scene.autoClear = document.getElementById(KEY_BACKGROUND_CHECK).checked;
+        if (scene.autoClear)
+            scene.clearColor = color4FromHex(document.getElementById(KEY_BACKGROUND_COLOR).value);
+
         hdri.preload(() => {
             if (this.getStartup()) {
                 project.loadFromUrl('user/startup.json', () => {
@@ -188,7 +195,6 @@ class Preferences {
                     ui.hideInterface(false);
                     document.getElementById('introscreen').style.display = 'none';
                     console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
-                    
                 });
             } else {
                 project.newProjectStartup();
@@ -198,7 +204,6 @@ class Preferences {
                 console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
             }
 
-            ui.toggleHover(!this.getNoHover());
             palette.expand(this.getPaletteSize());
             helper.floorPlane.isVisible = this.getFloorPlane();
         });
@@ -233,16 +238,6 @@ class Preferences {
         return document.getElementById(KEY_STARTUP).checked;
     }
 
-    getNoHover() {
-        return document.getElementById(KEY_NOHOVER).checked;
-    }
-
-    setNoHover(isEnabled) {
-        document.getElementById(KEY_NOHOVER).checked = isEnabled;
-        localStorage.setItem(KEY_NOHOVER, isEnabled);
-        ui.toggleHover(!isEnabled);
-    }
-
     getPaletteSize() {
         return document.getElementById(KEY_PALETTE_SIZE).value;
     }
@@ -261,6 +256,10 @@ class Preferences {
 
     getPointCloud() {
         return document.getElementById(KEY_POINTCLOUD).checked;
+    }
+
+    getBackgroundColor() {
+        return document.getElementById(KEY_BACKGROUND_COLOR).value;
     }
 
     getWebsocket() {
@@ -363,7 +362,7 @@ class Camera {
         }
     }
 
-    getFramed(mesh, offset = 1.5) {
+    getFramed(mesh, offset = 2.2) {
         if (!mesh) return undefined;
 
         mesh.computeWorldMatrix(true);
@@ -373,19 +372,23 @@ class Camera {
         const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
         const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
         
-        // TODO
         const radiusWithoutFraming = Vector3Distance(minimumWorld, maximumWorld) * 0.5;
-        if (radiusWithoutFraming < 10) offset = 2.5;
-        if (radiusWithoutFraming > 10) offset = 2.0;
-        if (radiusWithoutFraming > 20) offset = 1.5;
-        if (radiusWithoutFraming > 30) offset = 1.1;
+        if (radiusWithoutFraming > 20) offset /= 1.8;
 
         const radius = radiusWithoutFraming * offset;
         const distanceForHorizontalFrustum = radius / frustumSlopeX;
         const distanceForVerticalFrustum = radius / frustumSlopeY;
         const distance = offset + Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
 
-        return { radius: distance, target: bounds.boundingSphere.centerWorld };
+        const radiusWorld = maximumWorld.subtract(minimumWorld).scale(0.5);
+        const centerWorld = minimumWorld.add(radiusWorld);
+        const zoomTargetY = minimumWorld.y + (maximumWorld.y - minimumWorld.y) * 0.5;
+        const zoomTarget = Vector3(centerWorld.x, zoomTargetY, centerWorld.z);
+
+        return {
+            radius: distance,
+            target: zoomTarget
+        };
     }
 
     toggleCameraAutoRotation() {
@@ -420,7 +423,7 @@ class Camera {
 
     setView(name) {
         const center = builder.getCenter();
-        let position = null;
+        let position = undefined;
 
         switch (name) {
             case 'x':
@@ -496,12 +499,11 @@ class MainScene {
         scene.blockMaterialDirtyMechanism = true;
         scene.collisionsEnabled = false;
         scene.useRightHandedSystem = true;
+        scene.environmentIntensity = 0.8;
     
         const ambient = new BABYLON.HemisphericLight("ambient", Vector3(0, 0, -1), scene);
         ambient.diffuse = Color3(0.4, 0.4, 0.4);
-        ambient.specular = Color3(0.2, 0.2, 0.2);
         ambient.groundColor = Color3(0.2, 0.2, 0.2);
-        ambient.intensity = 0.4;
         
         const shadowcatcher = CreatePlane("shadowcatcher", 1000, BACKSIDE, scene);
         shadowcatcher.material = new BABYLON.ShadowOnlyMaterial('shadowcatcher', scene);
@@ -745,7 +747,7 @@ class HDRI {
 
     preload(onLoad) { // HDRCubeTexture locks the thread, start with smaller texture size
         this.hdrMap = new BABYLON.HDRCubeTexture(ENVMAP, scene, 16, false, false, false, undefined, () => {
-            this.createSkybox(this.hdrMap.clone(), parseFloat(ui.domHdriBlur.value));
+            this.createSkybox(this.hdrMap.clone());
             scene.environmentTexture = this.hdrMap;
             onLoad();
         });
@@ -756,29 +758,11 @@ class HDRI {
     }
 
     loadHDR(url) {
-        if (this.hdrMap)
-            this.hdrMap.dispose();
-
-        url += `?${performance.now()}`;
-
-        this.hdrMap = new BABYLON.HDRCubeTexture(url, scene, 256, false, false, false, undefined, () => {            
-            this.showSkybox(ui.domHdriBackground.checked);
-
-            if (this.skybox.material.reflectionTexture)
-                this.skybox.material.reflectionTexture.dispose();
-            this.skybox.material.reflectionTexture = this.hdrMap.clone();
-            this.skybox.material.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-
-            scene.environmentTexture = this.hdrMap;
-            
-            pool.updateReflectionTextures();
-            this.isLoaded = true;
-        });
-
         modules.sandbox.loadHDR(url, (tex) => {
             this.hdrMapRender = tex;
             if (modules.sandbox.isActive())
                 modules.sandbox.updateHDR();
+            this.isLoaded = true;
         });
     }
 
@@ -786,7 +770,7 @@ class HDRI {
         this.loadHDR(ENVMAP);
     }
 
-    createSkybox(tex, blur, dist = 10000) {
+    createSkybox(tex, blur = 0.5, dist = 10000) {
         this.skybox = CreateBox('skybox', dist, BACKSIDE, scene);
         this.skybox.material = new BABYLON.PBRMaterial("skybox", scene);
         this.skybox.material.reflectionTexture = tex;
@@ -802,16 +786,9 @@ class HDRI {
         this.skybox.ignoreCameraMaxZ = true;
         this.skybox.doNotSyncBoundingInfo = true;
         this.skybox.doNotSerialize = true;
+        this.skybox.material.freeze();
         this.skybox.freezeWorldMatrix();
         this.skybox.freezeNormals();
-    }
-
-    showSkybox(isShow) {
-        this.skybox.isVisible = isShow;
-    }
-
-    setBlurAmount(num) {
-        this.skybox.material.microSurface = 1.0 - num;
     }
 }
 
@@ -833,8 +810,8 @@ class Light {
         this.directional = new BABYLON.DirectionalLight("directional", Vector3(0, 0, -1), scene);
         this.directional.autoUpdateExtends = true;  // enable REFRESHRATE_RENDER_ONCE
         this.directional.position.copyFrom(this.location);
-        this.directional.diffuse = color3FromHex(document.getElementById('input-light-color').value);
-        this.directional.intensity = document.getElementById('input-light-intensity').value;
+        this.directional.diffuse = Color3(0.8, 0.8, 0.8);
+        this.directional.intensity = 0.8;
         this.directional.shadowMaxZ = 2500;
         this.directional.shadowMinZ = -2500;
         this.directional.setDirectionToTarget(Vector3(0, 0, 0));
@@ -869,7 +846,7 @@ class Light {
     }
     
     updateIntensity(value) {
-        this.directional.intensity = value;
+        this.directional.intensity = parseFloat(value);
         material.updateCelMaterial();
     }
     
@@ -917,17 +894,16 @@ class Material {
         this.mat_white = undefined;
         this.tex_pbr = undefined;
         this.textures = [];
-        this.texId = 0; // last PBR texture
         
         this.init();
     }
 
     init() {
-        for (let i = 0; i < TEX_PATTERNS.length; i++)
-            this.textures.push(this.createTexture('texpat'+i, TEX_PATTERNS[i], BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_null', TEX_NULL));
+        this.textures.push(this.loadTexture('tex_grid', this.createVoxelTexture(), BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_checker', TEX_CHECKER, BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR));
 
-        this.texId = 3; // checker
-        this.tex_pbr = this.textures[this.texId];
+        this.tex_pbr = this.textures[2];
 
         this.createCELMaterial();
         this.createPBRMaterialVoxel();
@@ -942,7 +918,7 @@ class Material {
     createPBRMaterialVoxel() {
         const mat = new BABYLON.PBRMaterial("PBR_V", scene);
         mat.albedoColor = Color3(1, 1, 1);
-        mat.albedoTexture = this.createVoxelTexture();
+        mat.albedoTexture = this.textures[1];
         mat.roughness = 1;
         mat.metallic = 0;
         mat.metallicF0Factor = 0;
@@ -950,23 +926,19 @@ class Material {
         mat.specularIntensity = 1;
         mat.directIntensity = 1;
         mat.environmentIntensity = 1;
-        mat.brdf.useSphericalHarmonics = false;
-        mat.brdf.useEnergyConservation = false;
         this.mat_pbr_vox = mat;
     }
 
     createPBRMaterial(backFaceCulling = true) {
         if (this.mat_pbr_msh) {
             this.mat_pbr_msh.albedoTexture.dispose();
-            if (this.mat_pbr_msh.reflectionTexture)
-                this.mat_pbr_msh.reflectionTexture.dispose();
             this.mat_pbr_msh.dispose();
         }
         const mat = new BABYLON.PBRMaterial("PBR", scene);
         mat.albedoColor = Color3(1, 1, 1);
         mat.albedoTexture = this.tex_pbr.clone();
         if (hdri.hdrMap) {
-            mat.reflectionTexture = hdri.hdrMap.clone();
+            mat.reflectionTexture = hdri.hdrMap;
             mat.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
         }
         mat.roughness = 0.9;
@@ -1031,21 +1003,20 @@ class Material {
     }
 
     createVoxelTexture(size = 128) {
-        const tex = new BABYLON.DynamicTexture('voxeltex', size, scene, BABYLON.Texture.NEAREST_SAMPLINGMODE);
-        const ctx = tex.getContext();
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, size, size);
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#00000080';
         ctx.filter = 'blur(1px)';
         ctx.strokeRect(0, 0, size, size);
-        tex.update();
-        tex.hasAlpha = false;
-        tex.getAlphaFromRGB = false;
-        return tex;
+        return canvas.toDataURL("image/png");
     }
 
-    createTexture(name, url, sampling = BABYLON.Texture.NEAREST_SAMPLINGMODE) {
+    loadTexture(name, url, sampling = BABYLON.Texture.NEAREST_SAMPLINGMODE) {
         const tex = new BABYLON.Texture(url, scene, undefined, undefined, sampling);
         tex.name = name;
         tex.uScale = 1;
@@ -1056,9 +1027,8 @@ class Material {
         return tex;
     }
 
-    setPBRTexture(idx = 3) {
-        this.texId = idx;
-        this.tex_pbr = this.textures[idx];
+    setPBRTexture() {
+        this.tex_pbr = this.textures[parseInt(ui.domPbrTexture.value)];
         this.createPBRMaterial(ui.domBakeryBackface.checked);
     }
 
@@ -1122,7 +1092,6 @@ class Material {
         
         uniform vec3 uCamDir;
         uniform vec3 uLightPos;
-        uniform vec3 uLightDir;
         uniform vec3 uLightCol;
         
         void main() {
@@ -1130,22 +1099,23 @@ class Material {
             float line = min(grid.x, grid.y);
             line = 1.0 - min(line, 1.0);
         
+            vec3 position = normalize(vPositionW);
             vec3 normal = normalize(vNormalW);
             vec3 viewDir = normalize(uCamDir);
-            vec3 lightDir = normalize(uLightDir);
-
-            float amb = clamp(1.0 + 0.5 * normal.y, 0.0, 1.0);
+            vec3 lightDir = normalize(uLightPos - position);
+            
+            float amb = clamp(0.8 + 0.5 * normal.y, 0.0, 1.0);
             float dif = max(0.0, dot(normal, lightDir));
-            float inv = max(0.0, dot(normal, -lightDir));
-            float spc = pow(max(0.0, dot(reflect(-lightDir, normal), viewDir)), 8.0);
+            dif += 0.8 * max(0.0, dot(normal, -lightDir));
+            
+            if (dot(normal, lightDir) < 0.0)
+                amb *= 1.2;
 
             vec3 brdf = vec3(0);
-            brdf += 0.5 * amb * vec3(1);
-            brdf += 1.1 * dif * uLightCol;
-            brdf += 0.5 * inv * vec3(1);
-            brdf += 0.1 * spc * vec3(1);
+            brdf += 0.8 * amb * vec3(1);
+            brdf += 1.0 * dif * uLightCol;
 
-            vec3 col = pow(vColor.rgb * vColor.rgb, vec3(0.4545));
+            vec3 col = vColor.rgb;
             col = mix(col, vec3(0), line * 0.22);
             col *= brdf;
             col = pow(col, vec3(0.4545));
@@ -1158,7 +1128,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uCamDir", "uLightPos", "uLightDir", "uLightCol" ],
+                              "uCamDir", "uLightPos", "uLightCol" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             });
@@ -1169,11 +1139,10 @@ class Material {
             if (this.mat_cel) {
                 this.mat_cel.setVector3("uCamDir", camera.camera0.getDirection(AXIS_Z));
                 this.mat_cel.setVector3("uLightPos", light.directional.position);
-                this.mat_cel.setVector3("uLightDir", light.directional.direction);
                 this.mat_cel.setColor3("uLightCol", Color3(
-                    (light.directional.diffuse.r * light.directional.diffuse.r) * (light.directional.intensity * light.directional.intensity),
-                    (light.directional.diffuse.g * light.directional.diffuse.g) * (light.directional.intensity * light.directional.intensity),
-                    (light.directional.diffuse.b * light.directional.diffuse.b) * (light.directional.intensity * light.directional.intensity)));
+                    (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
+                    (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
+                    (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity));
                 //this.mat_cel.setTexture("uTexture", this.textures[3]);
             }
         }
@@ -1540,8 +1509,7 @@ class Builder {
             const data = [];
             for (let i = 0; i < msg.data.length; i++) {
                 data.push({
-                    position: Vector3(
-                        msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
+                    position: Vector3(msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
                     color: msg.data[i].color,
                     visible: msg.data[i].visible
                 });
@@ -1573,7 +1541,7 @@ class Builder {
     }
 
     async reduceVoxels() {
-        if (!await ui.showConfirm('reducing voxels, continue?<br><span style="color:indianred">notice: may affect<br>bake with color groups</span>')) return;
+        if (!await ui.showConfirm('reducing voxels, continue?')) return;
         ui.showProgress(1);
         const last = this.voxels.length;
         const voxels = await this.getReduceVoxels(this.voxels);
@@ -2058,10 +2026,12 @@ class Ghosts {
 class Palette {
     constructor() {
         this.canvas = document.getElementById('canvas_palette');
+        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+        
         this.size = 28;
         this.pad = 2;
         this.wPad = this.size + this.pad;
-        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+
         this.uniqueColors = [];
         this.invisibleColors = [];
         
@@ -2470,7 +2440,7 @@ class Helper {
         this.fixEdgesWidth(mesh);
     }
     
-    fixEdgesWidth(mesh) {
+    fixEdgesWidth(mesh) { // TODO
         mesh.edgesWidth = scene.activeCamera.radius / 8;
         if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
             mesh.edgesWidth /= 6;
@@ -2492,35 +2462,37 @@ class Symmetry {
         helper.toggleAxisPlane(false);
         helper.setSymmPivot();
 
+        const btnCol = getStyleRoot('--btn-color');
+
         if (axis == AXIS_X) {
             helper.setAxisPlane(AXIS_X);
-            ui.domSymmAxisS.style.color = '#98a1ac';
+            ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = COL_AXIS_X;
-            ui.domSymmAxisY.style.color = '#98a1ac';
-            ui.domSymmAxisZ.style.color = '#98a1ac';
+            ui.domSymmAxisY.style.color = btnCol;
+            ui.domSymmAxisZ.style.color = btnCol;
             ui.domInScreenSymmAxis.innerHTML = 'X';
             ui.domInScreenSymmAxis.style.color = COL_AXIS_X;
         } else if (axis == AXIS_Y) {
             helper.setAxisPlane(AXIS_Y);
-            ui.domSymmAxisS.style.color = '#98a1ac';
-            ui.domSymmAxisX.style.color = '#98a1ac';
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = btnCol;
             ui.domSymmAxisY.style.color = COL_AXIS_Y;
-            ui.domSymmAxisZ.style.color = '#98a1ac';
+            ui.domSymmAxisZ.style.color = btnCol;
             ui.domInScreenSymmAxis.innerHTML = 'Y';
             ui.domInScreenSymmAxis.style.color = COL_AXIS_Y;
         } else if (axis == AXIS_Z) {
             helper.setAxisPlane(AXIS_Z);
-            ui.domSymmAxisS.style.color = '#98a1ac';
-            ui.domSymmAxisX.style.color = '#98a1ac';
-            ui.domSymmAxisY.style.color = '#98a1ac';
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = btnCol;
+            ui.domSymmAxisY.style.color = btnCol;
             ui.domSymmAxisZ.style.color = COL_AXIS_Z;
             ui.domInScreenSymmAxis.innerHTML = 'Z';
             ui.domInScreenSymmAxis.style.color = COL_AXIS_Z;
         } else {
-            ui.domSymmAxisS.style.color = '#98a1ac';
-            ui.domSymmAxisX.style.color = '#98a1ac';
-            ui.domSymmAxisY.style.color = '#98a1ac';
-            ui.domSymmAxisZ.style.color = '#98a1ac';
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = btnCol;
+            ui.domSymmAxisY.style.color = btnCol;
+            ui.domSymmAxisZ.style.color = btnCol;
             ui.domInScreenSymmAxis.innerHTML = 'S';
             ui.domInScreenSymmAxis.style.color = COL_AQUA + 'AA';
         }
@@ -3229,6 +3201,9 @@ class Tool {
                 helper.clearOverlays();
             }, 10); // prevent last overlay in touchscreen
 
+            if (!builder.isWorking)
+                scene.activeCamera.attachControl(canvas, true);
+
             ui.domMarquee.style = "display: none; left: 0; top: 0; width: 0; height: 0;";
         }
     }
@@ -3482,9 +3457,6 @@ class MeshPool {
     }
 
     bakeColor(hex) {
-        if (ui.domBakeryClear.checked)
-            this.clearPool();
-        
         this.bakeToMesh(builder.getVoxelsByColor(hex));
 
         setTimeout(() => {
@@ -3676,16 +3648,7 @@ class MeshPool {
         if (this.selected && this.selected.material) {
             if (this.selected.material.albedoTexture)
                 this.selected.material.albedoTexture.dispose();
-            this.selected.material.albedoTexture = material.textures[material.texId].clone();
-        }
-    }
-
-    updateReflectionTextures() {
-        for (let i = 0; i < this.meshes.length; i++) {
-            if (this.meshes[i].material.reflectionTexture)
-                this.meshes[i].material.reflectionTexture.dispose();
-            this.meshes[i].material.reflectionTexture = hdri.hdrMap.clone();
-            this.meshes[i].material.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
+            this.selected.material.albedoTexture = material.textures[parseInt(ui.domPbrTexture.value)].clone();
         }
     }
 
@@ -3774,7 +3737,6 @@ class MeshPool {
             } else {
                 if (MODE !== 2)
                     this.setPoolVisibility(false);
-                this.updateReflectionTextures();
                 this.createMeshList();
                 light.updateShadowMap();
             }
@@ -3808,8 +3770,6 @@ class MeshPool {
         for (let i = 0; i < this.meshes.length; i++) { // dispose() computation
             if (this.meshes[i].material.albedoTexture)
                 this.meshes[i].material.albedoTexture.dispose();
-            if (this.meshes[i].material.reflectionTexture)
-                this.meshes[i].material.reflectionTexture.dispose();
             this.meshes[i].material.dispose();
             this.meshes[i].dispose();
         }
@@ -3894,7 +3854,7 @@ class Snapshot {
             return;
         }
         builder.setData(data);
-        project.clearScene(true);
+        project.clearScene(false);
     }
 
     delStorage(name) {
@@ -4005,15 +3965,11 @@ class Project {
 
     serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.4.6",
+            version: "Voxel Builder 4.4.7",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
                 meshes: pool.meshes.length
-            },
-            scene: { // TODO
-                bgcolor: "#FFFFFF",
-                lightcolor: "#FFFFFF"
             },
             data: {
                 voxels: "",
@@ -4021,40 +3977,23 @@ class Project {
             }
         };
         json.project.name = ui.domProjectName.value;
-        json.scene.bgcolor = ui.domColorPickerBackground.value.toUpperCase();
-        json.scene.lightcolor = ui.domColorPickerLightColor.value.toUpperCase();
         json.data.voxels = voxels;
         json.data.meshes = meshes;
         return json;
-    }
-
-    updateScene(data) {
-        if (data.bgcolor) {
-            this.setProjectValues(ui.domColorPickerBackground, data.bgcolor, '#6C6F7A');
-        }
-        if (data.lightcolor) {
-            this.setProjectValues(ui.domColorPickerLightColor, data.lightcolor, '#CCCCCC');
-            light.updateColor(ui.domColorPickerLightColor.value);
-        }
     }
     
     clearSceneAndReset() {
         ui.setMode(0);
         this.clearScene();
     
-        scene.clearColor = color4FromHex(DEF_BGCOLOR);
+        scene.clearColor = color4FromHex(preferences.getBackgroundColor());
         scene.autoClear = false;
         
         tool.toolSelector('camera');
         helper.enableFloorPlane(false);
         helper.enableWorkplane(false);
-        light.updateColor(DEF_LIGHTCOLOR);
         pool.clearPool();
         uix.hideLightLocator();
-    
-        ui.domColorPickerLightColor.value = DEF_LIGHTCOLOR;
-        ui.domColorPickerBackground.value = DEF_BGCOLOR;
-        ui.domBackgroundCheck.checked = false;
     }
 
     clearScene(frameCamera = true) {
@@ -4082,6 +4021,10 @@ class Project {
                     builder.add(Vector3(x, y, z), COL_ICE, true);
                 }
             }
+        }
+        for (let i = 0; i < builder.voxels.length; i++) {
+            if (builder.voxels[i].position.y == 0)
+                builder.voxels[i].color = '#4988CA';
         }
         builder.create();
         this.clearScene();
@@ -4114,10 +4057,6 @@ class Project {
         // project
         ui.domProjectName.value = data.project.name;
 
-        // scene
-        if (data.scene)
-            this.updateScene(data.scene)
-
         // data.voxels
         builder.setDataFromString(data.data.voxels);
         this.clearSceneAndReset();
@@ -4134,9 +4073,7 @@ class Project {
         }
     }
 
-    importVoxels(data) {
-        ui.setMode(0);
-        
+    importVoxels(data) {        
         const voxels = JSON.parse(data).data.voxels.split(';').slice(0, -1);
         for (let i = 0; i < voxels.length; i++) {
             const chunk = voxels[i].split(',');
@@ -4149,16 +4086,16 @@ class Project {
                 parseBool(chunk[4]));
         }
         
+        ui.setMode(0);
         builder.create();
         builder.update();
         this.clearScene(true);
     }
 
     importBakes(data) {
-        ui.setMode(2);
-
         data = JSON.parse(data);
         if (data.data.meshes) {
+            ui.setMode(2);
             pool.loadMesh(data.data.meshes);
         } else {
             ui.notification('no baked meshes');
@@ -4317,7 +4254,6 @@ class UserInterface {
         this.domToolbarC_mem = document.getElementById('toolbar_C_mem');
         this.domModes = document.querySelectorAll('#toolbar_C li.mode');
         this.domMenus = document.getElementById('menus');
-        this.domMenuInScreenLeft = document.getElementById('menu-inscreen-left');
         this.domMenuInScreenRight = document.getElementById('menu-inscreen-right');
         this.domMenuInScreenBottom = document.getElementById('menu-inscreen-bottom');
         this.domInScreenSymmAxis = document.getElementById('btn-inscreen-symmetry');
@@ -4335,6 +4271,7 @@ class UserInterface {
         this.domPaletteColors = document.getElementById('palette-colors');
         this.domMeshList = document.getElementById('meshlist');
         this.domHover = document.getElementById('hover');
+        this.domHoverItems = document.querySelectorAll('#hover ul li');
         this.domMarquee = document.getElementById("marquee");
         this.domBoxToolHeight = document.getElementById('input-boxtool-height');
         this.domHdriBackground = document.getElementById('input-hdri-background');
@@ -4342,7 +4279,6 @@ class UserInterface {
         this.domCameraFov = document.getElementById('input-camera-fov');
         this.domCameraFStop = document.getElementById('input-camera-fstop');
         this.domCameraFocalLength = document.getElementById('input-camera-focal');
-        this.domRenderBtn = document.getElementById('tab-render');
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
@@ -4353,28 +4289,26 @@ class UserInterface {
         this.domBakeryBackface = document.getElementById('input-bakery-backface');
         this.domAutoRotation = document.getElementById('input-autorotate');
         this.domAutoRotationCCW = document.getElementById('input-autorotate-ccw');
+        this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domRoughness = document.getElementById('input-material-roughness');
         this.domRoughnessRange = document.getElementById('input-material-roughness-range');
         this.domMetallic = document.getElementById('input-material-metallic');
         this.domMetallicRange = document.getElementById('input-material-metallic-range');
         this.domAlpha = document.getElementById('input-material-alpha');
         this.domAlphaRange = document.getElementById('input-material-alpha-range');
-        this.domBackgroundCheck = document.getElementById('input-env-bgcheck');
         this.domColorPicker = document.getElementById('input-color');
-        this.domColorPickerBackground = document.getElementById('input-env-background');
         this.domColorPickerAlbedo = document.getElementById('input-material-albedo');
         this.domColorPickerEmissive = document.getElementById('input-material-emissive');
         this.domColorPickerLightColor = document.getElementById('input-light-color');
         this.domColorPickerVertexColor = document.getElementById('input-vertex-color');
         this.domLightIntensity = document.getElementById('input-light-intensity');
-        this.domLightShadows = document.getElementById('input-light-shadows');
+        this.domLightShadows = document.getElementById('pref_light_shadows');
         this.domMaterialSwitch = document.getElementById('material-switch');
-        this.domProjectName = document.getElementById('input-project-name');
-        this.domExportFormat = document.getElementById('input-export-format');
-        this.domExportSelectedBake = document.getElementById('input-export-selbake');
+        this.domProjectName = document.getElementById('project_name');
+        this.domExportFormat = document.getElementById('export_format');
+        this.domExportSelectedBake = document.getElementById('export_selected_bake');
         this.domOrthoBtn = document.getElementById('btn-ortho');
         this.domRenderShade = document.getElementById('input-pt-shade');
-        this.domRenderFast = document.getElementById('input-pt-fast');
         this.domRenderPause = document.getElementById('btn-pt-pause');
         this.domRenderShot = document.getElementById('btn-pt-shot');
         this.domRenderMaxSamples = document.getElementById('input-pt-maxsamples');
@@ -4383,10 +4317,11 @@ class UserInterface {
         this.domRenderTiles = document.getElementById('input-pt-tiles');
         this.domRenderEnvPower = document.getElementById('input-pt-envpower');
         this.domRenderAutoStart = document.getElementById('input-pt-autostart');
-        this.domRenderGrid = document.getElementById('input-pt-grid');
+        this.domRenderTexture = document.getElementById('input-pt-texture');
         this.domRenderMaterialRoughness = document.getElementById('input-pt-roughness');
         this.domRenderMaterialMetalness = document.getElementById('input-pt-metalness');
         this.domRenderMaterialTransmission = document.getElementById('input-pt-transmission');
+        this.domRenderMaterialEmissive = document.getElementById('input-pt-emissive');
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
         this.domNotifier = document.getElementById('notifier');
@@ -4399,11 +4334,6 @@ class UserInterface {
         this.domPixelEyedropper = document.getElementById('activate_pixeleyedrop');
         this.domDevMode = document.getElementById('devmode');
         
-        this.hoverOffset = { x: 0, y: 0 };
-        this.panels = [];
-        this.lastIndex = 1000;
-        this.notificationTimer = null;
-
         this.eyeDropper = undefined;
         if (window.EyeDropper) {
             this.eyeDropper = new EyeDropper();
@@ -4411,8 +4341,7 @@ class UserInterface {
         }
         this.abortController = new AbortController();
 
-        this.registerPanels();
-        this.registerToolbarButtons();
+        this.notificationTimer = undefined;
     }
 
     showProgress(val, max = undefined) {
@@ -4460,7 +4389,6 @@ class UserInterface {
         this.domPalette.style.display = 'none';
         this.domMeshList.style.display = 'none';
         this.domHover.style.display = 'unset';
-        this.domMenuInScreenLeft.style.display = 'flex';
         this.domMenuInScreenRight.style.display = 'none';
         this.domSandboxRender.style.display = 'none';
         this.domInfoTool.style.display = 'none';
@@ -4474,35 +4402,34 @@ class UserInterface {
             this.domPalette.style.display = 'unset';
             this.domMenuInScreenRight.style.display = 'flex';
             this.domInfoTool.style.display = 'unset';
-            this.domToolbarL.children[14].firstChild.disabled = true; // MESHES
-            this.domToolbarL.children[15].firstChild.disabled = true; // MATERIAL
+            this.domToolbarL.children[13].firstChild.disabled = true; // MESHES
+            this.domToolbarL.children[14].firstChild.disabled = true; // PBR
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
             this.domHover.style.display = 'none';
-            this.domToolbarL.children[5].style.display = 'none';  // STORAGE
-            this.domToolbarL.children[6].style.display = 'none';  // IMPORT
-            this.domToolbarL.children[7].style.display = 'none';  // CREATE
-            this.domToolbarL.children[8].style.display = 'none';  // SYMM
-            this.domToolbarL.children[9].style.display = 'none';  // MODEL
-            this.domToolbarL.children[10].style.display = 'none'; // PAINT
-            this.domToolbarL.children[11].style.display = 'none'; // VOXELS
-            this.domToolbarL.children[12].style.display = 'none'; // GROUPS
-            this.domToolbarL.children[13].style.display = 'none'; // BAKERY
-            this.domToolbarL.children[14].style.display = 'none'; // MESHES
-            this.domToolbarL.children[15].style.display = 'none'; // MATERIAL
-            this.domMenuInScreenLeft.style.display = 'none';
+            this.domToolbarL.children[4].style.display = 'none';  // STORAGE
+            this.domToolbarL.children[5].style.display = 'none';  // IMPORT
+            this.domToolbarL.children[6].style.display = 'none';  // CREATE
+            this.domToolbarL.children[7].style.display = 'none';  // SYMM
+            this.domToolbarL.children[8].style.display = 'none';  // MODEL
+            this.domToolbarL.children[9].style.display = 'none';  // PAINT
+            this.domToolbarL.children[10].style.display = 'none'; // VOXELS
+            this.domToolbarL.children[11].style.display = 'none'; // GROUPS
+            this.domToolbarL.children[12].style.display = 'none'; // BAKERY
+            this.domToolbarL.children[13].style.display = 'none'; // MESHES
+            this.domToolbarL.children[14].style.display = 'none'; // PBR
             this.domSandboxRender.style.display = 'flex';
         } else if (mode == 2) {
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
-            this.domToolbarL.children[5].firstChild.disabled = true;  // STORAGE
-            this.domToolbarL.children[6].firstChild.disabled = true;  // IMPORT
-            this.domToolbarL.children[7].firstChild.disabled = true;  // CREATE
-            this.domToolbarL.children[8].firstChild.disabled = true;  // SYMM
-            this.domToolbarL.children[9].firstChild.disabled = true;  // MODEL
-            this.domToolbarL.children[10].firstChild.disabled = true; // PAINT
-            this.domToolbarL.children[11].firstChild.disabled = true; // VOXELS
-            this.domToolbarL.children[12].firstChild.disabled = true; // GROUPS
+            this.domToolbarL.children[4].firstChild.disabled = true;  // STORAGE
+            this.domToolbarL.children[5].firstChild.disabled = true;  // IMPORT
+            this.domToolbarL.children[6].firstChild.disabled = true;  // CREATE
+            this.domToolbarL.children[7].firstChild.disabled = true;  // SYMM
+            this.domToolbarL.children[8].firstChild.disabled = true;  // MODEL
+            this.domToolbarL.children[9].firstChild.disabled = true;  // PAINT
+            this.domToolbarL.children[10].firstChild.disabled = true; // VOXELS
+            this.domToolbarL.children[11].firstChild.disabled = true; // GROUPS
             uix.colorPicker.isVisible = false;
         }
 
@@ -4525,12 +4452,12 @@ class UserInterface {
             this.domToolbarC_mem.children[4].innerHTML = 'REDO';
         } else if (mode == 1) {
             this.domToolbarC_mem.children[0].onclick = () => { modules.sandbox.toggleAutoStart() };
-            this.domToolbarC_mem.children[1].onclick = () => { modules.sandbox.toggleFastMode() };
-            this.domToolbarC_mem.children[3].onclick = () => { modules.sandbox.togglePause() };
+            this.domToolbarC_mem.children[1].onclick = () => { modules.sandbox.togglePause() };
+            this.domToolbarC_mem.children[3].onclick = () => { modules.sandbox.toggleBackground() };
             this.domToolbarC_mem.children[4].onclick = () => { modules.sandbox.shot() };
             this.domToolbarC_mem.children[0].innerHTML = 'AUTO';
-            this.domToolbarC_mem.children[1].innerHTML = 'FAST';
-            this.domToolbarC_mem.children[3].innerHTML = 'PAUSE';
+            this.domToolbarC_mem.children[1].innerHTML = 'PAUSE';
+            this.domToolbarC_mem.children[3].innerHTML = 'HDRI';
             this.domToolbarC_mem.children[4].innerHTML = 'SHOT';
         } else if (mode == 2) {
             this.domToolbarC_mem.children[0].onclick = async () => { if (await ui.showConfirm('start the baking process?')) pool.bake() };
@@ -4541,129 +4468,6 @@ class UserInterface {
             this.domToolbarC_mem.children[1].innerHTML = 'UNBAKE';
             this.domToolbarC_mem.children[3].innerHTML = 'IMP';
             this.domToolbarC_mem.children[4].innerHTML = 'EXP';
-        }
-    }
-
-    // find and match a toolbar button for a panel by id
-    registerToolbarButtons() {
-        const buttons = document.querySelectorAll("button[id^='toolbar_btn_']");
-        this.panels.forEach((panel) => {
-            const panelId = panel.elem.id.split('-')[1];
-            for (let b = 0; b < buttons.length; b++) {
-                if (buttons[b].id.split('_')[2] === panelId) {
-                    buttons[b].onclick = () => { this.switchPanel(panel, buttons[b]) };
-                    panel.button = buttons[b];
-                }
-            }
-        });
-    }
-
-    registerPanels() {
-        const panels = document.querySelectorAll('.panel');
-        for (let i = 0; i < panels.length; i++) {
-            this.addToolbarToPanels(i, panels[i]);
-            this.panels.push({
-                idx: i,
-                elem: panels[i],
-                x: 0, y: 0,
-                detach: false
-            });
-        }
-    }
-    
-    addToolbarToPanels(idx, elem) {
-        const li = document.createElement('li');
-        li.classList.add('row_panel');
-
-        const div_move = document.createElement('div');
-        const div_hide = document.createElement('div');
-        const div_reset = document.createElement('div');
-        div_move.innerHTML = '<i class="material-icons">open_with</i>';
-        div_hide.innerHTML = '<i class="material-icons">remove_red_eye</i>';
-        div_reset.innerHTML = '<i class="material-icons">exit_to_app</i>';
-        div_move.title = 'Move';
-        div_hide.title = 'Hide';
-        div_reset.title = 'Reset';
-
-        div_move.onpointerdown = (ev) => {
-            elem.style.borderRadius = '6px';
-            elem.style.borderTop = 'solid 1px steelblue';
-            this.panels[idx].detach = true;
-            this.dragElement(idx, ev.target, elem);
-        };
-
-        div_hide.onclick = () => {
-            this.panels[idx].elem.style.display = 'none';
-            this.panels[idx].button.style.textDecoration = 'none';
-        };
-
-        div_reset.onclick = () => {
-            this.resetPanel(idx);
-        };
-        
-        li.appendChild(div_move);
-        li.appendChild(div_hide);
-        li.appendChild(div_reset);
-        
-        elem.classList.add('panel');
-        elem.insertBefore(li, elem.firstChild);
-        elem.onpointerdown = () => {
-            this.panelToFront(this.panels[idx]);
-        };
-    }
-
-    clearAllPanels(exclude) {
-        this.panels.forEach(panel => {
-            if (!panel.detach && panel.elem !== exclude) {
-                panel.elem.style.display = 'none';
-                if (panel.button)
-                    panel.button.style.textDecoration = 'none';
-            }
-        });
-    }
-
-    switchPanel(panel) {
-        this.clearAllPanels(panel.elem);
-        if (panel.elem.style.display === 'unset') {
-            panel.elem.style.display = 'none';
-            panel.button.style.textDecoration = 'none';
-        } else {
-            panel.elem.style.display = 'unset';
-            panel.button.style.textDecoration = 'underline';
-            if (!panel.detach)
-                this.panelToFront(panel);
-        }
-    }
-
-    panelToFront(panel) {
-        panel.elem.style.zIndex = this.lastIndex + 1;
-
-        this.lastIndex += 1;
-        if (this.lastIndex > 2000)
-            this.lastIndex = 1000;
-    }
-
-    resetPanel(idx) {
-        this.panels[idx].x = 0;
-        this.panels[idx].y = 0;
-        this.panels[idx].detach = false;
-        this.panels[idx].elem.style.transform = 'none';
-        this.panels[idx].elem.style.borderTop = 'none';
-        this.panels[idx].elem.style.borderRadius = '3px';
-        this.panels[idx].elem.style.borderTopLeftRadius = '0';
-        this.panels[idx].elem.style.borderTopRightRadius = '0';
-        this.panels[idx].elem.style.display = 'none';
-        this.panels[idx].elem.style.zIndex = 1000;
-        this.panels[idx].button.style.textDecoration = 'none';
-    }
-
-    toggleHover(isEnabled) {
-        if (isEnabled) {
-            for (let i = 1; i < this.domHover.children.length; i++)
-                this.domHover.children[i].style.display = 'unset';
-        } else {
-            for (let i = 1; i < this.domHover.children.length; i++)
-                this.domHover.children[i].style.display = 'none';
         }
     }
 
@@ -4742,7 +4546,6 @@ class UserInterface {
             this.domHover.style.display = 'none';
             this.domPalette.style.display = 'none';
             this.domMeshList.style.display = 'none';
-            this.domMenuInScreenLeft.style.display = 'none';
             this.domMenuInScreenRight.style.display = 'none';
             this.domMenuInScreenBottom.style.display = 'none';
             this.domInfoParent.style.display = 'none';
@@ -4752,7 +4555,6 @@ class UserInterface {
             if (MODE == 0) {
                 this.domHover.style.display = 'unset';
                 this.domPalette.style.display = 'unset';
-                this.domMenuInScreenLeft.style.display = 'flex';
                 this.domMenuInScreenRight.style.display = 'flex';
                 this.domMenuInScreenBottom.style.display = 'flex';
                 this.domInfoTool.style.display = 'unset';
@@ -4785,143 +4587,22 @@ class UserInterface {
         }
     }
 
-    dragElement(hIndex, elem, target) {
-        let active = false;
-        let currentX, currentY, initialX, initialY;
-
-        // prevent fast-dragging problem with background elements
-        document.body.addEventListener("mousedown", dragStart, false);
-        document.body.addEventListener("mouseup", dragEnd, false);
-        document.body.addEventListener("mousemove", drag, false);
-        document.body.addEventListener("touchstart", dragStart, false);
-        document.body.addEventListener("touchend", dragEnd, false);
-        document.body.addEventListener("touchmove", drag, false);
-
-        function dragStart(e) {
-            if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - ui.panels[hIndex].x;
-                initialY = e.touches[0].clientY - ui.panels[hIndex].y;
-            } else {
-                initialX = e.clientX - ui.panels[hIndex].x;
-                initialY = e.clientY - ui.panels[hIndex].y;
-            }
-            if (e.target === elem) active = true;
-        }
-
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            active = false;
-            document.body.removeEventListener("mousedown", dragStart, false);
-            document.body.removeEventListener("mouseup", dragEnd, false);
-            document.body.removeEventListener("mousemove", drag, false);
-            document.body.removeEventListener("touchstart", dragStart, false);
-            document.body.removeEventListener("touchend", dragEnd, false);
-            document.body.removeEventListener("touchmove", drag, false);
-        }
-
-        function drag(e) {
-            if (active) {
-                if (e.type === "touchmove") {
-                    currentX = e.touches[0].clientX - initialX;
-                    currentY = e.touches[0].clientY - initialY;
-                } else {
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-                }
-                ui.panels[hIndex].x = currentX;
-                ui.panels[hIndex].y = currentY;
-                setTranslate(currentX, currentY, target);
-            }
-        }
-        
-        function setTranslate(xPos, yPos, el) {
-            el.style.transform = "translate(" + xPos + "px, " + yPos + "px)";
-        }
+    offscreenCheckPanel() {
+        modules.panels.panels.forEach((panel) => {
+            if (this.isOffScreen(panel.elem, 60))
+                modules.panels.resetTranslate(panel.idx);
+        });
     }
 
-    dragHover(elem, target) {
-        let active = false;
-        let currentX, currentY, initialX, initialY;
-
-        document.body.addEventListener("mousedown", dragStart, false);
-        document.body.addEventListener("mouseup", dragEnd, false);
-        document.body.addEventListener("mousemove", drag, false);
-        document.body.addEventListener("touchstart", dragStart, false);
-        document.body.addEventListener("touchend", dragEnd, false);
-        document.body.addEventListener("touchmove", drag, false);
-
-        function dragStart(e) {
-            if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - ui.hoverOffset.x;
-                initialY = e.touches[0].clientY - ui.hoverOffset.y;
-            } else {
-                initialX = e.clientX - ui.hoverOffset.x;
-                initialY = e.clientY - ui.hoverOffset.y;
-            }
-            if (e.target === elem) active = true;
-        }
-
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            active = false;
-            document.body.removeEventListener("mousedown", dragStart, false);
-            document.body.removeEventListener("mouseup", dragEnd, false);
-            document.body.removeEventListener("mousemove", drag, false);
-            document.body.removeEventListener("touchstart", dragStart, false);
-            document.body.removeEventListener("touchend", dragEnd, false);
-            document.body.removeEventListener("touchmove", drag, false);
-        }
-
-        function drag(e) {
-            if (active) {
-                if (e.type === "touchmove") {
-                    currentX = e.touches[0].clientX - initialX;
-                    currentY = e.touches[0].clientY - initialY;
-                } else {
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-                }
-                ui.hoverOffset.x = currentX;
-                ui.hoverOffset.y = currentY;
-                setTranslate(currentX, currentY, target);
-            }
-        }
-        
-        function setTranslate(xPos, yPos, el) {
-            el.style.transform = "translate(" + xPos + "px, " + yPos + "px)";
-        }
-    }
-
-    panelTranslate(elem, idx, x, y) {
-        elem.style.transform = "translate(" + x + "px, " + y + "px)";
-        this.panels[idx].x = 0;
-        this.panels[idx].y = 0;
-    }
-
-    hoverTranslate(elem, x, y) {
-        elem.style.transform = "translate(" + x + "px, " + y + "px)";
-        ui.hoverOffset.x = 0;
-        ui.hoverOffset.y = 0;
+    offscreenCheckHover() {
+        if (this.isOffScreen(this.domHover))
+            modules.hover.resetTranslate();
     }
 
     isOffScreen(elem, minPad = 20) {
         const rect = elem.getBoundingClientRect();
         return ((rect.x + (rect.width/2) - minPad) < 0 || (rect.x + minPad) > window.innerWidth ||
                 (rect.y + minPad) < 0 || (rect.y + minPad) > window.innerHeight);
-    }
-
-    offscreenCheckPanel() {
-        this.panels.forEach((panel) => {
-            if (this.isOffScreen(panel.elem, 60))
-                this.panelTranslate(panel.elem, panel.idx, 0, 0);
-        });
-    }
-
-    offscreenCheckHover() {
-        if (this.isOffScreen(this.domHover))
-            this.hoverTranslate(this.domHover, 0, 0);
     }
 
     toggleElem(elem) {
@@ -4976,8 +4657,8 @@ class UserInterfaceAdvanced {
 
     createAdvancedColorPicker() {
         const panel = new BABYLON.GUI.StackPanel();
-        panel.width = "125px";
-        panel.height = "125px";
+        panel.width = "123px";
+        panel.height = "123px";
         panel.isVertical = true;
         panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
         panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
@@ -4998,7 +4679,7 @@ class UserInterfaceAdvanced {
 
     bindVoxelGizmo(mesh) {
         this.unbindVoxelGizmo();
-        this.gizmoVoxel = new BABYLON.GizmoManager(scene, 5, new BABYLON.UtilityLayerRenderer(scene));
+        this.gizmoVoxel = new BABYLON.GizmoManager(scene, 6, new BABYLON.UtilityLayerRenderer(scene));
         this.gizmoVoxel.positionGizmoEnabled = true;
         this.gizmoVoxel.rotationGizmoEnabled = false;
         this.gizmoVoxel.scaleGizmoEnabled = false;
@@ -5031,7 +4712,7 @@ class UserInterfaceAdvanced {
         this.unbindTransformGizmo();
         if (meshes.length == 0) return;
 
-        this.gizmo = new BABYLON.GizmoManager(scene, 5, new BABYLON.UtilityLayerRenderer(scene));
+        this.gizmo = new BABYLON.GizmoManager(scene, 6, new BABYLON.UtilityLayerRenderer(scene));
         this.gizmo.positionGizmoEnabled = true;
         this.gizmo.rotationGizmoEnabled = true;
         this.gizmo.scaleGizmoEnabled = false;
@@ -5337,12 +5018,12 @@ window.addEventListener("resize", () => {
     scene.getEngine().resize(true);
     renderTarget.resize();
     
+    axisView.updateViewport();
+    material.updateCelMaterial();
+
     if (MODE == 0) palette.create();
     if (MODE == 2) pool.createMeshList();
     
-    material.updateCelMaterial();
-    axisView.updateViewport();
-
     ui.offscreenCheckPanel();
     ui.offscreenCheckHover();
 
@@ -5464,18 +5145,11 @@ ui.domHover.onpointerdown = () => {
     helper.clearOverlays();
 };
 
-ui.domHover.children[0].onpointerdown = (ev) => {
-    ui.dragHover(ev.target, ev.target.parentElement);
-};
-ui.domHover.children[0].onclick = () => { tool.toolSelector('camera') };
-ui.domHover.children[1].onclick = () => { tool.toolSelector('box_paint') };
-ui.domHover.children[2].onclick = () => { tool.toolSelector('box_add') };
-ui.domHover.children[3].onclick = () => { tool.toolSelector('box_remove') };
-ui.domHover.children[4].onclick = () => { tool.toolSelector('bucket') };
-ui.domHover.children[5].onclick = () => { tool.toolSelector('remove') };
-ui.domHover.children[6].onclick = () => { tool.toolSelector('paint') };
-ui.domHover.children[7].onclick = () => { tool.toolSelector('add') };
-ui.domHover.children[8].onclick = () => { tool.toolSelector('eyedrop') };
+ui.domHoverItems[0].onclick = () => { tool.toolSelector('box_add') };
+ui.domHoverItems[1].onclick = () => { tool.toolSelector('box_remove') };
+ui.domHoverItems[2].onclick = () => { tool.toolSelector('box_paint') };
+ui.domHoverItems[3].onclick = () => { tool.toolSelector('transform_box') };
+
 
 ui.domInScreenSymmAxis.onclick = () => {
     symmetry.switchAxis();
@@ -5508,28 +5182,7 @@ ui.domColorPicker.oninput = (ev) => {
     uix.colorPicker.value = color3FromHex(currentColor);
 };
 
-ui.domColorPickerAlbedo.oninput = (ev) => {
-    currentColorBake = ev.target.value.toUpperCase();
-    pool.setMaterial('albedo'); // update material
-};
-
-ui.domColorPickerEmissive.oninput = () => {
-    pool.setMaterial('emissive');
-};
-
-ui.domColorPickerVertexColor.oninput = (ev) => {
-    (pool.meshes.length > 0) ?
-        pool.updateVertexColors(ev.target.value) :
-        ui.notification('select a mesh');
-};
-
-ui.domColorPickerBackground.oninput = (ev) => {
-    scene.clearColor = color4FromHex(ev.target.value);
-    scene.autoClear = ui.domBackgroundCheck.checked;
-};
-
 ui.domColorPickerLightColor.oninput = (ev) => {
-    light.updateColor(ev.target.value);
     modules.sandbox.updateLight();
 };
 
@@ -5566,7 +5219,6 @@ ui.domRenderTiles.onchange = (ev) => {
 
 
 ui.domRenderEnvPower.onchange = (ev) => {
-    if (ev.target.value < 1) ev.target.value = 1;
     if (modules.sandbox.isActive())
         modules.sandbox.updateEnvIntensity(ev.target.value);
 };
@@ -5587,40 +5239,44 @@ ui.domRenderShot.onclick = () => {
         modules.sandbox.shot();
 };
 
-ui.domRenderFast.oninput = () => {
-    if (modules.sandbox.isActive())
-        modules.sandbox.toggleFastMode();
-};
-
 ui.domRenderShade.oninput = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.toggleShadeMode();
 };
 
-ui.domRenderMaterialRoughness.onchange = (ev) => {
+ui.domRenderMaterialRoughness.onchange = () => {
     if (modules.sandbox.isActive()) {
-        modules.sandbox.meshes[0].material.roughness = ev.target.value;
+        modules.sandbox.updateMeshes();
         modules.sandbox.pathTracer.updateMaterials();
     }
 };
 
-ui.domRenderMaterialMetalness.onchange = (ev) => {
+ui.domRenderMaterialMetalness.onchange = () => {
     if (modules.sandbox.isActive()) {
-        modules.sandbox.meshes[0].material.metalness = ev.target.value;
+        modules.sandbox.updateMeshes();
         modules.sandbox.pathTracer.updateMaterials();
     }
 };
 
-ui.domRenderMaterialTransmission.onchange = (ev) => {
+ui.domRenderMaterialTransmission.onchange = () => {
     if (modules.sandbox.isActive()) {
-        modules.sandbox.meshes[0].material.transmission = ev.target.value;
+        modules.sandbox.updateMeshes();
         modules.sandbox.pathTracer.updateMaterials();
     }
 };
 
-ui.domRenderGrid.oninput = (ev) => {
-    if (modules.sandbox.isActive())
-        modules.sandbox.setGrid(ev.target.checked);
+ui.domRenderMaterialEmissive.onchange = () => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.updateMeshes();
+        modules.sandbox.pathTracer.updateMaterials();
+    }
+};
+
+ui.domRenderTexture.oninput = () => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.updateMeshes();
+        modules.sandbox.pathTracer.updateMaterials();
+    }
 };
 
 
@@ -5684,27 +5340,18 @@ ui.domSymmCenter.onclick = () => {
 };
 
 
-ui.domBackgroundCheck.onclick = (ev) => {
-    scene.autoClear = ev.target.checked;
-    if (scene.autoClear)
-        scene.clearColor = color4FromHex(ui.domColorPickerBackground.value);
-};
-
 ui.domHdriBackground.onclick = (ev) => {
-    hdri.showSkybox(ev.target.checked);
     if (modules.sandbox.isActive())
         modules.sandbox.updateBackground(ev.target.checked);
 };
 
-ui.domHdriBlur.oninput = (ev) => {
-    hdri.setBlurAmount(ev.target.value);
+ui.domHdriBlur.oninput = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.updateBackground(ui.domHdriBackground.checked);
 };
 
 
 ui.domLightIntensity.oninput = (ev) => {
-    light.updateIntensity(ev.target.value);
     modules.sandbox.light.intensity = ev.target.value;
     if (modules.sandbox.isActive())
         modules.sandbox.pathTracer.updateLights();
@@ -5718,41 +5365,57 @@ ui.domLightShadows.onclick = (ev) => {
 };
 
 
+ui.domPbrTexture.onclick = () => {
+    if (pool.selected) {
+        material.setPBRTexture();
+        pool.replaceTexture();
+    } else {
+        ui.notification('select a mesh');
+    }
+};
+
+ui.domColorPickerAlbedo.oninput = (ev) => {
+    if (pool.selected) {
+        currentColorBake = ev.target.value.toUpperCase();
+        pool.setMaterial('albedo'); // update material
+    } else {
+        ui.notification('select a mesh');
+    }
+};
+
+ui.domColorPickerEmissive.oninput = () => {
+    (pool.selected) ?
+        pool.setMaterial('emissive') :
+        ui.notification('select a mesh');
+};
+
+ui.domColorPickerVertexColor.oninput = (ev) => {
+    (pool.selected) ?
+        pool.updateVertexColors(ev.target.value) :
+        ui.notification('select a mesh');
+};
+
 ui.domRoughness.oninput = () => {
-    pool.setMaterial('roughness');
+    (pool.selected) ?
+        pool.setMaterial('roughness') :
+        ui.notification('select a mesh');
 };
 
 ui.domMetallic.oninput = () => {
-    pool.setMaterial('metallic');
+    (pool.selected) ?
+        pool.setMaterial('metallic') :
+        ui.notification('select a mesh');
 };
 
 ui.domAlpha.oninput = () => {
-    pool.setMaterial('alpha');
+    (pool.selected) ?
+        pool.setMaterial('alpha') :
+        ui.notification('select a mesh');
 };
+
 
 ui.domMaterialSwitch.onclick = () => {
     material.switchMaterial();
-};
-
-
-document.getElementById('bake_tex_solid').onclick = () => {
-    material.setPBRTexture(0);
-    pool.replaceTexture();
-};
-
-document.getElementById('bake_tex_outline').onclick = () => {
-    material.setPBRTexture(1);
-    pool.replaceTexture();
-};
-
-document.getElementById('bake_tex_grid').onclick = () => {
-    material.setPBRTexture(2);
-    pool.replaceTexture();
-};
-
-document.getElementById('bake_tex_checker').onclick = () => {
-    material.setPBRTexture(3);
-    pool.replaceTexture();
 };
 
 
@@ -5763,7 +5426,7 @@ document.getElementById('tab-export').onclick = () =>               { ui.setMode
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
-document.getElementById('reset_hover').onclick = () =>              { ui.hoverTranslate(ui.domHover, 0, 0) };
+document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
 document.getElementById('clear_cache').onclick = (ev) =>            { engine.clearCache(scene, ev.target) };
 document.getElementById('ws_connect').onclick = () =>               { if (ui.checkMode(0)) modules.ws_client.connect() };
 document.getElementById('new_project').onclick = () =>              { project.newProject() };
@@ -5820,7 +5483,7 @@ document.getElementById('delete_bake').onclick = () =>              { if (ui.che
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
 document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
 document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
-document.getElementById('hdr_dropdown').onclick = (ev) =>          { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('hdr_dropdown').onclick = (ev) =>           { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
 document.getElementById('btn_tool_isolate_color').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('isolate_color') };
 document.getElementById('btn_tool_hide_color').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('hide_color') };
@@ -5829,11 +5492,16 @@ document.getElementById('unhide_all').onclick = () =>               { if (ui.che
 document.getElementById('btn_tool_delete_color').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('delete_color') };
 document.getElementById('delete_hidden').onclick = () =>            { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
 document.getElementById('btn_tool_bucket_inscreen').onclick = () => { if (ui.checkMode(0)) tool.toolSelector('bucket') };
+document.getElementById('btn_tool_eyedrop_inscreen').onclick = () => { if (ui.checkMode(0)) tool.toolSelector('eyedrop') };
 
 
 // -------------------------------------------------------
 // Utils
 
+
+export function toolSelectCamera() {
+    tool.toolSelector('camera');
+}
 
 function downloadJson(data, filename) {
     const blob = new Blob([ data ], { type: "application/json" });

@@ -32,7 +32,7 @@
         :root { /* orange, steelblue */
             --font: Roboto;
             --font-size: 12px;
-            --btn-color: #8e98aa;
+            --btn-color: #969fb1;
             --btn-bg: #2d3542;
             --input-bg: #222833CC;
             --input-color: #788499;
@@ -44,6 +44,7 @@
             --toolbar-bg: #282e3aee;
             --confirm: #222731ee;
             --borders: #161a2050;
+            --btn-shadows: #161a2028;
             --white: #97a5b8;
         }
         * { margin: 0; padding: 0; outline: none; }
@@ -70,7 +71,7 @@
         input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; border: solid 1px transparent; }
         input[type=color]:hover { cursor: pointer; }
         button { font-family: var(--font); font-size: var(--font-size); background: linear-gradient(60deg, #2c3441 0%, #2a323f 100%); color: var(--btn-color); letter-spacing: 0.03em; border-radius: 2px; border: 1px solid var(--borders); }
-        button:hover { background: orange; color: #444; cursor: pointer; }
+        button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadows); cursor: pointer; }
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
         label { font-family: var(--font); font-size: var(--font-size); color: var(--label); margin: 0; }
         select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--btn-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
@@ -78,9 +79,9 @@
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
         ul { list-style-type: none; }
         ul li { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); border-radius: 2px; text-align: center; }
-        ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; }
+        ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadows); }
         #introscreen { z-index: 99999; display: unset; position: absolute; width: 100%; height: 100%; }
-        #introscreen .logo { color: orange; background: #252a3090; font-family: var(--font); font-size: 22px; letter-spacing: 0.06em; width: 240px; height: 24px; padding: 15px 0 15px 0; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 10px; text-align: center; }
+        #introscreen .logo { color: orange; background: #252a3090; font-family: var(--font); font-size: 24px; letter-spacing: 0.06em; width: fit-content; padding: 10px 20px 10px 20px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 10px; text-align: center; }
         #introscreen .logo :first-child { font-weight: normal; color: var(--white); }
         #canvas { z-index: 0; image-rendering: pixelated; position: absolute; width: 100%; height: 100%; background: linear-gradient(180deg, #434b5c 0%, #313544 100%); }
         #canvas_three { z-index: 300; display: none; image-rendering: pixelated; width: 100%; height: 100%; position: absolute;
@@ -122,20 +123,12 @@
         #toolbar_L li:nth-child(1) :last-child { width: 50%; border-left: none; }
         #toolbar_L button { background: var(--toolbar-bg); width: 100%; padding: 8px 0 6px 0; border-top: none; border-radius: 0; }
         #toolbar_L button:hover { background: orange; }
-        #hover { z-index: 450; display: none; bottom: 15%; left: 50%; margin-left: -14px; position: absolute; background: none; }
-        #hover li { opacity: 0.95; padding: 5px; border: 1px solid var(--borders); box-shadow: 0 0 2px #22252b; margin: -1px; cursor: pointer; }
-        #hover li:nth-child(1) { cursor: move; }
-        #hover li:nth-child(2) { position: absolute; top: -32px; left: 0%; }
-        #hover li:nth-child(3) { position: absolute; top: 0; left: 32px; }
-        #hover li:nth-child(4) { position: absolute; top: 0; left: -32px; }
-        #hover li:nth-child(5) { position: absolute; top: 32px; left: -32px; border-bottom-left-radius: 40%; }
-        #hover li:nth-child(6) { position: absolute; top: 32px; left: 32px; border-bottom-right-radius: 40%; }
-        #hover li:nth-child(7) { position: absolute; top: -32px; left: -32px; border-top-left-radius: 40%; }
-        #hover li:nth-child(8) { position: absolute; top: -32px; left: 32px; border-top-right-radius: 40%; }
-        #hover li:nth-child(9) { position: absolute; top: 32px; left: 0%; }
-        #hover li.hover_disabled { opacity: 0; pointer-events: none; }
-        #hover li .material-icons { font-size: 18px; }
-        #palette { z-index: 400; display: none; background: #31394b30; position: absolute; right: 2px; top: 8px; bottom: 250px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
+        #hover { z-index: 2200; opacity: 0.9; display: none; bottom: 20%; left: 50%; margin-left: -17px; position: absolute; }
+        #hover .tool_camera { z-index: 2220; position: relative; padding: 5px; top: 32px; left: 0; border: 1px solid #717b8d40; border-radius: 3px; cursor: move; }
+        #hover li { z-index: 2210; padding: 5px; transition: all 0.2s ease-in-out; border: 1px solid #717b8d35; border-radius: 3px; position: absolute; cursor: pointer; }
+        #hover li.hover_item_hide { opacity: 0; pointer-events: none; }
+        #hover .material-icons { font-size: 20px; }
+        #palette { z-index: 400; display: none; background: #31394b30; position: absolute; right: 2px; top: 8px; bottom: 285px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
         #meshlist { z-index: 400; display: none; min-width: 62px; background: #31394b30; position: absolute; right: 2px; top: 8px; bottom: 5px; overflow-y: scroll; overflow-x: hidden; }
         #meshlist .item_name { background: #3e4558; width: 62px; font-size: 10px; padding: 5px 2px 5px 2px; margin-bottom: 1px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
@@ -150,19 +143,15 @@
         #btn-symm-axis-x:hover { background: var(--input-bg); }
         #btn-symm-axis-y:hover { background: var(--input-bg); }
         #btn-symm-axis-z:hover { background: var(--input-bg); }
-        #menu-inscreen-left { z-index: 500; display: none; flex-direction: row; gap: 0; position: fixed; left: 4px; top: 510px; }
-        #menu-inscreen-left li { background: none; }
-        #menu-inscreen-left button { width: 30px; height: 28px; color: #00ffffAA; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; background: none; border: none; }
-        #menu-inscreen-left button:hover { background: transparent; }
         #menu-inscreen-right { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; bottom: 135px; }
         #menu-inscreen-right button { width: 45px; height: 32px; }
-        #menu-inscreen-bottom { z-index: 9; display: none; background: #30394740; width: 115px; height: fit-content; left: 50%; bottom: 20px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
-        #menu-inscreen-bottom div { z-index: 9; padding: 5px 10px 5px 10px; color: #00ffffAA; font-size: 16px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; cursor: pointer; background: none; border: none; }
-        #menu-inscreen-bottom div i { font-size: 19px; color: aqua; opacity: 0.7; }
+        #menu-inscreen-bottom { z-index: 9; display: none; background: #30394740; padding: 2px; height: fit-content; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
+        #menu-inscreen-bottom div { z-index: 9; width: 26px; color: #00ffffAA; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; text-align: center; cursor: pointer; background: none; border: none; }
+        #menu-inscreen-bottom div i { font-size: 19px; color: aqua; opacity: 0.7; margin-top: -4px; }
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
-        #sandbox_render { z-index: 301; display: none; flex-direction: column; left: 5px; top: 150px; position: fixed; }
-        #sandbox_render button { width: 65px; height: 50px; }
+        #sandbox_render { z-index: 301; display: none; flex-direction: column; left: 5px; top: 122px; position: fixed; }
+        #sandbox_render button { width: 61px; height: 50px; }
         #sandbox_render button i { font-size: 30px; }
         #info { z-index: 2; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: var(--white); letter-spacing: 0.05em; }
@@ -176,7 +165,7 @@
         #confirmblocker { z-index: 2400; display: none; opacity: 0.2; background: #181b22; position: absolute; width: 100%; height: 100%; }
         #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 110px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_status { font-size: 11px; color: indianred; }
-        #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 360px; height: 50%; transform: translate(-50%,-50%); position: fixed; }
+        #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 400px; height: 50%; transform: translate(-50%,-50%); position: fixed; }
         #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
         #shortcuts tr { font-size: 14px; border: solid 1px var(--cat-border); background: var(--cat-bg); }
         #shortcuts tr :first-child { width: 130px; text-align: center; }
@@ -186,7 +175,9 @@
         .row { display: flex; width: 100%; align-items: center; }
         .row_input { display: flex; width: 100%; gap: 5px; align-items: center; }
         .row_input :first-child { width: 100%; }
-        .row_panel { display: flex; width: 100%; height: 25px; align-items: center; gap: 11px; text-indent: 6px; }
+        .row_panel { display: flex; width: 100%; height: 25px; align-items: center; gap: 0; }
+        .row_panel div { width: 30px; padding: 5px; text-align: center; }
+        .row_panel:hover { box-shadow: none; }
         .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 16px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
         ::placeholder { color: #45515c; }
         ::-webkit-scrollbar { width: 5px; }
@@ -202,11 +193,10 @@
             input[type=color] { height: 18px; }
             input[type=color]::-moz-color-swatch { border: none; }
             select { text-indent: 2px; }
-            #palette { bottom: 250px; scrollbar-color: steelblue transparent; }
+            #palette { bottom: 285px; scrollbar-color: steelblue transparent; }
             #meshlist { scrollbar-color: steelblue transparent; }
             #meshlist .item_name { width: 65px; }
             #menu-inscreen-bottom { bottom: 22px; }
-            #menu-inscreen-left { top: 530px; }
             #sandbox_render { top: 155px; }
         }
     </style>
@@ -221,9 +211,8 @@
                 <button id="toolbar_btn_prefs"><i class="material-icons">settings</i></button>
             </li>
             <li><button id="toolbar_btn_file">FILE</button></li>
-            <li><button id="toolbar_btn_render">RENDER</button></li>
             <li><button id="toolbar_btn_camera">CAMERA</button></li>
-            <li title="Environment"><button id="toolbar_btn_env">ENV.</button><br><br></li>
+            <li><button id="toolbar_btn_render">RENDER</button><br><br></li>
             <li><button id="toolbar_btn_storage">STORAGE</button></li>
             <li><button id="toolbar_btn_import">IMPORT</button></li>
             <li><button id="toolbar_btn_create">CREATE</button></li>
@@ -234,7 +223,7 @@
             <li title="Color Groups"><button id="toolbar_btn_groups">GROUPS</button><br><br></li>
             <li><button id="toolbar_btn_bakery">BAKERY</button></li>
             <li><button id="toolbar_btn_meshes">MESHES</button></li>
-            <li><button id="toolbar_btn_material">MATERIAL</button></li>
+            <li><button id="toolbar_btn_pbr">PBR</button></li>
         </ul>
         <div id="toolbar_top">
             <ul id="toolbar_C_mem">
@@ -280,7 +269,7 @@
             </li>
             <li class="spacer"></li>
             <li class="about">
-                4.4.6 Beta 2024
+                4.4.7 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -295,13 +284,18 @@
         <ul class="menu_L panel" id="menu-prefs">
             <li class="category">GENERAL</li>
             <li><input type="checkbox" id="pref_startup"> <label for="pref_startup">User Startup</label></li>
-            <li><input type="checkbox" id="pref_nohover"> <label for="pref_nohover">No Hover Menu</label></li>
-            <li><input type="checkbox" id="pref_floorplane"> <label for="pref_floorplane">Floor Plane</label></li>
-            <li><input type="checkbox" id="pref_pointcloud"> <label for="pref_pointcloud">Point Cloud</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" value="1" min="1" max="10" step="1"></li>
+            <li class="category">SCENE</li>
+            <li><input type="checkbox" id="pref_floorplane"> <label for="pref_floorplane">Floor Plane</label></li>
+            <li><input type="checkbox" id="pref_pointcloud"> <label for="pref_pointcloud">Point Cloud</label></li>
+            <li>
+                <input type="checkbox" id="pref_background_check"> <label for="pref_background_check">Background</label>
+                <input type="color" id="pref_background_color" value="#474A52">
+            </li>
+            <li title="Not Persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Light Shadows</label></li>
             <li class="category">SYSTEM</li>
-            <button id="fullscreen">Fullscreen</button>
+            <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
             <li><button id="clear_cache">Clear Cache</button></li>
             <li class="category">WEBSOCKETS</li>
@@ -314,7 +308,7 @@
         </ul>
         <ul class="menu_L panel" id="menu-file">
             <li class="category">PROJECT</li>
-            <li><input id="input-project-name" type="text" class="ignorekeys" value="null" minlength="3" maxlength="100" spellcheck="false" placeholder="Project Name"></li>
+            <li><input id="project_name" type="text" class="ignorekeys" value="null" minlength="3" maxlength="100" spellcheck="false" placeholder="Project Name"></li>
             <li class="spacer"></li>
             <li><button id="new_project">New</button></li>
             <li class="spacer"></li>
@@ -325,14 +319,14 @@
             <li><button onclick="document.getElementById('openfile_import_bakes').click()">Import Bakes</button></li>
             <li class="category">EXPORT</li>
             <li class="row_input">
-                <label style="width: 60%;">Format</label><select id="input-export-format">
+                <label style="width: 60%;">Format</label><select id="export_format">
                     <option value="glb">GLB</option>
                     <option value="gltf">GLTF</option>
                     <option value="obj">OBJ</option>
                     <option value="stl">STL</option>
                 </select>
             </li>
-            <li><input type="checkbox" id="input-export-selbake"> <label for="input-export-selbake">Selected Mesh</label></li>
+            <li><input type="checkbox" id="export_selected_bake"> <label for="export_selected_bake">Selected Mesh</label></li>
             <li class="spacer"></li>
             <li><button id="export_voxels">Export Voxels</button></li>
             <li><button id="export_bakes">Export Bakes</button></li>
@@ -342,11 +336,11 @@
         <ul class="menu_L panel" id="menu-create">
             <li class="category">BOX</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="input-grid-x" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="input-grid-y" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="input-grid-z" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
-                <input type="checkbox" id="input-grid-fill" checked> <label for="input-grid-fill">Fill Box</label><br>
-                <input type="checkbox" id="input-grid-new" checked> <label for="input-grid-new">New Scene</label>
+                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_grid_y" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_grid_z" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
+                <input type="checkbox" id="create_grid_fill" checked> <label for="create_grid_fill">Fill Box</label><br>
+                <input type="checkbox" id="create_grid_new" checked> <label for="create_grid_new">New Scene</label>
                 <div class="flex">
                     <button id="create_box">Box</button>
                     <button id="create_plane">Plane</button>
@@ -355,18 +349,18 @@
             </li>
             <li class="category">SPHERE</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 12px">Size</label>&nbsp;<input id="input-sphere-size" type="number" class="ignorekeys" value="20" min="3" max="100"></div>
-                <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="input-sphere-inner" type="number" class="ignorekeys" value="19" min="0" max="100"></div>
-                <input type="checkbox" id="input-sphere-new" checked> <label for="input-sphere-new">New Scene</label><br>
+                <div class="row">&nbsp;<label style="margin-right: 12px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3" max="100"></div>
+                <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0" max="100"></div>
+                <input type="checkbox" id="create_sphere_new" checked> <label for="create_sphere_new">New Scene</label><br>
                 <button id="create_sphere">Sphere</button>
             </li>
             <li class="category">TERRAIN</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="input-terrain-x" type="number" class="ignorekeys" value="100" min="3" max="500"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="input-terrain-y" type="number" class="ignorekeys" value="5" min="1" max="50"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="input-terrain-z" type="number" class="ignorekeys" value="100" min="3" max="500"></div>
-                <input type="checkbox" id="input-terrain-grad" checked> <label for="input-terrain-grad">Height Gradient</label><br>
-                <input type="checkbox" id="input-terrain-new" checked> <label for="input-terrain-new">New Scene</label><br>
+                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3" max="500"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_terrain_y" type="number" class="ignorekeys" value="5" min="1" max="50"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3" max="500"></div>
+                <input type="checkbox" id="create_terrain_grad" checked> <label for="create_terrain_grad">Height Gradient</label><br>
+                <input type="checkbox" id="create_terrain_new" checked> <label for="create_terrain_new">New Scene</label><br>
                 <button id="create_terrain">Terrain</button>
             </li>
         </ul>
@@ -460,7 +454,7 @@
             <li class="spacer"></li>
             <li><input type="checkbox" id="input-bakery-split" checked> <label for="input-bakery-split">Split Color Groups</label></li>
             <li><input type="checkbox" id="input-bakery-backface" checked> <label for="input-bakery-backface">Backface Culling</label></li>
-            <li><input type="checkbox" id="input-bakery-clear" checked> <label for="input-bakery-clear">Clear Meshes</label></li>
+            <li><input type="checkbox" id="input-bakery-clear"> <label for="input-bakery-clear">Clear Meshes</label></li>
             <li class="category">INTERACTIVE</li>
             <li><button id="btn_tool_bakecolor" class="tool_bake_color">Selected Color</button></li>
             <li class="category">OPTIONS<li>
@@ -487,11 +481,10 @@
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
             <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start Render</label></li>
-            <li><input id="input-pt-fast" type="checkbox"></input> <label for="input-pt-fast">Fast DPR</label></li>
             <li class="spacer"></li>
+            <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.9" min="0.1" max="1" step="0.05"></li>
             <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" max="8192" step="8"></li>
             <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
-            <li class="row_input"><label>Max DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="1" min="1" max="1" step="1"></li>
             <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="1" min="1" step="1"></li>
             <li class="spacer"></li>
             <li class="row">
@@ -499,37 +492,6 @@
                 <button id="btn-pt-pause">Pause</button>
             </li>
             <li class="category">ENVIRONMENT</li>
-            <li class="row"><label style="min-width: 53%">Intensity</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="16.0" min="0.01" max="100" step="0.01"></li>
-            <li class="category">MATERIAL</li>
-            <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.98" min="0" max="1" step="0.01"></input></li>
-            <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0.01" min="0" max="1" step="0.01"></input></li>
-            <li class="row_input"><label for="input-pt-transmission">Transmiss.</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
-            <li class="spacer"></li>
-            <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
-            <li><input id="input-pt-grid" type="checkbox" checked></input> <label for="input-pt-grid">Grid Texture</label></li>
-        </ul>
-        <ul class="menu_L panel" id="menu-camera">
-            <li class="category">VIEW</li>
-            <li><button id="camera_frame">Frame</button></li>
-            <li><button id="btn_tool_frame_color" class="tool_frame_color">Frame Color</button></li>
-            <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
-            <li class="category">SETTINGS</li>
-            <li><button id="btn-ortho">Perspective</button></li>
-            <li class="spacer"></li>
-            <li class="row"><label style="min-width: 50%">FOV *</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01"></li>
-            <li class="row"><label style="min-width: 50%">F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
-            <li class="row"><label style="min-width: 50%">Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
-            <li class="category">ANIMATION</li>
-            <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
-            <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
-        </ul>
-        <ul class="menu_L panel" id="menu-env">
-            <li class="category">BACKGROUND</li>
-            <li>
-                <input type="checkbox" id="input-env-bgcheck" title="Enable Background Color"> <label for="input-env-bgcheck">Enabled</label>
-                <input type="color" id="input-env-background" value="#222222">
-            </li>
-            <li class="category">HDRI</li>
             <li>
                 <select id="hdr_dropdown" style="text-align: left;">
                     <option value="assets/snow_field_2_puresky_1k.hdr">Default (local)</option>
@@ -541,28 +503,55 @@
                     <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/quarry_01_1k.hdr">DLC: Quarry</option>
                 </select>
             </li>
-            <li><button onclick="document.getElementById('openfile_hdr').click()">Load HDR</button></li>
-            <li><button id="unload_hdr">Unload</button></li>
+            <li class="row">
+                <button id="unload_hdr">Unload</button>
+                <button onclick="document.getElementById('openfile_hdr').click()">Load</button>
+            </li>
             <li class="spacer"></li>
-            <li><input type="checkbox" id="input-hdri-background"> <label for="input-hdri-background">Background *</label></li>
+            <li><input type="checkbox" id="input-hdri-background"> <label for="input-hdri-background">Background</label></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Blur *</label> <input type="number" id="input-hdri-blur" value="0.1" min="0" max="1" step="0.01"></li>
-            <li class="category">DIRECT LIGHT</li>
-            <li><input type="color" id="input-light-color" value="#DCDCDC"></li>
+            <li class="row"><label style="min-width: 52%">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.8" min="0.01" max="100" step="0.01"></li>
+            <li class="row_input"><label>Blur</label> <input type="number" id="input-hdri-blur" value="0.05" min="0" max="1" step="0.01"></li>
+            <li class="row_input"><label>Light</label> <input type="color" id="input-light-color" value="#FFE484"></li>
+            <li class="row_input"><label>Intensity</label> <input type="number" id="input-light-intensity" value="0.8" min="0" step="0.01"></li>
+            <li class="category">MATERIAL</li>
+            <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0.1" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-transmission">Transmiss.</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input" title="Black voxels are emissive"><label>Emissive</label> <input type="color" id="input-pt-emissive" value="#C5AF5E"></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Intensity *</label> <input type="number" id="input-light-intensity" value="0.5" min="0" step="0.01"></li>
-            <li><input type="checkbox" id="input-light-shadows" checked> <label for="input-light-shadows">Shadows</label></li>
+            <li class="row_input">
+                <label>Texture</label> <select id="input-pt-texture" style="width: 155%;">
+                    <option value="0">None</option>
+                    <option value="1">Grid</option>
+                    <option value="2" selected>Checker</option>
+                </select>
+            </li>
+            <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
         </ul>
-        <ul class="menu_L panel" id="menu-material">
+        <ul class="menu_L panel" id="menu-camera">
+            <li class="category">VIEW</li>
+            <li><button id="camera_frame">Frame</button></li>
+            <li><button id="btn_tool_frame_color" class="tool_frame_color">Frame Color</button></li>
+            <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
+            <li class="category">SETTINGS</li>
+            <li><button id="btn-ortho">Perspective</button></li>
+            <li class="spacer"></li>
+            <li class="row"><label style="min-width: 50%">FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01"></li>
+            <li class="row"><label style="min-width: 50%">F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
+            <li class="row"><label style="min-width: 50%">Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
+            <li class="category">ANIMATION</li>
+            <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
+            <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
+        </ul>
+        <ul class="menu_L panel" id="menu-pbr">
             <li class="category">TEXTURE</li>
-            <li>
-                <div class="flex">
-                    <button id="bake_tex_solid">Solid</button>
-                    <button id="bake_tex_outline">Outline</button>
-                </div> <div class="flex">
-                    <button id="bake_tex_grid">Grid</button>
-                    <button id="bake_tex_checker">Checker</button>
-                </div>
+            <li class="row_input">
+                <select id="input-pbr-texture">
+                    <option value="0">None</option>
+                    <option value="1">Grid</option>
+                    <option value="2" selected>Checker</option>
+                </select>
             </li>
             <li class="category">COLORS</li>
             <li class="row"><label style="margin-right: 20px">Albedo</label> <input type="color" id="input-material-albedo" value="#FFFFFF"></li>
@@ -598,31 +587,28 @@
             <li><button id="delete_hidden">Delete Hidden</button>
         </ul>
     </div>
-    <ul id="hover">
-        <li class="tool_camera"><i class="material-icons">control_camera</i></li>
-        <li class="tool_box_paint"><i class="material-icons">imagesearch_roller</i></li>
-        <li class="tool_box_add"><i class="material-icons">add</i></li>
-        <li class="tool_box_remove"><i class="material-icons">remove</i></li>
-        <li class="tool_bucket hover_disabled"><i class="material-icons">format_color_fill</i></li>
-        <li class="tool_remove hover_disabled"><i class="material-icons">clear</i></li>
-        <li class="tool_paint hover_disabled"><i class="material-icons">brush</i></li>
-        <li class="tool_add hover_disabled"><i class="material-icons">create</i></li>
-        <li class="tool_eyedrop"><i class="material-icons">colorize</i></li>
-    </ul>
-    <ul id="menu-inscreen-left">
-        <li><button id="btn-inscreen-ortho" title="Orthographic View">P</button></li>
-        <li><button id="btn-inscreen-symmetry" title="Symmetry">S</button></li>
-    </ul>
+    <div id="hover">
+        <button class="tool_camera"><i class="material-icons">control_camera</i></button>
+        <ul>
+            <li class="tool_box_add hover_item_hide"><i class="material-icons">add</i></li>
+            <li class="tool_box_remove hover_item_hide"><i class="material-icons">remove</i></li>
+            <li class="tool_box_paint hover_item_hide"><i class="material-icons">imagesearch_roller</i></li>
+            <li class="tool_transform_box hover_item_hide"><i class="material-icons">select_all</i></li>
+        </ul>
+    </div>
     <ul id="menu-inscreen-right">
-        <li id="colorpicker"><input type="color" id="input-color" value="#4988CA"></li>
-        <li><button title="Color Bucket Tool" id="btn_tool_bucket_inscreen" class="tool_bucket"><i class="material-icons">format_color_fill</i></button></li>
-        <li><button title="Material Switch" id="material-switch">CEL</button></li>
+        <li id="colorpicker"><input type="color" id="input-color" value="#4B81B4"></li>
+        <li><button id="btn_tool_bucket_inscreen" class="tool_bucket" title="Bucket Tool"><i class="material-icons">format_color_fill</i></button></li>
+        <li><button id="btn_tool_eyedrop_inscreen" class="tool_eyedrop" title="Eyedropper Tool"><i class="material-icons">colorize</i></button></li>
+        <li><button id="material-switch" title="Material Switch">CEL</button></li>
     </ul>
-    <ul id="menu-inscreen-bottom">
+    <div id="menu-inscreen-bottom">
         <div id="btn-inscreen-gridplane" title="Grid Plane"><i class="material-icons">grid_4x4</i></div>
         <div id="btn-inscreen-workplane" title="Workplane 3D"><i class="material-icons">grid_on</i></div>
         <div id="btn-inscreen-lightlocator" title="Light Locator"><i class="material-icons">tungsten</i></div>
-    </ul>
+        <div id="btn-inscreen-ortho" title="Orthographic View">P</div>
+        <div id="btn-inscreen-symmetry" title="Symmetry">S</div>
+    </div>
     <div id="sandbox_render">
         <button><i class="material-icons">play_arrow</i></button>
     </div>

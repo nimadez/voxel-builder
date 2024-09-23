@@ -43,13 +43,13 @@ class Generator {
     }
 
     async createBox(isPlane = false) {
-        const isNewScene = document.getElementById('input-grid-new').checked;
+        const isNewScene = document.getElementById('create_grid_new').checked;
         if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
         
-        const isFill = document.getElementById('input-grid-fill').checked;
-        const X = parseInt(document.getElementById('input-grid-x').value);
-        const Y = (isPlane) ? 1 : parseInt(document.getElementById('input-grid-y').value);
-        const Z = parseInt(document.getElementById('input-grid-z').value);
+        const isFill = document.getElementById('create_grid_fill').checked;
+        const X = parseInt(document.getElementById('create_grid_x').value);
+        const Y = (isPlane) ? 1 : parseInt(document.getElementById('create_grid_y').value);
+        const Z = parseInt(document.getElementById('create_grid_z').value);
         
         const data = [];
         if (isFill) {
@@ -90,11 +90,11 @@ class Generator {
     }
 
     async createIsometric() {
-        const isNewScene = document.getElementById('input-grid-new').checked;
+        const isNewScene = document.getElementById('create_grid_new').checked;
         if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
-        const X = parseInt(document.getElementById('input-grid-x').value);
-        const Y = parseInt(document.getElementById('input-grid-y').value);
-        const Z = parseInt(document.getElementById('input-grid-z').value);
+        const X = parseInt(document.getElementById('create_grid_x').value);
+        const Y = parseInt(document.getElementById('create_grid_y').value);
+        const Z = parseInt(document.getElementById('create_grid_z').value);
 
         const data = [];
         for (let x = 0; x < X; x++) {
@@ -119,14 +119,14 @@ class Generator {
     }
 
     async createSphere() {
-        const isNewScene = document.getElementById('input-sphere-new').checked;
+        const isNewScene = document.getElementById('create_sphere_new').checked;
         if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
 
-        const size = parseInt(document.getElementById('input-sphere-size').value);
-        let inner = parseInt(document.getElementById('input-sphere-inner').value);
+        const size = parseInt(document.getElementById('create_sphere_size').value);
+        let inner = parseInt(document.getElementById('create_sphere_inner').value);
         if (inner >= size) {
             inner = size - 1;
-            document.getElementById('input-sphere-inner').value = inner;
+            document.getElementById('create_sphere_inner').value = inner;
         }
         inner -= 1;
 
@@ -166,12 +166,12 @@ class Generator {
     }
 
     async createTerrain() {
-        const isNewScene = document.getElementById('input-terrain-new').checked;
+        const isNewScene = document.getElementById('create_terrain_new').checked;
         if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
-        const isHeightGrad = document.getElementById('input-terrain-grad').checked;
-        const X = parseInt(document.getElementById('input-terrain-x').value);
-        const Y = parseInt(document.getElementById('input-terrain-y').value);
-        const Z = parseInt(document.getElementById('input-terrain-z').value);
+        const isHeightGrad = document.getElementById('create_terrain_grad').checked;
+        const X = parseInt(document.getElementById('create_terrain_x').value);
+        const Y = parseInt(document.getElementById('create_terrain_y').value);
+        const Z = parseInt(document.getElementById('create_terrain_z').value);
 
         const simplex = new SimplexNoise();
         const colArrayHigh = gradientHexArray('#87BC24', '#31A531', Y);
