@@ -12,7 +12,7 @@ import {
     ui, builder, xformer, project,
     hexToRgbFloat, rgbFloatToHex,
     COL_ICE
-} from '../../main.js';
+} from '../core.js';
 
 
 class Generator {

@@ -5,7 +5,7 @@
     Floating hover menu
 */
 
-import { toolSelectCamera } from '../../main.js';
+import { tool } from '../core.js';
 
 
 class Hover {
@@ -50,7 +50,7 @@ class Hover {
 
         if (ev.target === hover.elemDrag) {
             hover.isActive = true;
-            toolSelectCamera();
+            tool.toolSelector('camera');
         }
     }
 

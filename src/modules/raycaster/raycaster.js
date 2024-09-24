@@ -7,7 +7,7 @@
 
 import { THREE } from '../three.js';
 import { Vector3, PositionKind, ColorKind } from '../babylon.js';
-import { builder } from '../../main.js';
+import { builder } from '../core.js';
 
 
 const nullMaterial = new THREE.MeshBasicMaterial();

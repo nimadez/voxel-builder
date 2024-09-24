@@ -15,7 +15,7 @@ import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
 import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
 
 import { engine, Vector3 } from '../babylon.js';
-import { ui, camera, hdri, light, builder } from '../../main.js';
+import { ui, camera, hdri, light, builder } from '../core.js';
 
 
 const TILE = 1;
@@ -137,7 +137,7 @@ class Sandbox {
         this.geomBox = new THREE.BoxGeometry(1.01, 1.01, 1.01);
 
         // overrided
-        this.mat_illum = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0xC5AF5E), side: THREE.FrontSide });
+        this.mat_illum = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x5EC3C5), side: THREE.FrontSide });
         this.mat_illum.emissiveIntensity = 20;
         this.mat_shade = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xAAAAAA), side: THREE.BackSide, precision: "mediump" });
         this.mat_pbr = new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.BackSide });
@@ -273,7 +273,7 @@ class Sandbox {
         this.scene.environment = hdri.hdrMapRender;
         this.scene.environment.mapping = THREE.EquirectangularReflectionMapping;
         this.scene.environment.encoding = THREE.sRGBEncoding;
-        this.updateBackground(ui.domHdriBackground.checked);
+        this.updateBackground(ui.domRenderHdriBackground.checked);
         this.pathTracer.updateEnvironment();
     }
 
@@ -284,11 +284,11 @@ class Sandbox {
 
     updateBackground(isEnabled) {
         if (isEnabled) {
-            if (ui.domHdriBackground.checked) {
+            if (ui.domRenderHdriBackground.checked) {
                 this.scene.background = this.scene.environment;
                 this.scene.background.mapping = THREE.EquirectangularReflectionMapping;
                 this.scene.backgroundIntensity = 1.0;
-                this.scene.backgroundBlurriness = ui.domHdriBlur.value;
+                this.scene.backgroundBlurriness = ui.domRenderHdriBlur.value;
             } else {
                 this.scene.background = null;
             }
@@ -301,8 +301,8 @@ class Sandbox {
     updateLight() {
         this.light.position.set(light.directional.position.x, light.directional.position.y, light.directional.position.z).multiplyScalar(3);
         this.light.target.position.set(0, 0, 0);
-        this.light.color = new THREE.Color(ui.domColorPickerLightColor.value);
-        this.light.intensity = ui.domLightIntensity.value;
+        this.light.color = new THREE.Color(ui.domRenderLightColor.value);
+        this.light.intensity = ui.domRenderLightIntensity.value;
         this.lightHelper.update();
         this.pathTracer.updateLights();
     }
@@ -412,7 +412,7 @@ class Sandbox {
             this.flagUpdateScene = 1;
 
             ui.domInfoRender.style.display = 'unset';
-            ui.domSandboxRender.children[0].firstChild.innerHTML = 'stop';
+            ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.setClearColor(0x000000, 0);
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -424,7 +424,7 @@ class Sandbox {
             this.isProgressing = false;
 
             ui.domInfoRender.style.display = 'none';
-            ui.domSandboxRender.children[0].firstChild.innerHTML = 'play_arrow';
+            ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'play_arrow';
             ui.domRenderPause.innerHTML = 'Pause';
             ui.domRenderPause.classList.remove('btn_select_pt');
             ui.showProgress(0);
@@ -470,10 +470,10 @@ class Sandbox {
 
     toggleBackground() {
         if (!this.scene.background) {
-            ui.domHdriBackground.checked = true;
+            ui.domRenderHdriBackground.checked = true;
             this.updateBackground(true);
         } else {
-            ui.domHdriBackground.checked = false;
+            ui.domRenderHdriBackground.checked = false;
             this.updateBackground(false);
         }
     }

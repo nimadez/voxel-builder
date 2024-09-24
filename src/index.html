@@ -130,7 +130,7 @@
         #hover .material-icons { font-size: 20px; }
         #palette { z-index: 400; display: none; background: #31394b30; position: absolute; right: 2px; top: 8px; bottom: 285px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
         #meshlist { z-index: 400; display: none; min-width: 62px; background: #31394b30; position: absolute; right: 2px; top: 8px; bottom: 5px; overflow-y: scroll; overflow-x: hidden; }
-        #meshlist .item_name { background: #3e4558; width: 62px; font-size: 10px; padding: 5px 2px 5px 2px; margin-bottom: 1px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
+        #meshlist .item_name { background: #3e4558; width: 62px; font-size: 11px; padding: 6px 2px 6px 2px; margin-bottom: 2px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: fixed; }
@@ -148,11 +148,11 @@
         #menu-inscreen-bottom { z-index: 9; display: none; background: #30394740; padding: 2px; height: fit-content; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
         #menu-inscreen-bottom div { z-index: 9; width: 26px; color: #00ffffAA; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; text-align: center; cursor: pointer; background: none; border: none; }
         #menu-inscreen-bottom div i { font-size: 19px; color: aqua; opacity: 0.7; margin-top: -4px; }
+        #menu-inscreen-sandbox { z-index: 301; display: none; flex-direction: column; left: 5px; top: 122px; position: fixed; }
+        #menu-inscreen-sandbox button { width: 61px; height: 50px; }
+        #menu-inscreen-sandbox button i { font-size: 30px; }
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
-        #sandbox_render { z-index: 301; display: none; flex-direction: column; left: 5px; top: 122px; position: fixed; }
-        #sandbox_render button { width: 61px; height: 50px; }
-        #sandbox_render button i { font-size: 30px; }
         #info { z-index: 2; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
         #info span { color: var(--white); letter-spacing: 0.05em; }
         #info_tool { z-index: 2; display: none; color: #97a5b890; letter-spacing: 0.05em; font-size: 11px; position: absolute; padding: 2px; width: auto; top: 78px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
@@ -197,7 +197,7 @@
             #meshlist { scrollbar-color: steelblue transparent; }
             #meshlist .item_name { width: 65px; }
             #menu-inscreen-bottom { bottom: 22px; }
-            #sandbox_render { top: 155px; }
+            #menu-inscreen-sandbox { top: 155px; }
         }
     </style>
 </head>
@@ -269,17 +269,18 @@
             </li>
             <li class="spacer"></li>
             <li class="about">
-                4.4.7 Beta 2024
+                4.4.8 Beta 2024
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
                 <br>&#8627; <a href="https://nimadez.github.io/">@nimadez</a>
-                <br><input type="checkbox" id="devmode"> <label for="devmode">Dev mode</label>
             </li>
             <li class="category">EXTRAS</li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus()">Asset Viewer</button></li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus()">Pixel Monk</button></li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="devmode"> <label for="devmode">Dev mode</label></li>
         </ul>
         <ul class="menu_L panel" id="menu-prefs">
             <li class="category">GENERAL</li>
@@ -297,7 +298,6 @@
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
-            <li><button id="clear_cache">Clear Cache</button></li>
             <li class="category">WEBSOCKETS</li>
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>            
@@ -508,17 +508,17 @@
                 <button onclick="document.getElementById('openfile_hdr').click()">Load</button>
             </li>
             <li class="spacer"></li>
-            <li><input type="checkbox" id="input-hdri-background"> <label for="input-hdri-background">Background</label></li>
+            <li><input type="checkbox" id="input-pt-hdri-background"> <label for="input-pt-hdri-background">Background</label></li>
             <li class="spacer"></li>
             <li class="row"><label style="min-width: 52%">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.8" min="0.01" max="100" step="0.01"></li>
-            <li class="row_input"><label>Blur</label> <input type="number" id="input-hdri-blur" value="0.05" min="0" max="1" step="0.01"></li>
-            <li class="row_input"><label>Light</label> <input type="color" id="input-light-color" value="#FFE484"></li>
-            <li class="row_input"><label>Intensity</label> <input type="number" id="input-light-intensity" value="0.8" min="0" step="0.01"></li>
+            <li class="row_input"><label>Blur</label> <input type="number" id="input-pt-hdri-blur" value="0.05" min="0" max="1" step="0.01"></li>
+            <li class="row_input"><label>Light</label> <input type="color" id="input-pt-light-color" value="#FFE484"></li>
+            <li class="row_input"><label>Intensity</label> <input type="number" id="input-pt-light-intensity" value="0.8" min="0" step="0.01"></li>
             <li class="category">MATERIAL</li>
             <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" max="1" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0.1" min="0" max="1" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-transmission">Transmiss.</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
-            <li class="row_input" title="Black voxels are emissive"><label>Emissive</label> <input type="color" id="input-pt-emissive" value="#C5AF5E"></li>
+            <li class="row_input" title="Black voxels are emissive"><label>Emissive</label> <input type="color" id="input-pt-emissive" value="#5EC3C5"></li>
             <li class="spacer"></li>
             <li class="row_input">
                 <label>Texture</label> <select id="input-pt-texture" style="width: 155%;">
@@ -609,7 +609,7 @@
         <div id="btn-inscreen-ortho" title="Orthographic View">P</div>
         <div id="btn-inscreen-symmetry" title="Symmetry">S</div>
     </div>
-    <div id="sandbox_render">
+    <div id="menu-inscreen-sandbox">
         <button><i class="material-icons">play_arrow</i></button>
     </div>
     <!-- dynamic -->

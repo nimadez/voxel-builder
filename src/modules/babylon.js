@@ -11,32 +11,26 @@ class Engine {
         this.canvas = document.getElementById('canvas');
 
         this.engine = undefined;
-        this.isRendering = true;
-
-        this.init();
+        this.isRendering = false;
     }
 
     init() {
-        this.engine = new BABYLON.Engine(this.canvas, true, {});
-        this.engine.disablePerformanceMonitorInBackground = true;
-        this.engine.preserveDrawingBuffer = false;
-        this.engine.premultipliedAlpha = false;
-        this.engine.enableOfflineSupport = false;
-        this.engine.doNotHandleContextLost = true;
+        return new Promise(resolve => {
+            this.engine = new BABYLON.Engine(this.canvas, true, {});
+            this.engine.disablePerformanceMonitorInBackground = true;
+            this.engine.preserveDrawingBuffer = false;
+            this.engine.premultipliedAlpha = false;
+            this.engine.enableOfflineSupport = false;
+            this.engine.doNotHandleContextLost = true;
+
+            this.isRendering = true;
+
+            resolve(this.engine);
+        });
     }
 
     getFps() {
         return ~~this.engine.getFps();
-    }
-
-    clearCache(scene, elem) {
-        this.engine.clearInternalTexturesCache();
-        scene.cleanCachedTextureBuffer();
-        BABYLON.Tools.ClearLogCache();
-        elem.innerHTML = 'Cleared';
-        setTimeout(() => {
-            elem.innerHTML = 'Clear Cache';
-        }, 800);
     }
 }
 

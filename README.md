@@ -142,6 +142,7 @@ How to run Blender importer script?
 
 ## History
 ```
+↑ Initialize the core!
 ↑ Rendering was left to three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
 ↑ x1.5 faster startup (2s to 350ms)

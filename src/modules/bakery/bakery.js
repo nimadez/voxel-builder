@@ -6,7 +6,7 @@
 */
 
 import { Vector3 } from '../babylon.js';
-import { ui, builder, pool } from '../../main.js';
+import { ui, builder, pool } from '../core.js';
 
 
 const PIH = Math.PI / 2;

@@ -14,10 +14,12 @@ import {
 } from '../babylon.js';
 
 import {
-    scene, ui, builder, pool, project,
+    ui, builder, pool, project,
     rgbIntToHex,
     COL_ICE
-} from '../../main.js';
+} from '../core.js';
+
+import { scene } from '../../main.js';
 
 
 class Voxelizer {

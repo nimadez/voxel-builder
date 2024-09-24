@@ -1,11 +1,12 @@
 //
 // Do not rename this file, it's a module entry point.
 //
-console.log('load user module');
 
 /*
-import { builder, pool } from '../main.js';
+import { builder, pool } from "../modules/core";
 
 console.log( builder.voxels );
 console.log( pool.meshes );
 */
+
+console.log('load user module');
