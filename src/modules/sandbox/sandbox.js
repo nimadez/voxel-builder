@@ -21,7 +21,7 @@ import { ui, camera, hdri, light, builder } from '../core.js';
 const TILE = 1;
 const DPR_FAST = 0.6;
 const CAM_FAR = 1000;
-const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArBJREFUeF7t3UGKwkAUhOEXBMHoQlBw5f0P5UpBBHEpCoLM0Imjzhnq8wavbTr1V1Un3fF4/Cm/2BXoDofDz/1+j12ANnjXdZHzz+fzGjbA8/ms1WoVtQht5tvtNsy8Xq9rOp1Gzb/b7coGsAGcAE4AjwCPABqABiACiUAUkIQBKAAGwkA+ACOIEcQJ5ASyglnBsgBZgDAoiQILBsJAGAgDYSAMhIEwEAbCQBgIA2EgDExaAaVQpVCtYLVwtXD3AtwLcDHExRA3g9wMcjXM1bAkCiwYCANhIAyEgTAQBsJAGAgDYSAMhIEwMGgFtIK1grWCtYK1grWCtYK1grWCtYK1grWCtYKDILBcDhUHi4PFweJgcbA4WBwsDhYHi4PFweJgcXAUB8NAGAgDYSAMhIEwEAbCQBgIA2EgDISBQSugFawVrBWsFfzVCl4ul0EH4Djq9wZIG36/339OgMfjUbPZLG0Noue9Xq+1WCzGbwfbAHl74d8GaONvNpu4VbhcLsPMfd/HzX4+nz8nQJt+u91GLUI79b43wGQyiZr/dDrZADbASwM4AfpyAngEeAQkrQANQAMQgX8+AA1AA8BAGMgHSNJAfABGECOIEcQIemcBjCBGUJIEKBqABqABaAAagAZojSBOICeQE8gJ5AQmYQAKQAEoAAWgABSAAsZaOCuYFZykAVnBOoE6gTqBOoGfq2E0AA1AAyStAA1AA9AANAANMLwgQhzMCBIHi4PFwUkiWBwsDhYHi4PFweJgFCAOhoH6AF4TJwwSBiVRoEKIMEgYJAwSBgmDhEGvl0UTgUQgEZi0AkQgEUgEEoFEIBFIBKqEuRvokzEuh/pmkG8GJVFgwUAYCANhIAyEgTAQBsJAGAgDYWA4BkYx4GvYhoLtl9YFaDO32d+fj0/88808bvxf87nn25fi4GYAAAAASUVORK5CYII=";
+const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
 
 
 class Sandbox {
@@ -287,7 +287,7 @@ class Sandbox {
             if (ui.domRenderHdriBackground.checked) {
                 this.scene.background = this.scene.environment;
                 this.scene.background.mapping = THREE.EquirectangularReflectionMapping;
-                this.scene.backgroundIntensity = 1.0;
+                this.scene.backgroundIntensity = 0.8;
                 this.scene.backgroundBlurriness = ui.domRenderHdriBlur.value;
             } else {
                 this.scene.background = null;
@@ -415,8 +415,8 @@ class Sandbox {
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.setClearColor(0x000000, 0);
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1;
+            //renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            //renderer.toneMappingExposure = 0.8;
             renderer.shadowMap.type = THREE.PCFShadowMap;
             renderer.domElement.style.pointerEvents = 'unset';
 

@@ -32,7 +32,7 @@ class Voxelizer {
         pool.normalizeMesh(mesh, scale);
 
         const data = rcv.mesh_voxel(mesh, COL_ICE);
-        builder.setDataFromArray(data);
+        builder.createVoxelsFromArray(data);
         project.clearScene();
         ui.showProgress(0);
     }
@@ -45,7 +45,7 @@ class Voxelizer {
             const data = rcv.mesh_bake(pool.selected);
 
             ui.setMode(0); // important: after data
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             project.clearScene();
             ui.showProgress(0);
         } else {
@@ -64,7 +64,7 @@ class Voxelizer {
             mesh.dispose();
 
             ui.setMode(0);
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             project.clearScene();
             ui.showProgress(0);
         }
@@ -118,7 +118,7 @@ class Voxelizer {
                 }
             }
 
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             builder.normalizeVoxelPositions(false);
             project.clearScene();
             ui.showProgress(0);

@@ -68,6 +68,14 @@ export function Vector3Distance(min, max) {
     return BABYLON.Vector3.Distance(min, max);
 }
 
+export function Vector3Minimize(left, right) {
+    return BABYLON.Vector3.Minimize(left, right);
+}
+
+export function Vector3Maximize(left, right) {
+    return BABYLON.Vector3.Maximize(left, right);
+}
+
 export function Vector3TransformCoordinates(p, m) {
     return BABYLON.Vector3.TransformCoordinates(p, m);
 }
@@ -116,6 +124,10 @@ export function CreateBox(name, size, side, scene) {
 
 export function CreatePlane(name, size, side, scene) {
     return BABYLON.MeshBuilder.CreatePlane(name, { size: size, sideOrientation: side, updatable: false }, scene);
+}
+
+export function CreateDisc(name, radius, tessellation, side, scene) {
+    return BABYLON.MeshBuilder.CreateDisc(name, { radius: radius, tessellation: tessellation, sideOrientation: side }, scene);
 }
 
 export function CreateSphere(name, diameter, segments, side, scene) {

@@ -9,7 +9,7 @@ import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
 
 import {
-    ui, builder, xformer, project,
+    ui, builder, xformer, project, memory,
     hexToRgbFloat, rgbFloatToHex,
     COL_ICE
 } from '../core.js';
@@ -35,7 +35,7 @@ class Generator {
             if (str.length == 3 && parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
                 builder.add(Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), currentColor, true);
                 builder.create();
-                builder.update();
+                memory.record();
             } else {
                 ui.notification("invalid coord (e.g. 20,20,20)");
             }
@@ -82,7 +82,7 @@ class Generator {
         }
 
         if (isNewScene) {
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             project.clearScene();
         } else {
             xformer.beginNewObject(data);
@@ -111,7 +111,7 @@ class Generator {
         }
 
         if (isNewScene) {
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             project.clearScene();
         } else {
             xformer.beginNewObject(data);
@@ -158,7 +158,7 @@ class Generator {
         }
         
         if (isNewScene) {
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             project.clearScene();
         } else {
             xformer.beginNewObject(data);
@@ -204,7 +204,7 @@ class Generator {
         }
 
         if (isNewScene) {
-            builder.setDataFromArray(data);
+            builder.createVoxelsFromArray(data);
             project.clearScene();
         } else {
             xformer.beginNewObject(data, (isHeightGrad) ? true : false);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Websockets Server
-# This script can be used to connect with or train machine learning models
+#
 # $ python3 ws-connect.py
 
 

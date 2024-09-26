@@ -50,9 +50,10 @@ import {
     DOUBLESIDE, FRONTSIDE, BACKSIDE,
     AXIS_X, AXIS_Y, AXIS_Z,
     Vector3, Color3, Color4,
-    Vector3Distance, Vector3TransformCoordinates, isTargetIn,
+    Vector3Distance, Vector3Minimize, Vector3Maximize,
+    Vector3TransformCoordinates, isTargetIn,
     MatrixIdentity, MatrixTranslation, MatrixScaling,
-    CreateBox, CreatePlane, CreateSphere, CreateLine,
+    CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
     MergeMeshes, Animator,
     LoadAssetContainerAsyncFromData,
     ExportGLB, ExportGLTF, ExportOBJ, ExportSTL
@@ -66,10 +67,10 @@ import * as modules from './modules.js';
 // Globals
 
 
-const ENVMAP = "assets/snow_field_2_puresky_1k.hdr";
+const ENVMAP = "assets/overcast_soil_puresky_1k.hdr";
 const SNAPSHOT = "data:image/png;base64,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";
 const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
-const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArBJREFUeF7t3UGKwkAUhOEXBMHoQlBw5f0P5UpBBHEpCoLM0Imjzhnq8wavbTr1V1Un3fF4/Cm/2BXoDofDz/1+j12ANnjXdZHzz+fzGjbA8/ms1WoVtQht5tvtNsy8Xq9rOp1Gzb/b7coGsAGcAE4AjwCPABqABiACiUAUkIQBKAAGwkA+ACOIEcQJ5ASyglnBsgBZgDAoiQILBsJAGAgDYSAMhIEwEAbCQBgIA2EgDExaAaVQpVCtYLVwtXD3AtwLcDHExRA3g9wMcjXM1bAkCiwYCANhIAyEgTAQBsJAGAgDYSAMhIEwMGgFtIK1grWCtYK1grWCtYK1grWCtYK1grWCtYKDILBcDhUHi4PFweJgcbA4WBwsDhYHi4PFweJgcXAUB8NAGAgDYSAMhIEwEAbCQBgIA2EgDISBQSugFawVrBWsFfzVCl4ul0EH4Djq9wZIG36/339OgMfjUbPZLG0Noue9Xq+1WCzGbwfbAHl74d8GaONvNpu4VbhcLsPMfd/HzX4+nz8nQJt+u91GLUI79b43wGQyiZr/dDrZADbASwM4AfpyAngEeAQkrQANQAMQgX8+AA1AA8BAGMgHSNJAfABGECOIEcQIemcBjCBGUJIEKBqABqABaAAagAZojSBOICeQE8gJ5AQmYQAKQAEoAAWgABSAAsZaOCuYFZykAVnBOoE6gTqBOoGfq2E0AA1AAyStAA1AA9AANAANMLwgQhzMCBIHi4PFwUkiWBwsDhYHi4PFweJgFCAOhoH6AF4TJwwSBiVRoEKIMEgYJAwSBgmDhEGvl0UTgUQgEZi0AkQgEUgEEoFEIBFIBKqEuRvokzEuh/pmkG8GJVFgwUAYCANhIAyEgTAQBsJAGAgDYWA4BkYx4GvYhoLtl9YFaDO32d+fj0/88808bvxf87nn25fi4GYAAAAASUVORK5CYII=";
+const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
 
 const COL_ORANGE = '#FFA500';
 const COL_ORANGE_RGB = color3FromHex(COL_ORANGE);
@@ -104,18 +105,19 @@ const VEC6_ONE = [
 
 const MAX_VOXELS = 512000;
 const MAX_VOXELS_DRAW = 64000;
+const MAX_Z = 2500;
+const GRIDPLANE_SIZE = 2000;
 const WORKPLANE_SIZE = 120;
-const WORKPLANE_VISIBILITY = 0.15;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
 const isMobile = isMobileDevice();
 
 const canvas = document.getElementById('canvas');
 
-export let MODE = 0; // model|render|export
-const FPS_TOOL = 1000 / 30;
+export let MODE = -1; // model|render|export
+const FPS_TOOL = 1000 / 60;
 let isRenderAxisView = true;
 let currentColor = document.getElementById('input-color').value.toUpperCase();
-let currentColorBake = document.getElementById('input-material-albedo').value.toUpperCase();
+let currentColorBake = document.getElementById('input-pbr-albedo').value.toUpperCase();
 let duplicateFlag = 0;
 
 const workplaneWhiteList = [
@@ -147,13 +149,13 @@ class MainScene {
             scene.blockMaterialDirtyMechanism = true;
             scene.collisionsEnabled = false;
             scene.useRightHandedSystem = true;
-            scene.environmentIntensity = 0.8;
+            scene.environmentIntensity = 0.5;
     
             const ambient = new BABYLON.HemisphericLight("ambient", Vector3(0, 0, -1), scene);
             ambient.diffuse = Color3(0.4, 0.4, 0.4);
             ambient.groundColor = Color3(0.2, 0.2, 0.2);
             
-            const shadowcatcher = CreatePlane("shadowcatcher", 1000, BACKSIDE, scene);
+            const shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
             shadowcatcher.material = new BABYLON.ShadowOnlyMaterial('shadowcatcher', scene);
             shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
             //shadowcatcher.material.activeLight = light.directional; // later
@@ -165,6 +167,7 @@ class MainScene {
             shadowcatcher.isPickable = false;
             shadowcatcher.doNotSyncBoundingInfo = true;
             shadowcatcher.doNotSerialize = true;
+            shadowcatcher.infiniteDistance = true;
             shadowcatcher.freezeWorldMatrix();
             shadowcatcher.freezeNormals();
     
@@ -184,10 +187,6 @@ class AxisViewScene {
         this.viewCube = undefined;
         this.viewAxes = [];
         this.view = [ 100, 100, -5, -95 ];
-    }
-
-    predicate = (mesh) => {
-        return this.viewAxes.includes(mesh) || mesh == this.viewCube;
     }
 
     init() {
@@ -281,6 +280,10 @@ class AxisViewScene {
         return new BABYLON.Viewport((w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
     }
 
+    predicate = (mesh) => {
+        return this.viewAxes.includes(mesh) || mesh == this.viewCube;
+    }
+
     registerEvent() {
         const pick = this.scene.pick(scene.pointerX, scene.pointerY, this.predicate);
         if (pick && pick.hit) {
@@ -326,7 +329,7 @@ class Camera {
         this.camera0.panningSensibility = 200;  // def 1000
         this.camera0.inertia = 0.9;             // def 0.9
         //this.camera0.minZ = 0.01;
-        //this.camera0.maxZ = 2000;
+        this.camera0.maxZ = MAX_Z;
         this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
     }
 
@@ -342,7 +345,7 @@ class Camera {
                 if (pool.selected) {
                     this.setFramingBehavior(this.camera0, pool.selected);
                 } else {
-                    this.setFramingBehavior(this.camera0, builder.mesh);
+                    this.setFramingBehaviorMeshes(this.camera0);
                 }
             } else {
                 this.setFramingBehavior(this.camera0, builder.mesh);
@@ -370,27 +373,42 @@ class Camera {
         }
     }
 
-    getFramed(mesh, offset = 2.2) {
+    setFramingBehaviorMeshes(cam) {
+        const sum = pool.getBoundingBoxSum();
+        const f = this.getFramedBoundingBox(sum.min, sum.max);
+        if (f) {
+            Animator(cam, 'radius', cam.radius, f.radius);
+            Animator(cam, 'target', cam.target.clone(), f.target);
+        }
+    }
+
+    getFramed(mesh) {
         if (!mesh) return undefined;
 
         mesh.computeWorldMatrix(true);
         const bounds = mesh.getBoundingInfo();
         const { minimumWorld, maximumWorld } = bounds.boundingBox;
 
+        return this.getFramedBoundingBox(minimumWorld, maximumWorld);
+    }
+
+    getFramedBoundingBox(min, max, offset = 2.2) {
         const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
         const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
         
-        const radiusWithoutFraming = Vector3Distance(minimumWorld, maximumWorld) * 0.5;
-        if (radiusWithoutFraming > 20) offset /= 1.8;
+        const radiusWithoutFraming = Vector3Distance(min, max) * 0.5;
+        if (radiusWithoutFraming < 10) offset = 2.5;
+        if (radiusWithoutFraming > 20) offset = 1.5;
+        if (radiusWithoutFraming > 30) offset = 1.2;
 
         const radius = radiusWithoutFraming * offset;
         const distanceForHorizontalFrustum = radius / frustumSlopeX;
         const distanceForVerticalFrustum = radius / frustumSlopeY;
         const distance = offset + Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
 
-        const radiusWorld = maximumWorld.subtract(minimumWorld).scale(0.5);
-        const centerWorld = minimumWorld.add(radiusWorld);
-        const zoomTargetY = minimumWorld.y + (maximumWorld.y - minimumWorld.y) * 0.5;
+        const radiusWorld = max.subtract(min).scale(0.5);
+        const centerWorld = min.add(radiusWorld);
+        const zoomTargetY = min.y + (max.y - min.y) * 0.5;
         const zoomTarget = Vector3(centerWorld.x, zoomTargetY, centerWorld.z);
 
         return {
@@ -645,8 +663,7 @@ class Material {
         this.mat_cel = undefined;
         this.mat_pbr_vox = undefined;
         this.mat_pbr_msh = undefined;
-        this.mat_floor = undefined;
-        this.mat_workplane = undefined;
+        this.mat_gridplane = undefined;
         this.mat_highlight = undefined;
         this.mat_white = undefined;
         this.tex_pbr = undefined;
@@ -665,8 +682,7 @@ class Material {
         this.createPBRMaterial(true);
         this.createHighlightMaterial();
 
-        this.createWorkplaneMaterial();
-        this.createFloorMaterial();
+        this.createGridPlaneMaterial();
         this.createWhiteMaterial();
     }
 
@@ -705,6 +721,7 @@ class Material {
         mat.transparencyMode = 1;
         mat.useAlphaFromAlbedoTexture = true;
         mat.backFaceCulling = backFaceCulling;
+        mat.wireframe = ui.domPbrWireframe.checked;
         mat.specularIntensity = 1;
         mat.directIntensity = 1;
         mat.environmentIntensity = 1;
@@ -724,28 +741,16 @@ class Material {
         this.mat_highlight = mat;
     }
 
-    createWorkplaneMaterial() {
-        const mat = new BABYLON.GridMaterial("workplane", scene);
+    createGridPlaneMaterial() {
+        const mat = new BABYLON.GridMaterial("gridplane", scene);
         mat.gridRatio = 1;
         mat.majorUnitFrequency = 20;
-        mat.minorUnitVisibility = 0.5;
-        mat.mainColor = Color3(0, 1, 1);
-        mat.lineColor = Color3(0, 1, 1);
-        mat.opacity = 0.8;
+        mat.minorUnitVisibility = 0.4;
+        mat.mainColor = Color3(0.1, 0.1, 0.2);
+        mat.lineColor = Color3(1, 1, 1);
         mat.backFaceCulling = false;
         mat.freeze();
-        this.mat_workplane = mat;
-    }
-
-    createFloorMaterial() {
-        const mat = new BABYLON.GridMaterial("floor", scene);
-        mat.gridRatio = 0; // overrided by setFloor()
-        mat.majorUnitFrequency = 20;
-        mat.minorUnitVisibility = 0.25;
-        mat.mainColor = Color3(0.1, 0.1, 0.1);
-        mat.lineColor = Color3(1, 1, 1);
-        mat.backFaceCulling = true;
-        this.mat_floor = mat;
+        this.mat_gridplane = mat;
     }
 
     createWhiteMaterial() {
@@ -864,10 +869,10 @@ class Material {
             dif += 0.8 * max(0.0, dot(normal, -lightDir));
             
             if (dot(normal, lightDir) < 0.0)
-                amb *= 1.2;
+                amb *= 1.1;
 
             vec3 brdf = vec3(0);
-            brdf += 0.8 * amb * vec3(1);
+            brdf += 0.8 * amb * vec3(0.9);
             brdf += 1.0 * dif * uLightCol;
 
             vec3 col = vColor.rgb;
@@ -964,13 +969,13 @@ class Builder {
         this.mesh = this.voxel.clone();
     }
 
-    create(updateFloor = true) {
+    create() {
         if (this.voxels.length == 0)
             modules.generator.newBox(1, COL_ICE);
 
         this.isWorking = true;
         
-        this.createThinInstances(() => {            
+        this.createThinInstances().then(() => {            
             setTimeout(() => {
                 this.isWorking = false;
 
@@ -979,8 +984,6 @@ class Builder {
             });
             
             setTimeout(() => {
-                if (updateFloor)
-                    helper.setFloor();
                 palette.create();
                 helper.setSymmPivot();
                 if (preferences.getWebsocket())
@@ -989,66 +992,68 @@ class Builder {
         });
     }
 
-    createThinInstances(onCreate) {
-        this.bufferMatrix = new Float32Array(16 * this.voxels.length);
-        this.bufferColors = new Float32Array(4 * this.voxels.length);
-        this.rttColors = new Float32Array(4 * this.voxels.length);
-        this.rttColorsMap = new Array(this.voxels.length);
-        this.positionsMap = new Array(this.voxels.length);
+    createThinInstances() {
+        return new Promise((resolve) => {
+            this.bufferMatrix = new Float32Array(16 * this.voxels.length);
+            this.bufferColors = new Float32Array(4 * this.voxels.length);
+            this.rttColors = new Float32Array(4 * this.voxels.length);
+            this.rttColorsMap = new Array(this.voxels.length);
+            this.positionsMap = new Array(this.voxels.length);
 
-        for (let i = 0; i < this.voxels.length; i++) {
-            this.voxels[i].idx = i;
+            for (let i = 0; i < this.voxels.length; i++) {
+                this.voxels[i].idx = i;
 
-            const voxel = this.voxels[i];
+                const voxel = this.voxels[i];
 
-            if (this.getIndexAtPosition(voxel.position) > -1) {
-                this.voxels[i].position = RECYCLEBIN;
-                this.voxels[i].visible = false;
-                duplicateFlag = 1;
+                if (this.getIndexAtPosition(voxel.position) > -1) {
+                    this.voxels[i].position = RECYCLEBIN;
+                    this.voxels[i].visible = false;
+                    duplicateFlag = 1;
+                }
+
+                this.tMatrix.m[12] = voxel.position.x;
+                this.tMatrix.m[13] = voxel.position.y;
+                this.tMatrix.m[14] = voxel.position.z;
+                this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxel.visible) ? 1 : 0;
+                this.tMatrix.copyToArray(this.bufferMatrix, i * 16);
+
+                this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
+                this.bufferColors[i * 4] = this.rgbBuffer.r;
+                this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+                this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
+                this.bufferColors[i * 4 + 3] = 1;
+
+                this.rgbIndex = renderTarget.numToColor(i);
+                this.rttColors[i * 4] = this.rgbIndex[0] / 255;
+                this.rttColors[i * 4 + 1] = this.rgbIndex[1] / 255;
+                this.rttColors[i * 4 + 2] = this.rgbIndex[2] / 255;
+                this.rttColors[i * 4 + 3] = 1;
+
+                this.rttColorsMap[`${this.rgbIndex[0]}_${this.rgbIndex[1]}_${this.rgbIndex[2]}`] = i;
+                this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
             }
-
-            this.tMatrix.m[12] = voxel.position.x;
-            this.tMatrix.m[13] = voxel.position.y;
-            this.tMatrix.m[14] = voxel.position.z;
-            this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxel.visible) ? 1 : 0;
-            this.tMatrix.copyToArray(this.bufferMatrix, i * 16);
-
-            this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
-            this.bufferColors[i * 4] = this.rgbBuffer.r;
-            this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
-            this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
-            this.bufferColors[i * 4 + 3] = 1;
-
-            this.rgbIndex = renderTarget.numToColor(i);
-            this.rttColors[i * 4] = this.rgbIndex[0] / 255;
-            this.rttColors[i * 4 + 1] = this.rgbIndex[1] / 255;
-            this.rttColors[i * 4 + 2] = this.rgbIndex[2] / 255;
-            this.rttColors[i * 4 + 3] = 1;
-
-            this.rttColorsMap[`${this.rgbIndex[0]}_${this.rgbIndex[1]}_${this.rgbIndex[2]}`] = i;
-            this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
-        }
-    
-        this.mesh.dispose();
-        this.mesh = this.voxel.clone();
-        this.mesh.makeGeometryUnique();
-        this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
-        this.mesh.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
-        this.mesh.isVisible = true;
-        this.mesh.thinInstanceEnablePicking = false;
-        this.mesh.doNotSyncBoundingInfo = false;
-        this.mesh.material = material.getMaterial();
-        this.mesh.name = "thin";
-        //this.mesh.thinInstanceRefreshBoundingInfo(); super expensive task
-
-        renderTarget.pickTexture.renderList = [ this.mesh ];
-        renderTarget.pickTexture.setMaterialForRendering(this.mesh, material.mat_white);
-        onCreate();
         
-        light.addMesh(this.mesh);
-        light.updateShadowMap();
+            this.mesh.dispose();
+            this.mesh = this.voxel.clone();
+            this.mesh.makeGeometryUnique();
+            this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
+            this.mesh.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
+            this.mesh.isVisible = true;
+            this.mesh.thinInstanceEnablePicking = false;
+            this.mesh.doNotSyncBoundingInfo = false;
+            this.mesh.material = material.getMaterial();
+            this.mesh.name = "thin";
+            //this.mesh.thinInstanceRefreshBoundingInfo(); super expensive task
 
-        this.bufferMatrix = [];
+            renderTarget.pickTexture.renderList = [ this.mesh ];
+            renderTarget.pickTexture.setMaterialForRendering(this.mesh, material.mat_white);
+            resolve();
+            
+            light.addMesh(this.mesh);
+            light.updateShadowMap();
+
+            this.bufferMatrix = [];
+        });
     }
 
     // for pathtracer and raw export
@@ -1134,6 +1139,23 @@ class Builder {
             Math.abs(bounds.minimum.y - bounds.maximum.y),
             Math.abs(bounds.minimum.z - bounds.maximum.z)
         );
+    }
+
+    getDimensions() {
+        const positions = this.voxels.map(voxel => voxel.position);
+    
+        const minX = Math.min(...positions.map(pos => pos.x));
+        const maxX = Math.max(...positions.map(pos => pos.x));
+        const minY = Math.min(...positions.map(pos => pos.y));
+        const maxY = Math.max(...positions.map(pos => pos.y));
+        const minZ = Math.min(...positions.map(pos => pos.z));
+        const maxZ = Math.max(...positions.map(pos => pos.z));
+    
+        const width = maxX - minX + 1;
+        const height = maxY - minY + 1;
+        const length = maxZ - minZ + 1;
+
+        return Vector3(width, height, length);
     }
 
     getIndexAtPointer() {
@@ -1227,14 +1249,14 @@ class Builder {
         for (let i = 0; i < voxels.length; i++)
             this.voxels[voxels[i].idx].visible = isVisible;
         this.create();
-        this.update();
+        memory.record();
     }
 
     setAllVisibilityAndUpdate(isVisible) {
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].visible = isVisible;
         this.create();
-        this.update();
+        memory.record();
     }
 
     invertVisibilityAndUpdate() {
@@ -1244,7 +1266,7 @@ class Builder {
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].visible = !this.voxels[i].visible;
         this.create();
-        this.update();
+        memory.record();
     }
 
     deleteColorAndUpdate(hex) {
@@ -1253,7 +1275,7 @@ class Builder {
         
         this.removeArray(group);
         this.create();
-        this.update();
+        memory.record();
     }
 
     async getReduceVoxels(voxels) {
@@ -1280,7 +1302,7 @@ class Builder {
         
         this.removeArray(hiddens);
         this.create();
-        this.update();
+        memory.record();
     }
 
     async setAllColorsAndUpdate(hex = currentColor) {
@@ -1290,7 +1312,7 @@ class Builder {
             this.voxels[i].color = hex;
         }
         this.create();
-        this.update();
+        memory.record();
     }
 
     async reduceVoxels() {
@@ -1301,7 +1323,7 @@ class Builder {
         if (voxels) {
             this.voxels = voxels;
             this.create();
-            this.update();
+            memory.record();
             ui.notification(`${ last - this.voxels.length } voxels removed`);
         } else {
             ui.errorMessage('unable to reduce voxels');
@@ -1329,15 +1351,15 @@ class Builder {
         this.create();
 
         if (isRecordMem) {
-            this.update();
+            memory.record();
             camera.frame();
             ui.notification('normalized');
         }
     }
 
-    // voxel-data io
+    // Voxel Data IO
 
-    getDataString() {
+    getStringData() {
         let data = '';
         for (let i = 0; i < this.voxels.length; i++) {
             data += this.voxels[i].position.x + ',' +
@@ -1349,35 +1371,7 @@ class Builder {
         return data;
     }
 
-    getData() {
-        return JSON.stringify(this.getDataString());
-    }
-
-    setData(data) {
-        const voxels = JSON.parse(data);
-        
-        try {
-            this.setDataFromString(voxels);
-        } catch (err) {
-            // backward compability (fix 'exceeded the quota')
-            const newData = [];
-            for (let i = 0; i < voxels.length; i++) {
-                newData.push({ 
-                    position: Vector3(
-                        voxels[i].position._x,
-                        voxels[i].position._y,
-                        voxels[i].position._z
-                    ),
-                    color: voxels[i].color,
-                    visible: voxels[i].visible
-                });
-            }
-            this.voxels = newData;
-            this.create();
-        }
-    }
-
-    setDataFromString(data) {
+    setStringData(data) {
         const voxels = data.split(';').slice(0, -1);
         const newData = [];
         for (let i = 0; i < voxels.length; i++) {
@@ -1396,7 +1390,30 @@ class Builder {
         this.create();
     }
 
-    setDataFromArray(arr) {
+    setStringData_backwardCompatible(data) {
+        try {
+            this.setStringData(data);
+
+        } catch (err) { // backward compability
+            const voxels = JSON.parse(data);
+            const newData = [];
+            for (let i = 0; i < voxels.length; i++) {
+                newData.push({ 
+                    position: Vector3(
+                        voxels[i].position._x,
+                        voxels[i].position._y,
+                        voxels[i].position._z
+                    ),
+                    color: voxels[i].color,
+                    visible: voxels[i].visible
+                });
+            }
+            this.voxels = newData;
+            this.create();
+        }
+    }
+
+    createVoxelsFromArray(arr) {
         this.voxels = arr;
         this.create();
     }
@@ -1438,10 +1455,6 @@ class Builder {
             }
         }
         return arr;
-    }
-
-    update() {
-        memory.record(this.getData());
     }
 }
 
@@ -1486,7 +1499,7 @@ class XFormer {
         }
 
         if (!ui.domTransformClone.checked)
-            builder.create(false);
+            builder.create();
 
         this.isActive = true;
     }
@@ -1558,7 +1571,7 @@ class XFormer {
             this.finishNewObject();
             
             builder.create();
-            builder.update();
+            memory.record();
 
             this.dispose();
         }
@@ -1582,7 +1595,7 @@ class XFormer {
             if (!ui.domTransformClone.checked) {
                 builder.removeArray(this.origins);
                 builder.create();
-                builder.update();
+                memory.record();
                 this.dispose();
             } else {
                 ui.notification('uncheck clone');
@@ -1865,7 +1878,7 @@ class MeshPool {
             const colors = [];
             const rgb = color3FromHex(hex).toLinearSpace();
             const positions = this.selected.getVerticesData(PositionKind);
-            for (let i = 0; i < positions.length/3; i++) {
+            for (let i = 0; i < positions.length / 3; i++) {
                 colors.push(rgb.r, rgb.g, rgb.b, 1);
             }
             this.selected.setVerticesData(ColorKind, colors);
@@ -1876,6 +1889,16 @@ class MeshPool {
 
     createMeshList() {
         ui.domMeshList.innerHTML = "";
+
+        if (this.meshes.length == 0) {
+            const item = document.createElement('div');
+            const name = document.createElement('div');
+            name.classList.add('item_name');
+            name.innerHTML = "EMPTY";
+            item.appendChild(name);
+            ui.domMeshList.appendChild(item);
+        }
+
         for (let i = 0; i < this.meshes.length; i++) {
             const item = document.createElement('div');
             const name = document.createElement('div');
@@ -1951,7 +1974,7 @@ class MeshPool {
         }, (err) => {
             ui.errorMessage('unable to load baked meshes');
             console.error(err);
-        })
+        });
     }
 
     constructPlane(positions, normals, uvs, indices, hex) {
@@ -2025,6 +2048,24 @@ class MeshPool {
         mesh.setPivotMatrix(MatrixIdentity());
         mesh.position = center;
         mesh.refreshBoundingInfo();
+    }
+
+    getBoundingBoxSum() {
+        const boxSum = {
+            min: Vector3(Infinity, Infinity, Infinity),
+            max: Vector3(-Infinity, -Infinity, -Infinity)
+        };
+
+        this.meshes.forEach((mesh) => {
+            const boundingBox = mesh.getBoundingInfo().boundingBox;
+            const min = boundingBox.minimumWorld;
+            const max = boundingBox.maximumWorld;
+        
+            boxSum.min = Vector3Minimize(boxSum.min, min);
+            boxSum.max = Vector3Maximize(boxSum.max, max);
+        });
+
+        return boxSum;
     }
 }
 
@@ -2190,7 +2231,7 @@ class Ghosts {
 
         this.cloud.addPoints(voxels.length, setParticles);
         this.cloud.buildMeshAsync().then((mesh) => {
-            mesh.visibility = 0.28;
+            mesh.visibility = 0.35;
             mesh.isPickable = false;
             mesh.doNotSerialize = true;
             mesh.doNotSyncBoundingInfo = true;
@@ -2217,7 +2258,6 @@ class Ghosts {
 
 class Helper {
     constructor() {
-        this.floorPlane = undefined;
         this.gridPlane = undefined;
         this.workplane = undefined;
         this.axisPlane = undefined;
@@ -2226,13 +2266,12 @@ class Helper {
         this.boxShape = undefined;
         this.boxShapeSymm = undefined;
         this.symmPivot = undefined;
+        this.isGridPlaneActive = false;
         this.isWorkplaneActive = false;
-        this.isFloorPlaneActive = false;
     }
 
     init() {
-        this.floorPlane = CreatePlane("floorplane", 4, DOUBLESIDE, scene);
-        this.gridPlane = CreatePlane("gridplane", 2500, BACKSIDE, scene);
+        this.gridPlane = CreateDisc("gridplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
         this.workplane = CreatePlane("workplane", WORKPLANE_SIZE, BACKSIDE, scene);
         this.axisPlane = CreatePlane("axisplane", 4, DOUBLESIDE, uix.utilLayer.utilityLayerScene);
         this.overlayPlane = CreatePlane("overlay_plane", 1, DOUBLESIDE, scene);
@@ -2240,17 +2279,47 @@ class Helper {
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
 
-        this.floorPlane.material = material.mat_floor;
-        this.floorPlane.visibility = 0.07;
-        this.floorPlane.isVisible = true; // overrided
-        this.floorPlane.isPickable = false;
-        this.floorPlane.position.x = -0.5;
-        this.floorPlane.position.y = -0.5;
-        this.floorPlane.position.z = -0.5;
-        this.floorPlane.rotation.x = PIH;
-        this.floorPlane.doNotSerialize = true;
-        this.floorPlane.freezeNormals();
-        
+        this.gridPlane.position.x = -0.5;
+        this.gridPlane.position.y = -0.5;
+        this.gridPlane.position.z = -0.5;
+        this.gridPlane.rotation.x = -PIH;
+        this.gridPlane.material = material.mat_gridplane;
+        this.gridPlane.isVisible = false;
+        this.gridPlane.isPickable = false; // overrided
+        this.gridPlane.visibility = 0.06;
+        this.gridPlane.doNotSerialize = true;
+        this.gridPlane.freezeNormals();
+
+        const wpHalf = WORKPLANE_SIZE / 2;
+        const wpVol = [
+            this.workplane.clone(),
+            this.workplane.clone(),
+            this.workplane.clone()
+        ];
+        wpVol[0].position.set(wpHalf, 0, wpHalf);
+        wpVol[1].position.set(0, wpHalf, wpHalf);
+        wpVol[2].position.set(wpHalf, wpHalf, 0);
+        wpVol[0].rotation.x = -PIH;
+        wpVol[1].rotation.y = PIH;
+        wpVol[2].rotation.z = PIH;
+        this.workplane.dispose();
+        this.workplane = MergeMeshes(wpVol, true, true);
+        this.workplane.name = 'workplane';
+        pool.resetPivot(this.workplane);
+        wpVol[0].dispose();
+        wpVol[1].dispose();
+        wpVol[2].dispose();
+
+        this.workplane.material = material.mat_gridplane;
+        this.workplane.isVisible = false;
+        this.workplane.isPickable = true;
+        this.workplane.position.x = wpHalf - 0.5;
+        this.workplane.position.y = wpHalf - 0.5;
+        this.workplane.position.z = wpHalf - 0.5;
+        this.workplane.visibility = 0.08;
+        this.workplane.doNotSerialize = true;
+        this.workplane.freezeNormals();
+
         this.axisPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
         this.axisPlane.isPickable = false;
         this.axisPlane.visibility = 0.01;
@@ -2275,45 +2344,6 @@ class Helper {
         this.highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB);
         this.overlayCube.freezeNormals();
 
-        this.gridPlane.position.copyFrom(this.floorPlane.position);
-        this.gridPlane.rotation.x = -PIH;
-        this.gridPlane.material = material.mat_workplane;
-        this.gridPlane.isVisible = false;
-        this.gridPlane.isPickable = true; // overrided
-        this.gridPlane.visibility = WORKPLANE_VISIBILITY;
-        this.gridPlane.doNotSerialize = true;
-        this.gridPlane.freezeNormals();
-
-        const wpHalf = WORKPLANE_SIZE / 2;
-        const wpVol = [
-            this.workplane.clone(),
-            this.workplane.clone(),
-            this.workplane.clone()
-        ];
-        wpVol[0].position.set(wpHalf, 0, wpHalf);
-        wpVol[1].position.set(0, wpHalf, wpHalf);
-        wpVol[2].position.set(wpHalf, wpHalf, 0);
-        wpVol[0].rotation.x = -PIH;
-        wpVol[1].rotation.y = PIH;
-        wpVol[2].rotation.z = PIH;
-        this.workplane.dispose();
-        this.workplane = MergeMeshes(wpVol, true, true);
-        this.workplane.name = 'workplane';
-        pool.resetPivot(this.workplane);
-        wpVol[0].dispose();
-        wpVol[1].dispose();
-        wpVol[2].dispose();
-
-        this.workplane.material = material.mat_workplane;
-        this.workplane.isVisible = false;
-        this.workplane.isPickable = true;
-        this.workplane.position.x = wpHalf - 0.5;
-        this.workplane.position.y = wpHalf - 0.5;
-        this.workplane.position.z = wpHalf - 0.5;
-        this.workplane.visibility = WORKPLANE_VISIBILITY;
-        this.workplane.doNotSerialize = true;
-        this.workplane.freezeNormals();
-
         this.boxShape.isVisible = false;
         this.boxShape.isPickable = false;
         this.boxShape.visibility = 0.1;
@@ -2329,7 +2359,7 @@ class Helper {
         this.boxShapeSymm.visibility = 0.1;
         this.boxShapeSymm.doNotSerialize = true;
         this.highlightEdgesMesh(this.boxShapeSymm, COL_AQUA_RGBA);
-        this.boxShapeSymm.edgesColor.a = 0.4;
+        this.boxShapeSymm.edgesColor.a = 0.2;
         this.boxShapeSymm.freezeNormals();
 
         const r = Math.max(10, ~~builder.getRadius());
@@ -2349,18 +2379,8 @@ class Helper {
         this.symmPivot.isPickable = false;
     }
 
-    setFloor() {
-        const f = camera.getFramed(builder.mesh);
-        if (f) {
-            this.floorPlane.scaling.x = f.radius;
-            this.floorPlane.scaling.y = f.radius;
-            this.floorPlane.scaling.z = 1;
-            this.floorPlane.material.gridRatio = 1 / f.radius;
-        }
-    }
-
-    enableFloorPlane(isEnabled) {
-        this.isFloorPlaneActive = isEnabled;
+    enableGridPlane(isEnabled) {
+        this.isGridPlaneActive = isEnabled;
         this.displayGridPlane(isEnabled);
         if (isEnabled)
             this.enableWorkplane(false);
@@ -2370,7 +2390,7 @@ class Helper {
         this.isWorkplaneActive = isEnabled;
         this.displayWorkplane(isEnabled);
         if (isEnabled)
-            this.enableFloorPlane(false);
+            this.enableGridPlane(false);
     }
 
     displayWorkplane(isEnabled) {
@@ -2394,9 +2414,9 @@ class Helper {
 
     toggleWorkplane(id) {
         if (id == 0) {
-            this.isFloorPlaneActive = !this.isFloorPlaneActive;
+            this.isGridPlaneActive = !this.isGridPlaneActive;
             this.displayGridPlane();
-            this.enableFloorPlane(this.isFloorPlaneActive);
+            this.enableGridPlane(this.isGridPlaneActive);
         } else {
             this.isWorkplaneActive = !this.isWorkplaneActive;
             this.displayWorkplane();
@@ -2622,7 +2642,7 @@ class Symmetry {
         this.deleteHalf(side);
         this.invertVoxelsClone();
         builder.create();
-        builder.update();
+        memory.record();
     }
 
     mirrorVoxels() {
@@ -2633,7 +2653,7 @@ class Symmetry {
         builder.setVoxelsVisibility(true);
         this.invertVoxels();
         builder.create();
-        builder.update();
+        memory.record();
     }
 
     deleteHalfVoxels(side) {
@@ -2644,7 +2664,7 @@ class Symmetry {
         builder.setVoxelsVisibility(true);
         this.deleteHalf(side);
         builder.create();
-        builder.update();
+        memory.record();
     }
 
     invertVoxels() {
@@ -3052,7 +3072,7 @@ class Tool {
                 this.startBox = this.pos;
                 break;
             case 'measure_color':
-                ui.notification(`${ builder.getVoxelsByColor(builder.voxels[index].color).length } Voxels`, 5000);
+                ui.notification(`${ builder.getVoxelsByColor(builder.voxels[index].color).length } Voxels`, 8000);
                 break;
             case 'bake_color':
                 pool.bakeColor(builder.voxels[index].color);
@@ -3146,7 +3166,7 @@ class Tool {
             case 'add':
                 if (this.selected.length > 0) {
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'remove':
@@ -3154,23 +3174,23 @@ class Tool {
                     for (let i = 0; i < this.selected.length; i++)
                         builder.removeByPosition(this.selected[i]);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'paint':
                 builder.create();
-                builder.update();
+                memory.record();
                 break;
             case 'bucket':
                 builder.create();
-                builder.update();
+                memory.record();
                 break;
             case 'box_add':
                 if (this.selected.length > 0) {
                     this.tmp = builder.createArrayFromNewPositions(this.selected, currentColor, this.isSymmetry);
                     builder.addArray(this.tmp);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'box_remove':
@@ -3178,7 +3198,7 @@ class Tool {
                     this.tmp = builder.createArrayFromPositions(this.selected, this.isSymmetry);
                     builder.removeArray(this.tmp);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'box_paint':
@@ -3186,28 +3206,28 @@ class Tool {
                     this.tmp = builder.createArrayFromPositions(this.selected, this.isSymmetry);
                     builder.paintByArray(this.tmp, currentColor);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'rect_add':
                 if (this.selected.length > 0) {
                     builder.addArray(this.selected);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'rect_remove':
                 if (this.selected.length > 0) {
                     builder.removeArray(this.selected);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'rect_paint':
                 if (this.selected.length > 0) {
                     builder.paintByArray(this.selected, currentColor);
                     builder.create();
-                    builder.update();
+                    memory.record();
                 }
                 break;
             case 'transform_box':
@@ -3229,7 +3249,7 @@ class Tool {
             case 'measure_volume':
                 if (this.selected.length > 0)
                     (this.selected.length == 1) ? 
-                        ui.notification(`X: ${ this.selected[0]._x }, Y: ${ this.selected[0]._y }, Z: ${ this.selected[0]._z }`, 10000):
+                        ui.notification(`${ this.selected[0]._x }, ${ this.selected[0]._y }, ${ this.selected[0]._z }`, 8000):
                         ui.notification(`${ this.selected.length } Voxels`, 8000);
                 break;
             case 'frame_voxels':
@@ -3293,7 +3313,7 @@ class Tool {
     }
 
     predicateWorkplane(mesh) {
-        if (helper.isFloorPlaneActive && helper.gridPlane.isVisible)
+        if (helper.isGridPlaneActive && helper.gridPlane.isVisible)
             return mesh == helper.gridPlane;
         if (helper.isWorkplaneActive && helper.workplane.isVisible)
             return mesh == helper.workplane;
@@ -3340,7 +3360,7 @@ class Tool {
                 helper.clearOverlays();
 
                 pick = scene.pick(scene.pointerX, scene.pointerY, this.predicateWorkplane);
-                if (pick && pick.hit) {
+                if (pick && pick.hit && !builder.isWorking && !xformer.isActive) {
                     pick.INDEX = pick.faceId;
                     pick.NORMAL = pick.getNormal(true);
                     pick.WORKPLANE = true;
@@ -3461,6 +3481,8 @@ class ToolMesh {
 
         pool.deselectMesh();
         uix.unbindTransformGizmo();
+
+        ui.domInfoTool.innerHTML = `[ ${ this.name.toUpperCase() } ]`;
     }
 }
 
@@ -3474,7 +3496,7 @@ class Project {
 
     serializeScene(voxels, meshes) {
         const json = {
-            version: "Voxel Builder 4.4.8",
+            version: "Voxel Builder 4.4.9",
             project: {
                 name: "name",
                 voxels: builder.voxels.length,
@@ -3494,15 +3516,12 @@ class Project {
     clearSceneAndReset() {
         ui.setMode(0);
         this.clearScene();
-    
-        scene.clearColor = color4FromHex(preferences.getBackgroundColor());
-        scene.autoClear = false;
-        
+
         tool.toolSelector('camera');
-        helper.enableFloorPlane(false);
-        helper.enableWorkplane(false);
+        ghosts.disposePointCloud();
         pool.clearPool();
         uix.hideLightLocator();
+        ui.domProjectName.value = 'untitled';
     }
 
     clearScene(frameCamera = true) {
@@ -3519,7 +3538,6 @@ class Project {
         modules.generator.newBox(1, COL_ICE);
         builder.create();
         this.clearSceneAndReset();
-        ui.domProjectName.value = 'untitled';
     }
 
     newProjectStartup(size = 20) {
@@ -3531,18 +3549,18 @@ class Project {
                 }
             }
         }
-        for (let i = 0; i < builder.voxels.length; i++) {
-            if (builder.voxels[i].position.y == 0)
-                builder.voxels[i].color = '#4988CA';
+        if (size > 5) {
+            for (let i = 0; i < builder.voxels.length; i++) {
+                if (builder.voxels[i].position.y == 0)
+                    builder.voxels[i].color = '#4988CA';
+            }
         }
         builder.create();
-        this.clearScene();
-        ui.setMode(0);
-        ui.domProjectName.value = 'untitled';
+        project.clearSceneAndReset();
     }
 
     save() {
-        const json = this.serializeScene(builder.getDataString(), "");
+        const json = this.serializeScene(builder.getStringData(), "");
 
         if (pool.meshes.length > 0) {
             ExportGLB(scene, ui.domProjectName.value, pool.exportOptions, false, (data) => {
@@ -3567,38 +3585,25 @@ class Project {
         ui.domProjectName.value = data.project.name;
 
         // data.voxels
-        builder.setDataFromString(data.data.voxels);
+        builder.setStringData(data.data.voxels);
         this.clearSceneAndReset();
 
         // data.meshes
         if (data.data.meshes) {
             pool.clearPool(false);
             pool.loadMesh(data.data.meshes);
-        } else if (data.data.bakes) { // backward compatibity
-            pool.clearPool(false);
-            pool.loadMesh(data.data.bakes);
         } else {
             pool.clearPool(false);
         }
     }
 
-    importVoxels(data) {        
-        const voxels = JSON.parse(data).data.voxels.split(';').slice(0, -1);
-        for (let i = 0; i < voxels.length; i++) {
-            const chunk = voxels[i].split(',');
-            builder.add(Vector3(
-                    parseFloat(chunk[0]),
-                    parseFloat(chunk[1]),
-                    parseFloat(chunk[2])
-                ),
-                chunk[3].toUpperCase(),
-                parseBool(chunk[4]));
-        }
-        
+    importVoxels(data) {
+        const voxels = builder.voxels;
         ui.setMode(0);
+        builder.setStringData(JSON.parse(data).data.voxels);  
+        builder.addArray(voxels);
         builder.create();
-        builder.update();
-        this.clearScene(true);
+        memory.record();
     }
 
     importBakes(data) {
@@ -3706,7 +3711,7 @@ class Project {
                     visible: true
                 });
             }
-            builder.setDataFromArray(voxels, true);
+            builder.createVoxelsFromArray(voxels);
             builder.normalizeVoxelPositions(false);
             this.clearSceneAndReset();
             ui.domProjectName.value = 'untitled';
@@ -3874,7 +3879,7 @@ class Memory {
         this.block = -1;
     }
 
-    record(current) {
+    record(current = builder.getStringData()) {
         if (this.stack[this.block] !== current) {   // not detect all changes
             this.stack[++this.block] = current;
             this.stack.splice(this.block + 1);      // delete anything forward
@@ -3884,7 +3889,7 @@ class Memory {
     undo() {
         --this.block;
         if (this.stack[this.block]) {
-            builder.setData(this.stack[this.block]);
+            builder.setStringData(this.stack[this.block]);
         } else {
             ++this.block;
         }
@@ -3893,14 +3898,14 @@ class Memory {
     redo() {
         ++this.block;
         if (this.stack[this.block]) {
-            builder.setData(this.stack[this.block]);
+            builder.setStringData(this.stack[this.block]);
         } else {
             --this.block;
         }
     }
 
     reset() {
-        this.stack[++this.block] = builder.getData();
+        this.stack[++this.block] = builder.getStringData();
         this.stack.splice(this.block + 1);
     }
 
@@ -3932,7 +3937,7 @@ class Snapshot {
 
     setStorageVoxels(name = vbstoreVoxels) {
         try {
-            localStorage.setItem(name, builder.getData());
+            localStorage.setItem(name, builder.getStringData());
         } catch (err) {
             ui.errorMessage('error: quota exceeded')
         }
@@ -3944,7 +3949,7 @@ class Snapshot {
             ui.notification("empty storage");
             return;
         }
-        builder.setData(data);
+        builder.setStringData_backwardCompatible(data);
         project.clearScene(true);
     }
 
@@ -4088,7 +4093,7 @@ class UserInterface {
         this.domInScreenGridPlane = document.getElementById('btn-inscreen-gridplane');
         this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
         this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
-        this.domMenuInScreenRender = document.getElementById('menu-inscreen-sandbox');
+        this.domMenuInScreenRender = document.getElementById('menu-inscreen-render');
         this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
         this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
         this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
@@ -4117,12 +4122,13 @@ class UserInterface {
         this.domBakeryBackface = document.getElementById('input-bakery-backface');
         this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
-        this.domPbrAlbedo = document.getElementById('input-material-albedo');
-        this.domPbrEmissive = document.getElementById('input-material-emissive');
-        this.domPbrRoughness = document.getElementById('input-material-roughness');
-        this.domPbrMetallic = document.getElementById('input-material-metallic');
-        this.domPbrAlpha = document.getElementById('input-material-alpha');
-        this.domPbrVertexColor = document.getElementById('input-vertex-color');
+        this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
+        this.domPbrEmissive = document.getElementById('input-pbr-emissive');
+        this.domPbrRoughness = document.getElementById('input-pbr-roughness');
+        this.domPbrMetallic = document.getElementById('input-pbr-metallic');
+        this.domPbrAlpha = document.getElementById('input-pbr-alpha');
+        this.domPbrVertexColor = document.getElementById('input-pbr-vertexcolor');
+        this.domPbrWireframe = document.getElementById('input-pbr-wireframe');
         this.domLightShadows = document.getElementById('pref_light_shadows');
         this.domMaterialSwitch = document.getElementById('material-switch');
         this.domProjectName = document.getElementById('project_name');
@@ -4154,17 +4160,8 @@ class UserInterface {
         this.domInfoTool = document.getElementById('info_tool');
         this.domInfoRender = document.getElementById('info_render');
         this.domProgressBar = document.getElementById('progressbar');
-        this.domWebSocketStatus = document.getElementById('ws_status');
-        this.domPixelEyedropper = document.getElementById('activate_pixeleyedrop');
         this.domDevMode = document.getElementById('devmode');
         
-        this.eyeDropper = undefined;
-        if (window.EyeDropper) {
-            this.eyeDropper = new EyeDropper();
-            this.domPixelEyedropper.disabled = false;
-        }
-        this.abortController = new AbortController();
-
         this.notificationTimer = undefined;
     }
 
@@ -4176,30 +4173,29 @@ class UserInterface {
     }
 
     setMode(mode) {
-        if (preferences.isInitialized && MODE == mode) return;
+        if (MODE == mode) return;
         MODE = mode;
 
         helper.clearOverlays();
-        ghosts.disposePointCloud();
-        tool.toolSelector('camera');
-        toolMesh.toolSelector('select');
         uix.unbindTransformGizmo();
-        modules.sandbox.deactivate();
 
         if (mode == 0) {
+            modules.sandbox.deactivate();
             builder.setMeshVisibility(true);
             pool.setPoolVisibility(false);
             light.updateShadowMap();
         } else if (mode == 1) {
             modules.sandbox.activate();
         } else if (mode == 2) {
+            modules.sandbox.deactivate();
             builder.setMeshVisibility(false);
             pool.setPoolVisibility(true);
             pool.createMeshList();
             light.updateShadowMap();
-            if (preferences.getPointCloud())
-                ghosts.createPointCloud();
         }
+
+        if (ghosts.cloud)
+            ghosts.cloud.mesh.isVisible = mode == 2;
 
         this.setInterfaceMode(mode);
     }
@@ -4215,7 +4211,7 @@ class UserInterface {
         this.domHover.style.display = 'unset';
         this.domMenuInScreenRight.style.display = 'none';
         this.domMenuInScreenRender.style.display = 'none';
-        this.domInfoTool.style.display = 'none';
+        this.domInfoTool.style.display = 'unset';
 
         for (const i of this.domToolbarL.children) {
             i.style.display = 'unset';
@@ -4225,9 +4221,9 @@ class UserInterface {
         if (mode == 0) {
             this.domPalette.style.display = 'unset';
             this.domMenuInScreenRight.style.display = 'flex';
-            this.domInfoTool.style.display = 'unset';
             this.domToolbarL.children[13].firstChild.disabled = true; // MESHES
             this.domToolbarL.children[14].firstChild.disabled = true; // PBR
+            this.domInfoTool.innerHTML = `[ ${ tool.name.replace('_', ' ').toUpperCase() } ]`;
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
             this.domHover.style.display = 'none';
@@ -4243,6 +4239,7 @@ class UserInterface {
             this.domToolbarL.children[13].style.display = 'none'; // MESHES
             this.domToolbarL.children[14].style.display = 'none'; // PBR
             this.domMenuInScreenRender.style.display = 'flex';
+            this.domInfoTool.style.display = 'none';
         } else if (mode == 2) {
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
@@ -4254,6 +4251,7 @@ class UserInterface {
             this.domToolbarL.children[9].firstChild.disabled = true;  // PAINT
             this.domToolbarL.children[10].firstChild.disabled = true; // VOXELS
             this.domToolbarL.children[11].firstChild.disabled = true; // GROUPS
+            this.domInfoTool.innerHTML = `[ ${ toolMesh.name.toUpperCase() } ]`;
             uix.colorPicker.isVisible = false;
         }
 
@@ -4290,8 +4288,8 @@ class UserInterface {
             this.domToolbarC_mem.children[4].onclick = () => { project.exportBakes() };
             this.domToolbarC_mem.children[0].innerHTML = 'BAKE';
             this.domToolbarC_mem.children[1].innerHTML = 'UNBAKE';
-            this.domToolbarC_mem.children[3].innerHTML = 'IMP';
-            this.domToolbarC_mem.children[4].innerHTML = 'EXP';
+            this.domToolbarC_mem.children[3].innerHTML = 'IMPORT';
+            this.domToolbarC_mem.children[4].innerHTML = 'EXPORT';
         }
     }
 
@@ -4324,23 +4322,6 @@ class UserInterface {
         }, timeout);
     }
 
-    activateEyedropper() {
-        if (this.eyeDropper) {
-            this.eyeDropper.open({ signal: this.abortController.signal }).then(res => {
-                currentColor = res.sRGBHex.toUpperCase();
-                // fix for linux systems (sRGBHex return RGBA)
-                if (currentColor.startsWith('RGBA')) {
-                    const rgb = currentColor.match(/\d+/g);
-                    currentColor = rgbIntToHexGamma(rgb[0], rgb[1], rgb[2], 1);
-                }
-                uix.colorPicker.value = color3FromHex(currentColor);
-            }).catch(err => {
-                this.abortController.abort();
-                this.abortController = new AbortController();
-            });
-        }
-    }
-
     async showConfirm(title) {
         this.domConfirmBlocker.style.display = 'unset';
         this.domConfirm.style.display = 'unset';
@@ -4364,7 +4345,7 @@ class UserInterface {
         });
     }
 
-    hideInterface(isEnabled) {
+    hideInterface(isEnabled) { // for startup only
         if (isEnabled) {
             this.domMenus.style.display = 'none';
             this.domHover.style.display = 'none';
@@ -4376,17 +4357,11 @@ class UserInterface {
             this.domInfoTool.style.display = 'none';
         } else {
             this.domMenus.style.display = 'unset';
-            if (MODE == 0) {
-                this.domHover.style.display = 'unset';
-                this.domPalette.style.display = 'unset';
-                this.domMenuInScreenRight.style.display = 'flex';
-                this.domMenuInScreenBottom.style.display = 'flex';
-                this.domInfoTool.style.display = 'unset';
-                palette.create();
-            }
-            if (MODE == 2) {
-                this.domMeshList.style.display = 'unset';
-            }
+            this.domHover.style.display = 'unset';
+            this.domPalette.style.display = 'unset';
+            this.domMenuInScreenRight.style.display = 'flex';
+            this.domMenuInScreenBottom.style.display = 'flex';
+            this.domInfoTool.style.display = 'unset';
             this.domInfoParent.style.display = 'unset';
         }
     }
@@ -4462,10 +4437,9 @@ class UserInterfaceAdvanced {
         this.colorPicker = undefined;
         this.gizmo = undefined;
         this.gizmoVoxel = undefined;
-        this.sunNode = undefined;
-        this.sunGizmoUp = undefined;
-        this.sunGizmoNews = undefined;
-        this.isSunLocatorActive = undefined;
+        this.lightNode = undefined;
+        this.lightGizmoUp = undefined;
+        this.lightGizmoNews = undefined;
     }
 
     init() {
@@ -4474,7 +4448,7 @@ class UserInterfaceAdvanced {
         this.utilLayer.utilityLayerScene.autoClearDepthAndStencil = true;
 
         this.createAdvancedColorPicker();
-        this.initLightLocator();
+        this.createLightLocator();
     }
 
     createAdvancedColorPicker() {
@@ -4585,63 +4559,57 @@ class UserInterfaceAdvanced {
         this.gizmo = undefined;
     }
 
-    initLightLocator() {
-        this.sunNode = new BABYLON.TransformNode();
-        this.sunNode.position.x -= 0.5;
-        this.sunNode.position.y -= 0.5;
-        this.sunNode.position.z -= 0.5;
-        this.sunNode.rotation.x = PIH;
-        this.sunNode.rotation.y = light.angle * Math.PI / 180;
-        this.sunNode.isVisible = false;
-        this.sunNode.doNotSerialize = true;
+    createLightLocator() {
+        this.lightNode = new BABYLON.TransformNode('light_locator');
+        this.lightNode.position.x -= 0.5;
+        this.lightNode.position.y -= 0.5;
+        this.lightNode.position.z -= 0.5;
+        this.lightNode.rotation.x = PIH;
+        this.lightNode.rotation.y = light.angle * Math.PI / 180;
+        this.lightNode.isVisible = false;
+        this.lightNode.doNotSerialize = true;
 
-        this.sunGizmoUp = new BABYLON.AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, undefined, 2);
-        this.sunGizmoUp.scaleRatio = 0.8;
-        this.sunGizmoUp.sensitivity = 5.0;
-        this.sunGizmoUp.attachedMesh = null;
-        this.sunGizmoUp.uniformScaling = true;
-        this.sunGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
-        this.sunGizmoUp.dragBehavior.onDragObservable.add(() => {
-            light.updateHeight(light.location.y / this.sunNode.scaling.x);
+        this.lightGizmoUp = new BABYLON.AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, undefined, 2);
+        this.lightGizmoUp.scaleRatio = 0.9;
+        this.lightGizmoUp.sensitivity = 5.0;
+        this.lightGizmoUp.attachedMesh = null;
+        this.lightGizmoUp.uniformScaling = true;
+        this.lightGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
+        this.lightGizmoUp.dragBehavior.onDragObservable.add(() => {
+            light.updateHeight(light.location.y / this.lightNode.scaling.x);
             modules.sandbox.updateLight();
         });
 
-        this.sunGizmoNews = new BABYLON.PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
-        this.sunGizmoNews.scaleRatio = 0.8;
-        this.sunGizmoNews.attachedMesh = null;
-        this.sunGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
-        this.sunGizmoNews.dragBehavior.onDragObservable.add(() => {
-            light.updateAngle(this.sunNode.rotation.y * 180 / Math.PI);
+        this.lightGizmoNews = new BABYLON.PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
+        this.lightGizmoNews.scaleRatio = 0.9;
+        this.lightGizmoNews.attachedMesh = null;
+        this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
+        this.lightGizmoNews.dragBehavior.onDragObservable.add(() => {
+            light.updateAngle(this.lightNode.rotation.y * 180 / Math.PI);
             modules.sandbox.updateLight();
         });
     }
 
     showLightLocator() {        
-        this.sunGizmoUp.attachedMesh = this.sunNode;
-        this.sunGizmoNews.attachedMesh = this.sunNode;
+        this.lightGizmoUp.attachedMesh = this.lightNode;
+        this.lightGizmoNews.attachedMesh = this.lightNode;
         ui.domInScreenLightLocator.firstChild.style.color = COL_ORANGE;
-        this.isSunLocatorActive = true;
     }
 
     hideLightLocator() {
-        this.sunGizmoUp.attachedMesh = null;
-        this.sunGizmoNews.attachedMesh = null;
+        this.lightGizmoUp.attachedMesh = null;
+        this.lightGizmoNews.attachedMesh = null;
         ui.domInScreenLightLocator.firstChild.style.color = COL_AQUA;
-        this.isSunLocatorActive = false;
     }
 
     setLightLocator(isEnabled) {
-        (isEnabled) ? this.showLightLocator() : this.hideLightLocator();
+        (isEnabled) ?
+            this.showLightLocator() : this.hideLightLocator();
     }
 
     toggleLightLocator() {
-        if (this.sunGizmoUp.attachedMesh) {
-            this.hideLightLocator();
-            this.isSunLocatorActive = false;
-        } else {
-            this.showLightLocator();
-            this.isSunLocatorActive = true;
-        }
+        (this.lightGizmoUp.attachedMesh) ?
+            this.hideLightLocator() : this.showLightLocator();
     }
 }
 
@@ -4651,9 +4619,8 @@ class UserInterfaceAdvanced {
 
 
 const KEY_STARTUP = "pref_startup";
+const KEY_STARTBOX_SIZE = "pref_startbox_size";
 const KEY_PALETTE_SIZE = "pref_palette_size";
-const KEY_FLOORPLANE = "pref_floorplane";
-const KEY_POINTCLOUD = "pref_pointcloud";
 const KEY_BACKGROUND_CHECK = "pref_background_check";
 const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_WEBSOCKET = "pref_websocket";
@@ -4666,44 +4633,36 @@ class Preferences {
 
     init() {
         document.getElementById(KEY_STARTUP).checked = false;
+        document.getElementById(KEY_STARTBOX_SIZE).value = 20;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
-        document.getElementById(KEY_FLOORPLANE).checked = true;
-        document.getElementById(KEY_POINTCLOUD).checked = true;
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#474A52";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
 
-        this.initPrefCheck(KEY_STARTUP);
+        this.setPrefCheck(KEY_STARTUP);
+        this.setPref(KEY_STARTBOX_SIZE);
 
-        this.initPref(KEY_PALETTE_SIZE, (val) => {
+        this.setPref(KEY_PALETTE_SIZE, (val) => {
             palette.expand(val);
         });
-
-        this.initPrefCheck(KEY_FLOORPLANE, (chk) => {
-            helper.floorPlane.isVisible = chk;
-        });
-
-        this.initPrefCheck(KEY_POINTCLOUD, (chk) => {
-            (chk && MODE == 2) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
-        });
         
-        this.initPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
+        this.setPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
             scene.autoClear = chk;
             if (scene.autoClear)
                 scene.clearColor = color4FromHex(document.getElementById(KEY_BACKGROUND_COLOR).value);
         });
 
-        this.initPref(KEY_BACKGROUND_COLOR, (val) => {
+        this.setPref(KEY_BACKGROUND_COLOR, (val) => {
             scene.clearColor = color4FromHex(val);
-            scene.autoClear = document.getElementById(KEY_BACKGROUND_CHECK).checked;
         });
 
-        this.initPrefCheck(KEY_WEBSOCKET, (chk) => {
-            (chk && !modules.sandbox.isActive()) ? modules.ws_client.connect() : modules.ws_client.disconnect();
+        this.setPrefCheck(KEY_WEBSOCKET, (chk) => {
+            (chk && !modules.sandbox.isActive()) ?
+                modules.ws_client.connect() : modules.ws_client.disconnect();
         });
 
-        this.initPref(KEY_WEBSOCKET_URL);
+        this.setPref(KEY_WEBSOCKET_URL);
     }
 
     finish(startTime) {
@@ -4722,16 +4681,15 @@ class Preferences {
                     this.postFinish();
                 });
             } else {
-                project.newProjectStartup();
+                project.newProjectStartup(document.getElementById(KEY_STARTBOX_SIZE).value);
                 ui.hideInterface(false);
                 document.getElementById('introscreen').style.display = 'none';
                 console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
                 this.postFinish();
             }
-
-            palette.expand(this.getPaletteSize());
-            helper.floorPlane.isVisible = this.getFloorPlane();
         });
+
+        palette.expand(this.getPaletteSize());
     }
 
     postFinish() {
@@ -4755,36 +4713,12 @@ class Preferences {
         document.body.appendChild(scriptUserModules);
     }
 
-    setStartup(isEnabled) {
-        localStorage.setItem(KEY_STARTUP, isEnabled);
-    }
-
     getStartup() {
         return document.getElementById(KEY_STARTUP).checked;
     }
 
     getPaletteSize() {
         return document.getElementById(KEY_PALETTE_SIZE).value;
-    }
-
-    setFloorPlane(isEnabled) {
-        localStorage.setItem(KEY_FLOORPLANE, isEnabled);
-    }
-
-    getFloorPlane() {
-        return document.getElementById(KEY_FLOORPLANE).checked;
-    }
-
-    setPointCloud(isEnabled) {
-        localStorage.setItem(KEY_POINTCLOUD, isEnabled);
-    }
-
-    getPointCloud() {
-        return document.getElementById(KEY_POINTCLOUD).checked;
-    }
-
-    getBackgroundColor() {
-        return document.getElementById(KEY_BACKGROUND_COLOR).value;
     }
 
     getWebsocket() {
@@ -4795,7 +4729,7 @@ class Preferences {
         return document.getElementById(KEY_WEBSOCKET_URL).value;
     }
 
-    initPref(key, callback = undefined) {
+    setPref(key, callback = undefined) {
         if (localStorage.getItem(key))
             document.getElementById(key).value = localStorage.getItem(key);
 
@@ -4805,7 +4739,7 @@ class Preferences {
         }, false);
     }
 
-    initPrefCheck(key, callback = undefined) {
+    setPrefCheck(key, callback = undefined) {
         if (localStorage.getItem(key))
             document.getElementById(key).checked = parseBool(localStorage.getItem(key));
         
@@ -5122,6 +5056,14 @@ document.ondragleave = (ev) => { dragLeaveHandler(ev) };
 // Events DOM
 
 
+document.getElementById('tab-model').onclick = () => { ui.setMode(0) };
+document.getElementById('tab-render').onclick = () => { ui.setMode(1) };
+document.getElementById('tab-export').onclick = () => {
+    ui.setMode(2);
+    if (pool.meshes.length == 0)
+        ghosts.createPointCloud();
+};
+
 ui.domMenus.onpointerdown = (ev) => {
     if (MODE == 0) { // prevent premature usage!
         if (ev.target !== canvas && ev.target !== ui.domHover) {
@@ -5171,10 +5113,6 @@ ui.domMenuInScreenRender.children[0].onclick = () => {
 ui.domColorPicker.oninput = (ev) => {
     currentColor = ev.target.value.toUpperCase();
     uix.colorPicker.value = color3FromHex(currentColor);
-};
-
-ui.domPixelEyedropper.onclick = () => {
-    ui.activateEyedropper();
 };
 
 
@@ -5307,11 +5245,11 @@ ui.domCameraFocalLength.onchange = (ev) => {
     }
 };
 
-ui.domCameraAutoRotation.onclick = () => {
+ui.domCameraAutoRotation.oninput = () => {
     camera.toggleCameraAutoRotation();
 };
 
-ui.domCameraAutoRotationCCW.onclick = () => {
+ui.domCameraAutoRotationCCW.oninput = () => {
     camera.updateCameraAutoRotation();
 };
 
@@ -5336,7 +5274,7 @@ ui.domSymmCenter.onclick = () => {
     helper.setSymmPivot();
 };
 
-ui.domLightShadows.onclick = (ev) => {
+ui.domLightShadows.oninput = (ev) => {
     light.enableShadows(ev.target.checked);
     modules.sandbox.light.castShadow = ev.target.checked;
     if (modules.sandbox.isActive())
@@ -5374,6 +5312,11 @@ ui.domPbrVertexColor.oninput = (ev) => {
         ui.notification('select a mesh');
 };
 
+ui.domPbrWireframe.oninput = (ev) => {
+    for (let i = 0; i < pool.meshes.length; i++)
+        pool.meshes[i].material.wireframe = ev.target.checked;
+};
+
 ui.domPbrRoughness.oninput = () => {
     (pool.selected) ?
         pool.setMaterial('roughness') :
@@ -5397,16 +5340,22 @@ ui.domMaterialSwitch.onclick = () => {
     material.switchMaterial();
 };
 
+document.getElementById('btn_voxel_dimensions').onclick = () => {
+    const dims = builder.getDimensions();
+    ui.notification(`${dims.x}, ${dims.y}, ${dims.z}`, 8000);
+}
 
 document.getElementById('fullscreen').onclick = () =>               { toggleFullscreen() };
-document.getElementById('tab-model').onclick = () =>                { ui.setMode(0) };
-document.getElementById('tab-render').onclick = () =>               { ui.setMode(1) };
-document.getElementById('tab-export').onclick = () =>               { ui.setMode(2) };
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
 document.getElementById('ws_connect').onclick = () =>               { if (ui.checkMode(0)) modules.ws_client.connect() };
+document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
+document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
+document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
+document.getElementById('hdr_dropdown').onclick = (ev) =>           { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
 document.getElementById('new_project').onclick = () =>              { project.newProject() };
 document.getElementById('save_project').onclick = () =>             { project.save() };
 document.getElementById('export_voxels').onclick = () =>            { project.exportVoxels() };
@@ -5445,9 +5394,11 @@ document.getElementById('btn_tool_transform_visible').onclick = ()=>{ if (ui.che
 document.getElementById('normalize_voxels').onclick = () =>         { if (ui.checkMode(0)) builder.normalizeVoxelPositions(true) };
 document.getElementById('btn_tool_measure_volume').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
 document.getElementById('btn_tool_measure_color').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('measure_color') };
-document.getElementById('reduce_voxels').onclick = () =>            { if (ui.checkMode(0)) builder.reduceVoxels() };
+document.getElementById('btn_reduce_voxels').onclick = () =>        { if (ui.checkMode(0)) builder.reduceVoxels() };
 document.getElementById('bakery_bake').onclick = () =>              { pool.bake() };
 document.getElementById('btn_tool_bakecolor').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('bake_color') };
+document.getElementById('create_pointcloud').onclick = () =>        { if (ui.checkMode(2)) ghosts.createPointCloud() };
+document.getElementById('delete_pointcloud').onclick = () =>        { ghosts.disposePointCloud() };
 document.getElementById('clear_bakes').onclick = () =>              { pool.clearPool(true) };
 document.getElementById('clone_bake').onclick = () =>               { if (ui.checkMode(2)) pool.cloneSelected() };
 document.getElementById('merge_bakes_pick').onclick = () =>         { if (ui.checkMode(2)) toolMesh.toolSelector('merge') };
@@ -5458,11 +5409,6 @@ document.getElementById('voxelize_bake').onclick = () =>            { if (ui.che
 document.getElementById('voxelize_bake_all').onclick = () =>        { if (ui.checkMode(2)) modules.voxelizer.voxelizeBakeAll() };
 document.getElementById('reset_bake_rotation').onclick = () =>      { if (ui.checkMode(2)) pool.resetRotation() };
 document.getElementById('delete_bake').onclick = () =>              { if (ui.checkMode(2)) pool.deleteSelected() };
-document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
-document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
-document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
-document.getElementById('hdr_dropdown').onclick = (ev) =>           { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
-document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
 document.getElementById('btn_tool_isolate_color').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('isolate_color') };
 document.getElementById('btn_tool_hide_color').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('hide_color') };
 document.getElementById('invert_visibility').onclick = () =>        { if (ui.checkMode(0)) builder.invertVisibilityAndUpdate() };
@@ -5523,13 +5469,6 @@ export function color4FromHex(hex) {
 }
 
 export function rgbIntToHex(r, g, b) {
-    return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
-}
-
-function rgbIntToHexGamma(r, g, b, gamma) {
-    r = 255 * Math.pow(r / 255, gamma);
-    g = 255 * Math.pow(g / 255, gamma);
-    b = 255 * Math.pow(b / 255, gamma);
     return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
 }
 

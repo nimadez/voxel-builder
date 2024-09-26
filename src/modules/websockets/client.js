@@ -14,6 +14,7 @@ import { MODE, preferences, ui, builder } from '../core.js';
 
 class WebsocketClient {
     constructor() {
+        this.domConnect = document.getElementById('ws_connect');
         this.ws = undefined;
         this.retryDelay = 2000;
         this.maxRetry = 10;
@@ -33,8 +34,8 @@ class WebsocketClient {
 
         this.ws.onopen = () => {
             clearInterval(this.interval);
-            ui.domWebSocketStatus.innerHTML = 'Connected';
-            ui.domWebSocketStatus.style.color = 'limegreen';
+            this.domConnect.innerHTML = 'Connected';
+            this.domConnect.style.color = 'limegreen';
             this.retry = 0;
             this.sendMessage('Initialized.', 'init');
         };
@@ -56,7 +57,7 @@ class WebsocketClient {
                 }
 
                 if (this.parsed.is_clear) {
-                    builder.setDataFromArray(this.data);
+                    builder.createVoxelsFromArray(this.data);
                 } else {
                     builder.add(
                         this.data[0].position,
@@ -82,8 +83,8 @@ class WebsocketClient {
             this.interval = setInterval(() => {
                 if (this.retry < this.maxRetry) {
                     this.retry++;
-                    ui.domWebSocketStatus.innerHTML = `Retry ${this.retry}/${this.maxRetry} ...`;
-                    ui.domWebSocketStatus.style.color = 'slategray';
+                    this.domConnect.innerHTML = `Retry ${this.retry}/${this.maxRetry} ...`;
+                    this.domConnect.style.color = 'slategray';
                     this.connect();
                 } else {
                     this.disconnect();
@@ -103,8 +104,8 @@ class WebsocketClient {
         if (this.ws && this.ws.readyState === WebSocket.OPEN)
             this.ws.close();
         this.ws = undefined;
-        ui.domWebSocketStatus.innerHTML = 'Disconnect';
-        ui.domWebSocketStatus.style.color = 'indianred';
+        this.domConnect.innerHTML = 'Connect';
+        this.domConnect.style.color = 'indianred';
     }
 }
 
