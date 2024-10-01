@@ -14,8 +14,8 @@ import { RenderPass } from '../../libs/addons/RenderPass.js';
 import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
 import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
 
-import { engine, Vector3 } from '../babylon.js';
-import { ui, camera, hdri, light, builder } from '../core.js';
+import { engine, Vector3, PositionKind, UVKind, ColorKind } from '../babylon.js';
+import { ui, camera, hdri, light, builder, ghosts, palette } from '../core.js';
 
 
 const TILE = 1;
@@ -66,6 +66,11 @@ class Sandbox {
     }
 
     init() {
+        renderer.setClearColor(0x000000, 0);
+        renderer.autoClearColor = true;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFShadowMap;
+
         this.scene = new THREE.Scene();
 
         this.camera = new PhysicalCamera(45, window.innerWidth / window.innerHeight, 1.0, CAM_FAR);
@@ -90,7 +95,7 @@ class Sandbox {
         this.pathTracer = new PathTracer();
         this.pathTracer.create(this.scene, this.camera);
 
-        this.pickBox = new THREE.BoxHelper();
+        this.pickBox = new THREE.BoxHelper(this.scene, 0xFFA500);
 
         console.log('load sandbox');
     }
@@ -105,7 +110,7 @@ class Sandbox {
         this.light.target.position.set(0, 0, 0);
         this.light.castShadow = true;
         this.light.shadow.mapSize.width = isMobileDevice() ? 256 : 1024;
-        this.light.shadow.mapSize.height = isMobileDevice() ? 256 : 1024;
+        this.light.shadow.mapSize.height = this.light.shadow.mapSize.width;
         this.light.shadow.camera.near = 1.0;
         this.light.shadow.camera.far = 1000;
         this.light.shadow.camera.top = 100;
@@ -134,7 +139,7 @@ class Sandbox {
         this.shadowGround.updateMatrix();
         this.scene.add(this.shadowGround);
 
-        this.geomBox = new THREE.BoxGeometry(1.01, 1.01, 1.01);
+        this.geomBox = new THREE.BoxGeometry(1.02, 1.02, 1.02);
 
         // overrided
         this.mat_illum = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x5EC3C5), side: THREE.FrontSide });
@@ -180,7 +185,7 @@ class Sandbox {
         return batchedMesh;
     }
 
-    createMeshFromBuffers() {
+    createMeshFromBuffersFast() {
         builder.fillArrayBuffers();
         
         const geom = new THREE.BufferGeometry();
@@ -189,7 +194,31 @@ class Sandbox {
         geom.setAttribute('color', new THREE.BufferAttribute(builder.colors, 4));
         geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
         geom.computeVertexNormals();
-        return new THREE.Mesh(geom, this.mat_pbr.clone());
+
+        return [ new THREE.Mesh(geom, this.mat_pbr.clone()) ];
+    }
+
+    createMeshFromBuffersGroup() {
+        const meshes = [];
+        for (let i = 0; i < palette.uniqueColors.length; i++) {
+            const group = builder.getVoxelsByColor(palette.uniqueColors[i]);
+
+            ghosts.createSPS(group);
+            
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(ghosts.sps.mesh.getVerticesData(PositionKind)), 3));
+            geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(ghosts.sps.mesh.getVerticesData(UVKind)), 2));
+            geom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(ghosts.sps.mesh.getVerticesData(ColorKind)), 4));
+            geom.setIndex(new THREE.BufferAttribute(new Uint32Array(ghosts.sps.mesh.getIndices()), 1));
+            geom.computeVertexNormals();
+
+            (palette.uniqueColors[i] == '#000000') ?
+                meshes.push(new THREE.Mesh(geom, this.mat_illum.clone())) :
+                meshes.push(new THREE.Mesh(geom, this.mat_pbr.clone()));
+
+            ghosts.disposeSPS();
+        }
+        return meshes;
     }
 
     createMeshes() {
@@ -202,17 +231,18 @@ class Sandbox {
         this.mat_pbr.metalness = ui.domRenderMaterialMetalness.value;
         this.mat_pbr.transmission = ui.domRenderMaterialTransmission.value;
 
-        const mesh = this.createMeshFromBuffers();
-        
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        if (ui.domRenderShade.checked) {
-            mesh.material.dispose();
-            mesh.material = this.mat_shade.clone();
-        }
+        this.meshes = this.createMeshFromBuffersFast();
 
-        this.scene.add(mesh);
-        this.meshes.push(mesh);
+        for (let i = 0; i < this.meshes.length; i++) {
+            this.meshes[i].castShadow = true;
+            this.meshes[i].receiveShadow = true;
+            if (ui.domRenderShade.checked) {
+                this.meshes[i].material.dispose();
+                this.meshes[i].material = this.mat_shade.clone();
+            }
+
+            this.scene.add(this.meshes[i]);
+        }
 
         this.createLightSources();
 
@@ -399,14 +429,12 @@ class Sandbox {
         this.isRendering = isEnabled;
         this.controls.enableDamping = !isEnabled;
 
-        renderer.autoClearColor = !isEnabled;
-        renderer.shadowMap.enabled = !isEnabled;
-
         if (isEnabled) {
-            renderer.setClearColor(0x000000, 0);
             renderer.toneMapping = THREE.NoToneMapping;
-            
+            renderer.toneMappingExposure = 1;
+
             this.scene.remove(this.shadowGround);
+
             this.pathTracer.updateBounces(ui.domRenderBounces.value);
             this.pathTracer.updateMaxSamples(ui.domRenderMaxSamples.value);
             this.flagUpdateScene = 1;
@@ -414,10 +442,8 @@ class Sandbox {
             ui.domInfoRender.style.display = 'unset';
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
-            renderer.setClearColor(0x000000, 0);
-            //renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            //renderer.toneMappingExposure = 0.8;
-            renderer.shadowMap.type = THREE.PCFShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.6;
             renderer.domElement.style.pointerEvents = 'unset';
 
             this.scene.add(this.shadowGround);
@@ -425,8 +451,7 @@ class Sandbox {
 
             ui.domInfoRender.style.display = 'none';
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'play_arrow';
-            ui.domRenderPause.innerHTML = 'Pause';
-            ui.domRenderPause.classList.remove('btn_select_pt');
+            ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
             ui.showProgress(0);
         }
     }
@@ -450,12 +475,10 @@ class Sandbox {
         if (this.isRendering) {
             this.isProgressing = !this.isProgressing;
             if (this.isProgressing) {
-                ui.domRenderPause.innerHTML = 'Pause';
-                ui.domRenderPause.classList.remove('btn_select_pt');
+                ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
                 renderer.domElement.style.pointerEvents = 'unset';
             } else {
-                ui.domRenderPause.innerHTML = 'Continue';
-                ui.domRenderPause.classList.add('btn_select_pt');
+                ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'play_arrow';
                 renderer.domElement.style.pointerEvents = 'none';
             }
         }
@@ -524,12 +547,10 @@ class Sandbox {
         camera.camera0.position = Vector3(this.camera.position.x, this.camera.position.y, this.camera.position.z);
         camera.camera0.target = Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
 
-        ui.domRenderPause.innerHTML = 'Pause';
-        ui.domRenderPause.classList.remove('btn_select_pt');
-        ui.showProgress(0);
-        
         renderer.domElement.style.display = 'none';
+        ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
         ui.domInfoRender.style.display = 'none';
+        ui.showProgress(0);
     }
 
     async loadHDR(url, onLoad) {

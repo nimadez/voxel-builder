@@ -9,7 +9,7 @@
 */
 
 import { Vector3 } from '../babylon.js';
-import { MODE, preferences, ui, builder } from '../core.js';
+import { MODE, preferences, builder } from '../core.js';
 
 
 class WebsocketClient {
@@ -63,7 +63,7 @@ class WebsocketClient {
                         this.data[0].position,
                         this.data[0].color,
                         this.data[0].visible);
-                    builder.create();
+                    builder.create(false);
                 }
             }
         };

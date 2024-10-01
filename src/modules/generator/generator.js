@@ -7,12 +7,10 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
+import { ui, builder, xformer, project, memory, hexToRgbFloat } from '../core.js';
 
-import {
-    ui, builder, xformer, project, memory,
-    hexToRgbFloat, rgbFloatToHex,
-    COL_ICE
-} from '../core.js';
+
+const COL_ICE = '#8398AF';
 
 
 class Generator {
@@ -35,7 +33,6 @@ class Generator {
             if (str.length == 3 && parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
                 builder.add(Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), currentColor, true);
                 builder.create();
-                memory.record();
             } else {
                 ui.notification("invalid coord (e.g. 20,20,20)");
             }
@@ -229,4 +226,9 @@ function gradientHexArray(hexStart, hexEnd, count) {
         ));
     }
     return arr;
+}
+
+function rgbFloatToHex(r, g, b) {
+    [r, g, b] = [r, g, b].map(x => Math.round(x * 255));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }

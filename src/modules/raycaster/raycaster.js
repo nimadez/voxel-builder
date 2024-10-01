@@ -61,18 +61,19 @@ class Raycaster {
         this.buildBvhBatched(this.batchedMesh);
     } */
 
-    buildBvh(geometry, maxDepth = 40) {
+    buildBvh(geometry) {
         geometry.computeBoundsTree({
-            //strategy: CENTER,
-            maxDepth: maxDepth, // def: 40
-            maxLeafTris: 10,    // def: 10
+            strategy: 0,     // CENTER
+            maxDepth: 40,    // def: 40
+            maxLeafTris: 10, // def: 10
             indirect: true
         });
     }
 
-    buildBvhBatched(batchedMesh, maxDepth = 40) {
+    buildBvhBatched(batchedMesh) {
         batchedMesh.computeBoundsTree(-1, {
-            maxDepth: maxDepth,
+            strategy: 0,
+            maxDepth: 40,
             maxLeafTris: 10,
             indirect: false
         });
@@ -149,24 +150,26 @@ class RaycasterMesh {
         this.invMat.copy(this.mesh.matrixWorld).invert();
     }
 
-    buildBvh(geometry, maxDepth = 40) {
+    buildBvh(geometry) {
         geometry.computeBoundsTree({
-            maxDepth: maxDepth,
+            strategy: 0,
+            maxDepth: 40,
             maxLeafTris: 10,
             indirect: true
         });
     }
 
+    // The first two directions will return the result
+    // but in problematic cases more is needed
     raycastOmni(x, y, z) {
         this.ray.origin.set(x, y, z);
-        let res = null;               // workaround for bakery cap-face-direction issue
-        for (let i = 0; i < 6; i++) { // the first two directions will return the result
-            this.ray.direction = directions[i]; // but in problematic cases, more is needed
-            res = this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
+        for (const direction of directions) {
+            this.ray.direction.copy(direction);
+            const res = this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
             if (res && res.face.normal.dot(this.ray.direction) > 0)
-                break;
+                return res;
         }
-        return res;
+        return undefined;
     }
 
     boxHit(x, y, z) {
@@ -212,7 +215,9 @@ class RaycasterVoxelizer {
         for (let x = 0; x < size.x; x++) {
             for (let y = 0; y < size.y; y++) {
                 for (let z = 0; z < size.z; z++) {
+
                     if (rcm.boxHit(x, y, z)) {
+
                         data.push({
                             position: Vector3(x, y, z),
                             color: color,
@@ -227,7 +232,7 @@ class RaycasterVoxelizer {
         return data;
     }
     
-    mesh_bake(mesh) {
+    bake_voxel(mesh) {
         const rcm = new RaycasterMesh();
     
         rcm.createFromDataWithColor(
@@ -252,8 +257,9 @@ class RaycasterVoxelizer {
                     const res = rcm.raycastOmni(x, y, z);
                     if (res && res.face.normal.dot(rcm.ray.direction) > 0) {
                         
-                        const hex = color.fromBufferAttribute(rcm.mesh.geometry.attributes.color, res.face.a)
-                            .getHexString(THREE.SRGBColorSpace).toUpperCase();
+                        const hex = color.fromBufferAttribute(
+                            rcm.mesh.geometry.attributes.color, res.face.a)
+                                .getHexString(THREE.SRGBColorSpace).toUpperCase();
     
                         data.push({
                             position: Vector3(

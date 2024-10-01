@@ -60,7 +60,7 @@ export function Color4(r, g, b, a) {
 }
 
 
-export function Vector3(x, y, z) {
+export function Vector3(x = 0, y = 0, z = 0) {
     return new BABYLON.Vector3(x, y, z);
 }
 
@@ -88,20 +88,6 @@ export function Vector3Project(target, scene, camera) {
         camera.viewport.toGlobal(
             scene.getEngine().getRenderWidth(),
             scene.getEngine().getRenderHeight()));
-}
-
-export const isTargetIn = (startPos, endPos, target, camera, scene) => {
-    const targetScreenPosition = Vector3Project(target, scene, camera);
-    const rect = {
-        x: Math.min(startPos.x, endPos.x),
-        y: Math.min(startPos.y, endPos.y),
-        w: Math.abs(endPos.x - startPos.x),
-        h: Math.abs(endPos.y - startPos.y)
-    };
-    return targetScreenPosition.x >= rect.x &&
-           targetScreenPosition.x <= rect.x + rect.w &&
-           targetScreenPosition.y >= rect.y &&
-           targetScreenPosition.y <= rect.y + rect.h;
 }
 
 
@@ -145,15 +131,6 @@ export function MergeMeshes(arr, disposeSource, allow32BitsIndices) {
 
 export function LoadAssetContainerAsync(url, dotExt, scene, onLoaded, onError) {
     BABYLON.SceneLoader.LoadAssetContainerAsync(url, '', scene, undefined, dotExt)
-        .then(container => {
-            onLoaded(container);
-        }).catch((err) => {
-            onError(err.message);
-        });
-}
-
-export function LoadAssetContainerAsyncFromData(data, dotExt, scene, onLoaded, onError) {
-    BABYLON.SceneLoader.LoadAssetContainerAsync('', data, scene, undefined, dotExt)
         .then(container => {
             onLoaded(container);
         }).catch((err) => {

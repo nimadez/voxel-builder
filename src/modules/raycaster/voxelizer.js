@@ -6,68 +6,36 @@
 */
 
 import { rcv } from './raycaster.js';
-
-import {
-    Vector3,
-    MergeMeshes,
-    LoadAssetContainerAsync
-} from '../babylon.js';
-
-import {
-    ui, builder, pool, project,
-    rgbIntToHex,
-    COL_ICE
-} from '../core.js';
-
+import { Vector3, MergeMeshes, LoadAssetContainerAsync } from '../babylon.js';
+import { ui, builder, pool, project } from '../core.js';
 import { scene } from '../../main.js';
+
+
+const COL_ICE = '#8398AF';
 
 
 class Voxelizer {
     constructor() {}
 
     voxelizeMesh(mesh) {
-        ui.showProgress(1);
         const scale = parseInt(ui.domVoxelizerScale.value);
 
         pool.normalizeMesh(mesh, scale);
-
         const data = rcv.mesh_voxel(mesh, COL_ICE);
+        
         builder.createVoxelsFromArray(data);
         project.clearScene();
-        ui.showProgress(0);
     }
 
-    async voxelizeBake() {
-        if (pool.selected) {
-            if (!await ui.showConfirm('clear and replace all voxels?')) return;
-            ui.showProgress(1);
-            
-            const data = rcv.mesh_bake(pool.selected);
+    voxelizeBake(meshes) {
+        const mesh = MergeMeshes(meshes, false, true);
+        pool.resetPivot(mesh);
 
-            ui.setMode(0); // important: after data
-            builder.createVoxelsFromArray(data);
-            project.clearScene();
-            ui.showProgress(0);
-        } else {
-            ui.notification('select a mesh');
-        }
-    }
+        const data = rcv.bake_voxel(mesh);
+        mesh.dispose();
 
-    async voxelizeBakeAll() {
-        if (pool.meshes.length > 0) {
-            if (!await ui.showConfirm('clear and replace all voxels?')) return;
-            ui.showProgress(1);
-
-            const mesh = MergeMeshes(pool.meshes, false, true);
-            pool.resetPivot(mesh);
-            const data = rcv.mesh_bake(mesh);
-            mesh.dispose();
-
-            ui.setMode(0);
-            builder.createVoxelsFromArray(data);
-            project.clearScene();
-            ui.showProgress(0);
-        }
+        builder.createVoxelsFromArray(data);
+        project.clearScene();
     }
 
     voxelize2D(imgData) {
@@ -125,25 +93,51 @@ class Voxelizer {
         }
     }
 
+    importBakedVoxels(url) {
+        ui.showProgress(1);
+        LoadAssetContainerAsync(url, '.glb', scene, (container) => {
+            const meshes = [];
+            for (let i = 0; i < container.meshes.length; i++) {
+                if (container.meshes[i].name !== '__root__')
+                    meshes.push(container.meshes[i].clone(container.meshes[i].name));
+            }
+            container.removeAllFromScene();
+            if (meshes.length > 0) {
+                this.voxelizeBake(meshes);
+            } else {
+                ui.errorMessage('unable to load baked meshes');
+            }
+            ui.showProgress(0);
+        }, () => {
+            ui.errorMessage('unable to load baked meshes');
+            ui.showProgress(0);
+        });
+    }
+
     importMeshOBJ(url) {
+        ui.showProgress(1);
         LoadAssetContainerAsync(url, ".obj", scene, (container) => {
             const mesh = MergeMeshes(container.meshes, true, true);
             container.removeAllFromScene();
             this.voxelizeMesh(mesh);
             mesh.dispose();
+            ui.showProgress(0);
         }, (err) => {
             ui.notification("unable to import/merge meshes");
+            ui.showProgress(0);
             console.error(err);
         });
     }
 
     importMeshGLB(url) {
+        ui.showProgress(1);
         LoadAssetContainerAsync(url, ".glb", scene, (container) => {
             const meshes = [];
             for (let i = 0; i < container.meshes.length; i++) {
                 if (container.meshes[i].name !== '__root__')
                     meshes.push(container.meshes[i]);
             }
+            container.removeAllFromScene();
             if (meshes.length > 0) {
                 const mesh = MergeMeshes(meshes, true, true);
                 this.voxelizeMesh(mesh);
@@ -151,9 +145,10 @@ class Voxelizer {
             } else {
                 ui.notification('unable to find meshes');
             }
-            container.removeAllFromScene();
+            ui.showProgress(0);
         }, (err) => {
             ui.notification("unable to import/merge meshes");
+            ui.showProgress(0);
             console.error(err);
         });
     }
@@ -216,6 +211,10 @@ class Voxelizer {
 
 export const voxelizer = new Voxelizer();
 
+
+function rgbIntToHex(r, g, b) {
+    return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
+}
 
 function aspectRatioFit(srcW, srcH, maxW, maxH) {
     const ratio = Math.min(maxW / srcW, maxH / srcH);

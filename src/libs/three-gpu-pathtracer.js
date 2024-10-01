@@ -1417,7 +1417,8 @@ class PathTracingSceneGenerator {
 			if ( result.changeType === GEOMETRY_REBUILT ) {
 
 				const bvhOptions = {
-					strategy: SAH,
+					strategy: 0,
+					maxDepth: 40,
 					maxLeafTris: 1,
 					indirect: true,
 					onProgress,

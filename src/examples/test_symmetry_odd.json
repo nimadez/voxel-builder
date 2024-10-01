@@ -1,12 +1,10 @@
 {
-    "version": "Voxel Builder 4.2.4",
+    "version": "Voxel Builder 4.5.0",
     "project": {
         "name": "test_symmetry_odd",
-        "voxels": 31,
-        "meshes": 0
+        "voxels": 31
     },
     "data": {
-        "voxels": "4,4,4,#CCCCCC,true;3,4,4,#CCCCCC,true;1,4,4,#FFADAF,true;0,4,4,#FFADAF,true;5,4,4,#CCCCCC,true;7,4,4,#FF5256,true;8,4,4,#FF5256,true;4,3,4,#CCCCCC,true;4,1,4,#A4FFB7,true;4,0,4,#A4FFB7,true;3,3,4,#CCCCCC,true;5,3,4,#CCCCCC,true;4,5,4,#CCCCCC,true;4,7,4,#52FF76,true;4,8,4,#52FF76,true;3,5,4,#CCCCCC,true;5,5,4,#CCCCCC,true;4,4,3,#CCCCCC,true;4,4,1,#A8D0FF,true;4,4,0,#A8D0FF,true;3,4,3,#CCCCCC,true;5,4,3,#CCCCCC,true;4,3,3,#CCCCCC,true;4,5,3,#CCCCCC,true;4,4,5,#CCCCCC,true;4,4,7,#52A3FF,true;4,4,8,#52A3FF,true;3,4,5,#CCCCCC,true;5,4,5,#CCCCCC,true;4,3,5,#CCCCCC,true;4,5,5,#CCCCCC,true;",
-        "meshes": ""
+        "voxels": "4,4,4,#CCCCCC,true;3,4,4,#CCCCCC,true;1,4,4,#FFADAF,true;0,4,4,#FFADAF,true;5,4,4,#CCCCCC,true;7,4,4,#FF5256,true;8,4,4,#FF5256,true;4,3,4,#CCCCCC,true;4,1,4,#A4FFB7,true;4,0,4,#A4FFB7,true;3,3,4,#CCCCCC,true;5,3,4,#CCCCCC,true;4,5,4,#CCCCCC,true;4,7,4,#52FF76,true;4,8,4,#52FF76,true;3,5,4,#CCCCCC,true;5,5,4,#CCCCCC,true;4,4,3,#CCCCCC,true;4,4,1,#A8D0FF,true;4,4,0,#A8D0FF,true;3,4,3,#CCCCCC,true;5,4,3,#CCCCCC,true;4,3,3,#CCCCCC,true;4,5,3,#CCCCCC,true;4,4,5,#CCCCCC,true;4,4,7,#52A3FF,true;4,4,8,#52A3FF,true;3,4,5,#CCCCCC,true;5,4,5,#CCCCCC,true;4,3,5,#CCCCCC,true;4,5,5,#CCCCCC,true;"
     }
 }

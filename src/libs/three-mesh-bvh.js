@@ -1,4 +1,4 @@
-import { BufferAttribute, Vector3, Vector2, Plane, Line3, Triangle, Sphere, Matrix4, Box3, BackSide, DoubleSide, FrontSide, Object3D, Mesh, BufferGeometry, Group, LineBasicMaterial, MeshBasicMaterial, REVISION, Ray, BatchedMesh, RGBAFormat, RGFormat, RedFormat, RGBAIntegerFormat, RGIntegerFormat, RedIntegerFormat, DataTexture, NearestFilter, IntType, UnsignedIntType, FloatType, UnsignedByteType, UnsignedShortType, ByteType, ShortType, Vector4, Matrix3 } from 'three';
+import { BufferAttribute, Vector3, Vector2, Plane, Line3, Triangle, Sphere, Matrix4, Box3, REVISION, BackSide, DoubleSide, FrontSide, Object3D, Mesh, BufferGeometry, Group, LineBasicMaterial, MeshBasicMaterial, Ray, BatchedMesh, RGBAFormat, RGFormat, RedFormat, RGBAIntegerFormat, RGIntegerFormat, RedIntegerFormat, DataTexture, NearestFilter, IntType, UnsignedIntType, FloatType, UnsignedByteType, UnsignedShortType, ByteType, ShortType, Vector4, Matrix3 } from 'three';
 
 // Split strategy constants
 const CENTER = 0;
@@ -2833,6 +2833,8 @@ function closestPointToPoint(
 
 }
 
+const IS_GT_REVISION_169 = parseInt( REVISION ) >= 169;
+
 // Ripped and modified From THREE.js Mesh raycast
 // https://github.com/mrdoob/three.js/blob/0aa87c999fe61e216c1133fba7a95772b503eddf/src/objects/Mesh.js#L115
 const _vA = /* @__PURE__ */ new Vector3();
@@ -2886,6 +2888,9 @@ function checkBufferGeometryIntersection( ray, position, normal, uv, uv1, a, b, 
 
 	if ( intersection ) {
 
+		const barycoord = new Vector3();
+		Triangle.getBarycoord( _intersectionPoint, _vA, _vB, _vC, barycoord );
+
 		if ( uv ) {
 
 			_uvA.fromBufferAttribute( uv, a );
@@ -2933,6 +2938,12 @@ function checkBufferGeometryIntersection( ray, position, normal, uv, uv1, a, b, 
 
 		intersection.face = face;
 		intersection.faceIndex = a;
+
+		if ( IS_GT_REVISION_169 ) {
+
+			intersection.barycoord = barycoord;
+
+		}
 
 	}
 
@@ -3042,6 +3053,10 @@ function getTriangleHitPointInfo( point, geometry, triangleIndex, target ) {
 
 	}
 
+	// extract barycoord
+	const barycoord = target && target.barycoord ? target.barycoord : new Vector3();
+	Triangle.getBarycoord( point, tempV1, tempV2, tempV3, barycoord );
+
 	// extract uvs
 	let uv = null;
 	if ( uvs ) {
@@ -3069,6 +3084,7 @@ function getTriangleHitPointInfo( point, geometry, triangleIndex, target ) {
 		Triangle.getNormal( tempV1, tempV2, tempV3, target.face.normal );
 
 		if ( uv ) target.uv = uv;
+		target.barycoord = barycoord;
 
 		return target;
 
@@ -3082,7 +3098,8 @@ function getTriangleHitPointInfo( point, geometry, triangleIndex, target ) {
 				materialIndex: materialIndex,
 				normal: Triangle.getNormal( tempV1, tempV2, tempV3, new Vector3() )
 			},
-			uv: uv
+			uv: uv,
+			barycoord: barycoord,
 		};
 
 	}

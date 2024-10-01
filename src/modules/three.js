@@ -30,7 +30,6 @@ const renderer = new THREE.WebGLRenderer({
     alpha: true
 });
 
-
 export { THREE, renderer };
 
-console.log('load three.js');
+console.log(`Three.js r${ THREE.REVISION }`);
