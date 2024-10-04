@@ -160,7 +160,6 @@ class Sandbox {
         this.textures.push(new THREE.TextureLoader().load(TEX_CHECKER));
     }
 
-    // If batchedmesh is supported by pathtracer, we can do more!
     createBatchedMesh() {
         const box = new THREE.BoxGeometry(1, 1, 1);
         const batchedMesh = new THREE.BatchedMesh(
@@ -443,7 +442,7 @@ class Sandbox {
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.6;
+            renderer.toneMappingExposure = 0.65;
             renderer.domElement.style.pointerEvents = 'unset';
 
             this.scene.add(this.shadowGround);

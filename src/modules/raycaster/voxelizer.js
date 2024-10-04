@@ -7,7 +7,7 @@
 
 import { rcv } from './raycaster.js';
 import { Vector3, MergeMeshes, LoadAssetContainerAsync } from '../babylon.js';
-import { ui, builder, pool, project } from '../core.js';
+import { ui, camera, builder, pool } from '../core.js';
 import { scene } from '../../main.js';
 
 
@@ -24,7 +24,7 @@ class Voxelizer {
         const data = rcv.mesh_voxel(mesh, COL_ICE);
         
         builder.createVoxelsFromArray(data);
-        project.clearScene();
+        camera.frame();
     }
 
     voxelizeBake(meshes) {
@@ -35,7 +35,7 @@ class Voxelizer {
         mesh.dispose();
 
         builder.createVoxelsFromArray(data);
-        project.clearScene();
+        camera.frame();
     }
 
     voxelize2D(imgData) {
@@ -87,8 +87,8 @@ class Voxelizer {
             }
 
             builder.createVoxelsFromArray(data);
-            builder.normalizeVoxelPositions(false);
-            project.clearScene();
+            builder.normalizeVoxelPositions();
+            camera.frame();
             ui.showProgress(0);
         }
     }

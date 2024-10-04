@@ -23,8 +23,6 @@ class Engine {
             this.engine.enableOfflineSupport = false;
             this.engine.doNotHandleContextLost = true;
 
-            this.isRendering = true;
-
             resolve(this.engine);
         });
     }

@@ -1,6 +1,6 @@
 {
     "name": "voxel-builder",
-    "version": "4.5.0",
+    "version": "4.5.1",
     "description": "Voxel-based 3D modeling application",
     "main": "electron.js",
     "scripts": {
@@ -13,7 +13,7 @@
         "electron": "^30.0.0",
         "babylonjs": "^7.25.0",
         "three": "^0.169.0",
-        "three-mesh-bvh": "^0.8.1",
+        "three-mesh-bvh": "^0.8.2",
         "three-gpu-pathtracer": "^0.0.23",
         "@tweenjs/tween.js": "^25.0.0"
     }

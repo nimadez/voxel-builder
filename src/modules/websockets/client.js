@@ -25,7 +25,7 @@ class WebsocketClient {
     }
 
     connect() {
-        if (!preferences.getWebsocket()) {
+        if (!preferences.isWebsocket()) {
             this.disconnect();
             return;
         }
@@ -63,7 +63,7 @@ class WebsocketClient {
                         this.data[0].position,
                         this.data[0].color,
                         this.data[0].visible);
-                    builder.create(false);
+                    builder.create();
                 }
             }
         };
@@ -79,7 +79,7 @@ class WebsocketClient {
 
     retryConnection() {
         clearInterval(this.interval);
-        if (preferences.getWebsocket()) {
+        if (preferences.isWebsocket()) {
             this.interval = setInterval(() => {
                 if (this.retry < this.maxRetry) {
                     this.retry++;
@@ -94,7 +94,7 @@ class WebsocketClient {
     }
 
     sendMessage(voxels, key) {
-        if (MODE == 0 && preferences.getWebsocket())
+        if (MODE == 0 && preferences.isWebsocket())
             if (this.ws && this.ws.readyState === WebSocket.OPEN)
                 this.ws.send(JSON.stringify({ key: key, voxels: voxels }));
     }
