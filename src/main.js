@@ -27,10 +27,10 @@ engine.init().then(eng => {
         CORE.builder.init();
         CORE.xformer.init();
 
+        CORE.axisView.create(eng);
         CORE.uix.init();
         CORE.helper.init();
         CORE.ghosts.init();
-        CORE.axisView.init();
 
         CORE.tool.init();
         
@@ -39,6 +39,8 @@ engine.init().then(eng => {
         CORE.preferences.finish(startTime);
 
         CORE.registerRenderLoops();
+
+        engine.isRendering = true;
     });
 });
 

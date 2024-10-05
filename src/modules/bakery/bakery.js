@@ -27,11 +27,6 @@ const VEC6_HALF = [
     Vector3(0, 0, -0.5)
 ];
 
-const indices = [ 0,1,2, 0,2,3 ];
-const positions = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
-const normals = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ]; // right handed
-const uvs = [ 0,1, 1,1, 1,0, 0,0 ];
-
 
 class Bakery {
     constructor() {
@@ -56,14 +51,14 @@ class Bakery {
     constructFace(voxel, position, nearby, rotX, rotY) {
         const idx = builder.getIndexAtPosition(voxel.position.add(nearby));
         if (idx === undefined) {
-            const plane = pool.constructPlane(positions, normals, uvs, indices, voxel.color);
+            const plane = pool.constructPlane(voxel.color);
             plane.position = voxel.position.add(position);
             plane.rotation.x = rotX;
             plane.rotation.y = rotY;
             this.planes.push(plane);
         } else {
             if (voxel.color !== builder.voxels[idx].color) {
-                const plane = pool.constructPlane(positions, normals, uvs, indices, voxel.color);
+                const plane = pool.constructPlane(voxel.color);
                 plane.position = voxel.position.add(position);
                 plane.rotation.x = rotX;
                 plane.rotation.y = rotY;

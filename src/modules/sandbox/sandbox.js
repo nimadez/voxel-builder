@@ -160,7 +160,6 @@ class Sandbox {
         this.textures.push(new THREE.TextureLoader().load(TEX_CHECKER));
     }
 
-    // If batchedmesh is supported by pathtracer, we can do more!
     createBatchedMesh() {
         const box = new THREE.BoxGeometry(1, 1, 1);
         const batchedMesh = new THREE.BatchedMesh(
@@ -430,7 +429,7 @@ class Sandbox {
         this.controls.enableDamping = !isEnabled;
 
         if (isEnabled) {
-            renderer.toneMapping = THREE.NoToneMapping;
+            //renderer.toneMapping = THREE.NoToneMapping;
             renderer.toneMappingExposure = 1;
 
             this.scene.remove(this.shadowGround);
@@ -442,7 +441,7 @@ class Sandbox {
             ui.domInfoRender.style.display = 'unset';
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            //renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 0.6;
             renderer.domElement.style.pointerEvents = 'unset';
 

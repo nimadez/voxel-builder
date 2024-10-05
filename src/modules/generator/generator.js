@@ -7,7 +7,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { ui, builder, xformer, project, memory, hexToRgbFloat } from '../core.js';
+import { ui, camera, builder, xformer } from '../core.js';
 
 
 const COL_ICE = '#8398AF';
@@ -80,7 +80,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearScene();
+            camera.frame();
         } else {
             xformer.beginNewObject(data);
         }
@@ -109,7 +109,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearScene();
+            camera.frame();
         } else {
             xformer.beginNewObject(data);
         }
@@ -156,7 +156,7 @@ class Generator {
         
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearScene();
+            camera.frame();
         } else {
             xformer.beginNewObject(data);
         }
@@ -202,7 +202,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearScene();
+            camera.frame();
         } else {
             xformer.beginNewObject(data, (isHeightGrad) ? true : false);
         }
@@ -226,6 +226,14 @@ function gradientHexArray(hexStart, hexEnd, count) {
         ));
     }
     return arr;
+}
+
+function hexToRgbFloat(hex, gamma = 2.2) {
+    return {
+        r: (parseInt(hex.substring(1, 3), 16) / 255) ** gamma,
+        g: (parseInt(hex.substring(3, 5), 16) / 255) ** gamma,
+        b: (parseInt(hex.substring(5, 7), 16) / 255) ** gamma
+    }
 }
 
 function rgbFloatToHex(r, g, b) {

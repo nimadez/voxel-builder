@@ -46,7 +46,7 @@
 - glTF compatible editor
 
 **Extensibility**
-- ES modules [?](https://github.com/nimadez/voxel-builder/wiki/Modules)
+- ES modules
 - WebSockets client [?](https://github.com/nimadez/voxel-builder/wiki/WebSocket-Client)
 - User startup project
 - Blender importer script
@@ -88,7 +88,6 @@ python3 update.py
 - Mozilla Firefox
 > - PWA A2HS-ready *(add to home screen)*
 > - For the best experience, a tablet with pen or Wacom is recommended
-> - Voxel Builder is not designed for mobile devices with small screens
 
 ## Known Issues
 Higher than 512K is not recommended
@@ -114,8 +113,7 @@ This problem is related to Babylon.js and nothing can be done.
 ```
 Error: Exceeded the quota
 ```
-Browser storage can handle 6 snapshots with 32x32x32 voxels
-(use Electron for much higher capacity - 1 million)
+Browser storage is limited, use Electron for much higher capacity.
 ```
 
 ## FAQ
