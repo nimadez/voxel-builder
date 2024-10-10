@@ -1997,7 +1997,7 @@ class Ghosts {
         this.disposeThin(); // init
     }
 
-    createThin(voxels) {
+    createThin(voxels, isHighlight = true) {
         if (voxels.length == 0) return;
 
         if (this.thin)
@@ -2030,7 +2030,8 @@ class Ghosts {
         this.thin.material.diffuseColor = Color3(1, 1, 1);
 
         // TODO: visual artifacts with thin-instances
-        helper.highlightOverlayMesh(this.thin, COL_ORANGE_RGB, 0.25);
+        if (isHighlight)
+            helper.highlightOverlayMesh(this.thin, COL_ORANGE_RGB, 0.25);
 
         light.addMesh(this.thin);
         light.updateShadowMap();
@@ -2875,7 +2876,7 @@ class Tool {
             }
         }
 
-        ghosts.createThin(this.selected);
+        ghosts.createThin(this.selected, false);
     }
 
     pickWorkplane(pick, norm) {
@@ -3352,7 +3353,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.2",
+            version: "Voxel Builder 4.5.3",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3390,20 +3391,19 @@ class Project {
     }
 
     newProjectStartup(size = 20) {
+        let color = COL_ICE;
+        if (size > 5)
+            color = '#4988CA';
+
         builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    builder.add(Vector3(x, y, z), COL_ICE, true);
+                    builder.add(Vector3(x, y, z), y == 0 ? color : COL_ICE, true);
                 }
             }
         }
-        if (size > 5) {
-            for (let i = 0; i < builder.voxels.length; i++) {
-                if (builder.voxels[i].position.y == 0)
-                    builder.voxels[i].color = '#4988CA';
-            }
-        }
+        
         builder.create();
         project.clearSceneAndReset();
         ui.domProjectName.value = 'untitled';
