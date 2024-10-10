@@ -1634,7 +1634,7 @@ class MeshPool {
         setTimeout(() => {
             const planes = modules.bakery.bake(voxels);
             const baked = MergeMeshes(planes, true, true);
-            baked.overrideMaterialSideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
+            baked.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
             baked.name = '_mesh';
             this.resetPivot(baked);
 
@@ -1997,7 +1997,7 @@ class Ghosts {
         this.disposeThin(); // init
     }
 
-    createThin(voxels) {
+    createThin(voxels, highlightAlpha = 0.25, highlightColor = COL_ORANGE_RGB) {
         if (voxels.length == 0) return;
 
         if (this.thin)
@@ -2030,7 +2030,8 @@ class Ghosts {
         this.thin.material.diffuseColor = Color3(1, 1, 1);
 
         // TODO: visual artifacts with thin-instances
-        helper.highlightOverlayMesh(this.thin, COL_ORANGE_RGB, 0.25);
+        if (highlightAlpha > 0)
+            helper.highlightOverlayMesh(this.thin, highlightColor, highlightAlpha);
 
         light.addMesh(this.thin);
         light.updateShadowMap();
@@ -2853,6 +2854,12 @@ class Tool {
         ghosts.createThin(this.selected);
     }
 
+    rectSelectPaint(start) {
+        this.selected = this.getVoxelsFromRectangleSelection(start);
+        this.selected = this.selected.filter((i) => i.visible);
+        ghosts.createThin(this.selected, 0.8, color3FromHex(currentColor));
+    }
+
     rectSelectFirst(start, norm, pick) {
         this.tmp = this.getVoxelsFromRectangleSelection(start);
         this.tmp = this.tmp.filter((i) => i.visible);
@@ -2875,7 +2882,7 @@ class Tool {
             }
         }
 
-        ghosts.createThin(this.selected);
+        ghosts.createThin(this.selected, 0);
     }
 
     pickWorkplane(pick, norm) {
@@ -3053,7 +3060,7 @@ class Tool {
                 break;
             case 'rect_paint':
                 if (this.startRect)
-                    this.rectSelect(this.startRect);
+                    this.rectSelectPaint(this.startRect);
                 break;
             case 'transform_box':
                 if (this.startBox)
@@ -3352,7 +3359,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.2",
+            version: "Voxel Builder 4.5.3",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3390,20 +3397,19 @@ class Project {
     }
 
     newProjectStartup(size = 20) {
+        let color = COL_ICE;
+        if (size > 5)
+            color = '#4988CA';
+
         builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    builder.add(Vector3(x, y, z), COL_ICE, true);
+                    builder.add(Vector3(x, y, z), y == 0 ? color : COL_ICE, true);
                 }
             }
         }
-        if (size > 5) {
-            for (let i = 0; i < builder.voxels.length; i++) {
-                if (builder.voxels[i].position.y == 0)
-                    builder.voxels[i].color = '#4988CA';
-            }
-        }
+        
         builder.create();
         project.clearSceneAndReset();
         ui.domProjectName.value = 'untitled';
@@ -5041,6 +5047,10 @@ ui.domRenderShade.onchange = () => {
         modules.sandbox.toggleShadeMode();
 };
 
+ui.domCameraAutoFrame.onchange = (ev) => {
+    if (ev.target.checked)
+        camera.frame();
+};
 
 ui.domCameraOrtho.onclick = () => {
     camera.switchOrtho();

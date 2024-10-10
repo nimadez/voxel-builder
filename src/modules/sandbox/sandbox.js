@@ -429,6 +429,7 @@ class Sandbox {
         this.isRendering = isEnabled;
         this.controls.enableDamping = !isEnabled;
         renderer.toneMapping = parseInt(ui.domRenderTonemap.value);
+        renderer.domElement.style.pointerEvents = 'unset';
 
         if (isEnabled) {
             renderer.toneMappingExposure = 1;
@@ -443,7 +444,6 @@ class Sandbox {
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.toneMappingExposure = 0.8;
-            renderer.domElement.style.pointerEvents = 'unset';
 
             this.scene.add(this.shadowGround);
             this.isProgressing = false;
@@ -534,6 +534,7 @@ class Sandbox {
         this.resize();
         this.animate();
         
+        document.getElementById('canvas').style.pointerEvents = 'none';
         renderer.domElement.style.display = 'unset';
     }
 
@@ -551,6 +552,8 @@ class Sandbox {
         camera.camera0.target = Vector3(this.controls.target.x, this.controls.target.y, this.controls.target.z);
 
         renderer.domElement.style.display = 'none';
+        document.getElementById('canvas').style.pointerEvents = 'unset';
+        
         ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
         ui.domInfoRender.style.display = 'none';
         ui.showProgress(0);
