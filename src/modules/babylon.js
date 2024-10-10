@@ -156,12 +156,12 @@ export function ExportOBJ(meshes) {
 }
 
 export function ExportSTL(meshes, filename) {
-    return BABYLON.STLExport.CreateSTL(meshes, true, filename, false, false, true);
+    return BABYLON.STLExport.CreateSTL(meshes, true, filename, null, null, false, true, false);
 }
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-export function Animator(target, property, from, to, fps = 2, frames = 1, callback = undefined) {
+export function Animator(target, property, from, to, callback = undefined, fps = 2, frames = 1) {
     BABYLON.Animation.CreateAndStartAnimation('animator',
         target, property, fps, frames, from, to, 
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,

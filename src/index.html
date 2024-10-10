@@ -33,18 +33,19 @@
             --font: Roboto;
             --font-size: 12px;
             --btn-color: #969fb1;
-            --btn-bg: #2d3542;
+            --btn-bg: #2d3542DD;
             --input-bg: #222833CC;
             --input-color: #788499;
             --label: #788599;
-            --cat-bg: #282d38;
+            --cat-bg: #2a2f38;
             --cat-color: #636f85;
             --cat-border: #3e485caa;
-            --menu-bg: #2c323ff5;
-            --toolbar-bg: #282e3aee;
-            --confirm: #222731ee;
+            --menu-bg: #2d3542EE;
+            --confirm: #222731EE;
             --borders: #161a2050;
-            --btn-shadows: #161a2028;
+            --btn-shadow: #161a2028;
+            --text-shadow: 1px 1px 0 #222;
+            --info-color: #94a0b1EE;
             --white: #97a5b8;
         }
         * { margin: 0; padding: 0; outline: none; }
@@ -56,6 +57,7 @@
         input[type=number]:hover { color: steelblue; border: solid 1px #43495a; }
         input[type=number]:disabled { opacity: 0.5; }
         input[type=number] { appearance: textfield; }
+        input[type=number]:hover { appearance: unset; }
         input[type=text] { font-family: var(--font); font-size: 13px; width: 98%; background: var(--input-bg); color: var(--input-color); padding: 6px 0 6px 0; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
         input[type=text]:hover { color: steelblue; border: solid 1px #43495a; cursor: text; }
         input[type=url] { font-family: var(--font); font-size: 13px; width: 100%; background: var(--input-bg); color: var(--input-color); padding: 6px 0 6px 0; margin-left: -2px; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
@@ -70,8 +72,8 @@
         input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border: solid 1px transparent; }
         input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; border: solid 1px transparent; }
         input[type=color]:hover { cursor: pointer; }
-        button { font-family: var(--font); font-size: var(--font-size); background: linear-gradient(60deg, #2c3441 0%, #2a323f 100%); color: var(--btn-color); letter-spacing: 0.03em; border-radius: 2px; border: 1px solid var(--borders); }
-        button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadows); cursor: pointer; }
+        button { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); letter-spacing: 0.03em; border-radius: 2px; border: 1px solid var(--borders); }
+        button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
         label { font-family: var(--font); font-size: var(--font-size); color: var(--label); margin: 0; }
         select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--btn-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
@@ -79,9 +81,9 @@
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
         ul { list-style-type: none; }
         ul li { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); border-radius: 2px; text-align: center; }
-        ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadows); }
+        ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); }
         #introscreen { z-index: 99999; display: unset; position: absolute; width: 100%; height: 100%; }
-        #introscreen .logo { background: #252a3060; width: fit-content; padding: 20px 15px 20px 15px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 10px; text-align: center; }
+        #introscreen .logo { background: #252a3060; width: fit-content; padding: 20px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 10px; text-align: center; }
         #introscreen .logo img { width: 100px; height: 100px; }
         #canvas { z-index: 0; position: absolute; width: 100%; height: 100%; background: linear-gradient(180deg, #434b5c 0%, #313544 100%); }
         #canvas_three { z-index: 300; display: none; width: 100%; height: 100%; position: absolute;
@@ -91,13 +93,13 @@
             background-size: 38px 38px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
         #canvas_palette { z-index: 1; image-rendering: pixelated; background: #31394b80; position: relative; width: 100%; height: 32000px; }
         #menus { display: none; }
-        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 76px; padding: 0 4px 4px 4px; width: 130px; height: fit-content; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
+        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 76px; padding: 0 4px 4px 4px; width: 125px; height: fit-content; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
         .menu_L li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
         .menu_L li:hover { background: none; }
         .menu_L li div.flex { display: flex; }
         .menu_L li div.flex button { width: 50%; }
         .menu_L button { width: 100%; padding: 7px 0 7px 0; border-radius: 2px; }
-        .menu_L .category { color: var(--cat-color); background: var(--cat-bg); border: solid 1px var(--cat-border); font-size: 11px; letter-spacing: 0.08em; text-shadow: 1px 1px 0 #222; text-align: center; margin: 3px 0 3px 0; padding: 3px 0 2px 0; border-radius: 4px; }
+        .menu_L .category { color: var(--cat-color); background: var(--cat-bg); border: solid 1px var(--cat-border); font-size: 11px; letter-spacing: 0.08em; text-shadow: var(--text-shadow); text-align: center; margin: 3px 0 3px 0; padding: 3px 0 2px 0; border-radius: 4px; }
         .menu_L .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
         .menu_L :first-child { cursor: pointer; }
         .menu_L li div i { color: var(--cat-color); margin-top: 3px; }
@@ -110,23 +112,22 @@
         #toolbar_top_cen li:nth-child(2) { border-radius: 0; }
         #toolbar_top_cen li:nth-child(3) { border-left: none; border-radius: 0; border-bottom-right-radius: 2px; border-top-right-radius: 2px; }
         #toolbar_top_cen li.mode_select { color: orange; }
-        #toolbar_top_mem li { width: 40px; font-size: 11px; letter-spacing: 0.03em; padding: 5px; background: none; text-shadow: 1px 1px 0 #222; cursor: pointer; }
+        #toolbar_top_mem li { width: 40px; font-size: 11px; letter-spacing: 0.03em; padding: 5px; background: none; text-shadow: var(--text-shadow); cursor: pointer; }
         #toolbar_top_mem li:first-child { float: left; }
         #toolbar_top_mem li:last-child { float: right; }
         #toolbar_top_mem li:hover { box-shadow: none; color: orange }
-        #toolbar_L { z-index: 1000; opacity: 0.95; width: 75px; position: absolute; left: 0; top: 0; }
+        #toolbar_L { z-index: 1000; width: 75px; position: absolute; left: 0; top: 0; }
         #toolbar_L li { background: none; border: none; padding: 0; }
         #toolbar_L li:nth-child(1) button { padding: 6px 0 6px 10px; }
         #toolbar_L li:nth-child(1) :first-child { width: 50%; float: left; }
         #toolbar_L li:nth-child(1) :last-child { width: 50%; border-left: none; }
-        #toolbar_L button { background: var(--toolbar-bg); width: 100%; padding: 8px 0 7px 0; border-top: none; border-radius: 0; }
-        #toolbar_L button:hover { background: orange; }
+        #toolbar_L button { width: 100%; padding: 8px 0 7px 0; border-top: none; border-radius: 0; }
         #toolbar_minimal { z-index: 1000; flex-direction: column; gap: 5px; opacity: 0.95; width: 40px; position: absolute; left: 0; top: 40px; }
         #toolbar_minimal li { display: inline; background: none; box-shadow: none; border: none; padding: 0; }
         #toolbar_minimal button { background: none; box-shadow: none; color: var(--btn-color); width: 100%; padding: 8px 0 7px 0; border: none; border-radius: 0; }
-        #toolbar_minimal button i { font-size: 22px; text-shadow: 1px 1px 0 #222; }
+        #toolbar_minimal button i { font-size: 22px; text-shadow: var(--text-shadow); }
         #toolbar_minimal button:hover { color: orange; }
-        #hover { z-index: 2200; opacity: 0.9; display: none; bottom: 23%; left: 50%; margin-left: -17px; position: absolute; }
+        #hover { z-index: 2200; display: none; bottom: 130px; left: 50%; margin-left: -17px; position: absolute; }
         #hover .tool_camera { z-index: 2220; position: relative; padding: 5px; top: 32px; left: 0; border: 1px solid #717b8d40; border-radius: 3px; cursor: move; }
         #hover li { z-index: 2210; padding: 5px; transition: all 0.2s ease-in-out; border: 1px solid #717b8d35; border-radius: 3px; position: absolute; cursor: pointer; }
         #hover li.hover_item_hide { opacity: 0; pointer-events: none; }
@@ -139,7 +140,7 @@
         #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: fixed; }
         #menu-about .about { font-size: 13px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 6px; }
         #menu-about .about h1 { font-size: 13px; font-weight: normal; color: #98a1ac; letter-spacing: 1px; }
-        #menu-storage img { object-fit: contain; width: 100%; height: 80px; background: var(--btn-shadows); box-shadow: inset 0 0 10px #25262e; border-radius: 5px; cursor: pointer; }
+        #menu-storage img { object-fit: contain; width: 100%; height: 80px; background: #292f3aaa; box-shadow: inset 0 0 10px #25262e; border-radius: 5px; cursor: pointer; }
         #menu-storage li div button { font-size: 11px; letter-spacing: 0.05em; width: 100%; padding: 5px 0 5px 0; }
         #btn-symm-axis-s:hover { background: var(--input-bg); }
         #btn-symm-axis-x:hover { background: var(--input-bg); }
@@ -149,9 +150,9 @@
         #menu-inscreen-store button { width: 68px; height: 32px; font-size: 11px; }
         #menu-inscreen-right { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; bottom: 135px; }
         #menu-inscreen-right button { width: 45px; height: 32px; }
-        #menu-inscreen-bottom { z-index: 9; display: none; background: #30394740; padding: 2px; height: fit-content; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
-        #menu-inscreen-bottom div { z-index: 9; width: 28px; color: #00ffffAA; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #14171b; text-align: center; cursor: pointer; background: none; border: none; }
-        #menu-inscreen-bottom div i { font-size: 19px; color: aqua; opacity: 0.7; margin-top: -4px; }
+        #menu-inscreen-bottom { z-index: 9; display: none; padding: 2px; height: fit-content; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
+        #menu-inscreen-bottom div { z-index: 9; width: 28px; opacity: 0.75; color: aqua; font-size: 18px; font-weight: bold; text-shadow: var(--text-shadow); text-align: center; cursor: pointer; background: none; border: none; }
+        #menu-inscreen-bottom div i { font-size: 19px; margin-top: -4px; }
         #menu-inscreen-render { z-index: 301; display: none; flex-direction: column; gap: 4px; right: 5px; top: 5px; position: fixed; }
         #menu-inscreen-render button { width: 65px; height: 32px; font-size: 11px; }
         #menu-inscreen-render button i { font-size: 24px; }
@@ -159,11 +160,9 @@
         #menu-inscreen-export button { width: 68px; height: 32px; font-size: 11px; }
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
-        #info { z-index: 2; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
-        #info span { color: var(--white); letter-spacing: 0.05em; }
-        #info_tool { z-index: 2; display: none; color: #97a5b890; letter-spacing: 0.05em; font-size: 11px; position: absolute; padding: 2px; width: auto; top: 46px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
-        #info_render { z-index: 301; display: none; background: #2c313a80; color: #97a5b880; font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #info_render span { color: var(--white); letter-spacing: 0.05em; }
+        #info { z-index: 2; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
+        #info_tool { z-index: 2; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 46px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
+        #info_render { z-index: 301; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
         #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-align: center; }
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
@@ -235,7 +234,7 @@
         <ul id="toolbar_minimal">
             <li><button id="btn_minimal_new"><i class="material-icons">description</i></button></li>
             <li><button id="btn_minimal_load"><i class="material-icons">file_upload</i></button></li>
-            <li><button id="btn_minimal_export"><i class="material-icons">download</i></button></li>
+            <li><button id="btn_minimal_save"><i class="material-icons">download</i></button></li>
             <li><button id="btn_minimal_quicksave"><i class="material-icons">settings_backup_restore</i></button></li>
             <li><button id="btn_minimal_quickload"><i class="material-icons">save_as</i></button></li>
         </ul>
@@ -284,7 +283,7 @@
             <li class="spacer"></li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.1 Beta
+                <br>&#8627; 4.5.2 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -303,8 +302,8 @@
             <li><input type="checkbox" id="pref_minimal"> <label for="pref_minimal">Minimal UIX</label></li>
             <li><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="20" step="1"></li>
-            <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="10" step="1"></li>
+            <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
+            <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
             <li class="category">SCENE</li>
             <li>
                 <input type="checkbox" id="pref_background_check"> <label for="pref_background_check">Background</label>
@@ -357,16 +356,18 @@
 
         <ul class="menu_L panel" id="menu-camera">
             <li class="category">VIEW</li>
+            <li><input id="input-camera-autoframe" type="checkbox"></input> <label for="input-camera-autoframe">Auto Frame</label></li>
+            <li class="spacer"></li>
             <li><button id="camera_frame">Frame</button></li>
             <li><button id="btn_tool_frame_color" class="tool_frame_color">Frame Color</button></li>
             <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li><button id="camera_topview">Top View</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.5" min="0.6" step="0.01"></li>
+            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.5" min="0" step="0.01"></li>
             <li class="category">SETTINGS</li>
             <li><button id="btn-ortho">Perspective</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.01"></li>
+            <li class="row_input"><label>FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" step="0.01"></li>
             <li class="row_input"><label>F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
             <li class="row_input"><label>Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
             <li class="category">ANIMATION</li>
@@ -379,9 +380,21 @@
             <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start Render</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.9" min="0.1" max="1" step="0.05"></li>
-            <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" max="8192" step="8"></li>
-            <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
+            <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" step="8"></li>
+            <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" step="1"></li>
             <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="1" min="1" step="1"></li>
+            <li class="spacer"></li>
+            <li class="row_input">
+                <label>Tonemap</label> <select id="input-pt-tonemap">
+                    <option value="0">No Tone Mapping</option>
+                    <option value="1" selected>Linear</option>
+                    <option value="2">Reinhard</option>
+                    <option value="3">Cineon</option>
+                    <option value="4">ACESFilmic</option>
+                    <option value="5">AgX</option>
+                    <option value="6">Neutral</option>
+                </select>
+            </li>
             <li class="category">ENVIRONMENT</li>
             <li>
                 <select id="hdr_dropdown" style="text-align: left;">
@@ -401,14 +414,14 @@
             <li class="spacer"></li>
             <li><input type="checkbox" id="input-pt-hdri-background"> <label for="input-pt-hdri-background">Background</label></li>
             <li class="spacer"></li>
-            <li class="row"><label style="min-width: 52%">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.8" min="0.01" max="1" step="0.01"></li>
-            <li class="row_input"><label>Blur</label> <input type="number" id="input-pt-hdri-blur" class="ignorekeys" value="0.05" min="0" max="1" step="0.01"></li>
+            <li class="row"><label style="min-width: 52%">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.8" min="0.01" step="0.01"></li>
+            <li class="row_input"><label>Blur</label> <input type="number" id="input-pt-hdri-blur" class="ignorekeys" value="0.05" min="0" step="0.01"></li>
             <li class="row_input"><label>Light</label> <input type="color" id="input-pt-light-color" value="#FFE484"></li>
             <li class="row_input"><label>Intensity</label> <input type="number" id="input-pt-light-intensity" class="ignorekeys" value="0.8" min="0" step="0.01"></li>
             <li class="category">MATERIAL</li>
-            <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" max="1" step="0.01"></input></li>
-            <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
-            <li class="row_input"><label for="input-pt-transmission">Transmiss.</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" max="1" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-transmission">Transmiss.</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
             <li class="row_input" title="Black voxels are emissive"><label>Emissive</label> <input type="color" id="input-pt-emissive" value="#5EC3C5"></li>
             <li class="spacer"></li>
             <li class="row_input">
@@ -423,7 +436,7 @@
 
         <ul class="menu_L panel" id="menu-voxelize">
             <li class="category">3D MODELS</li>
-            <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1" max="1000"></li>
+            <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1"></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
             <li class="row" style="margin: 2px 0 0 2px">
@@ -431,7 +444,7 @@
                 <button id="import_mesh_url" style="max-width: 28%"> > </button>
             </li>
             <li class="category">2D IMAGES</li>
-            <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" max="20" step="0.1"></li>
+            <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" step="0.1"></li>
             <li><input type="checkbox" id="input-voxelizer-yup" checked> <label for="input-voxelizer-yup">Y-Up</label></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer_img').click()">Upload Image</button></li>
@@ -445,9 +458,9 @@
         <ul class="menu_L panel" id="menu-create">
             <li class="category">BOX</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_grid_y" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_grid_z" type="number" class="ignorekeys" value="20" min="1" max="100"></div>
+                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_grid_y" type="number" class="ignorekeys" value="20" min="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_grid_z" type="number" class="ignorekeys" value="20" min="1"></div>
                 <input type="checkbox" id="create_grid_fill" checked> <label for="create_grid_fill">Fill Box</label><br>
                 <input type="checkbox" id="create_grid_new" checked> <label for="create_grid_new">New Scene</label>
                 <div class="flex">
@@ -458,16 +471,16 @@
             </li>
             <li class="category">SPHERE</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 12px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3" max="100"></div>
-                <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0" max="100"></div>
+                <div class="row">&nbsp;<label style="margin-right: 12px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0"></div>
                 <input type="checkbox" id="create_sphere_new" checked> <label for="create_sphere_new">New Scene</label><br>
                 <button id="create_sphere">Sphere</button>
             </li>
             <li class="category">TERRAIN</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3" max="500"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_terrain_y" type="number" class="ignorekeys" value="5" min="1" max="50"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3" max="500"></div>
+                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_terrain_y" type="number" class="ignorekeys" value="5" min="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3"></div>
                 <input type="checkbox" id="create_terrain_grad" checked> <label for="create_terrain_grad">Height Gradient</label><br>
                 <input type="checkbox" id="create_terrain_new" checked> <label for="create_terrain_new">New Scene</label><br>
                 <button id="create_terrain">Terrain</button>
@@ -502,7 +515,7 @@
             <li><button id="btn_tool_box_add" class="tool_box_add">Box Add</button></li>
             <li><button id="btn_tool_box_remove" class="tool_box_remove">Box Remove</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Height</label> <input id="input-boxtool-height" type="number" class="ignorekeys" value="1" min="1" max="100"></li>
+            <li class="row_input"><label>Height</label> <input id="input-boxtool-height" type="number" class="ignorekeys" value="1" min="1"></li>
             <li class="category">RECTANGLE</li>
             <li><button id="btn_tool_rect_add" class="tool_rect_add">Rect Add</button></li>
             <li><button id="btn_tool_rect_remove" class="tool_rect_remove">Rect Remove</button></li>
@@ -531,7 +544,6 @@
             <li><button id="btn_tool_transform_group" class="tool_transform_group">Color Group</button></li>
             <li><button id="btn_tool_transform_visible" class="tool_transform_visible">Visible Voxels</button></li>
             <li class="spacer"></li>
-            <li><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone Voxels</label></li>
             <li class="category">MANIPULATE</li>
             <li><button id="normalize_voxels">Normalize Voxels</button></li>
@@ -592,9 +604,9 @@
             <li class="row"><label style="margin-right: 20px">Albedo</label> <input type="color" id="input-pbr-albedo" value="#FFFFFF"></li>
             <li class="row"><label style="margin-right: 10px">Emissive</label> <input type="color" id="input-pbr-emissive" value="#000000"></li>
             <li class="category">PROPERTIES</li>
-            <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-pbr-roughness" type="number" class="ignorekeys" value="1" min="0" max="1" step="0.01"></li>
-            <li class="row"><label style="margin-right: 21px">Metallic</label> <input id="input-pbr-metallic" type="number" class="ignorekeys" value="0" min="0" max="1" step="0.01"></li>
-            <li class="row"><label style="margin-right: 32px">Alpha</label> <input id="input-pbr-alpha" type="number" class="ignorekeys" value="1" min="0.1" max="1" step="0.01"></li>
+            <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-pbr-roughness" type="number" class="ignorekeys" value="1" min="0" step="0.01"></li>
+            <li class="row"><label style="margin-right: 21px">Metallic</label> <input id="input-pbr-metallic" type="number" class="ignorekeys" value="0" min="0" step="0.01"></li>
+            <li class="row"><label style="margin-right: 32px">Alpha</label> <input id="input-pbr-alpha" type="number" class="ignorekeys" value="1" min="0.1" step="0.01"></li>
             <li class="category">VERTEX COLORS<li>
             <li><input type="color" id="input-pbr-vertexcolor" value="#899AAE"></li>
             <li class="category">DISPLAY<li>
@@ -647,8 +659,8 @@
     <div id="marquee"></div>
     <div id="palette"><canvas id="canvas_palette"></canvas></div>
     <div id="meshlist"></div>
-    <div id="info"><span>0</span> FPS | <span>0</span> | <span>0</span> | <span>0</span></div>
-    <div id="info_render"><span>0</span> | SL <span>0</span> / <span>0</span> | <span>0</span> | BOUNCE <span>0</span></div>
+    <div id="info"><span>0</span> FPS &nbsp; <span>0</span> &nbsp; <span>0</span> &nbsp; <span>0</span></div>
+    <div id="info_render"><span>0</span> &nbsp; SL <span>0</span> / <span>0</span> &nbsp; <span>0</span> &nbsp; BOUNCE <span>0</span></div>
     <div id="info_tool"></div>
     <div id="progressbar"></div>
     <div id="introscreen"><div class="logo"><img src="data:image/png;base64,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"></div></div>

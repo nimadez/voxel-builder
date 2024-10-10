@@ -119,6 +119,7 @@ const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
 const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
 const canvas = document.getElementById('canvas');
+const pointer = { x: 0, y: 0, isDown: false };
 
 export let MODE = -1; // model|render|export
 let isRenderAxisView = true;
@@ -290,7 +291,7 @@ class AxisViewScene {
     }
 
     registerEvent() {
-        const pick = this.scene.pick(scene.pointerX, scene.pointerY, this.predicate);
+        const pick = this.scene.pick(this.scene.pointerX, this.scene.pointerY, this.predicate);
         if (pick && pick.hit) {
             if (pick.pickedMesh == this.viewCube) {
                 camera.frame();
@@ -318,6 +319,7 @@ class Camera {
     constructor() {
         this.camera0 = null;
         this.lastPos = [];
+        this.isFramingActive = false;
     }
 
     init() {
@@ -339,19 +341,21 @@ class Camera {
     }
 
     frame() {
+        if (this.isFramingActive) return;
+
         if (MODE == 0) {
             (xformer.isActive) ?
-                camera.setFramingBehavior(camera.camera0, ghosts.thin) :
+                this.setFramingBehavior(this.camera0, ghosts.thin) :
                 this.setFramingBehavior(this.camera0, builder.mesh);
+
         } else if (MODE == 1) {
             modules.sandbox.frameCamera();
+
         } else if (MODE == 2) {
             if (pool.meshes.length > 0) {
-                if (pool.selected) {
-                    this.setFramingBehavior(this.camera0, pool.selected);
-                } else {
+                (pool.selected) ?
+                    this.setFramingBehavior(this.camera0, pool.selected) :
                     this.setFramingBehaviorMeshes(this.camera0);
-                }
             } else {
                 this.setFramingBehavior(this.camera0, builder.mesh);
             }
@@ -373,8 +377,9 @@ class Camera {
     setFramingBehavior(cam, mesh) {
         const f = this.getFramed(mesh);
         if (f) {
+            this.isFramingActive = true;
             Animator(cam, 'radius', cam.radius, f.radius);
-            Animator(cam, 'target', cam.target.clone(), f.target);
+            Animator(cam, 'target', cam.target.clone(), f.target, () => { this.isFramingActive = false; });
         }
     }
 
@@ -382,8 +387,9 @@ class Camera {
         const sum = pool.getBoundingBoxSum();
         const f = this.getFramedBoundingBox(sum.min, sum.max);
         if (f) {
+            this.isFramingActive = true;
             Animator(cam, 'radius', cam.radius, f.radius);
-            Animator(cam, 'target', cam.target.clone(), f.target);
+            Animator(cam, 'target', cam.target.clone(), f.target, () => { this.isFramingActive = false; });
         }
     }
 
@@ -498,12 +504,12 @@ class Camera {
     }
 
     setOrthoMode() {
-        const sizeY = (scene.activeCamera.radius / 2) * scene.activeCamera.fov;
-        const sizeX = sizeY * engine.engine.getAspectRatio(scene.activeCamera);
-        scene.activeCamera.orthoLeft = -sizeX;
-        scene.activeCamera.orthoRight = sizeX;
-        scene.activeCamera.orthoTop = sizeY;
-        scene.activeCamera.orthoBottom = -sizeY;
+        const sizeY = (this.camera0.radius / 2) * this.camera0.fov;
+        const sizeX = sizeY * engine.engine.getAspectRatio(this.camera0);
+        this.camera0.orthoLeft = -sizeX;
+        this.camera0.orthoRight = sizeX;
+        this.camera0.orthoTop = sizeY;
+        this.camera0.orthoBottom = -sizeY;
     }
 
     setFov(value) {
@@ -539,7 +545,7 @@ class HDRI {
         this.hdrMap = new BABYLON.HDRCubeTexture(ENVMAP, scene, 16, false, false, false, undefined, () => {
             this.createSkybox(this.hdrMap);
             scene.environmentTexture = this.hdrMap;
-            scene.environmentIntensity = 0.5;
+            scene.environmentIntensity = 0.6;
             material.mat_pbr_vox.reflectionTexture = hdri.hdrMap;
             material.mat_pbr_vox.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
             onLoad();
@@ -749,7 +755,7 @@ class Material {
     createHighlightMaterial() {
         const mat = new BABYLON.StandardMaterial("highlight", scene);
         mat.diffuseColor = Color3(1, 1, 1); // overrided
-        mat.specularColor = Color3(1, 1, 1);
+        mat.specularColor = Color3(0, 0, 0);
         mat.emissiveColor = Color3(0.5, 0.5, 0.5);
         mat.useEmissiveAsIllumination = false;
         mat.linkEmissiveWithDiffuse = true;
@@ -987,19 +993,22 @@ class Builder {
         this.mesh = this.voxel.clone();
     }
 
-    create() {
+    create(isRecord = true) {
         if (this.voxels.length == 0)
             modules.generator.newBox(1, COL_ICE);
         
         this.createThinInstances().then(() => {
             if (duplicateFlag == 0) {
                 
-                memory.record();
+                if (isRecord)
+                    memory.record();
 
                 if (bvhWhiteList.includes(tool.name))
                     modules.rc.create();
                 
                 setTimeout(() => {
+                    if (ui.domCameraAutoFrame.checked && !xformer.isActive)
+                        camera.frame();
                     palette.create();
                     helper.setSymmPivot();
                     if (preferences.isWebsocket())
@@ -1423,13 +1432,13 @@ class Builder {
 
         for (let i = 0; i < positions.length; i++) {
             const idx = this.getIndexAtPosition(positions[i]);
-            if (idx !== undefined && builder.voxels[idx].visible) {
-                arr.push(builder.voxels[idx]);
+            if (idx !== undefined && this.voxels[idx].visible) {
+                arr.push(this.voxels[idx]);
 
                 if (isSymmetry) {
                     const idx = this.getIndexAtPosition(symmetry.invertPos(positions[i]));
-                    if (idx !== undefined && builder.voxels[idx].visible)
-                        arr.push(builder.voxels[idx]);
+                    if (idx !== undefined && this.voxels[idx].visible)
+                        arr.push(this.voxels[idx]);
                 }
             }
         }
@@ -1493,7 +1502,7 @@ class XFormer {
         if (!ui.domTransformClone.checked) {
             for (let i = 0; i < this.xforms.length; i++)
                 builder.voxels[ this.xforms[i].idx ].visible = false;
-            builder.create();
+            builder.create(false);
         }
 
         this.isActive = true;
@@ -1585,7 +1594,9 @@ class XFormer {
 
     deleteSelected() {
         if (this.isActive) {
-            builder.removeArray(this.xforms);
+            if (!ui.domTransformClone.checked)
+                builder.removeArray(this.xforms);
+
             builder.create();
             this.dispose();
         }
@@ -1735,6 +1746,9 @@ class MeshPool {
             ui.domPbrRoughness.value = this.selected.material.roughness;
             ui.domPbrMetallic.value = this.selected.material.metallic;
             ui.domPbrAlpha.value = this.selected.material.alpha;
+
+            const color = this.selected.getVerticesData(ColorKind);
+            ui.domPbrVertexColor.value = rgbFloatToHex(color[0], color[1], color[2]);
         } else {
             ui.notification('select a mesh');
         }
@@ -1896,6 +1910,8 @@ class MeshPool {
             colors[i + 2] = rgb.b;
         }
         mesh.setVerticesData(ColorKind, colors);
+
+        this.createMeshList();
     }
 
     normalizeMesh(mesh, scale) {
@@ -1959,6 +1975,7 @@ class Ghosts {
         this.tMatrix = MatrixIdentity();
         this.bufferMatrix = [];
         this.bufferColors = [];
+        this.rgbBuffer = undefined;
     }
 
     init() {
@@ -1994,10 +2011,14 @@ class Ghosts {
             this.tMatrix.m[13] = voxels[i].position.y;
             this.tMatrix.m[14] = voxels[i].position.z;
             this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxels[i].visible) ? 1 : 0;
-            this.tMatrix.copyToArray(this.bufferMatrix, i * 16);
-        }
+            this.bufferMatrix.set(this.tMatrix.m, i * 16);
 
-        this.bufferColors.fill(1);
+            this.rgbBuffer = hexToRgbFloat(voxels[i].color, 1);
+            this.bufferColors[i * 4] = this.rgbBuffer.r;
+            this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+            this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
+            this.bufferColors[i * 4 + 3] = 1;
+        }
     
         this.thin = this.voxel.clone();
         this.thin.makeGeometryUnique();
@@ -2009,8 +2030,7 @@ class Ghosts {
         this.thin.material.diffuseColor = Color3(1, 1, 1);
 
         // TODO: visual artifacts with thin-instances
-        helper.highlightOverlayMesh(this.thin, COL_ORANGE_RGB, 0.5);
-        helper.highlightOutlineMesh(this.thin, COL_ORANGE_RGBA);
+        helper.highlightOverlayMesh(this.thin, COL_ORANGE_RGB, 0.25);
 
         light.addMesh(this.thin);
         light.updateShadowMap();
@@ -2489,7 +2509,7 @@ class Symmetry {
             ui.domSymmAxisY.style.color = btnCol;
             ui.domSymmAxisZ.style.color = btnCol;
             ui.domInScreenSymmAxis.innerHTML = 'S';
-            ui.domInScreenSymmAxis.style.color = COL_AQUA + 'AA';
+            ui.domInScreenSymmAxis.style.color = COL_AQUA;
         }
     }
 
@@ -2637,17 +2657,17 @@ class Symmetry {
 class Tool {
     constructor() {
         this.name = 'camera';
-        this.last = null;
+        this.last = undefined;
         this.selected = [];
-        this.isMouseDown = false;
 
-        this.normal = null;
+        this.pick = undefined;
+        this.normal = undefined;
         this.isSymmetry = false;
         this.isWorkplane = false;
-        this.startBox = null;
-        this.startRect = null;
-        this.pos = null;
-        this.posNorm = null;
+        this.startBox = undefined;
+        this.startRect = undefined;
+        this.pos = undefined;
+        this.posNorm = undefined;
         this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
         this.boxCount = 0;
         this.fixedHeight = 0;
@@ -2810,7 +2830,7 @@ class Tool {
     }
 
     getVoxelsFromRectangleSelection(start) {
-        const end = { x: scene.pointerX, y: scene.pointerY };
+        const end = { x: pointer.x, y: pointer.y };
         const bounds = {
             left: Math.min(start.x, end.x),
             top: Math.min(start.y, end.y),
@@ -2932,19 +2952,18 @@ class Tool {
                     this.startBox = this.posNorm;
                 break;
             case 'rect_add':
-                this.startRect = { x: scene.pointerX, y: scene.pointerY };
+                this.startRect = { x: pointer.x, y: pointer.y };
                 ui.domMarquee.style.display = 'unset';
                 break;
             case 'rect_remove':
-                this.startRect = { x: scene.pointerX, y: scene.pointerY };
+                this.startRect = { x: pointer.x, y: pointer.y };
                 ui.domMarquee.style.display = 'unset';
                 break;
             case 'rect_paint':
-                this.startRect = { x: scene.pointerX, y: scene.pointerY };
+                this.startRect = { x: pointer.x, y: pointer.y };
                 ui.domMarquee.style.display = 'unset';
                 break;
             case 'transform_box':
-                if (!ui.domTransformReactive.checked && xformer.isActive) break;
                 xformer.apply();
                 this.selected.push(this.pos);
                 this.startBox = this.pos;
@@ -2952,13 +2971,11 @@ class Tool {
                     this.startBox = this.posNorm;
                 break;
             case 'transform_rect':
-                if (!ui.domTransformReactive.checked && xformer.isActive) break;
                 xformer.apply();
-                this.startRect = { x: scene.pointerX, y: scene.pointerY };
+                this.startRect = { x: pointer.x, y: pointer.y };
                 ui.domMarquee.style.display = 'unset';
                 break;
             case 'transform_group':
-                if (!ui.domTransformReactive.checked && xformer.isActive) break;
                 xformer.apply();
                 xformer.begin(builder.getVoxelsByColor(builder.voxels[index].color));
                 break;
@@ -2999,7 +3016,7 @@ class Tool {
 
         this.posNorm = this.pos.add(norm);
 
-        if (!this.isMouseDown) return;
+        if (!pointer.isDown) return;
 
         switch (this.name) {
             case 'add':
@@ -3146,33 +3163,31 @@ class Tool {
         }
     }
 
-    handleToolDown(pickInfo) {
-        this.isMouseDown = true;
-        if (this.name !== 'camera') {
-            this.setPickInfo(pickInfo, (p) => {
+    handleToolDown() {
+        if (this.name !== 'camera' && !xformer.isActive) {
+            this.setPickInfo(pick => {
                 scene.stopAnimation(camera.camera0);
                 scene.activeCamera.detachControl(canvas);
-                this.onToolDown(p);
+                this.onToolDown(pick);
             });
         }
     }
 
-    handleToolMove(pickInfo) {
-        if (this.name !== 'camera') {
+    handleToolMove() {
+        if (this.name !== 'camera' && !xformer.isActive) {
             this.now = performance.now();
             this.elapsed = this.now - this.then;
             if (this.elapsed > FPS_TOOL) {
                 this.then = this.now - (this.elapsed % FPS_TOOL);
-                this.setPickInfo(pickInfo, (p) => {
+                this.setPickInfo(pick => {
                     if (!camera.isCameraChange())
-                        this.onToolMove(p);
+                        this.onToolMove(pick);
                 });
             }
         }
     }
 
     handleToolUp() {
-        this.isMouseDown = false;
         if (this.name !== 'camera') {
             this.onToolUp();
 
@@ -3225,43 +3240,33 @@ class Tool {
         }
 
         ghosts.createSPSPick(this.tmpsps);
-        pick = scene.pick(scene.pointerX, scene.pointerY, this.predicateSPS);
+        pick = scene.pick(pointer.x, pointer.y, this.predicateSPS);
         if (pick && pick.hit)
             this.normal = pick.getNormal(true);
-        
-        /*  let closestDotProduct = Infinity;
-            for (const faceNormal of VEC6_ONE) {
-                const dotProduct = Math.abs(BABYLON.Vector3.Dot(pick.ray.direction, faceNormal));
-                if (dotProduct < closestDotProduct) {
-                    this.normal = faceNormal;
-                    closestDotProduct = dotProduct;
-                }
-            }
-        */
 
         return this.normal;
     }
 
-    setPickInfo(pick, onHit) {
+    setPickInfo(onHit) {
         helper.clearOverlays();
 
+        this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
         const index = builder.getIndexAtPointer();
 
         if (index !== undefined) {
-            const norm = this.normalProbe(pick, index, builder.voxels[index].position);
+            const norm = this.normalProbe(this.pick, index, builder.voxels[index].position);
             if (norm) {
-                pick.INDEX = index;
-                pick.NORMAL = norm;
-                pick.WORKPLANE = false;
-                onHit(pick);
+                this.pick.INDEX = index;
+                this.pick.NORMAL = norm;
+                this.pick.WORKPLANE = false;
+                onHit(this.pick);
             }
         } else {
-            pick = scene.pick(scene.pointerX, scene.pointerY, this.predicateWorkplane);
-            if (pick && pick.hit) {
-                pick.INDEX = pick.faceId;
-                pick.NORMAL = pick.getNormal(true);
-                pick.WORKPLANE = true;
-                onHit(pick);
+            if (this.pick && this.pick.hit) {
+                this.pick.INDEX = this.pick.faceId;
+                this.pick.NORMAL = this.pick.getNormal(true);
+                this.pick.WORKPLANE = true;
+                onHit(this.pick);
             }
         }
     }
@@ -3302,7 +3307,7 @@ class ToolMesh {
     }
 
     handleToolDown() {
-        const pick = scene.pick(scene.pointerX, scene.pointerY, (mesh) => {
+        const pick = scene.pick(pointer.x, pointer.y, (mesh) => {
             return pool.meshes.includes(mesh);
         });
 
@@ -3347,7 +3352,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.1",
+            version: "Voxel Builder 4.5.2",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3363,22 +3368,17 @@ class Project {
     
     clearSceneAndReset() {
         ui.setMode(0);
-        this.clearScene();
 
+        memory.clear();
+        symmetry.resetAxis();
         tool.toolSelector('camera');
         ghosts.disposePointCloud();
         pool.clearPool();
         uix.hideLightLocator();
-    }
 
-    clearScene(frameCamera = true) {
-        memory.clear();
-        symmetry.resetAxis();
-        pool.clearPool(false);
-        if (frameCamera)
-            setTimeout(() => {
-                camera.frame();
-            }, 10);
+        setTimeout(() => {
+            camera.frame();
+        }, 10);
     }
 
     async newProject() {
@@ -3754,7 +3754,7 @@ class Snapshot {
 
         if (this.newScene.checked) {
             builder.setStringData_backwardCompatible(data);
-            project.clearScene(true);
+            project.clearSceneAndReset();
         } else {
             const voxels = builder.createArrayFromStringData(data);
             xformer.beginNewObject(voxels, true);
@@ -3780,7 +3780,7 @@ class Snapshot {
             if (data) img.src = data;
 
             clear.addEventListener("click", async () => {
-                if (MODE !== 0 || img.src !== SNAPSHOT && !await ui.showConfirm('delete snapshot?')) return;
+                if (img.src !== SNAPSHOT && !await ui.showConfirm('delete snapshot?')) return;
                 img.src = SNAPSHOT;
                 this.delStorage(vbstoreSnapshots + img.id);
                 this.delStorage(vbstoreSnapshotsImages + img.id);
@@ -3851,8 +3851,8 @@ class RenderTarget {
     }
 
     read() {
-        this.pointer.x = Math.round(scene.pointerX);
-        this.pointer.y = engine.engine.getRenderHeight() - Math.round(scene.pointerY);
+        this.pointer.x = Math.round(pointer.x);
+        this.pointer.y = engine.engine.getRenderHeight() - Math.round(pointer.y);
         this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource, this.pointer.x, this.pointer.y, 1, 1);
         return `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
     }
@@ -3919,6 +3919,7 @@ class UserInterface {
         this.domHoverItems = document.querySelectorAll('#hover ul li');
         this.domMarquee = document.getElementById("marquee");
         this.domBoxToolHeight = document.getElementById('input-boxtool-height');
+        this.domCameraAutoFrame = document.getElementById('input-camera-autoframe');
         this.domCameraOffset = document.getElementById('input-camera-offset');
         this.domCameraFov = document.getElementById('input-camera-fov');
         this.domCameraFStop = document.getElementById('input-camera-fstop');
@@ -3927,7 +3928,6 @@ class UserInterface {
         this.domCameraAutoRotationCCW = document.getElementById('input-autorotate-ccw');
         this.domCameraOrtho = document.getElementById('btn-ortho');
         this.domTransformClone = document.getElementById('input-transform-clone');
-        this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerYup = document.getElementById('input-voxelizer-yup');
@@ -3950,6 +3950,7 @@ class UserInterface {
         this.domRenderBounces = document.getElementById('input-pt-bounces');
         this.domRenderDPR = document.getElementById('input-pt-dpr');
         this.domRenderTiles = document.getElementById('input-pt-tiles');
+        this.domRenderTonemap = document.getElementById('input-pt-tonemap');
         this.domRenderHdriBackground = document.getElementById('input-pt-hdri-background');
         this.domRenderHdriBlur = document.getElementById('input-pt-hdri-blur');
         this.domRenderEnvPower = document.getElementById('input-pt-envpower');
@@ -4153,10 +4154,12 @@ class UserInterface {
             this.domMenuInScreenBottom.children[1].style.display = 'none';
             this.domMenuInScreenBottom.children[2].style.display = 'none';
 
-            this.domInfoParent.innerHTML = '| ' + this.domInfoParent.innerHTML;
             this.domInfo[3].style.display = 'none';
 
-            this.domTransformReactive.checked = false;
+            if (isMobile) {
+                this.domCameraAutoFrame.checked = true;
+                this.domCameraOffset.value = 1.2;
+            }
         }
     }
 
@@ -4229,11 +4232,11 @@ class UserInterfaceAdvanced {
         this.advancedTexture = undefined;
         this.utilLayer = undefined;
         this.colorPicker = undefined;
-        this.gizmo = undefined;
         this.gizmoVoxel = undefined;
         this.lightNode = undefined;
         this.lightGizmoUp = undefined;
         this.lightGizmoNews = undefined;
+        this.isColorPickerActive = false;
     }
 
     init() {
@@ -4264,93 +4267,40 @@ class UserInterfaceAdvanced {
             currentColor = color3.toHexString();
             ui.domColorPicker.value = currentColor;
         });
+        this.colorPicker.onPointerDownObservable.add(() => {
+            this.isColorPickerActive = true;
+            helper.clearOverlays();
+        });
+        this.colorPicker.onPointerUpObservable.add(() => {
+            this.isColorPickerActive = false;
+        });
         panel.addControl(this.colorPicker);
     }
 
     bindVoxelGizmo(mesh) {
         this.unbindVoxelGizmo();
-        this.gizmoVoxel = new BABYLON.GizmoManager(scene, 6, new BABYLON.UtilityLayerRenderer(scene));
-        this.gizmoVoxel.positionGizmoEnabled = true;
-        this.gizmoVoxel.rotationGizmoEnabled = false;
-        this.gizmoVoxel.scaleGizmoEnabled = false;
-        this.gizmoVoxel.usePointerToAttachGizmos = false;
-        this.gizmoVoxel.clearGizmoOnEmptyPointerEvent = true;
+        this.gizmoVoxel = new BABYLON.PositionGizmo(this.utilLayer);
 
-        this.gizmoVoxel.gizmos.positionGizmo.scaleRatio = 0.6;
-        this.gizmoVoxel.gizmos.positionGizmo.snapDistance = 1;
-        this.gizmoVoxel.gizmos.positionGizmo.planarGizmoEnabled = false;
-        this.gizmoVoxel.gizmos.positionGizmo.updateGizmoRotationToMatchAttachedMesh = true;
-        [ this.gizmoVoxel.gizmos.positionGizmo.xGizmo,
-          this.gizmoVoxel.gizmos.positionGizmo.yGizmo,
-          this.gizmoVoxel.gizmos.positionGizmo.zGizmo ].forEach((gizmo) => {
+        this.gizmoVoxel.scaleRatio = 1;
+        this.gizmoVoxel.snapDistance = 1;
+        this.gizmoVoxel.planarGizmoEnabled = false;
+        this.gizmoVoxel.updateGizmoPositionToMatchAttachedMesh = true;
+        this.gizmoVoxel.updateGizmoRotationToMatchAttachedMesh = true;
+        [ this.gizmoVoxel.xGizmo,
+          this.gizmoVoxel.yGizmo,
+          this.gizmoVoxel.zGizmo ].forEach((gizmo) => {
                 gizmo.dragBehavior.onDragObservable.add(() => {
                     light.updateShadowMap();
                 });
             });
 
-        this.gizmoVoxel.attachableMeshes = [ mesh ];
-        this.gizmoVoxel.attachToMesh(mesh);
+        this.gizmoVoxel.attachedMesh = mesh;
     }
 
     unbindVoxelGizmo() {
         if (this.gizmoVoxel)
             this.gizmoVoxel.dispose();
         this.gizmoVoxel = undefined;
-    }
-
-    bindTransformGizmo(meshes) {
-        this.unbindTransformGizmo();
-        if (meshes.length == 0) return;
-
-        this.gizmo = new BABYLON.GizmoManager(scene, 6, new BABYLON.UtilityLayerRenderer(scene));
-        this.gizmo.positionGizmoEnabled = true;
-        this.gizmo.rotationGizmoEnabled = true;
-        this.gizmo.scaleGizmoEnabled = false;
-        this.gizmo.usePointerToAttachGizmos = true;
-        this.gizmo.clearGizmoOnEmptyPointerEvent = true;
-
-        this.gizmo.gizmos.positionGizmo.scaleRatio = 0.6;
-        this.gizmo.gizmos.positionGizmo.snapDistance = 1;
-        this.gizmo.gizmos.positionGizmo.xPlaneGizmo.snapDistance = 1;
-        this.gizmo.gizmos.positionGizmo.yPlaneGizmo.snapDistance = 1;
-        this.gizmo.gizmos.positionGizmo.zPlaneGizmo.snapDistance = 1;
-        this.gizmo.gizmos.positionGizmo.planarGizmoEnabled = false;
-        this.gizmo.gizmos.positionGizmo.updateGizmoRotationToMatchAttachedMesh = true;
-        [ this.gizmo.gizmos.positionGizmo.xGizmo,
-          this.gizmo.gizmos.positionGizmo.yGizmo,
-          this.gizmo.gizmos.positionGizmo.zGizmo,
-          this.gizmo.gizmos.positionGizmo.xPlaneGizmo,
-          this.gizmo.gizmos.positionGizmo.yPlaneGizmo,
-          this.gizmo.gizmos.positionGizmo.zPlaneGizmo ].forEach((gizmo) => {
-                gizmo.dragBehavior.onDragObservable.add(() => {
-                    light.updateShadowMap();
-                });
-            });
-        
-        this.gizmo.gizmos.rotationGizmo.scaleRatio = 0.3;
-        this.gizmo.gizmos.rotationGizmo.snapDistance = Math.PI / 8;
-        this.gizmo.gizmos.rotationGizmo.updateGizmoRotationToMatchAttachedMesh = false;
-        [ this.gizmo.gizmos.rotationGizmo.xGizmo,
-          this.gizmo.gizmos.rotationGizmo.yGizmo,
-          this.gizmo.gizmos.rotationGizmo.zGizmo ].forEach((gizmo) => {
-                gizmo.dragBehavior.onDragObservable.add(() => {
-                    light.updateShadowMap();
-                });
-            });
-
-        (meshes.length > 1) ?
-            this.gizmo.attachableMeshes = meshes :
-            this.gizmo.attachableMeshes = [meshes];
-
-        this.gizmo.onAttachedToMeshObservable.add((mesh) => {
-            (mesh) ? pool.onGizmoAttached(mesh) : pool.deselectMesh();
-        });
-    }
-
-    unbindTransformGizmo() {
-        if (this.gizmo)
-            this.gizmo.dispose();
-        this.gizmo = undefined;
     }
 
     createLightLocator() {
@@ -4364,7 +4314,7 @@ class UserInterfaceAdvanced {
         this.lightNode.doNotSerialize = true;
 
         this.lightGizmoUp = new BABYLON.AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, undefined, 2);
-        this.lightGizmoUp.scaleRatio = 0.9;
+        this.lightGizmoUp.scaleRatio = 0.8;
         this.lightGizmoUp.sensitivity = 5.0;
         this.lightGizmoUp.attachedMesh = null;
         this.lightGizmoUp.uniformScaling = true;
@@ -4375,7 +4325,7 @@ class UserInterfaceAdvanced {
         });
 
         this.lightGizmoNews = new BABYLON.PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
-        this.lightGizmoNews.scaleRatio = 0.8;
+        this.lightGizmoNews.scaleRatio = 0.5;
         this.lightGizmoNews.attachedMesh = null;
         this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
         this.lightGizmoNews.dragBehavior.onDragObservable.add(() => {
@@ -4584,6 +4534,10 @@ export const uix = new UserInterfaceAdvanced();
 export const xformer = new XFormer();
 
 
+// -------------------------------------------------------
+// Events
+
+
 export function registerRenderLoops() {
 
     engine.engine.runRenderLoop(() => {
@@ -4595,53 +4549,27 @@ export function registerRenderLoops() {
         if (engine.isRendering) {
             if (isRenderAxisView) {
                 axisView.scene.render();
-                axisView.scene.activeCamera.alpha = scene.activeCamera.alpha;
-                axisView.scene.activeCamera.beta = scene.activeCamera.beta;
+                axisView.scene.activeCamera.alpha = camera.camera0.alpha;
+                axisView.scene.activeCamera.beta = camera.camera0.beta;
             }
-            
-            if (MODE == 0 && !tool.isMouseDown) {
+
+            if (!pointer.isDown && !builder.isWorking) {
                 camera.lastPos = [ camera.camera0.alpha, camera.camera0.beta ];
+                camera.camera0.attachControl(canvas, true);
 
-                if (!builder.isWorking) {
-                    scene.activeCamera.attachControl(canvas, true);
-
-                    if (duplicateFlag == 1) {
-                        duplicateFlag = 0;
-                        builder.removeDuplicates();
-                    }
+                if (duplicateFlag == 1) {
+                    duplicateFlag = 0;
+                    builder.removeDuplicates();
                 }
             }
-            
-            if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
+
+            if (camera.camera0.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
                 camera.setOrthoMode();
 
             ui.updateStatus();
         }
     });
-
-    scene.onPointerObservable.add((pInfo) => {
-        switch (pInfo.type) {
-            case BABYLON.PointerEventTypes.POINTERDOWN:
-                if (!axisView.registerEvent()) {
-                    if (MODE == 0) tool.handleToolDown(pInfo.pickInfo);
-                    if (MODE == 2) toolMesh.handleToolDown();
-                }
-                break;
-            case BABYLON.PointerEventTypes.POINTERMOVE:
-                if (MODE == 0) tool.handleToolMove(pInfo.pickInfo);
-                break;
-            case BABYLON.PointerEventTypes.POINTERUP:
-                if (MODE == 0) tool.handleToolUp();
-                break;
-            case BABYLON.PointerEventTypes.POINTERWHEEL:
-                break;
-        }
-    });
 }
-
-
-// -------------------------------------------------------
-// Events
 
 
 window.addEventListener("resize", () => {
@@ -4662,12 +4590,38 @@ window.addEventListener("resize", () => {
 }, false);
 
 
+window.addEventListener('pointerdown', (ev) => {
+    pointer.x = ev.clientX;
+    pointer.y = ev.clientY;
+    pointer.isDown = true;
+    if (ev.target === canvas && !axisView.registerEvent() && !uix.isColorPickerActive) {
+        if (MODE == 0) tool.handleToolDown();
+        if (MODE == 2) toolMesh.handleToolDown();
+    }
+}, false);
+
+
+window.addEventListener('pointermove', (ev) => {
+    pointer.x = ev.clientX;
+    pointer.y = ev.clientY;
+    if (ev.target === canvas && MODE == 0 && !uix.isColorPickerActive)
+        tool.handleToolMove();
+}, false);
+
+
+window.addEventListener('pointerup', () => {
+    pointer.isDown = false;
+    if (MODE == 0)
+        tool.handleToolUp();
+}, false);
+
+
 document.addEventListener("keydown", (ev) => {
     if (ev.target.matches(".ignorekeys")) return;
     if (ev.key == '/') ui.toggleDebugLayer();
     if (scene.debugLayer.isVisible()) return;
 
-    if (MODE == 0 && !tool.last && !tool.isMouseDown) {
+    if (MODE == 0 && !tool.last && !pointer.isDown) {
         if (ev.altKey || ev.key == ' ') {
             tool.last = tool.name;
             tool.toolSelector('camera');
@@ -4859,20 +4813,39 @@ document.ondragleave = (ev) => { dragLeaveHandler(ev) };
 // Events DOM
 
 
-document.getElementById('tab-model').onclick = () => { ui.setMode(0) };
-document.getElementById('tab-render').onclick = () => { ui.setMode(1) };
+document.getElementById('tab-model').onclick = () => {
+    ui.setMode(0);
+};
+
+document.getElementById('tab-render').onclick = () => {
+    ui.setMode(1);
+};
+
 document.getElementById('tab-export').onclick = () => {
     ui.setMode(2);
+
     if (tool.name == 'bake_color')
         tool.toolSelector('camera');
+    
     if (pool.meshes.length == 0 || (ghosts.cloud && ghosts.cloud.mesh.isVisible))
         ghosts.createPointCloud();
 };
 
-ui.domToolbarTopMem.children[0].onclick = () => { memory.undo() };
-ui.domToolbarTopMem.children[1].onclick = () => { memory.redo() };
-ui.domMenuInScreenStore.children[0].onclick = () => { snapshot.getStorageVoxels() };
-ui.domMenuInScreenStore.children[1].onclick = () => { snapshot.setStorageVoxels() };
+ui.domToolbarTopMem.children[0].onclick = () => {
+    memory.undo();
+};
+
+ui.domToolbarTopMem.children[1].onclick = () => {
+    memory.redo();
+};
+
+ui.domMenuInScreenStore.children[0].onclick = () => {
+    snapshot.getStorageVoxels();
+};
+
+ui.domMenuInScreenStore.children[1].onclick = () => {
+    snapshot.setStorageVoxels();
+};
 
 ui.domMenuInScreenExport.children[0].onclick = async () => {
     if (pool.meshes.length > 0) {
@@ -4882,37 +4855,55 @@ ui.domMenuInScreenExport.children[0].onclick = async () => {
         pool.bake();
     }
 };
-ui.domMenuInScreenExport.children[1].onclick = () => { project.exportMeshes() };
+
+ui.domMenuInScreenExport.children[1].onclick = () => {
+    project.exportMeshes();
+};
 
 ui.domMenuInScreenRight.children[0].oninput = (ev) => {
     currentColor = ev.target.value.toUpperCase();
     uix.colorPicker.value = color3FromHex(currentColor);
 };
-ui.domMenuInScreenRight.children[1].onclick = () => { if (ui.checkMode(0)) tool.toolSelector('bucket') };
-ui.domMenuInScreenRight.children[2].onclick = () => { if (ui.checkMode(0)) tool.toolSelector('eyedrop') };
-ui.domMenuInScreenRight.children[3].onclick = () => { material.switchMaterial() };
+
+ui.domMenuInScreenRight.children[1].onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('bucket');
+};
+
+ui.domMenuInScreenRight.children[2].onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('eyedrop');
+};
+
+ui.domMenuInScreenRight.children[3].onclick = () => {
+    material.switchMaterial();
+};
 
 ui.domMenuInScreenRender.children[0].onclick = () => {
     if (!ui.domRenderAutoStart.checked)
         modules.sandbox.toggleRender();
 };
+
 ui.domMenuInScreenRender.children[1].onclick = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.togglePause();
 };
+
 ui.domMenuInScreenRender.children[2].onclick = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.shot();
 };
 
-
-ui.domMenus.onpointerdown = (ev) => {
-    if (MODE == 0) { // prevent premature usage!
-        if (ev.target !== canvas && ev.target !== ui.domHover) {
-            xformer.apply();
-            helper.clearOverlays();
-        }
+ui.domMenus.onpointerdown = () => {
+    if (MODE == 0) {
+        xformer.apply();
+        helper.clearOverlays();
     }
+};
+
+ui.domMenuInScreenStore.onpointerdown = () => {
+    xformer.apply();
+    helper.clearOverlays();
 };
 
 ui.domHover.onpointerdown = () => {
@@ -4920,19 +4911,43 @@ ui.domHover.onpointerdown = () => {
     helper.clearOverlays();
 };
 
-ui.domHoverItems[0].onclick = () => { tool.toolSelector('box_add') };
-ui.domHoverItems[1].onclick = () => { tool.toolSelector('box_remove') };
-ui.domHoverItems[2].onclick = () => { tool.toolSelector('box_paint') };
-ui.domHoverItems[3].onclick = () => { tool.toolSelector('transform_box') };
+ui.domHoverItems[0].onclick = () => {
+    tool.toolSelector('box_add');
+};
 
-ui.domInScreenSymmAxis.onclick = () => { symmetry.switchAxis() };
-ui.domInScreenGridPlane.onclick = () => { helper.toggleWorkplane(0) };
-ui.domInScreenWorkplane.onclick = () => { helper.toggleWorkplane(1) };
-ui.domInScreenLightLocator.onclick = () => { uix.toggleLightLocator() };
-ui.domInScreenOrtho.onclick = () => { camera.switchOrtho() };
+ui.domHoverItems[1].onclick = () => {
+    tool.toolSelector('box_remove');
+};
 
+ui.domHoverItems[2].onclick = () => {
+    tool.toolSelector('box_paint');
+};
 
-ui.domRenderAutoStart.oninput = (ev) => {
+ui.domHoverItems[3].onclick = () => {
+    tool.toolSelector('transform_box');
+};
+
+ui.domInScreenSymmAxis.onclick = () => {
+    symmetry.switchAxis();
+};
+
+ui.domInScreenGridPlane.onclick = () => {
+    helper.toggleWorkplane(0);
+};
+
+ui.domInScreenWorkplane.onclick = () => {
+    helper.toggleWorkplane(1);
+};
+
+ui.domInScreenLightLocator.onclick = () => {
+    uix.toggleLightLocator();
+};
+
+ui.domInScreenOrtho.onclick = () => {
+    camera.switchOrtho();
+};
+
+ui.domRenderAutoStart.onchange = (ev) => {
     if (modules.sandbox.isActive())
         modules.sandbox.setAutoStart(ev.target.checked);
 };
@@ -4956,12 +4971,16 @@ ui.domRenderTiles.onchange = (ev) => {
     modules.sandbox.pathTracer.updateTiles(parseInt(ev.target.value));
 };
 
+ui.domRenderTonemap.onchange = (ev) => {
+    modules.sandbox.setTonemap(parseInt(ev.target.value));
+};
+
 ui.domRenderHdriBackground.onclick = (ev) => {
     if (modules.sandbox.isActive())
         modules.sandbox.updateBackground(ev.target.checked);
 };
 
-ui.domRenderHdriBlur.oninput = () => {
+ui.domRenderHdriBlur.onchange = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.updateBackground(ui.domRenderHdriBackground.checked);
 };
@@ -4976,7 +4995,7 @@ ui.domRenderLightColor.oninput = () => {
         modules.sandbox.updateLight();
 };
 
-ui.domRenderLightIntensity.oninput = (ev) => {
+ui.domRenderLightIntensity.onchange = (ev) => {
     modules.sandbox.light.intensity = ev.target.value;
     if (modules.sandbox.isActive())
         modules.sandbox.pathTracer.updateLights();
@@ -5010,14 +5029,14 @@ ui.domRenderMaterialEmissive.onchange = () => {
     }
 };
 
-ui.domRenderTexture.oninput = () => {
+ui.domRenderTexture.onchange = () => {
     if (modules.sandbox.isActive()) {
         modules.sandbox.updateMeshes();
         modules.sandbox.pathTracer.updateMaterials();
     }
 };
 
-ui.domRenderShade.oninput = () => {
+ui.domRenderShade.onchange = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.toggleShadeMode();
 };
@@ -5029,9 +5048,11 @@ ui.domCameraOrtho.onclick = () => {
 
 ui.domCameraOffset.onchange = () => {
     camera.frame();
+    if (modules.sandbox.isActive())
+        modules.sandbox.frameCamera();
 };
 
-ui.domCameraFov.oninput = (ev) => {
+ui.domCameraFov.onchange = (ev) => {
     if (ev.target.value > 0) {
         camera.setFov(ev.target.value);
         if (modules.sandbox.isActive())
@@ -5053,14 +5074,13 @@ ui.domCameraFocalLength.onchange = (ev) => {
     }
 };
 
-ui.domCameraAutoRotation.oninput = () => {
+ui.domCameraAutoRotation.onchange = () => {
     camera.toggleCameraAutoRotation();
 };
 
-ui.domCameraAutoRotationCCW.oninput = () => {
+ui.domCameraAutoRotationCCW.onchange = () => {
     camera.updateCameraAutoRotation();
 };
-
 
 ui.domSymmAxisS.onclick = () => {
     symmetry.switchAxisByNum(-1);
@@ -5082,13 +5102,12 @@ ui.domSymmCenter.onclick = () => {
     helper.setSymmPivot();
 };
 
-ui.domLightShadows.oninput = (ev) => {
+ui.domLightShadows.onchange = (ev) => {
     light.enableShadows(ev.target.checked);
     modules.sandbox.light.castShadow = ev.target.checked;
     if (modules.sandbox.isActive())
         modules.sandbox.pathTracer.updateLights();
 };
-
 
 ui.domPbrTexture.onclick = () => {
     if (pool.selected) {
@@ -5120,23 +5139,23 @@ ui.domPbrVertexColor.oninput = (ev) => {
         ui.notification('select a mesh');
 };
 
-ui.domPbrWireframe.oninput = (ev) => {
+ui.domPbrWireframe.onchange = (ev) => {
     pool.setWireframe(ev.target.checked);
 };
 
-ui.domPbrRoughness.oninput = () => {
+ui.domPbrRoughness.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('roughness') :
         ui.notification('select a mesh');
 };
 
-ui.domPbrMetallic.oninput = () => {
+ui.domPbrMetallic.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('metallic') :
         ui.notification('select a mesh');
 };
 
-ui.domPbrAlpha.oninput = () => {
+ui.domPbrAlpha.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('alpha') :
         ui.notification('select a mesh');
@@ -5214,7 +5233,7 @@ document.getElementById('btn_tool_delete_color').onclick = () =>    { if (ui.che
 document.getElementById('delete_hidden').onclick = () =>            { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
 document.getElementById('btn_minimal_new').onclick = () =>          { project.newProject() };
 document.getElementById('btn_minimal_load').onclick = () =>         { document.getElementById('openfile_json').click() };
-document.getElementById('btn_minimal_export').onclick = () =>       { project.save() };
+document.getElementById('btn_minimal_save').onclick = () =>         { project.save() };
 document.getElementById('btn_minimal_quicksave').onclick = () =>    { snapshot.getStorageVoxels() };
 document.getElementById('btn_minimal_quickload').onclick = () =>    { snapshot.setStorageVoxels() };
 

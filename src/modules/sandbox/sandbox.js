@@ -9,8 +9,6 @@ import { THREE, renderer } from '../three.js';
 import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer.js';
 import { RGBELoader } from '../../libs/addons/RGBELoader.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
-import { EffectComposer } from '../../libs/addons/EffectComposer.js';
-import { RenderPass } from '../../libs/addons/RenderPass.js';
 import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
 import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
 
@@ -22,6 +20,15 @@ const TILE = 1;
 const DPR_FAST = 0.6;
 const CAM_FAR = 1000;
 const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
+const toneMappingOptions = {
+    0: THREE.NoToneMapping,
+    1: THREE.LinearToneMapping,
+    2: THREE.ReinhardToneMapping,
+    3: THREE.CineonToneMapping,
+    4: THREE.ACESFilmicToneMapping,
+    5: THREE.AgXToneMapping,
+    6: THREE.NeutralToneMapping
+};
 
 
 class Sandbox {
@@ -37,7 +44,6 @@ class Sandbox {
         this.camera = undefined;
         this.controls = undefined;
         this.transform = undefined;
-        this.framed = undefined;
         this.light = undefined;
         this.lightHelper = undefined;
         this.mouse = new THREE.Vector2();
@@ -86,9 +92,6 @@ class Sandbox {
         this.controls.addEventListener('change', () => {
             this.pathTracer.updateCamera();
         });
-
-        this.composer = new EffectComposer(renderer);
-        this.composer.addPass(new RenderPass(this.scene, this.camera));
 
         this.createScene();
 
@@ -280,10 +283,8 @@ class Sandbox {
         this.disposePick();
     }
 
-    updateCamera(fetchPos = true) {
-        this.framed = camera.getFramed(builder.mesh);
-
-        if (fetchPos) {
+    updateCamera(isFetchPos = true) {
+        if (isFetchPos) {
             this.camera.position.set(camera.camera0.position.x, camera.camera0.position.y, camera.camera0.position.z);
             this.controls.target = new THREE.Vector3(camera.camera0.target.x, camera.camera0.target.y, camera.camera0.target.z);
         }
@@ -352,8 +353,7 @@ class Sandbox {
                     ui.domInfoRender.children[4].innerHTML = ui.domRenderBounces.value;
                 }
             } else {
-                sandbox.composer.render(sandbox.clock.getDelta());
-                //renderer.render(sandbox.scene, sandbox.camera);
+                renderer.render(sandbox.scene, sandbox.camera);
             }
 
             sandbox.tweens.update(performance.now());
@@ -417,8 +417,9 @@ class Sandbox {
     }
 
     frameCamera() {
-        const center = new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z);
-        const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(this.framed.radius);
+        const framed = camera.getFramed(builder.mesh);
+        const center = new THREE.Vector3(framed.target.x, framed.target.y, framed.target.z);
+        const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(framed.radius);
         const position = this.camera.position.clone().copy(center).sub(direction);
 
         this.cameraAnimator(position, center);
@@ -427,9 +428,9 @@ class Sandbox {
     startPathTracer(isEnabled) {
         this.isRendering = isEnabled;
         this.controls.enableDamping = !isEnabled;
+        renderer.toneMapping = parseInt(ui.domRenderTonemap.value);
 
         if (isEnabled) {
-            //renderer.toneMapping = THREE.NoToneMapping;
             renderer.toneMappingExposure = 1;
 
             this.scene.remove(this.shadowGround);
@@ -441,8 +442,7 @@ class Sandbox {
             ui.domInfoRender.style.display = 'unset';
             ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
         } else {
-            //renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.6;
+            renderer.toneMappingExposure = 0.8;
             renderer.domElement.style.pointerEvents = 'unset';
 
             this.scene.add(this.shadowGround);
@@ -458,6 +458,10 @@ class Sandbox {
     setAutoStart(isStart) {
         this.startPathTracer(isStart);
         this.updateBackground(isStart);
+    }
+
+    setTonemap(id) {
+        renderer.toneMapping = toneMappingOptions[id];
     }
 
     toggleAutoStart() {
@@ -683,8 +687,8 @@ function createVoxelTexture(size = 64) {
     const ctx = c.getContext('2d');
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, size, size);
-    ctx.lineWidth = 1.2;
-    ctx.strokeStyle = '#00000090';
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#00000080';
     //ctx.filter = 'blur(1px)';
     ctx.strokeRect(0, 0, size, size);
     const tex = new THREE.CanvasTexture(c);
