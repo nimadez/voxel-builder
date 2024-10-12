@@ -119,6 +119,7 @@ Browser storage is limited, use Electron for much higher capacity.
 ## FAQ
 How to go back to the previous version?
 ```
+git clone https://github.com/nimadez/voxel-builder
 cd voxel-builder
 git log -2 (copy the hash of the previous commit)
 git reset --hard $HASH

@@ -7,7 +7,7 @@
 
 import { rcv } from './raycaster.js';
 import { Vector3, MergeMeshes, LoadAssetContainerAsync } from '../babylon.js';
-import { ui, camera, builder, pool } from '../core.js';
+import { ui, builder, pool, project } from '../core.js';
 import { scene } from '../../main.js';
 
 
@@ -24,18 +24,28 @@ class Voxelizer {
         const data = rcv.mesh_voxel(mesh, COL_ICE);
         
         builder.createVoxelsFromArray(data);
-        camera.frame();
+        project.clearSceneAndReset();
     }
 
     voxelizeBake(meshes) {
-        const mesh = MergeMeshes(meshes, false, true);
+        const mesh = MergeMeshes(meshes, true, true);
         pool.resetPivot(mesh);
 
         const data = rcv.bake_voxel(mesh);
         mesh.dispose();
 
-        builder.createVoxelsFromArray(data);
-        camera.frame();
+        let isValidGLB = 0;
+        for (const v in data)
+            if (data[v].color == '#000NAN')
+                isValidGLB++;
+
+        if (data.length == 0 || isValidGLB == data.length) {
+            ui.errorMessage('Invalid GLB (not baked)');
+        } else {
+            builder.createVoxelsFromArray(data);
+            builder.normalizeVoxelPositions();
+            project.clearSceneAndReset();
+        }
     }
 
     voxelize2D(imgData) {
@@ -88,7 +98,7 @@ class Voxelizer {
 
             builder.createVoxelsFromArray(data);
             builder.normalizeVoxelPositions();
-            camera.frame();
+            project.clearSceneAndReset();
             ui.showProgress(0);
         }
     }

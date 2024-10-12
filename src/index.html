@@ -33,11 +33,11 @@
             --font: Roboto;
             --font-size: 12px;
             --btn-color: #969fb1;
-            --btn-bg: #2d3542DD;
+            --btn-bg: #2e3542;
             --input-bg: #222833CC;
             --input-color: #788499;
             --label: #788599;
-            --cat-bg: #2a2f38;
+            --cat-bg: #292e38;
             --cat-color: #636f85;
             --cat-border: #3e485caa;
             --menu-bg: #2d3542EE;
@@ -58,7 +58,7 @@
         input[type=number]:disabled { opacity: 0.5; }
         input[type=number] { appearance: textfield; }
         input[type=number]:hover { appearance: unset; }
-        input[type=text] { font-family: var(--font); font-size: 13px; width: 98%; background: var(--input-bg); color: var(--input-color); padding: 6px 0 6px 0; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
+        input[type=text] { font-family: var(--font); font-size: 13px; letter-spacing: 0.04em; width: 98%; background: var(--input-bg); color: var(--input-color); padding: 6px 0 6px 0; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
         input[type=text]:hover { color: steelblue; border: solid 1px #43495a; cursor: text; }
         input[type=url] { font-family: var(--font); font-size: 13px; width: 100%; background: var(--input-bg); color: var(--input-color); padding: 6px 0 6px 0; margin-left: -2px; text-indent: 5px; border: solid 1px var(--borders); border-radius: 2px; text-align: left; }
         input[type=url]:hover { color: steelblue; border: solid 1px #43495a; cursor: text; }
@@ -72,10 +72,10 @@
         input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border: solid 1px transparent; }
         input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; border: solid 1px transparent; }
         input[type=color]:hover { cursor: pointer; }
-        button { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); letter-spacing: 0.03em; border-radius: 2px; border: 1px solid var(--borders); }
+        button { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); letter-spacing: 0.04em; border-radius: 2px; border: 1px solid var(--borders); }
         button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
-        label { font-family: var(--font); font-size: var(--font-size); color: var(--label); margin: 0; }
+        label { font-family: var(--font); font-size: var(--font-size); color: var(--label); letter-spacing: 0.04em; margin: 0; }
         select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--btn-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
         select:hover { color: steelblue; cursor: pointer; }
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
@@ -112,7 +112,7 @@
         #toolbar_top_cen li:nth-child(2) { border-radius: 0; }
         #toolbar_top_cen li:nth-child(3) { border-left: none; border-radius: 0; border-bottom-right-radius: 2px; border-top-right-radius: 2px; }
         #toolbar_top_cen li.mode_select { color: orange; }
-        #toolbar_top_mem li { width: 40px; font-size: 11px; letter-spacing: 0.03em; padding: 5px; background: none; text-shadow: var(--text-shadow); cursor: pointer; }
+        #toolbar_top_mem li { width: 40px; font-size: 11px; letter-spacing: 0.04em; padding: 5px; background: none; text-shadow: var(--text-shadow); cursor: pointer; }
         #toolbar_top_mem li:first-child { float: left; }
         #toolbar_top_mem li:last-child { float: right; }
         #toolbar_top_mem li:hover { box-shadow: none; color: orange }
@@ -137,9 +137,8 @@
         #meshlist .item_name { margin-bottom: 2px; background: #3e4558; width: 55px; word-break: break-all; font-size: 11px; padding: 8px 3px 8px 3px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
-        #marquee { z-index: 500; display: none; background: #00ffff20; border: dotted 2px aqua; position: fixed; }
-        #menu-about .about { font-size: 13px; line-height: 1.3em; background: #21262e; color: #98a1ac; padding: 6px; }
-        #menu-about .about h1 { font-size: 13px; font-weight: normal; color: #98a1ac; letter-spacing: 1px; }
+        #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
+        #menu-about .about { font-size: 13px; line-height: 1.4em; letter-spacing: 0.05em; background: #21262e; color: #98a1ac; padding: 6px; }
         #menu-storage img { object-fit: contain; width: 100%; height: 80px; background: #292f3aaa; box-shadow: inset 0 0 10px #25262e; border-radius: 5px; cursor: pointer; }
         #menu-storage li div button { font-size: 11px; letter-spacing: 0.05em; width: 100%; padding: 5px 0 5px 0; }
         #btn-symm-axis-s:hover { background: var(--input-bg); }
@@ -150,8 +149,8 @@
         #menu-inscreen-store button { width: 68px; height: 32px; font-size: 11px; }
         #menu-inscreen-right { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; bottom: 135px; }
         #menu-inscreen-right button { width: 45px; height: 32px; }
-        #menu-inscreen-bottom { z-index: 9; display: none; padding: 2px; height: fit-content; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
-        #menu-inscreen-bottom div { z-index: 9; width: 28px; opacity: 0.75; color: aqua; font-size: 18px; font-weight: bold; text-shadow: var(--text-shadow); text-align: center; cursor: pointer; background: none; border: none; }
+        #menu-inscreen-bottom { z-index: 9; display: none; gap: 1px; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
+        #menu-inscreen-bottom div { z-index: 9; width: 100%; min-width: 32px; opacity: 0.75; color: aqua; font-size: 18px; font-weight: bold; text-shadow: var(--text-shadow); text-align: center; cursor: pointer; background: none; border: none; }
         #menu-inscreen-bottom div i { font-size: 19px; margin-top: -4px; }
         #menu-inscreen-render { z-index: 301; display: none; flex-direction: column; gap: 4px; right: 5px; top: 5px; position: fixed; }
         #menu-inscreen-render button { width: 65px; height: 32px; font-size: 11px; }
@@ -170,12 +169,12 @@
         #confirmblocker { z-index: 2400; display: none; opacity: 0.2; background: #181b22; position: absolute; width: 100%; height: 100%; }
         #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 80px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_connect { color: indianred; }
-        #shortcuts { z-index: 3000; display: none; opacity: 0.95; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: 50%; height: 60%; transform: translate(-50%,-50%); position: fixed; }
+        #shortcuts { z-index: 3000; display: none; opacity: 0.98; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: fit-content; height: 60%; transform: translate(-50%,-50%); position: fixed; }
         #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
         #shortcuts tr { font-size: 14px; border: solid 1px var(--cat-border); background: var(--cat-bg); }
         #shortcuts tr :first-child { width: 30%; text-align: center; }
         #shortcuts tr :last-child { text-indent: 5px; }
-        #shortcuts th, td { width: 380px; padding: 4px 0 4px 0; }
+        #shortcuts th, td { width: 380px; padding: 5px 0 5px 0; }
         .spacer { height: 3px; }
         .row { display: flex; width: 100%; align-items: center; }
         .row_input { display: flex; width: 100%; gap: 5px; align-items: center; }
@@ -282,8 +281,8 @@
             </li>
             <li class="spacer"></li>
             <li class="about">
-                VOXEL BUILDER
-                <br>&#8627; 4.5.2 Beta
+                <span style="color: orange;">V</span>OXEL BUILDER
+                <br>&#8627; 4.5.3 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -294,7 +293,7 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus()">Pixel Monk</button></li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
             <li class="spacer"></li>
-            <li><input type="checkbox" id="devmode"> <label for="devmode">Dev mode</label></li>
+            <li><input type="checkbox" id="devmode"> <label for="devmode">I feel like a dev</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-prefs">
@@ -363,7 +362,7 @@
             <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li><button id="camera_topview">Top View</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.5" min="0" step="0.01"></li>
+            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.6" min="0" step="0.01"></li>
             <li class="category">SETTINGS</li>
             <li><button id="btn-ortho">Perspective</button></li>
             <li class="spacer"></li>
@@ -377,7 +376,7 @@
 
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
-            <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start Render</label></li>
+            <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.9" min="0.1" max="1" step="0.05"></li>
             <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" step="8"></li>
@@ -386,7 +385,7 @@
             <li class="spacer"></li>
             <li class="row_input">
                 <label>Tonemap</label> <select id="input-pt-tonemap">
-                    <option value="0">No Tone Mapping</option>
+                    <option value="0">None</option>
                     <option value="1" selected>Linear</option>
                     <option value="2">Reinhard</option>
                     <option value="3">Cineon</option>
@@ -544,6 +543,7 @@
             <li><button id="btn_tool_transform_group" class="tool_transform_group">Color Group</button></li>
             <li><button id="btn_tool_transform_visible" class="tool_transform_visible">Visible Voxels</button></li>
             <li class="spacer"></li>
+            <!-- <li><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li> -->
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone Voxels</label></li>
             <li class="category">MANIPULATE</li>
             <li><button id="normalize_voxels">Normalize Voxels</button></li>
@@ -685,26 +685,25 @@
             <tr><td>ENTER</td> <td>Apply Voxel Transforms (MODEL)</td></tr>
             <tr><td>DEL</td> <td>Delete Selected Voxels (Transform)</td></tr>
             <tr><td>DEL</td> <td>Delete Selected Bake (EXPORT)</td></tr>
-            <tr><td>`</td> <td>Free Camera Tool (MODEL)</td></tr>
-            <tr><td>C</td> <td>Free Camera Tool (MODEL)</td></tr>
+            <tr><td>` / C</td> <td>Free Camera Tool (MODEL)</td></tr>
             <tr><td>F</td> <td>Frame Camera (ALL MODES)</td></tr>
             <tr><td>F</td> <td>Frame Voxels (Transform)</td></tr>
-            <tr><td>O</td> <td>Toggle Orthographic View</td></tr>
-            <tr><td>R</td> <td>Toggle Renderer - Path Tracer</td></tr>
-            <tr><td>S</td> <td>Switch Symmetry Axis (MODEL)</td></tr>
-            <tr><td>T</td> <td>Transform Box Tool</td></tr>
-            <tr><td>1</td> <td>Add Voxel Tool</td></tr>
-            <tr><td>2</td> <td>Remove Voxel Tool</td></tr>
-            <tr><td>3</td> <td>Box Add Tool</td></tr>
-            <tr><td>4</td> <td>Box Remove Tool</td></tr>
-            <tr><td>5</td> <td>Paint Voxel Tool</td></tr>
-            <tr><td>6</td> <td>Box Paint Tool</td></tr>
-            <tr><td>7</td> <td>Paint Bucket Tool</td></tr>
-            <tr><td>8</td> <td>Color Eyedropper Tool</td></tr>
-            <tr><td>CTRL + L</td> <td>Load JSON Project</td></tr>
+            <tr><td>O</td> <td>Toggle Orthographic camera</td></tr>
+            <tr><td>R</td> <td>Toggle Render tab</td></tr>
+            <tr><td>S</td> <td>Switch Symmetry axis (MODEL)</td></tr>
+            <tr><td>T</td> <td>Tool: Transform Box</td></tr>
+            <tr><td>1</td> <td>Tool: Add Voxel</td></tr>
+            <tr><td>2</td> <td>Tool: Remove Voxel</td></tr>
+            <tr><td>3</td> <td>Tool: Box Add</td></tr>
+            <tr><td>4</td> <td>Tool: Box Remove</td></tr>
+            <tr><td>5</td> <td>Tool: Paint Voxel</td></tr>
+            <tr><td>6</td> <td>Tool: Box Paint</td></tr>
+            <tr><td>7</td> <td>Tool: Paint Bucket</td></tr>
+            <tr><td>8</td> <td>Tool: Color Eyedropper</td></tr>
+            <tr><td>CTRL + L</td> <td>Load JSON File</td></tr>
             <tr><td>CTRL + Z</td> <td>Undo (MODEL)</td></tr>
             <tr><td>CTRL + X</td> <td>Redo (MODEL)</td></tr>
-            <tr><td>/</td> <td>Toggle Debug Layer (Dev Mode)</td></tr>
+            <tr><td>/</td> <td>Toggle Debug Layer</td></tr>
           </table>
     </div>
 

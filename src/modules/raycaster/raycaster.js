@@ -39,7 +39,7 @@ class Raycaster {
             this.mesh.geometry.dispose();
         }
 
-        builder.fillArrayBuffers();
+        builder.fillMeshBuffers();
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
         geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
@@ -255,8 +255,7 @@ class RaycasterVoxelizer {
                 for (let z = -size.z; z <= size.z; z++) {
                     
                     const res = rcm.raycastOmni(x, y, z);
-                    if (res && res.face.normal.dot(rcm.ray.direction) > 0) {
-                        
+                    if (res) {
                         const hex = color.fromBufferAttribute(
                             rcm.mesh.geometry.attributes.color, res.face.a)
                                 .getHexString(THREE.SRGBColorSpace).toUpperCase();

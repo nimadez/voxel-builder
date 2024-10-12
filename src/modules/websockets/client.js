@@ -9,7 +9,7 @@
 */
 
 import { Vector3 } from '../babylon.js';
-import { MODE, preferences, builder } from '../core.js';
+import { MODE, preferences, builder, project } from '../core.js';
 
 
 class WebsocketClient {
@@ -58,6 +58,7 @@ class WebsocketClient {
 
                 if (this.parsed.is_clear) {
                     builder.createVoxelsFromArray(this.data);
+                    project.clearSceneAndReset();
                 } else {
                     builder.add(
                         this.data[0].position,

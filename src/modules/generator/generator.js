@@ -7,7 +7,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { ui, camera, builder, xformer } from '../core.js';
+import { ui, camera, builder, xformer, project } from '../core.js';
 
 
 const COL_ICE = '#8398AF';
@@ -80,7 +80,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            camera.frame();
+            project.clearSceneAndReset();
         } else {
             xformer.beginNewObject(data);
         }
@@ -109,7 +109,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            camera.frame();
+            project.clearSceneAndReset();
         } else {
             xformer.beginNewObject(data);
         }
@@ -156,7 +156,7 @@ class Generator {
         
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            camera.frame();
+            project.clearSceneAndReset();
         } else {
             xformer.beginNewObject(data);
         }
@@ -202,7 +202,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            camera.frame();
+            project.clearSceneAndReset();
         } else {
             xformer.beginNewObject(data, (isHeightGrad) ? true : false);
         }
