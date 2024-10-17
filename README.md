@@ -141,14 +141,15 @@ How to run Blender importer script?
 
 ## History
 ```
-↑ Initialize the core!
+↑ The face-normal probe jumps to the portal
+↑ Core initialization!
 ↑ Rendering was left to three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
-↑ x1.5 faster startup (2s to 350ms)
+↑ x1.5 faster startup (2s to 300ms)
 ↑ Migrating to Linux: Firefox ready
 ↑ High performance GPU picking system
 ↑ Voxel engine updated to thin-instances (64k to 512k)
-↑ Cut half precision (from 0.0 to 0.5 center to avoid -0.5/+0.5)
+↑ The world moved (from 0.0 to 0.5 center to avoid 0.5)
 ↑ Real-time GPU path tracing
 ↑ Introducing ES modules
 ↑ Advancing to the next level (bakery)

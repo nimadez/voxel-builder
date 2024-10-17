@@ -94,6 +94,7 @@ const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
 const PI2 = Math.PI * 2;
 const PIH = Math.PI / 2;
 const VEC3_ZERO = Vector3();
+const VEC3_HALF = Vector3(0.5, 0.5, 0.5);
 const VEC3_ONE = Vector3(1, 1, 1);
 const VEC3_TWO = Vector3(2, 2, 2);
 const VEC6_ONE = [
@@ -118,7 +119,7 @@ const MAX_Z = isMobile ? 500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
-const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
+const FPS_TOOL = 1000 / 30;
 
 const canvas = document.getElementById('canvas');
 const pointer = { x: 0, y: 0, isDown: false };
@@ -320,7 +321,7 @@ class AxisViewScene {
 class Camera {
     constructor() {
         this.camera0 = null;
-        this.lastPos = [];
+        this.lastPos = undefined;
         this.isFramingActive = false;
     }
 
@@ -519,9 +520,11 @@ class Camera {
     }
 
     isCameraChange() {
-        return (this.lastPos[0] !== this.camera0.alpha &&
-                this.lastPos[1] !== this.camera0.beta &&
-                this.camera0.hasMoved)
+        return this.lastPos[0] !== this.camera0.alpha &&
+               this.lastPos[1] !== this.camera0.beta;
+               // hasMoved is supposed to be hasStopped,
+               // because it counts animations!
+               //this.camera0.hasMoved; 
     }
 }
 
@@ -1001,14 +1004,11 @@ class Builder {
         
         this.createThinInstances().then(() => {
             if (duplicateFlag == 0) {
-                
-                if (isRecord)
-                    memory.record();
 
-                if (bvhWhiteList.includes(tool.name))
-                    modules.rc.create();
-                
                 setTimeout(() => {
+                    if (isRecord)
+                        memory.record();
+
                     if (ui.domCameraAutoFrame.checked && !xformer.isActive)
                         camera.frame();
 
@@ -1018,6 +1018,9 @@ class Builder {
                     if (preferences.isWebsocket())
                         modules.ws_client.sendMessage(this.voxels, 'get');
                 }, 100);
+
+                if (bvhWhiteList.includes(tool.name))
+                    modules.rc.create();
             }
         });
     }
@@ -1189,6 +1192,15 @@ class Builder {
             maxY - minY + 1,
             maxZ - minZ + 1
         );
+    }
+
+    getNearbyVoxels(position, distance) {
+        const arr = [];
+        for (const voxel of this.voxels) {
+            if (distanceVectors(voxel.position, position) <= distance)
+                arr.push(voxel);
+        }
+        return arr;
     }
 
     getIndexAtPointer() {
@@ -1381,7 +1393,7 @@ class Builder {
         let data = '';
         for (let i = 0; i < this.voxels.length; i++) {
             const v = this.voxels[i];
-            data += `${ parseInt(v.position.x) },${ parseInt(v.position.y) },${ parseInt(v.position.z) },${ v.color },${ v.visible ? 1 : 0 };`;
+            data += `${ Math.trunc(v.position.x) },${ Math.trunc(v.position.y) },${ Math.trunc(v.position.z) },${ v.color },${ v.visible ? 1 : 0 };`;
         }
         return data;
     }
@@ -1422,7 +1434,7 @@ class Builder {
         for (let i = 0; i < voxels.length; i++) {
             const [x, y, z, color, visible] = voxels[i].split(',');
             arr.push({
-                position: Vector3(parseInt(x), parseInt(y), parseInt(z)),
+                position: Vector3(Math.trunc(x), Math.trunc(y), Math.trunc(z)),
                 color: color.toUpperCase(), // backward compability for "true"
                 visible: visible === "1" || visible === "true"
             });
@@ -1897,6 +1909,16 @@ class MeshPool {
         return mesh;
     }
 
+    constructPlaneFast() {
+        const mesh = new BABYLON.Mesh('plane', scene);
+        const vertexData = new BABYLON.VertexData();
+        vertexData.positions = PLANE_POSITIONS;
+        vertexData.normals = PLANE_NORMALS;
+        vertexData.indices = PLANE_INDICES;
+        vertexData.applyToMesh(mesh);
+        return mesh;
+    }
+
     clearMeshArray() {
         scene.blockfreeActiveMeshesAndRenderingGroups = true; // save unnecessary
         for (let i = 0; i < this.meshes.length; i++) { // dispose() computation
@@ -1977,7 +1999,6 @@ class MeshPool {
 class Ghosts {
     constructor() {
         this.voxel = undefined;
-        this.voxelPick = undefined;
         this.thin = undefined;
         this.sps = undefined;
         this.spsPick = undefined;
@@ -1996,13 +2017,6 @@ class Ghosts {
         this.voxel.doNotSerialize = true;
         this.voxel.freezeWorldMatrix();
         this.voxel.freezeNormals();
-
-        this.voxelPick = CreateBox("ghost_voxelpick", 1.1, FRONTSIDE, scene);
-        this.voxelPick.isVisible = false;
-        this.voxelPick.isPickable = false;
-        this.voxelPick.receiveShadows = false;
-        this.voxelPick.doNotSerialize = true;
-        this.voxelPick.freezeNormals();
 
         this.disposeThin(); // init
     }
@@ -2103,7 +2117,7 @@ class Ghosts {
         
         this.spsPick = new BABYLON.SolidParticleSystem('ghost_spspick', scene, { updatable: false, expandable: false, boundingSphereOnly: false });
         
-        this.spsPick.addShape(this.voxelPick, voxels.length, { positionFunction: (p, i, s) => {
+        this.spsPick.addShape(this.voxel, voxels.length, { positionFunction: (p, i, s) => {
             p.position.copyFrom(voxels[i].position);
             if (!voxels[i].visible) p.scaling.set(0,0,0);
         }});
@@ -2113,8 +2127,7 @@ class Ghosts {
         this.spsPick.computeBoundingBox = true;
         this.spsPick.mesh.isPickable = true;
         this.spsPick.mesh.doNotSerialize = true;
-        if (!ui.domDevMode.checked)
-            this.spsPick.mesh.layerMask = 0x00000000;
+        this.spsPick.mesh.layerMask = 0x00000000;
     }
 
     createPointCloud(voxels = builder.voxels) {
@@ -2683,7 +2696,7 @@ class Tool {
         this.boxCount = 0;
         this.fixedHeight = 0;
         this.tmp = [];
-        this.tmpsps = [];
+        this.tmpBlock = [];
 
         this.then = performance.now();
         this.now = 0;
@@ -2695,16 +2708,16 @@ class Tool {
     }
 
     add(pos) {
-        builder.addNoDup(pos, currentColor, true);
-        ghosts.addThin(pos, currentColor);
-
-        if (this.isSymmetry) {
-            pos = symmetry.invertPos(pos);
-            builder.addNoDup(pos, currentColor, true);
+        if (this.selected.indexOf(pos) == -1) {
+            this.selected.push(pos);
             ghosts.addThin(pos, currentColor);
-        }
 
-        this.selected.push(0);
+            if (this.isSymmetry) {
+                pos = symmetry.invertPos(pos);
+                this.selected.push(pos);
+                ghosts.addThin(pos, currentColor);
+            }
+        }
     }
 
     addNoHelper(pos) {
@@ -2896,9 +2909,7 @@ class Tool {
     }
 
     pickWorkplane(pick, norm) {
-        norm.z = Math.round(norm.z * 10) / 10; // fix normal Z
-
-        const pos = pick.pickedPoint.add(VEC3_ONE).subtract(Vector3(0.5, 0.5, 0.5)).floor();
+        const pos = pick.pickedPoint.add(VEC3_ONE).subtract(VEC3_HALF).floor();
 
         if (norm.x > 0) pos.x = -1;
         if (norm.y > 0) pos.y = -1;
@@ -3090,8 +3101,11 @@ class Tool {
     onToolUp() {
         switch (this.name) {
             case 'add':
-                if (this.selected.length > 0)
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, currentColor, this.isSymmetry);
+                    builder.addArray(this.tmp);
                     builder.create();
+                }
                 break;
             case 'remove':
                 if (this.selected.length > 0) {
@@ -3177,8 +3191,17 @@ class Tool {
     }
 
     handleToolDown() {
-        if (this.name !== 'camera' && !xformer.isActive) {
+        if (this.name !== 'camera') {
             this.setPickInfo(pick => {
+                if (xformer.isActive) {
+                    if (ui.domTransformReactive.checked) {
+                        xformer.apply();
+                        pointer.isDown = false;
+                        scene.stopAnimation(camera.camera0);
+                        scene.activeCamera.detachControl(canvas);
+                    }
+                    return;
+                }
                 scene.stopAnimation(camera.camera0);
                 scene.activeCamera.detachControl(canvas);
                 this.onToolDown(pick);
@@ -3212,8 +3235,9 @@ class Tool {
             this.pos = null;
             this.posNorm = null;
             this.tmp = [];
-            this.tmpsps = [];
+            this.tmpBlock = [];
 
+            modules.bakery.dispose();
             ghosts.disposeThin();
             ghosts.disposeSPS();
             helper.clearBoxShape();
@@ -3227,35 +3251,59 @@ class Tool {
 
     predicateWorkplane(mesh) {
         if (helper.isGridPlaneActive && helper.gridPlane.isVisible)
-            return mesh == helper.gridPlane;
+            return mesh === helper.gridPlane;
         if (helper.isWorkplaneActive && helper.workplane.isVisible)
-            return mesh == helper.workplane;
+            return mesh === helper.workplane;
         return null;
     }
 
-    predicateSPS(mesh) {
-        return mesh == ghosts.spsPick.mesh;
-    }
-
-    // Magnetic self-transforming normal probe
-    // An unusual way to find a pick-face-normal out of nowhere!
-    // This mysterious star-shaped object can stick to surfaces,
-    // change its shape like the surfaces, and collect information.
-    normalProbe(pick, index, p) {
+    // A magnetic portal into another world that doesn't exists!
+    // It sticks to surfaces and gather face-normal information.
+    // The portal dynamically expands to find problematic normals.
+    // https://github.com/nimadez/voxel-builder/releases/tag/4.5.4
+    normalProbe(pick, index) {
         this.normal = undefined;
 
-        this.tmpsps = [{ position: p, color: COL_RED, visible: builder.voxels[index].visible }];
-        for (let i = 0; i < VEC6_ONE.length; i++) {
-            const pos = p.add(VEC6_ONE[i]);
-            const idx = builder.getIndexAtPosition(pos);
-            if (idx !== undefined)
-                this.tmpsps.push({ position: pos, color: COL_RED, visible: builder.voxels[idx].visible });
+        if (builder.voxels.length == 1) {
+            ghosts.createSPSPick([ builder.voxels[index] ]);
+            pick = scene.pickWithRay(pick.ray);
+            if (pick.hit)
+                return pick.getNormal(true);
         }
 
-        ghosts.createSPSPick(this.tmpsps);
-        pick = scene.pick(pointer.x, pointer.y, this.predicateSPS);
-        if (pick && pick.hit)
-            this.normal = pick.getNormal(true);
+        this.tmpBlock = [];
+        for (let i = 0; i < VEC6_ONE.length; i++) {
+            const pos = builder.voxels[index].position.add(VEC6_ONE[i]);
+            const idx = builder.getIndexAtPosition(pos);
+            if (idx !== undefined)
+                this.tmpBlock.push(builder.voxels[idx]);
+        }
+        ghosts.createSPSPick(this.tmpBlock);
+        
+        for (let i = 1; i < 5; i += 0.1) {
+            modules.bakery.bakePick(builder.voxels[index], i);
+            pick = scene.pickWithRay(pick.ray);
+            if (pick.hit) {
+                if (pick.faceId == 1) {
+                    if (pick.pickedMesh.name == 'plane') {
+                        this.normal = pick.getNormal(true);
+                        break;
+                    }
+                } else {
+                    if (pick.pickedMesh.name == 'plane' && pick.pickedMesh.name !== 'ghost_spspick') {
+                        this.normal = pick.getNormal(true);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!this.normal) {
+            if (pointer.isDown && !camera.isCameraChange())
+                scene.activeCamera.detachControl(canvas);
+            //console.log(0);
+            return undefined;
+        }
 
         return this.normal;
     }
@@ -3267,8 +3315,12 @@ class Tool {
         const index = builder.getIndexAtPointer();
 
         if (index !== undefined) {
-            const norm = this.normalProbe(this.pick, index, builder.voxels[index].position);
+            const norm = this.normalProbe(this.pick, index);
             if (norm) {
+                norm.x = Math.round(norm.x * 10) / 10;
+                norm.y = Math.round(norm.y * 10) / 10;
+                norm.z = Math.round(norm.z * 10) / 10;
+
                 this.pick.INDEX = index;
                 this.pick.NORMAL = norm;
                 this.pick.WORKPLANE = false;
@@ -3276,9 +3328,15 @@ class Tool {
             }
         } else {
             if (this.pick && this.pick.hit) {
+                const norm = this.pick.getNormal(true);
+                norm.x = Math.round(norm.x * 10) / 10;
+                norm.y = Math.round(norm.y * 10) / 10;
+                norm.z = Math.round(norm.z * 10) / 10;
+
                 this.pick.INDEX = this.pick.faceId;
-                this.pick.NORMAL = this.pick.getNormal(true);
+                this.pick.NORMAL = norm;
                 this.pick.WORKPLANE = true;
+
                 onHit(this.pick);
             }
         }
@@ -3297,7 +3355,7 @@ class Tool {
         for (let i = 0; i < elems.length; i++)
             elems[i].classList.add("tool_selector");
 
-        if (finishTransforms)
+        if (xformer.isActive && finishTransforms)
             xformer.apply();
 
         if (bvhWhiteList.includes(this.name) && !modules.rc.mesh)
@@ -3365,7 +3423,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.3",
+            version: "Voxel Builder 4.5.4",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3691,7 +3749,8 @@ class Memory {
         this.block = -1;
     }
 
-    record(current = builder.getStringData()) {
+    record() {
+        const current = builder.getStringData();
         if (this.stack[this.block] !== current) {   // not detect all changes
             this.stack[++this.block] = current;
             this.stack.splice(this.block + 1);      // delete anything forward
@@ -3850,7 +3909,7 @@ class RenderTarget {
         }
         
         this.pickTexture.onAfterRender = () => {
-            if (engine.isRendering && MODE == 0 && tool.name !== 'camera' && !ui.domDevMode.checked)
+            if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
                 builder.mesh.thinInstanceSetBuffer("color", builder.bufferColors, 4, true);
         }
 
@@ -3939,7 +3998,7 @@ class UserInterface {
         this.domCameraAutoRotation = document.getElementById('input-autorotate');
         this.domCameraAutoRotationCCW = document.getElementById('input-autorotate-ccw');
         this.domCameraOrtho = document.getElementById('btn-ortho');
-        //this.domTransformReactive = document.getElementById('input-transform-reactive');
+        this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
@@ -3984,7 +4043,6 @@ class UserInterface {
         this.domInfoTool = document.getElementById('info_tool');
         this.domInfoRender = document.getElementById('info_render');
         this.domProgressBar = document.getElementById('progressbar');
-        this.domDevMode = document.getElementById('devmode');
         
         this.notificationTimer = undefined;
     }
@@ -4173,6 +4231,7 @@ class UserInterface {
             if (isMobile) {
                 this.domCameraAutoFrame.checked = true;
                 this.domCameraOffset.value = 1.2;
+                this.domTransformReactive.checked = false;
             }
         }
     }
@@ -4303,7 +4362,7 @@ class UserInterfaceAdvanced {
         this.unbindVoxelGizmo();
         this.gizmoVoxel = new BABYLON.PositionGizmo(this.utilLayer);
 
-        this.gizmoVoxel.scaleRatio = 1;
+        this.gizmoVoxel.scaleRatio = 1.2;
         this.gizmoVoxel.snapDistance = 1;
         this.gizmoVoxel.planarGizmoEnabled = false;
         this.gizmoVoxel.updateGizmoPositionToMatchAttachedMesh = true;
@@ -4669,7 +4728,8 @@ document.addEventListener("keydown", (ev) => {
     switch (ev.key.toLowerCase()) {
         case 'enter':
             if (ev.target instanceof HTMLButtonElement) return;
-            xformer.apply();
+            if (xformer.isActive)
+                xformer.apply();
             break;
         case '`':
             tool.toolSelector('camera', true);
@@ -4731,12 +4791,14 @@ document.addEventListener("keydown", (ev) => {
     if (MODE == 0) {
         if (ev.ctrlKey && ev.key.toLowerCase() === 'z') {
             ev.preventDefault();
-            xformer.apply();
+            if (xformer.isActive)
+                xformer.apply();
             memory.undo();
         }
         if (ev.ctrlKey && ev.key.toLowerCase() === 'x') {
             ev.preventDefault();
-            xformer.apply();
+            if (xformer.isActive)
+                xformer.apply();
             memory.redo();
         }
     }
@@ -4933,18 +4995,21 @@ ui.domMenuInScreenRender.children[2].onclick = () => {
 
 ui.domMenus.onpointerdown = () => {
     if (MODE == 0) {
-        xformer.apply();
+        if (xformer.isActive)
+            xformer.apply();
         helper.clearOverlays();
     }
 };
 
 ui.domMenuInScreenStore.onpointerdown = () => {
-    xformer.apply();
+    if (xformer.isActive)
+        xformer.apply();
     helper.clearOverlays();
 };
 
 ui.domHover.onpointerdown = () => {
-    xformer.apply();
+    if (xformer.isActive)
+        xformer.apply();
     helper.clearOverlays();
 };
 
@@ -5346,4 +5411,11 @@ function rgbIntToHex(r, g, b) {
 
 function parseBool(val) {
     return val === true || val === "true";
+}
+
+function distanceVectors(v1, v2) {
+    const dx = v2.x - v1.x;
+    const dy = v2.y - v1.y;
+    const dz = v2.z - v1.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }

@@ -112,7 +112,7 @@
         #toolbar_top_cen li:nth-child(2) { border-radius: 0; }
         #toolbar_top_cen li:nth-child(3) { border-left: none; border-radius: 0; border-bottom-right-radius: 2px; border-top-right-radius: 2px; }
         #toolbar_top_cen li.mode_select { color: orange; }
-        #toolbar_top_mem li { width: 40px; font-size: 11px; letter-spacing: 0.04em; padding: 5px; background: none; text-shadow: var(--text-shadow); cursor: pointer; }
+        #toolbar_top_mem li { width: 40px; text-indent: 2px; font-size: 11px; padding: 5px; background: none; text-shadow: var(--text-shadow); cursor: pointer; }
         #toolbar_top_mem li:first-child { float: left; }
         #toolbar_top_mem li:last-child { float: right; }
         #toolbar_top_mem li:hover { box-shadow: none; color: orange }
@@ -121,7 +121,7 @@
         #toolbar_L li:nth-child(1) button { padding: 6px 0 6px 10px; }
         #toolbar_L li:nth-child(1) :first-child { width: 50%; float: left; }
         #toolbar_L li:nth-child(1) :last-child { width: 50%; border-left: none; }
-        #toolbar_L button { width: 100%; padding: 8px 0 7px 0; border-top: none; border-radius: 0; }
+        #toolbar_L button { width: 100%; height: 32px; border-top: none; border-radius: 0; }
         #toolbar_minimal { z-index: 1000; flex-direction: column; gap: 5px; opacity: 0.95; width: 40px; position: absolute; left: 0; top: 40px; }
         #toolbar_minimal li { display: inline; background: none; box-shadow: none; border: none; padding: 0; }
         #toolbar_minimal button { background: none; box-shadow: none; color: var(--btn-color); width: 100%; padding: 8px 0 7px 0; border: none; border-radius: 0; }
@@ -160,7 +160,7 @@
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
         #info { z-index: 2; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; bottom: 2px; left: 50%; transform: translate(-50%,0); text-align: center; pointer-events: none; }
-        #info_tool { z-index: 2; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 46px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
+        #info_tool { z-index: 2; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
         #info_render { z-index: 301; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
         #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-align: center; }
@@ -246,8 +246,8 @@
             </ul>
 
             <ul id="toolbar_top_mem">
-                <li><i class="material-icons">undo</i></li>
-                <li><i class="material-icons">redo</i></li>
+                <li><i class="material-icons">arrow_back_ios</i></li>
+                <li><i class="material-icons">arrow_forward_ios</i></li>
             </ul>
         </div>
 
@@ -282,7 +282,7 @@
             <li class="spacer"></li>
             <li class="about">
                 <span style="color: orange;">V</span>OXEL BUILDER
-                <br>&#8627; 4.5.3 Beta
+                <br>&#8627; 4.5.4 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -292,8 +292,6 @@
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/asset-viewer', '_blank').focus()">Asset Viewer</button></li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/pixel-monk', '_blank').focus()">Pixel Monk</button></li>
             <li><button onclick="window.open('https://nimadez.github.io/voxel-builder/extras/vi2xel', '_blank').focus()">VI²XEL</button></li>
-            <li class="spacer"></li>
-            <li><input type="checkbox" id="devmode"> <label for="devmode">I feel like a dev</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-prefs">
@@ -543,7 +541,7 @@
             <li><button id="btn_tool_transform_group" class="tool_transform_group">Color Group</button></li>
             <li><button id="btn_tool_transform_visible" class="tool_transform_visible">Visible Voxels</button></li>
             <li class="spacer"></li>
-            <!-- <li><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li> -->
+            <li><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone Voxels</label></li>
             <li class="category">MANIPULATE</li>
             <li><button id="normalize_voxels">Normalize Voxels</button></li>
@@ -678,8 +676,8 @@
     <input style="display: none" type="file" id="openfile_baked_glb" accept=".glb" onclick="this.value = null">
 
     <!-- help -->
-    <div id="shortcuts">
-        <table>
+    <div id="shortcuts" ondblclick="this.style.display = 'none'">
+        <table title="Double tap to close">
             <tr><th>Shortcut</th> <th>Description</th></tr>
             <tr><td>SPACE / ALT</td> <td>Toggle Free Camera Tool (MODEL)</td></tr>
             <tr><td>ENTER</td> <td>Apply Voxel Transforms (MODEL)</td></tr>
