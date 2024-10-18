@@ -88,9 +88,6 @@ class Bakery {
             plane.rotation.x = rotX;
             plane.rotation.y = rotY;
             plane.scaling.scaleInPlace(scale);
-            plane.layerMask = 0x00000000;
-            //plane.renderingGroupId = 1;
-            //plane.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
             this.planes.push(plane);
         } else {
             if (voxel.color !== builder.voxels[idx].color) { // visibility support
@@ -99,9 +96,6 @@ class Bakery {
                 plane.rotation.x = rotX;
                 plane.rotation.y = rotY;
                 plane.scaling.scaleInPlace(scale);
-                plane.layerMask = 0x00000000;
-                //plane.renderingGroupId = 1;
-                //plane.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
                 this.planes.push(plane);
             }
         }

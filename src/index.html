@@ -33,14 +33,14 @@
             --font: Roboto;
             --font-size: 12px;
             --btn-color: #969fb1;
-            --btn-bg: #2e3542;
+            --btn-bg: #2e3542AA;
             --input-bg: #222833CC;
             --input-color: #788499;
             --label: #788599;
             --cat-bg: #292e38;
             --cat-color: #636f85;
             --cat-border: #3e485caa;
-            --menu-bg: #2d3542EE;
+            --menu-bg: #2d3542DD;
             --confirm: #222731EE;
             --borders: #161a2050;
             --btn-shadow: #161a2028;
@@ -76,7 +76,7 @@
         button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
         label { font-family: var(--font); font-size: var(--font-size); color: var(--label); letter-spacing: 0.04em; margin: 0; }
-        select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--btn-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
+        select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--menu-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
         select:hover { color: steelblue; cursor: pointer; }
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
         ul { list-style-type: none; }
@@ -282,7 +282,7 @@
             <li class="spacer"></li>
             <li class="about">
                 <span style="color: orange;">V</span>OXEL BUILDER
-                <br>&#8627; 4.5.4 Beta
+                <br>&#8627; 4.5.5 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -310,6 +310,8 @@
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="debug_pick"> <label for="debug_pick">Picking Portal</label></li>
             <li class="category">WEBSOCKETS</li>
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>            
@@ -411,7 +413,7 @@
             <li class="spacer"></li>
             <li><input type="checkbox" id="input-pt-hdri-background"> <label for="input-pt-hdri-background">Background</label></li>
             <li class="spacer"></li>
-            <li class="row"><label style="min-width: 52%">Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.8" min="0.01" step="0.01"></li>
+            <li class="row_input"><label>Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.8" min="0.01" step="0.01"></li>
             <li class="row_input"><label>Blur</label> <input type="number" id="input-pt-hdri-blur" class="ignorekeys" value="0.05" min="0" step="0.01"></li>
             <li class="row_input"><label>Light</label> <input type="color" id="input-pt-light-color" value="#FFE484"></li>
             <li class="row_input"><label>Intensity</label> <input type="number" id="input-pt-light-intensity" class="ignorekeys" value="0.8" min="0" step="0.01"></li>
@@ -455,7 +457,7 @@
         <ul class="menu_L panel" id="menu-create">
             <li class="category">BOX</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1"></div>
                 <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_grid_y" type="number" class="ignorekeys" value="20" min="1"></div>
                 <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_grid_z" type="number" class="ignorekeys" value="20" min="1"></div>
                 <input type="checkbox" id="create_grid_fill" checked> <label for="create_grid_fill">Fill Box</label><br>
@@ -468,14 +470,14 @@
             </li>
             <li class="category">SPHERE</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 12px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 13px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3"></div>
                 <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0"></div>
                 <input type="checkbox" id="create_sphere_new" checked> <label for="create_sphere_new">New Scene</label><br>
                 <button id="create_sphere">Sphere</button>
             </li>
             <li class="category">TERRAIN</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 3px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3"></div>
                 <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_terrain_y" type="number" class="ignorekeys" value="5" min="1"></div>
                 <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3"></div>
                 <input type="checkbox" id="create_terrain_grad" checked> <label for="create_terrain_grad">Height Gradient</label><br>

@@ -119,7 +119,7 @@ const MAX_Z = isMobile ? 500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
-const FPS_TOOL = 1000 / 30;
+const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
 const canvas = document.getElementById('canvas');
 const pointer = { x: 0, y: 0, isDown: false };
@@ -879,7 +879,6 @@ class Material {
         varying vec2 vUv;
         varying vec4 vColor;
         
-        uniform vec3 uCamDir;
         uniform vec3 uLightPos;
         uniform vec3 uLightCol;
         
@@ -890,7 +889,6 @@ class Material {
         
             vec3 position = normalize(vPositionW);
             vec3 normal = normalize(vNormalW);
-            vec3 viewDir = normalize(uCamDir);
             vec3 lightDir = normalize(uLightPos - position);
             
             float amb = clamp(0.8 + 0.5 * normal.y, 0.0, 1.0);
@@ -917,7 +915,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uCamDir", "uLightPos", "uLightCol" ],
+                              "uLightPos", "uLightCol" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             });
@@ -926,7 +924,6 @@ class Material {
         
         updateCelMaterial() {
             if (this.mat_cel) {
-                this.mat_cel.setVector3("uCamDir", camera.camera0.getDirection(AXIS_Z));
                 this.mat_cel.setVector3("uLightPos", light.directional.position);
                 this.mat_cel.setColor3("uLightCol", Color3(
                     (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
@@ -1618,6 +1615,7 @@ class XFormer {
 
     deleteSelected() {
         if (this.isActive) {
+            builder.removeArray(this.xforms);
             builder.create();
             this.dispose();
         }
@@ -1916,6 +1914,12 @@ class MeshPool {
         vertexData.normals = PLANE_NORMALS;
         vertexData.indices = PLANE_INDICES;
         vertexData.applyToMesh(mesh);
+
+        mesh.renderingGroupId = 1;
+        mesh.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
+        if (!ui.domDebugPick.checked)
+            mesh.layerMask = 0x00000000;
+        
         return mesh;
     }
 
@@ -2116,10 +2120,9 @@ class Ghosts {
             this.spsPick.dispose();
         
         this.spsPick = new BABYLON.SolidParticleSystem('ghost_spspick', scene, { updatable: false, expandable: false, boundingSphereOnly: false });
-        
+
         this.spsPick.addShape(this.voxel, voxels.length, { positionFunction: (p, i, s) => {
             p.position.copyFrom(voxels[i].position);
-            if (!voxels[i].visible) p.scaling.set(0,0,0);
         }});
 
         this.spsPick.initParticles();
@@ -2127,7 +2130,10 @@ class Ghosts {
         this.spsPick.computeBoundingBox = true;
         this.spsPick.mesh.isPickable = true;
         this.spsPick.mesh.doNotSerialize = true;
-        this.spsPick.mesh.layerMask = 0x00000000;
+        this.spsPick.mesh.renderingGroupId = 1;
+        (!ui.domDebugPick.checked) ?
+            this.spsPick.mesh.layerMask = 0x00000000:
+            helper.highlightOverlayMesh(this.spsPick.mesh, COL_AXIS_X_RGB);
     }
 
     createPointCloud(voxels = builder.voxels) {
@@ -2194,7 +2200,7 @@ class Helper {
         this.workplane = CreatePlane("workplane", WORKPLANE_SIZE, BACKSIDE, scene);
         this.axisPlane = CreatePlane("axisplane", 1.2, DOUBLESIDE, axisView.scene);
         this.overlayPlane = CreatePlane("overlay_plane", 1, DOUBLESIDE, scene);
-        this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
+        this.overlayCube = CreateBox("overlay_cube", 0.3, FRONTSIDE, scene);
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
         this.bbox = CreateBox("bbox", 1, FRONTSIDE, scene);
@@ -2261,7 +2267,8 @@ class Helper {
         this.overlayCube.isPickable = false;
         this.overlayCube.visibility = 0.1;
         this.overlayCube.doNotSerialize = true;
-        this.highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB);
+        this.overlayCube.renderingGroupId = 1;
+        this.highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB, 1);
         this.overlayCube.freezeNormals();
 
         this.boxShape.isVisible = false;
@@ -3258,16 +3265,19 @@ class Tool {
     }
 
     // A magnetic portal into another world that doesn't exists!
-    // It sticks to surfaces and gather face-normal information.
-    // The portal dynamically expands to find problematic normals.
-    // https://github.com/nimadez/voxel-builder/releases/tag/4.5.4
+    // It sticks to surfaces and gather face-normal information
+    // A star-shaped SPS used to block inner and side normals
+    // It supports:
+    //  - ~~hard slope camera directions~~
+    //  - the gap between faces and colors
+    //  - invisible and in-between voxels
     normalProbe(pick, index) {
         this.normal = undefined;
 
         if (builder.voxels.length == 1) {
-            ghosts.createSPSPick([ builder.voxels[index] ]);
+            ghosts.createSPSPick([builder.voxels[index]]);
             pick = scene.pickWithRay(pick.ray);
-            if (pick.hit)
+            if (pick.hit && pick.pickedMesh.name === 'ghost_spspick')
                 return pick.getNormal(true);
         }
 
@@ -3275,26 +3285,21 @@ class Tool {
         for (let i = 0; i < VEC6_ONE.length; i++) {
             const pos = builder.voxels[index].position.add(VEC6_ONE[i]);
             const idx = builder.getIndexAtPosition(pos);
-            if (idx !== undefined)
+            if (idx !== undefined && builder.voxels[idx].visible)
                 this.tmpBlock.push(builder.voxels[idx]);
         }
+
         ghosts.createSPSPick(this.tmpBlock);
-        
-        for (let i = 1; i < 5; i += 0.1) {
-            modules.bakery.bakePick(builder.voxels[index], i);
-            pick = scene.pickWithRay(pick.ray);
-            if (pick.hit) {
-                if (pick.faceId == 1) {
-                    if (pick.pickedMesh.name == 'plane') {
-                        this.normal = pick.getNormal(true);
-                        break;
-                    }
-                } else {
-                    if (pick.pickedMesh.name == 'plane' && pick.pickedMesh.name !== 'ghost_spspick') {
-                        this.normal = pick.getNormal(true);
-                        break;
-                    }
-                }
+        modules.bakery.bakePick(builder.voxels[index], 1);
+
+        pick = scene.pickWithRay(pick.ray);
+        if (pick.hit) {
+            if (pick.pickedMesh.name === 'ghost_spspick') {
+                // gaps
+                helper.setOverlayCube(pick.pickedPoint, COL_AXIS_X_RGB);
+            } else {
+                if (pick.pickedMesh.name === 'plane')
+                    this.normal = pick.getNormal(true);
             }
         }
 
@@ -3336,7 +3341,6 @@ class Tool {
                 this.pick.INDEX = this.pick.faceId;
                 this.pick.NORMAL = norm;
                 this.pick.WORKPLANE = true;
-
                 onHit(this.pick);
             }
         }
@@ -3423,7 +3427,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.4",
+            version: "Voxel Builder 4.5.5",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -4043,7 +4047,8 @@ class UserInterface {
         this.domInfoTool = document.getElementById('info_tool');
         this.domInfoRender = document.getElementById('info_render');
         this.domProgressBar = document.getElementById('progressbar');
-        
+        this.domDebugPick = document.getElementById('debug_pick');
+
         this.notificationTimer = undefined;
     }
 
@@ -5261,6 +5266,10 @@ ui.domPbrAlpha.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('alpha') :
         ui.notification('select a mesh');
+};
+
+ui.domDebugPick.onchange = (ev) => {
+    helper.overlayPlane.renderingGroupId = (ev.target.checked) ? 1 : 0;
 };
 
 document.getElementById('normalize_voxels').onclick = async () => {
