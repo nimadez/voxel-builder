@@ -119,7 +119,7 @@ const MAX_Z = isMobile ? 500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
-const FPS_TOOL = 1000 / 30;
+const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
 const canvas = document.getElementById('canvas');
 const pointer = { x: 0, y: 0, isDown: false };
@@ -320,7 +320,7 @@ class AxisViewScene {
 
 class Camera {
     constructor() {
-        this.camera0 = null;
+        this.camera0 = undefined;
         this.lastPos = undefined;
         this.isFramingActive = false;
     }
@@ -420,7 +420,7 @@ class Camera {
 
         const radiusWorld = max.subtract(min).scale(0.5);
         const centerWorld = min.add(radiusWorld);
-        const zoomTargetY = min.y + (max.y - min.y) * 0.5;
+        const zoomTargetY = min.y + (max.y - min.y) * 0.4;
         const zoomTarget = Vector3(centerWorld.x, zoomTargetY, centerWorld.z);
 
         return {
@@ -600,9 +600,9 @@ class HDRI {
 
 class Light {
     constructor() {
+        this.directional = undefined;
         this.location = Vector3(50, 100, 50);
         this.angle = 70;
-        this.directional = null;
     }
 
     init() {
@@ -879,7 +879,6 @@ class Material {
         varying vec2 vUv;
         varying vec4 vColor;
         
-        uniform vec3 uCamDir;
         uniform vec3 uLightPos;
         uniform vec3 uLightCol;
         
@@ -890,7 +889,6 @@ class Material {
         
             vec3 position = normalize(vPositionW);
             vec3 normal = normalize(vNormalW);
-            vec3 viewDir = normalize(uCamDir);
             vec3 lightDir = normalize(uLightPos - position);
             
             float amb = clamp(0.8 + 0.5 * normal.y, 0.0, 1.0);
@@ -917,7 +915,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uCamDir", "uLightPos", "uLightCol" ],
+                              "uLightPos", "uLightCol" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             });
@@ -926,7 +924,6 @@ class Material {
         
         updateCelMaterial() {
             if (this.mat_cel) {
-                this.mat_cel.setVector3("uCamDir", camera.camera0.getDirection(AXIS_Z));
                 this.mat_cel.setVector3("uLightPos", light.directional.position);
                 this.mat_cel.setColor3("uLightCol", Color3(
                     (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
@@ -1191,6 +1188,17 @@ class Builder {
             maxX - minX + 1,
             maxY - minY + 1,
             maxZ - minZ + 1
+        );
+    }
+
+    isPositionInBoundingBox(position) {
+        const bounds = this.mesh.getBoundingInfo();
+        const min = bounds.boundingBox.minimumWorld;
+        const max = bounds.boundingBox.maximumWorld;
+        return (
+            position.x >= min.x && position.x <= max.x &&
+            position.y >= min.y && position.y <= max.y &&
+            position.z >= min.z && position.z <= max.z
         );
     }
 
@@ -1493,7 +1501,7 @@ class XFormer {
         this.isActive = false;
         this.isNewObject = false;
         this.xforms = [];
-        this.startPos = null;
+        this.startPos = undefined;
         this.useColors = false;
     }
 
@@ -1618,6 +1626,7 @@ class XFormer {
 
     deleteSelected() {
         if (this.isActive) {
+            builder.removeArray(this.xforms);
             builder.create();
             this.dispose();
         }
@@ -1632,8 +1641,8 @@ class XFormer {
 class MeshPool {
     constructor() {
         this.meshes = [];
-        this.selected = null;
-        this.pick = null;
+        this.selected = undefined;
+        this.pick = undefined;
     }
 
     exportOptions = {
@@ -1710,7 +1719,7 @@ class MeshPool {
                 this.selected.material.reflectionTexture.dispose();
             this.selected.material.dispose();
             this.selected.dispose();
-            this.selected = null;
+            this.selected = undefined;
 
             this.createMeshList();
             light.updateShadowMap();
@@ -1728,7 +1737,7 @@ class MeshPool {
     }
 
     deselectMesh() {
-        this.selected = null;
+        this.selected = undefined;
         for (let i = 0; i < this.meshes.length; i++) {
             this.meshes[i].renderOverlay = false;
             this.meshes[i].renderOutline = false;
@@ -1754,7 +1763,7 @@ class MeshPool {
         if (this.meshes.length > 0) {
             if (isAlert && !await ui.showConfirm('clear all baked meshes?')) return;
             this.clearMeshArray();
-            this.selected = null;
+            this.selected = undefined;
             this.createMeshList();
             light.updateShadowMap();
         }
@@ -1905,16 +1914,6 @@ class MeshPool {
             col.r, col.g, col.b, 1,
             col.r, col.g, col.b, 1
         ];
-        vertexData.applyToMesh(mesh);
-        return mesh;
-    }
-
-    constructPlaneFast() {
-        const mesh = new BABYLON.Mesh('plane', scene);
-        const vertexData = new BABYLON.VertexData();
-        vertexData.positions = PLANE_POSITIONS;
-        vertexData.normals = PLANE_NORMALS;
-        vertexData.indices = PLANE_INDICES;
         vertexData.applyToMesh(mesh);
         return mesh;
     }
@@ -2107,19 +2106,18 @@ class Ghosts {
     disposeSPS() {
         if (this.sps)
             this.sps.dispose();
-        this.sps = null;
+        this.sps = undefined;
     }
 
-    // SPS used for picking after the SPS-voxel-engine fallout
-    createSPSPick(voxels) {
-        if (this.spsPick)
-            this.spsPick.dispose();
+    createSPSPick(voxels, coreScale) {
+        this.disposeSPSPick();
         
-        this.spsPick = new BABYLON.SolidParticleSystem('ghost_spspick', scene, { updatable: false, expandable: false, boundingSphereOnly: false });
-        
+        this.spsPick = new BABYLON.SolidParticleSystem('ghost_sps_pick', scene, { updatable: false, expandable: false, boundingSphereOnly: false });
+
         this.spsPick.addShape(this.voxel, voxels.length, { positionFunction: (p, i, s) => {
             p.position.copyFrom(voxels[i].position);
-            if (!voxels[i].visible) p.scaling.set(0,0,0);
+            if (i == 0)
+                p.scaling.scaleInPlace(coreScale);
         }});
 
         this.spsPick.initParticles();
@@ -2127,7 +2125,17 @@ class Ghosts {
         this.spsPick.computeBoundingBox = true;
         this.spsPick.mesh.isPickable = true;
         this.spsPick.mesh.doNotSerialize = true;
-        this.spsPick.mesh.layerMask = 0x00000000;
+        this.spsPick.mesh.renderingGroupId = 1;
+        (!ui.domDebugPick.checked) ?
+            this.spsPick.mesh.layerMask = 0x00000000 :
+            helper.highlightOverlayMesh(this.spsPick.mesh, COL_AXIS_X_RGB);
+    }
+
+    disposeSPSPick() {
+        if (this.spsPick) {
+            this.spsPick.dispose();
+            this.spsPick = undefined;
+        }
     }
 
     createPointCloud(voxels = builder.voxels) {
@@ -2161,7 +2169,7 @@ class Ghosts {
     disposePointCloud() {
         if (this.cloud)
             this.cloud.dispose();
-        this.cloud = null;
+        this.cloud = undefined;
     }
 
     getCenter() {
@@ -2193,8 +2201,8 @@ class Helper {
         this.gridPlane = CreateDisc("gridplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
         this.workplane = CreatePlane("workplane", WORKPLANE_SIZE, BACKSIDE, scene);
         this.axisPlane = CreatePlane("axisplane", 1.2, DOUBLESIDE, axisView.scene);
-        this.overlayPlane = CreatePlane("overlay_plane", 1, DOUBLESIDE, scene);
-        this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
+        this.overlayPlane = CreatePlane("overlay_plane", 1, BACKSIDE, scene);
+        this.overlayCube = CreateBox("overlay_cube", 0.25, FRONTSIDE, scene);
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
         this.bbox = CreateBox("bbox", 1, FRONTSIDE, scene);
@@ -2251,17 +2259,17 @@ class Helper {
         this.axisPlane.freezeNormals();
 
         this.overlayPlane.isVisible = false;
-        this.overlayPlane.isPickable = false;
-        this.overlayPlane.visibility = 0.01;
+        this.overlayPlane.isPickable = true;
+        this.overlayPlane.visibility = 0.5;
         this.overlayPlane.doNotSerialize = true;
         this.highlightOverlayMesh(this.overlayPlane, COL_ORANGE_RGB, 1);
-        this.overlayPlane.freezeNormals();
 
         this.overlayCube.isVisible = false;
         this.overlayCube.isPickable = false;
-        this.overlayCube.visibility = 0.1;
+        this.overlayCube.visibility = 0.5;
         this.overlayCube.doNotSerialize = true;
-        this.highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB);
+        this.overlayCube.renderingGroupId = 1;
+        this.highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB, 1);
         this.overlayCube.freezeNormals();
 
         this.boxShape.isVisible = false;
@@ -2393,30 +2401,37 @@ class Helper {
         this.symmPivot.isVisible = isVisible;
     }
 
-    setOverlayPlane(pos, normAxis) {
+    setOverlayPlane(pos, norm) {
         this.overlayPlane.isVisible = true;
-        this.overlayPlane.position = pos;
+        this.overlayPlane.isPickable = true;
+        this.overlayPlane.position.copyFrom(pos.add(norm.scale(0.5)));
 
-        if ((normAxis.x == 0 && normAxis.y == 0 && normAxis.z == 1) ||
-            (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == -1)) {
+        if ((norm.x == 0 && norm.y == 0 && norm.z == 1) ||
+            (norm.x == 0 && norm.y == 0 && norm.z == -1)) {
             this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                 BABYLON.Axis.X,
-                Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z)));
+                Math.acos(BABYLON.Vector3.Dot(norm, BABYLON.Axis.Z)));
         } else {
             this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-                BABYLON.Vector3.Cross(BABYLON.Axis.Z, normAxis), // axis
-                Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z))); // angle
+                BABYLON.Vector3.Cross(BABYLON.Axis.Z, norm), // axis
+                Math.acos(BABYLON.Vector3.Dot(norm, BABYLON.Axis.Z))); // angle
         }
     }
 
-    setOverlayCube(pos, color = COL_ORANGE_RGB) {
+    setOverlayCube(pos, color) {
         this.overlayCube.isVisible = true;
         this.overlayCube.position = pos;
         this.overlayCube.overlayColor = color;
     }
 
+    clearOverlayPlane() {
+        this.overlayPlane.isVisible = false;
+        this.overlayPlane.isPickable = false;
+    }
+
     clearOverlays() {
         this.overlayPlane.isVisible = false;
+        this.overlayPlane.isPickable = false;
         this.overlayCube.isVisible = false;
     }
 
@@ -2682,10 +2697,11 @@ class Tool {
     constructor() {
         this.name = 'camera';
         this.last = undefined;
-        this.selected = [];
 
         this.pick = undefined;
-        this.normal = undefined;
+        this.pickNormal = undefined;
+        this.pickBlock = [];
+
         this.isSymmetry = false;
         this.isWorkplane = false;
         this.startBox = undefined;
@@ -2695,8 +2711,9 @@ class Tool {
         this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
         this.boxCount = 0;
         this.fixedHeight = 0;
+
+        this.selected = [];
         this.tmp = [];
-        this.tmpBlock = [];
 
         this.then = performance.now();
         this.now = 0;
@@ -2908,6 +2925,37 @@ class Tool {
         ghosts.createThin(this.selected, 0);
     }
 
+    addBridge(pos, norm) {
+        const dims = builder.getDimensions();
+        const p = pos.clone();
+
+        if (norm.x !== 0 && norm.y == 0 && norm.z == 0) {
+            for (let i = 0; i <= dims.x; i++) {
+                p.x += norm.x;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        } else if (norm.x == 0 && norm.y !== 0 && norm.z == 0) {
+            for (let i = 0; i <= dims.y; i++) {
+                p.y += norm.y;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        } else if (norm.x == 0 && norm.y == 0 && norm.z !== 0) {
+            for (let i = 0; i <= dims.z; i++) {
+                p.z += norm.z;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        }
+    }
+
     pickWorkplane(pick, norm) {
         const pos = pick.pickedPoint.add(VEC3_ONE).subtract(VEC3_HALF).floor();
 
@@ -3021,6 +3069,9 @@ class Tool {
                 this.addNoHelper(this.pos); // allow 1 voxel
                 this.startBox = this.pos;
                 break;
+            case 'bridge':
+                this.addBridge(this.pos, norm);
+                break;
         }
     }
 
@@ -3036,8 +3087,6 @@ class Tool {
             this.pos = this.pickWorkplane(pick, norm);
         }
         
-        helper.setOverlayPlane(this.pos.add(norm.scale(0.5)), norm);  
-
         this.posNorm = this.pos.add(norm);
 
         if (!pointer.isDown) return;
@@ -3187,6 +3236,13 @@ class Tool {
                     camera.frameVoxels(this.tmp);
                 }
                 break;
+            case 'bridge':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, currentColor, false);
+                    builder.addArray(this.tmp);
+                    builder.create();
+                }
+                break;
         }
     }
 
@@ -3227,19 +3283,23 @@ class Tool {
         if (this.name !== 'camera') {
             this.onToolUp();
 
-            this.selected = [];
+            this.pick = undefined;
+            this.pickNormal = undefined;
+            this.pickBlock = [];
+
             this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
             this.boxCount = 0;
-            this.startBox = null;
-            this.startRect = null;
-            this.pos = null;
-            this.posNorm = null;
-            this.tmp = [];
-            this.tmpBlock = [];
+            this.startBox = undefined;
+            this.startRect = undefined;
+            this.pos = undefined;
+            this.posNorm = undefined;
 
-            modules.bakery.dispose();
+            this.selected = [];
+            this.tmp = [];
+
             ghosts.disposeThin();
             ghosts.disposeSPS();
+            ghosts.disposeSPSPick();
             helper.clearBoxShape();
             setTimeout(() => {
                 helper.clearOverlays();
@@ -3254,67 +3314,91 @@ class Tool {
             return mesh === helper.gridPlane;
         if (helper.isWorkplaneActive && helper.workplane.isVisible)
             return mesh === helper.workplane;
-        return null;
+        return undefined;
     }
 
     // A magnetic portal into another world that doesn't exists!
     // It sticks to surfaces and gather face-normal information.
-    // The portal dynamically expands to find problematic normals.
-    // https://github.com/nimadez/voxel-builder/releases/tag/4.5.4
+    // https://github.com/nimadez/voxel-builder/releases/tag/4.5.5
+
+    isRayHitPlane(pick) {
+        const res = scene.pickWithRay(pick.ray);
+        if (res.hit && res.pickedMesh.name === 'overlay_plane') {
+            const ray = pick.ray.clone();
+            ray.origin.copyFrom(res.pickedPoint).addInPlace(ray.direction.scale(-0.01));
+            const frontFace = scene.pickWithRay(ray);
+            return frontFace.hit && frontFace.pickedMesh.name === 'overlay_plane';
+        }
+        return false;
+    }
+    
     normalProbe(pick, index) {
-        this.normal = undefined;
+        this.pickNormal = undefined;
 
-        if (builder.voxels.length == 1) {
-            ghosts.createSPSPick([ builder.voxels[index] ]);
-            pick = scene.pickWithRay(pick.ray);
-            if (pick.hit)
-                return pick.getNormal(true);
-        }
+        helper.gridPlane.isPickable = false;
+        helper.workplane.isPickable = false;
 
-        this.tmpBlock = [];
+        const voxel = builder.voxels[index];
+
+        this.pickBlock = [ voxel ];
         for (let i = 0; i < VEC6_ONE.length; i++) {
-            const pos = builder.voxels[index].position.add(VEC6_ONE[i]);
+            const pos = voxel.position.add(VEC6_ONE[i]);
             const idx = builder.getIndexAtPosition(pos);
-            if (idx !== undefined)
-                this.tmpBlock.push(builder.voxels[idx]);
+            if (idx !== undefined && builder.voxels[idx].visible)
+                this.pickBlock.push(builder.voxels[idx]);
         }
-        ghosts.createSPSPick(this.tmpBlock);
-        
-        for (let i = 1; i < 5; i += 0.1) {
-            modules.bakery.bakePick(builder.voxels[index], i);
-            pick = scene.pickWithRay(pick.ray);
-            if (pick.hit) {
-                if (pick.faceId == 1) {
-                    if (pick.pickedMesh.name == 'plane') {
-                        this.normal = pick.getNormal(true);
+
+        ghosts.createSPSPick(this.pickBlock, 0.9999);
+
+        for (let i = 0; i < VEC6_ONE.length; i++) {
+
+            helper.setOverlayPlane(voxel.position, VEC6_ONE[i]);
+
+            const pos = voxel.position.add(VEC6_ONE[i]);
+            const idx = builder.getIndexAtPosition(pos);
+            if (idx === undefined) {
+                if (this.isRayHitPlane(pick))
+                    break;
+            } else {
+                if (!builder.voxels[idx].visible) {
+                    if (this.isRayHitPlane(pick))
                         break;
-                    }
-                } else {
-                    if (pick.pickedMesh.name == 'plane' && pick.pickedMesh.name !== 'ghost_spspick') {
-                        this.normal = pick.getNormal(true);
-                        break;
-                    }
                 }
             }
         }
 
-        if (!this.normal) {
+        const res = scene.pickWithRay(pick.ray);
+        if (res.hit &&
+            res.pickedMesh.name !== 'ghost_sps_pick' &&
+            res.pickedMesh.name === 'overlay_plane') {
+                this.pickNormal = res.getNormal(true);
+        } else {
+            // TODO: picked a bad gap!
+            if (res.hit && res.pickedMesh.name === 'ghost_sps_pick')
+                helper.setOverlayCube(res.pickedPoint, COL_AXIS_X_RGB);
+        }
+
+        helper.gridPlane.isPickable = true;
+        helper.workplane.isPickable = true;
+
+        if (!this.pickNormal) {
+            //console.log(0);
+            helper.clearOverlayPlane();
             if (pointer.isDown && !camera.isCameraChange())
                 scene.activeCamera.detachControl(canvas);
-            //console.log(0);
             return undefined;
         }
 
-        return this.normal;
+        return this.pickNormal;
     }
 
     setPickInfo(onHit) {
         helper.clearOverlays();
 
-        this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
         const index = builder.getIndexAtPointer();
 
         if (index !== undefined) {
+            this.pick = scene.pick(pointer.x, pointer.y, () => { return undefined });
             const norm = this.normalProbe(this.pick, index);
             if (norm) {
                 norm.x = Math.round(norm.x * 10) / 10;
@@ -3327,6 +3411,7 @@ class Tool {
                 onHit(this.pick);
             }
         } else {
+            this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
             if (this.pick && this.pick.hit) {
                 const norm = this.pick.getNormal(true);
                 norm.x = Math.round(norm.x * 10) / 10;
@@ -3336,7 +3421,6 @@ class Tool {
                 this.pick.INDEX = this.pick.faceId;
                 this.pick.NORMAL = norm;
                 this.pick.WORKPLANE = true;
-
                 onHit(this.pick);
             }
         }
@@ -3423,7 +3507,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.4",
+            version: "Voxel Builder 4.5.5",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3892,12 +3976,12 @@ class RenderTarget {
         this.pickTexture = undefined;
         this.frameBuffer = undefined;
         this.pixels = undefined;
-        this.pointer = { x: 0, y: 0 };
+        this.point = { x: 0, y: 0 };
     }
 
     init() {
         this.pickTexture = new BABYLON.RenderTargetTexture('pickTexture', {
-            useSRGBBuffer: false, width: engine.engine.getRenderWidth(), height: engine.engine.getRenderHeight() },
+            useSRGBBuffer: false, width: window.innerWidth, height: window.innerHeight },
             scene, false, undefined, BABYLON.Constants.TEXTURETYPE_UNSIGNED_INT, false, BABYLON.Constants.TEXTURE_NEAREST_NEAREST);
 
         this.pickTexture.clearColor = COL_WHITE_RGBA;
@@ -3915,16 +3999,16 @@ class RenderTarget {
 
         this.frameBuffer = engine.engine._gl.createFramebuffer();
 
-        const w = engine.engine.getRenderWidth();
-        const h = engine.engine.getRenderHeight();
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         const bufferSize = engine.engine.isWebGPU ? (4 * w * h + 255) & ~255 : 4 * w * h;
         this.pixels = new Uint8Array(bufferSize);
     }
 
     read() {
-        this.pointer.x = Math.round(pointer.x);
-        this.pointer.y = engine.engine.getRenderHeight() - Math.round(pointer.y);
-        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource, this.pointer.x, this.pointer.y, 1, 1);
+        this.point.x = Math.floor(pointer.x);
+        this.point.y = window.innerHeight - Math.floor(pointer.y);
+        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource, this.point.x, this.point.y, 1, 1);
         return `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
     }
     
@@ -3932,6 +4016,7 @@ class RenderTarget {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, null, 0); // unbind
     }
 
     numToColor(num) {
@@ -3943,8 +4028,8 @@ class RenderTarget {
     }
 
     resize() {
-        const w = engine.engine.getRenderWidth();
-        const h = engine.engine.getRenderHeight();
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         
         this.pickTexture.resize({ width: w, height: h });
 
@@ -4004,6 +4089,7 @@ class UserInterface {
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerYup = document.getElementById('input-voxelizer-yup');
         this.domBakeryBackface = document.getElementById('input-bakery-backface');
+        this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
         this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
@@ -4043,7 +4129,8 @@ class UserInterface {
         this.domInfoTool = document.getElementById('info_tool');
         this.domInfoRender = document.getElementById('info_render');
         this.domProgressBar = document.getElementById('progressbar');
-        
+        this.domDebugPick = document.getElementById('debug_pick');
+
         this.notificationTimer = undefined;
     }
 
@@ -4807,7 +4894,7 @@ document.addEventListener("keydown", (ev) => {
 document.addEventListener("keyup", () => {
     if (tool.last) {
         tool.toolSelector(tool.last);
-        tool.last = null;
+        tool.last = undefined;
     }
 }, false);
 
@@ -5263,6 +5350,10 @@ ui.domPbrAlpha.onchange = () => {
         ui.notification('select a mesh');
 };
 
+ui.domDebugPick.onchange = (ev) => {
+    helper.overlayPlane.renderingGroupId = (ev.target.checked) ? 1 : 0;
+};
+
 document.getElementById('normalize_voxels').onclick = async () => {
     if (ui.checkMode(0)) {
         if (await ui.showConfirm('normalize voxel positions?')) {
@@ -5304,6 +5395,7 @@ document.getElementById('symm_p_half').onclick = () =>              { if (ui.che
 document.getElementById('symm_n_half').onclick = () =>              { if (ui.checkMode(0)) symmetry.deleteHalfVoxels(1) };
 document.getElementById('btn_tool_add').onclick = () =>             { if (ui.checkMode(0)) tool.toolSelector('add') };
 document.getElementById('btn_tool_remove').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('remove') };
+document.getElementById('btn_tool_bridge').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bridge') };
 document.getElementById('btn_tool_box_add').onclick = () =>         { if (ui.checkMode(0)) tool.toolSelector('box_add') };
 document.getElementById('btn_tool_box_remove').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('box_remove') };
 document.getElementById('btn_tool_rect_add').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('rect_add') };
