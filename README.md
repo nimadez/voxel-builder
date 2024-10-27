@@ -10,22 +10,22 @@
 
 [Changelog](https://github.com/nimadez/voxel-builder/releases)<br>
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
-[Documentation](https://github.com/nimadez/voxel-builder/wiki)<br>
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
-[FAQ](https://github.com/nimadez/voxel-builder#faq)
+[FAQ](https://github.com/nimadez/voxel-builder#faq)<br>
+[Bug Report](https://github.com/nimadez/voxel-builder/issues)
 
 ## Features
 
 **File I/O**
-- Save and load JSON [?](https://github.com/nimadez/voxel-builder/wiki/File-Format)
+- Save and load JSON
 - Import MagicaVoxel VOX
-- Export to GLB, GLTF, OBJ, STL [?](https://github.com/nimadez/voxel-builder/wiki/project)
+- Export to GLB, GLTF, OBJ, STL
 - Local storages, snapshots, quicksave, undo
 
 **Model and Paint**
 - High performance voxel engine
 - Generators *(terrain, cube, sphere, isometric...)*
-- Interactive modeling toolsets [?](https://github.com/nimadez/voxel-builder/wiki/model)
+- Interactive modeling toolsets
 - Symmetric drawing and painting
 - Color groups and voxel transforms
 
@@ -36,18 +36,18 @@
 
 **Voxelization**
 - Fast BVH voxelization
-- 3D model voxelizer [?](https://github.com/nimadez/voxel-builder/wiki/Voxelization)
+- 3D model voxelizer
 - Image voxelizer
 
 **Export Meshes**
-- Bake voxels to editable meshes [?](https://github.com/nimadez/voxel-builder/wiki/export)
+- Bake voxels to editable meshes
 - Bake voxels by color groups
-- Unbake meshes to voxels
+- Unbake exported GLB to voxels
 - glTF compatible editor
 
 **Extensibility**
 - ES modules
-- WebSockets client [?](https://github.com/nimadez/voxel-builder/wiki/WebSocket-Client)
+- WebSockets client
 - User startup project
 - Blender importer script
 
@@ -141,8 +141,7 @@ How to run Blender importer script?
 
 ## History
 ```
-↑ The face-normal probe jumps to the portal
-↑ Core initialization!
+↑ Core initialization
 ↑ Rendering was left to three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
 ↑ x1.5 faster startup (2s to 300ms)
@@ -157,9 +156,6 @@ How to run Blender importer script?
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
 ```
-
-Version 4.3.9 *(BJS 7 - Three r168)*<br>
-<img src="media/devshot_43.jpg" width="581">
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
 ![screenshot](media/devshots.jpg?raw=true "Screenshot")
@@ -179,7 +175,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [Sketchfab](https://sketchfab.com/)
 - [KhronosGroup](https://github.com/KhronosGroup/)
 - [Shadertoy](https://www.shadertoy.com/)
-- [vengi](https://mgerhardy.github.io/vengi/)
+- [vengi](https://vengi-voxel.github.io/vengi/)
 #
 - [Allen Hastings](https://www.linkedin.com/in/allenhastings)
 - [David Catuhe](https://twitter.com/deltakosh)

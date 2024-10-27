@@ -36,6 +36,7 @@ engine.init().then(eng => {
         CORE.tool.init();
         
         CORE.renderTarget.init();
+        CORE.faceNormalProbe.init();
 
         CORE.preferences.finish(startTime);
 
