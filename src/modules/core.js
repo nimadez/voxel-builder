@@ -29,6 +29,7 @@
     - Snapshot
 
     - Render Target
+    - Face Normal Probe
     
     - UserInterface
     - UserInterfaceAdvanced
@@ -108,18 +109,18 @@ const VEC6_ONE = [
 
 // plane
 const PLANE_POSITIONS = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
-const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ]; // right handed
+const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ];
 const PLANE_UVS = [ 0,1, 1,1, 1,0, 0,0 ];
 const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
 const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
 const MAX_VOXELS_DRAW = isMobile ? 8000 : 64000;
-const MAX_Z = isMobile ? 500 : 2500;
+const MAX_Z = isMobile ? 1500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
-const FPS_TOOL = 1000 / 30;
+const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
 const canvas = document.getElementById('canvas');
 const pointer = { x: 0, y: 0, isDown: false };
@@ -320,7 +321,7 @@ class AxisViewScene {
 
 class Camera {
     constructor() {
-        this.camera0 = null;
+        this.camera0 = undefined;
         this.lastPos = undefined;
         this.isFramingActive = false;
     }
@@ -420,7 +421,7 @@ class Camera {
 
         const radiusWorld = max.subtract(min).scale(0.5);
         const centerWorld = min.add(radiusWorld);
-        const zoomTargetY = min.y + (max.y - min.y) * 0.5;
+        const zoomTargetY = min.y + (max.y - min.y) * 0.4;
         const zoomTarget = Vector3(centerWorld.x, zoomTargetY, centerWorld.z);
 
         return {
@@ -600,9 +601,9 @@ class HDRI {
 
 class Light {
     constructor() {
+        this.directional = undefined;
         this.location = Vector3(50, 100, 50);
         this.angle = 70;
-        this.directional = null;
     }
 
     init() {
@@ -879,7 +880,6 @@ class Material {
         varying vec2 vUv;
         varying vec4 vColor;
         
-        uniform vec3 uCamDir;
         uniform vec3 uLightPos;
         uniform vec3 uLightCol;
         
@@ -890,7 +890,6 @@ class Material {
         
             vec3 position = normalize(vPositionW);
             vec3 normal = normalize(vNormalW);
-            vec3 viewDir = normalize(uCamDir);
             vec3 lightDir = normalize(uLightPos - position);
             
             float amb = clamp(0.8 + 0.5 * normal.y, 0.0, 1.0);
@@ -917,7 +916,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uCamDir", "uLightPos", "uLightCol" ],
+                              "uLightPos", "uLightCol" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             });
@@ -926,7 +925,6 @@ class Material {
         
         updateCelMaterial() {
             if (this.mat_cel) {
-                this.mat_cel.setVector3("uCamDir", camera.camera0.getDirection(AXIS_Z));
                 this.mat_cel.setVector3("uLightPos", light.directional.position);
                 this.mat_cel.setColor3("uLightCol", Color3(
                     (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
@@ -952,6 +950,7 @@ class Material {
 class Builder {
     constructor() {
         this.isWorking = false;
+        this.latency = 0;
 
         this.voxels = [];
         this.mesh = undefined;
@@ -1001,10 +1000,17 @@ class Builder {
     create(isRecord = true) {
         if (this.voxels.length == 0)
             modules.generator.newBox(1, COL_ICE);
+
+        this.latency = performance.now();
         
         this.createThinInstances().then(() => {
             if (duplicateFlag == 0) {
 
+                if (bvhWhiteList.includes(tool.name))
+                    modules.rc.create();
+                
+                this.latency = Math.trunc(performance.now() - this.latency);
+                
                 setTimeout(() => {
                     if (isRecord)
                         memory.record();
@@ -1018,9 +1024,6 @@ class Builder {
                     if (preferences.isWebsocket())
                         modules.ws_client.sendMessage(this.voxels, 'get');
                 }, 100);
-
-                if (bvhWhiteList.includes(tool.name))
-                    modules.rc.create();
             }
         });
     }
@@ -1194,6 +1197,17 @@ class Builder {
         );
     }
 
+    isPositionInBoundingBox(position) {
+        const bounds = this.mesh.getBoundingInfo();
+        const min = bounds.boundingBox.minimumWorld;
+        const max = bounds.boundingBox.maximumWorld;
+        return (
+            position.x >= min.x && position.x <= max.x &&
+            position.y >= min.y && position.y <= max.y &&
+            position.z >= min.z && position.z <= max.z
+        );
+    }
+
     getNearbyVoxels(position, distance) {
         const arr = [];
         for (const voxel of this.voxels) {
@@ -1204,7 +1218,15 @@ class Builder {
     }
 
     getIndexAtPointer() {
-        return this.rttColorsMap[ renderTarget.read() ];
+        return this.rttColorsMap[ renderTarget.readPixel() ];
+    }
+
+    getIndexAtPointerFace() {
+        return this.rttColorsMap[ renderTarget.readFace() ];
+    }
+
+    getIndexAtPointerMost() {
+        return this.rttColorsMap[ renderTarget.readMost() ];
     }
 
     getIndexAtPosition(pos) {
@@ -1493,7 +1515,7 @@ class XFormer {
         this.isActive = false;
         this.isNewObject = false;
         this.xforms = [];
-        this.startPos = null;
+        this.startPos = undefined;
         this.useColors = false;
     }
 
@@ -1618,6 +1640,7 @@ class XFormer {
 
     deleteSelected() {
         if (this.isActive) {
+            builder.removeArray(this.xforms);
             builder.create();
             this.dispose();
         }
@@ -1632,8 +1655,8 @@ class XFormer {
 class MeshPool {
     constructor() {
         this.meshes = [];
-        this.selected = null;
-        this.pick = null;
+        this.selected = undefined;
+        this.pick = undefined;
     }
 
     exportOptions = {
@@ -1710,7 +1733,7 @@ class MeshPool {
                 this.selected.material.reflectionTexture.dispose();
             this.selected.material.dispose();
             this.selected.dispose();
-            this.selected = null;
+            this.selected = undefined;
 
             this.createMeshList();
             light.updateShadowMap();
@@ -1728,7 +1751,7 @@ class MeshPool {
     }
 
     deselectMesh() {
-        this.selected = null;
+        this.selected = undefined;
         for (let i = 0; i < this.meshes.length; i++) {
             this.meshes[i].renderOverlay = false;
             this.meshes[i].renderOutline = false;
@@ -1754,7 +1777,7 @@ class MeshPool {
         if (this.meshes.length > 0) {
             if (isAlert && !await ui.showConfirm('clear all baked meshes?')) return;
             this.clearMeshArray();
-            this.selected = null;
+            this.selected = undefined;
             this.createMeshList();
             light.updateShadowMap();
         }
@@ -1909,16 +1932,6 @@ class MeshPool {
         return mesh;
     }
 
-    constructPlaneFast() {
-        const mesh = new BABYLON.Mesh('plane', scene);
-        const vertexData = new BABYLON.VertexData();
-        vertexData.positions = PLANE_POSITIONS;
-        vertexData.normals = PLANE_NORMALS;
-        vertexData.indices = PLANE_INDICES;
-        vertexData.applyToMesh(mesh);
-        return mesh;
-    }
-
     clearMeshArray() {
         scene.blockfreeActiveMeshesAndRenderingGroups = true; // save unnecessary
         for (let i = 0; i < this.meshes.length; i++) { // dispose() computation
@@ -2001,7 +2014,6 @@ class Ghosts {
         this.voxel = undefined;
         this.thin = undefined;
         this.sps = undefined;
-        this.spsPick = undefined;
         this.cloud = undefined;
         this.tMatrix = MatrixIdentity();
         this.bufferMatrix = [];
@@ -2107,27 +2119,7 @@ class Ghosts {
     disposeSPS() {
         if (this.sps)
             this.sps.dispose();
-        this.sps = null;
-    }
-
-    // SPS used for picking after the SPS-voxel-engine fallout
-    createSPSPick(voxels) {
-        if (this.spsPick)
-            this.spsPick.dispose();
-        
-        this.spsPick = new BABYLON.SolidParticleSystem('ghost_spspick', scene, { updatable: false, expandable: false, boundingSphereOnly: false });
-        
-        this.spsPick.addShape(this.voxel, voxels.length, { positionFunction: (p, i, s) => {
-            p.position.copyFrom(voxels[i].position);
-            if (!voxels[i].visible) p.scaling.set(0,0,0);
-        }});
-
-        this.spsPick.initParticles();
-        this.spsPick.buildMesh();
-        this.spsPick.computeBoundingBox = true;
-        this.spsPick.mesh.isPickable = true;
-        this.spsPick.mesh.doNotSerialize = true;
-        this.spsPick.mesh.layerMask = 0x00000000;
+        this.sps = undefined;
     }
 
     createPointCloud(voxels = builder.voxels) {
@@ -2161,7 +2153,7 @@ class Ghosts {
     disposePointCloud() {
         if (this.cloud)
             this.cloud.dispose();
-        this.cloud = null;
+        this.cloud = undefined;
     }
 
     getCenter() {
@@ -2177,7 +2169,9 @@ class Ghosts {
 class Helper {
     constructor() {
         this.gridPlane = undefined;
-        this.workplane = undefined;
+        this.workplaneX = undefined;
+        this.workplaneY = undefined;
+        this.workplaneZ = undefined;
         this.axisPlane = undefined;
         this.overlayPlane = undefined;
         this.overlayCube = undefined;
@@ -2191,9 +2185,11 @@ class Helper {
 
     init() {
         this.gridPlane = CreateDisc("gridplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
-        this.workplane = CreatePlane("workplane", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.workplaneX = CreatePlane("workplaneX", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.workplaneY = CreatePlane("workplaneY", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.workplaneZ = CreatePlane("workplaneZ", WORKPLANE_SIZE, BACKSIDE, scene);
         this.axisPlane = CreatePlane("axisplane", 1.2, DOUBLESIDE, axisView.scene);
-        this.overlayPlane = CreatePlane("overlay_plane", 1, DOUBLESIDE, scene);
+        this.overlayPlane = CreatePlane("overlay_plane", 0.95, BACKSIDE, scene);
         this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
@@ -2211,34 +2207,39 @@ class Helper {
         this.gridPlane.freezeNormals();
 
         const wpHalf = WORKPLANE_SIZE / 2;
-        const wpVol = [
-            this.workplane.clone(),
-            this.workplane.clone(),
-            this.workplane.clone()
-        ];
-        wpVol[0].position.set(wpHalf, 0, wpHalf);
-        wpVol[1].position.set(0, wpHalf, wpHalf);
-        wpVol[2].position.set(wpHalf, wpHalf, 0);
-        wpVol[0].rotation.x = -PIH;
-        wpVol[1].rotation.y = PIH;
-        wpVol[2].rotation.z = PIH;
-        this.workplane.dispose();
-        this.workplane = MergeMeshes(wpVol, true, true);
-        this.workplane.name = 'workplane';
-        pool.resetPivot(this.workplane);
-        wpVol[0].dispose();
-        wpVol[1].dispose();
-        wpVol[2].dispose();
 
-        this.workplane.material = material.mat_gridplane;
-        this.workplane.isVisible = false;
-        this.workplane.isPickable = true;
-        this.workplane.position.x = wpHalf - 0.5;
-        this.workplane.position.y = wpHalf - 0.5;
-        this.workplane.position.z = wpHalf - 0.5;
-        this.workplane.visibility = 0.08;
-        this.workplane.doNotSerialize = true;
-        this.workplane.freezeNormals();
+        this.workplaneX.material = material.mat_gridplane;
+        this.workplaneX.isVisible = false;
+        this.workplaneX.isPickable = true;
+        this.workplaneX.position.x = wpHalf - 0.5;
+        this.workplaneX.position.y = -0.5;
+        this.workplaneX.position.z = wpHalf - 0.5;
+        this.workplaneX.rotation.x = -PIH;
+        this.workplaneX.visibility = 0.08;
+        this.workplaneX.doNotSerialize = true;
+        this.workplaneX.freezeNormals();
+
+        this.workplaneY.material = material.mat_gridplane;
+        this.workplaneY.isVisible = false;
+        this.workplaneY.isPickable = true;
+        this.workplaneY.position.x = -0.5;
+        this.workplaneY.position.y = wpHalf - 0.5;
+        this.workplaneY.position.z = wpHalf - 0.5;
+        this.workplaneY.rotation.y = PIH;
+        this.workplaneY.visibility = 0.08;
+        this.workplaneY.doNotSerialize = true;
+        this.workplaneY.freezeNormals();
+
+        this.workplaneZ.material = material.mat_gridplane;
+        this.workplaneZ.isVisible = false;
+        this.workplaneZ.isPickable = true;
+        this.workplaneZ.position.x = wpHalf - 0.5;
+        this.workplaneZ.position.y = wpHalf - 0.5;
+        this.workplaneZ.position.z = -0.5;
+        this.workplaneZ.rotation.z = PIH;
+        this.workplaneZ.visibility = 0.08;
+        this.workplaneZ.doNotSerialize = true;
+        this.workplaneZ.freezeNormals();
 
         this.axisPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
         this.axisPlane.isPickable = false;
@@ -2255,13 +2256,12 @@ class Helper {
         this.overlayPlane.visibility = 0.01;
         this.overlayPlane.doNotSerialize = true;
         this.highlightOverlayMesh(this.overlayPlane, COL_ORANGE_RGB, 1);
-        this.overlayPlane.freezeNormals();
 
         this.overlayCube.isVisible = false;
         this.overlayCube.isPickable = false;
-        this.overlayCube.visibility = 0.1;
+        this.overlayCube.visibility = 0.01;
         this.overlayCube.doNotSerialize = true;
-        this.highlightOverlayMesh(this.overlayCube, COL_ORANGE_RGB);
+        this.highlightOverlayMesh(this.overlayCube, COL_AQUA_RGB, 0.25);
         this.overlayCube.freezeNormals();
 
         this.boxShape.isVisible = false;
@@ -2321,7 +2321,9 @@ class Helper {
     }
 
     displayWorkplane(isEnabled) {
-        this.workplane.isVisible = isEnabled;
+        this.workplaneX.isVisible = isEnabled;
+        this.workplaneY.isVisible = isEnabled;
+        this.workplaneZ.isVisible = isEnabled;
         if (isEnabled) {
             ui.domInScreenWorkplane.firstChild.style.color = COL_ORANGE;
         } else {
@@ -2336,6 +2338,17 @@ class Helper {
             ui.domInScreenGridPlane.firstChild.style.color = COL_ORANGE;
         } else {
             ui.domInScreenGridPlane.firstChild.style.color = COL_AQUA;
+        }
+    }
+
+    setWorkplanesPickable(isEnabled) {
+        if (helper.isGridPlaneActive)
+            this.gridPlane.isPickable = isEnabled;
+
+        if (helper.isWorkplaneActive) {
+            this.workplaneX.isPickable = isEnabled;
+            this.workplaneY.isPickable = isEnabled;
+            this.workplaneZ.isPickable = isEnabled;
         }
     }
 
@@ -2360,7 +2373,7 @@ class Helper {
                 this.symmPivot.position.y -= 0.5;
                 this.symmPivot.position.z -= 0.5;
             } else { // local
-                this.symmPivot.position = builder.getCenter();
+                this.symmPivot.position.copyFrom(builder.getCenter());
             }
 
             this.symmPivot.scaling = builder.getDimensions().scale(0.25);
@@ -2393,26 +2406,25 @@ class Helper {
         this.symmPivot.isVisible = isVisible;
     }
 
-    setOverlayPlane(pos, normAxis) {
+    setOverlayPlane(pos, norm, scale) {
         this.overlayPlane.isVisible = true;
-        this.overlayPlane.position = pos;
+        this.overlayPlane.position.copyFrom(pos.add(norm.scale(scale)));
 
-        if ((normAxis.x == 0 && normAxis.y == 0 && normAxis.z == 1) ||
-            (normAxis.x == 0 && normAxis.y == 0 && normAxis.z == -1)) {
+        if ((norm.x == 0 && norm.y == 0 && norm.z == 1) ||
+            (norm.x == 0 && norm.y == 0 && norm.z == -1)) {
             this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                 BABYLON.Axis.X,
-                Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z)));
+                Math.acos(BABYLON.Vector3.Dot(norm, BABYLON.Axis.Z)));
         } else {
             this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-                BABYLON.Vector3.Cross(BABYLON.Axis.Z, normAxis), // axis
-                Math.acos(BABYLON.Vector3.Dot(normAxis, BABYLON.Axis.Z))); // angle
+                BABYLON.Vector3.Cross(BABYLON.Axis.Z, norm), // axis
+                Math.acos(BABYLON.Vector3.Dot(norm, BABYLON.Axis.Z))); // angle
         }
     }
 
-    setOverlayCube(pos, color = COL_ORANGE_RGB) {
+    setOverlayCube(pos) {
         this.overlayCube.isVisible = true;
-        this.overlayCube.position = pos;
-        this.overlayCube.overlayColor = color;
+        this.overlayCube.position.copyFrom(pos);
     }
 
     clearOverlays() {
@@ -2682,10 +2694,12 @@ class Tool {
     constructor() {
         this.name = 'camera';
         this.last = undefined;
-        this.selected = [];
 
+        this.lastIndex = -1;
         this.pick = undefined;
-        this.normal = undefined;
+        this.pickIndex = undefined;
+        this.pickNorm = undefined;
+
         this.isSymmetry = false;
         this.isWorkplane = false;
         this.startBox = undefined;
@@ -2695,8 +2709,9 @@ class Tool {
         this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
         this.boxCount = 0;
         this.fixedHeight = 0;
+
+        this.selected = [];
         this.tmp = [];
-        this.tmpBlock = [];
 
         this.then = performance.now();
         this.now = 0;
@@ -2908,30 +2923,48 @@ class Tool {
         ghosts.createThin(this.selected, 0);
     }
 
-    pickWorkplane(pick, norm) {
-        const pos = pick.pickedPoint.add(VEC3_ONE).subtract(VEC3_HALF).floor();
+    addBridge(pos, norm) {
+        const dims = builder.getDimensions();
+        const p = pos.clone();
 
-        if (norm.x > 0) pos.x = -1;
-        if (norm.y > 0) pos.y = -1;
-        if (norm.z > 0) pos.z = -1;
-        if (norm.x < 0) pos.x = 0;
-        if (norm.y < 0) pos.y = 0;
-        if (norm.z < 0) pos.z = 0;
-
-        return pos;
+        if (norm.x !== 0 && norm.y == 0 && norm.z == 0) {
+            for (let i = 0; i <= dims.x; i++) {
+                p.x += norm.x;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        } else if (norm.x == 0 && norm.y !== 0 && norm.z == 0) {
+            for (let i = 0; i <= dims.y; i++) {
+                p.y += norm.y;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        } else if (norm.x == 0 && norm.y == 0 && norm.z !== 0) {
+            for (let i = 0; i <= dims.z; i++) {
+                p.z += norm.z;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        }
     }
 
     onToolDown(pick) {
         const index = pick.INDEX;
         const norm = pick.NORMAL;
-        this.isWorkplane = pick.WORKPLANE;
+        this.isWorkplane = pick.WORKPLANE !== undefined;
         this.isSymmetry = symmetry.axis !== -1;
 
         if (!this.isWorkplane) {
             this.pos = builder.voxels[index].position;
         } else {
             if (!workplaneWhiteList.includes(this.name)) return;
-            this.pos = this.pickWorkplane(pick, norm);
+            this.pos = pick.WORKPLANE;
         }
 
         this.posNorm = this.pos.add(norm);
@@ -3021,24 +3054,28 @@ class Tool {
                 this.addNoHelper(this.pos); // allow 1 voxel
                 this.startBox = this.pos;
                 break;
+            case 'bridge':
+                this.addBridge(this.pos, norm);
+                break;
         }
     }
 
     onToolMove(pick) {
         const index = pick.INDEX;
         const norm = pick.NORMAL;
-        this.isWorkplane = pick.WORKPLANE;
+        this.isWorkplane = pick.WORKPLANE !== undefined;
 
         if (!this.isWorkplane) {
             this.pos = builder.voxels[index].position;
+            helper.setOverlayCube(this.pos);
         } else {
             if (!workplaneWhiteList.includes(this.name)) return;
-            this.pos = this.pickWorkplane(pick, norm);
+            this.pos = pick.WORKPLANE;
         }
         
-        helper.setOverlayPlane(this.pos.add(norm.scale(0.5)), norm);  
-
         this.posNorm = this.pos.add(norm);
+
+        helper.setOverlayPlane(this.pos, norm, 0.5);
 
         if (!pointer.isDown) return;
 
@@ -3187,6 +3224,13 @@ class Tool {
                     camera.frameVoxels(this.tmp);
                 }
                 break;
+            case 'bridge':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, currentColor, false);
+                    builder.addArray(this.tmp);
+                    builder.create();
+                }
+                break;
         }
     }
 
@@ -3227,17 +3271,22 @@ class Tool {
         if (this.name !== 'camera') {
             this.onToolUp();
 
-            this.selected = [];
+            this.lastIndex = -1;
+            this.pick = undefined;
+            this.pickIndex = undefined;
+            this.pickNorm = undefined;
+
             this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
             this.boxCount = 0;
-            this.startBox = null;
-            this.startRect = null;
-            this.pos = null;
-            this.posNorm = null;
-            this.tmp = [];
-            this.tmpBlock = [];
+            this.startBox = undefined;
+            this.startRect = undefined;
+            this.pos = undefined;
+            this.posNorm = undefined;
 
-            modules.bakery.dispose();
+            this.selected = [];
+            this.tmp = [];
+
+            faceNormalProbe.dispose();
             ghosts.disposeThin();
             ghosts.disposeSPS();
             helper.clearBoxShape();
@@ -3252,94 +3301,88 @@ class Tool {
     predicateWorkplane(mesh) {
         if (helper.isGridPlaneActive && helper.gridPlane.isVisible)
             return mesh === helper.gridPlane;
-        if (helper.isWorkplaneActive && helper.workplane.isVisible)
-            return mesh === helper.workplane;
-        return null;
+        if (helper.isWorkplaneActive)
+            if (helper.workplaneX.isVisible || helper.workplaneY.isVisible || helper.workplaneZ.isVisible)
+                return mesh === helper.workplaneX || mesh === helper.workplaneY || mesh === helper.workplaneZ;
+        return undefined;
     }
 
-    // A magnetic portal into another world that doesn't exists!
-    // It sticks to surfaces and gather face-normal information.
-    // The portal dynamically expands to find problematic normals.
-    // https://github.com/nimadez/voxel-builder/releases/tag/4.5.4
-    normalProbe(pick, index) {
-        this.normal = undefined;
-
-        if (builder.voxels.length == 1) {
-            ghosts.createSPSPick([ builder.voxels[index] ]);
-            pick = scene.pickWithRay(pick.ray);
-            if (pick.hit)
-                return pick.getNormal(true);
-        }
-
-        this.tmpBlock = [];
-        for (let i = 0; i < VEC6_ONE.length; i++) {
-            const pos = builder.voxels[index].position.add(VEC6_ONE[i]);
-            const idx = builder.getIndexAtPosition(pos);
-            if (idx !== undefined)
-                this.tmpBlock.push(builder.voxels[idx]);
-        }
-        ghosts.createSPSPick(this.tmpBlock);
-        
-        for (let i = 1; i < 5; i += 0.1) {
-            modules.bakery.bakePick(builder.voxels[index], i);
-            pick = scene.pickWithRay(pick.ray);
-            if (pick.hit) {
-                if (pick.faceId == 1) {
-                    if (pick.pickedMesh.name == 'plane') {
-                        this.normal = pick.getNormal(true);
-                        break;
-                    }
-                } else {
-                    if (pick.pickedMesh.name == 'plane' && pick.pickedMesh.name !== 'ghost_spspick') {
-                        this.normal = pick.getNormal(true);
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!this.normal) {
-            if (pointer.isDown && !camera.isCameraChange())
-                scene.activeCamera.detachControl(canvas);
-            //console.log(0);
-            return undefined;
-        }
-
-        return this.normal;
+    pickWorkplane(pick, norm) {
+        const pos = pick.pickedPoint.add(VEC3_ONE).subtract(VEC3_HALF).floor();
+        if (norm.x > 0) pos.x = -1;
+        if (norm.y > 0) pos.y = -1;
+        if (norm.z > 0) pos.z = -1;
+        if (norm.x < 0) pos.x = 0;
+        if (norm.y < 0) pos.y = 0;
+        if (norm.z < 0) pos.z = 0;
+        return pos;
     }
 
     setPickInfo(onHit) {
         helper.clearOverlays();
 
-        this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
         const index = builder.getIndexAtPointer();
 
         if (index !== undefined) {
-            const norm = this.normalProbe(this.pick, index);
-            if (norm) {
-                norm.x = Math.round(norm.x * 10) / 10;
-                norm.y = Math.round(norm.y * 10) / 10;
-                norm.z = Math.round(norm.z * 10) / 10;
+            this.pick = scene.pick(pointer.x, pointer.y, () => { return undefined });
 
-                this.pick.INDEX = index;
-                this.pick.NORMAL = norm;
-                this.pick.WORKPLANE = false;
+            if (index === builder.getIndexAtPointerFace()) { // face
+                this.pickIndex = index;
+                this.pickNorm = faceNormalProbe.getNormal(this.pick, index);
+            } else { // gap
+                const index_most = builder.getIndexAtPointerMost();
+                if (index_most !== undefined) {
+                    this.pickIndex = index_most;
+                    this.pickNorm = faceNormalProbe.getNormal(this.pick, index_most);
+                }
+            }
+
+            if (this.pickNorm) {
+                this.lastIndex = this.pickIndex;
+                this.pick.INDEX = this.pickIndex;
+                this.pick.NORMAL = this.pickNorm;
+                this.pick.WORKPLANE = undefined;
                 onHit(this.pick);
+            } else {
+                if (this.lastIndex > -1 && builder.voxels[this.lastIndex]) {
+                    this.pickNorm = faceNormalProbe.getNormal(this.pick, this.lastIndex);
+                    if (this.pickNorm) {
+                        this.pick.INDEX = this.lastIndex;
+                        this.pick.NORMAL = this.pickNorm;
+                        this.pick.WORKPLANE = undefined;
+                        onHit(this.pick);
+                    } else {
+                        this.clearPick();
+                    }
+                } else {
+                    this.clearPick();
+                }
             }
         } else {
-            if (this.pick && this.pick.hit) {
+            this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
+
+            if (this.pick.hit) {
                 const norm = this.pick.getNormal(true);
                 norm.x = Math.round(norm.x * 10) / 10;
                 norm.y = Math.round(norm.y * 10) / 10;
                 norm.z = Math.round(norm.z * 10) / 10;
-
-                this.pick.INDEX = this.pick.faceId;
-                this.pick.NORMAL = norm;
-                this.pick.WORKPLANE = true;
-
-                onHit(this.pick);
+                
+                const point = this.pickWorkplane(this.pick, norm);
+                const idx = builder.getIndexAtPosition(point.add(norm));
+                if (idx === undefined) {
+                    this.pick.INDEX = this.pick.faceId;
+                    this.pick.NORMAL = norm;
+                    this.pick.WORKPLANE = point;
+                    onHit(this.pick);
+                }
             }
         }
+    }
+
+    clearPick() {
+        helper.clearOverlays();
+        if (pointer.isDown && !camera.isCameraChange())
+            scene.activeCamera.detachControl(canvas);
     }
 
     toolSelector(toolName, finishTransforms = false) {
@@ -3423,7 +3466,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.4",
+            version: "Voxel Builder 4.5.5",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3892,13 +3935,22 @@ class RenderTarget {
         this.pickTexture = undefined;
         this.frameBuffer = undefined;
         this.pixels = undefined;
-        this.pointer = { x: 0, y: 0 };
+        this.point = { x: 0, y: 0 };
+        this.quad = new Array(4);
+        this.part = new Array(16);
     }
 
     init() {
-        this.pickTexture = new BABYLON.RenderTargetTexture('pickTexture', {
-            useSRGBBuffer: false, width: engine.engine.getRenderWidth(), height: engine.engine.getRenderHeight() },
-            scene, false, undefined, BABYLON.Constants.TEXTURETYPE_UNSIGNED_INT, false, BABYLON.Constants.TEXTURE_NEAREST_NEAREST);
+        this.pickTexture = new BABYLON.RenderTargetTexture('pick_texture', {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            samplingMode: BABYLON.Constants.TEXTURE_NEAREST_NEAREST,
+            type: BABYLON.Constants.TEXTURETYPE_UNSIGNED_INT,
+            generateMipMaps: false,
+            generateDepthBuffer: false,
+            generateStencilBuffer: false,
+            useSRGBBuffer: false
+        }, scene);
 
         this.pickTexture.clearColor = COL_WHITE_RGBA;
         scene.customRenderTargets.push(this.pickTexture);
@@ -3909,29 +3961,65 @@ class RenderTarget {
         }
         
         this.pickTexture.onAfterRender = () => {
-            if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
+            if (engine.isRendering && MODE == 0 && tool.name !== 'camera' && !ui.domDebugPick.checked)
                 builder.mesh.thinInstanceSetBuffer("color", builder.bufferColors, 4, true);
         }
 
         this.frameBuffer = engine.engine._gl.createFramebuffer();
 
-        const w = engine.engine.getRenderWidth();
-        const h = engine.engine.getRenderHeight();
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         const bufferSize = engine.engine.isWebGPU ? (4 * w * h + 255) & ~255 : 4 * w * h;
         this.pixels = new Uint8Array(bufferSize);
     }
 
-    read() {
-        this.pointer.x = Math.round(pointer.x);
-        this.pointer.y = engine.engine.getRenderHeight() - Math.round(pointer.y);
-        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource, this.pointer.x, this.pointer.y, 1, 1);
+    readPixel() {
+        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource, this.point.x, this.point.y, 1, 1);
         return `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+    }
+
+    readFace() {
+        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+            this.point.x - 1, this.point.y - 1, 2, 2);
+        
+        this.quad[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+        this.quad[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
+        this.quad[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
+        this.quad[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
+        
+        if (new Set(this.quad).size === 1)
+            return this.quad[0];
+    }
+
+    readMost() {
+        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+            this.point.x - 2, this.point.y - 2, 4, 4);
+        
+        this.part[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+        this.part[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
+        this.part[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
+        this.part[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
+        this.part[4] = `${this.pixels[16]}_${this.pixels[17]}_${this.pixels[18]}`;
+        this.part[5] = `${this.pixels[20]}_${this.pixels[21]}_${this.pixels[22]}`;
+        this.part[6] = `${this.pixels[24]}_${this.pixels[25]}_${this.pixels[26]}`;
+        this.part[7] = `${this.pixels[28]}_${this.pixels[29]}_${this.pixels[30]}`;
+        this.part[8] = `${this.pixels[32]}_${this.pixels[33]}_${this.pixels[34]}`;
+        this.part[9] = `${this.pixels[36]}_${this.pixels[37]}_${this.pixels[38]}`;
+        this.part[10] = `${this.pixels[40]}_${this.pixels[41]}_${this.pixels[42]}`;
+        this.part[11] = `${this.pixels[44]}_${this.pixels[45]}_${this.pixels[46]}`;
+        this.part[12] = `${this.pixels[48]}_${this.pixels[49]}_${this.pixels[50]}`;
+        this.part[13] = `${this.pixels[52]}_${this.pixels[53]}_${this.pixels[54]}`;
+        this.part[14] = `${this.pixels[56]}_${this.pixels[57]}_${this.pixels[58]}`;
+        this.part[15] = `${this.pixels[60]}_${this.pixels[61]}_${this.pixels[62]}`;
+
+        return mostDuplicatedItem(this.part);
     }
     
     readTexturePixels(gl, texture, x, y, w, h) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
         gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, null, 0);
     }
 
     numToColor(num) {
@@ -3943,13 +4031,113 @@ class RenderTarget {
     }
 
     resize() {
-        const w = engine.engine.getRenderWidth();
-        const h = engine.engine.getRenderHeight();
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         
         this.pickTexture.resize({ width: w, height: h });
 
         const bufferSize = engine.engine.isWebGPU ? (4 * w * h + 255) & ~255 : 4 * w * h;
         this.pixels = new Uint8Array(bufferSize);
+    }
+}
+
+
+// -------------------------------------------------------
+// Face Normal Probe
+
+
+class FaceNormalProbe {
+    constructor() {
+        this.probe = undefined;
+        this.ray = undefined;
+        this.normal = undefined;
+    }
+
+    init() {
+        this.probe = CreateBox('facenorm_probe', 1.05, FRONTSIDE, scene);
+        this.probe.isVisible = true;
+        this.probe.isPickable = false;
+        this.probe.doNotSerialize = true;
+        this.probe.layerMask = 0x00000000;
+        helper.highlightOverlayMesh(this.probe, COL_AXIS_X_RGB);
+
+        this.ray = new BABYLON.Ray();
+    }
+
+    predicate(mesh) {
+        return mesh.name === 'facenorm_probe';
+    }
+
+    getNormal(pick, index) {
+        this.normal = undefined;
+        const voxel = builder.voxels[index];
+
+        helper.setWorkplanesPickable(false);
+
+        this.probe.isPickable = true;
+        this.probe.position = voxel.position;
+        this.probe.layerMask = (ui.domDebugPick.checked) ? 0x0FFFFFFF : 0x00000000;
+        
+        this.ray.origin = pick.ray.origin;
+        this.ray.direction = pick.ray.direction;
+
+        const res = scene.pickWithRay(this.ray, this.predicate);
+        if (res.hit)
+            this.normal = this.getFaceNormal(voxel.position, res.pickedPoint);
+        // else { a moment of no surface probe (jumps) }
+
+        helper.setWorkplanesPickable(true);
+
+        return this.normal;
+    }
+
+    getFaceNormal(position, pickedPoint) {
+        this.normal = this.calculateFaceNormal(position, pickedPoint);
+        
+        if (this.isNormalValid(position, this.normal))
+            return this.normal.clone();
+
+        // neutral pick
+
+        return undefined;
+    }
+
+    calculateFaceNormal(position, pickedPoint) {
+        const point = pickedPoint.subtract(position);
+
+        const projections = [
+            Math.abs(point.x),
+            Math.abs(point.y),
+            Math.abs(point.z)
+        ];
+    
+        const maxIndex = projections.indexOf(Math.max(...projections));
+    
+        switch (maxIndex) {
+            case 0:
+                return point.x >= 0 ? VEC6_ONE[0] : VEC6_ONE[1];
+            case 1:
+                return point.y >= 0 ? VEC6_ONE[2] : VEC6_ONE[3];
+            case 2:
+                return point.z >= 0 ? VEC6_ONE[4] : VEC6_ONE[5];
+        }
+        
+        return undefined;
+    }
+
+    isNormalValid(position, normal) {
+        const idx = builder.getIndexAtPosition(position.add(normal));
+        if (idx === undefined) {
+            return true;
+        } else if (!builder.voxels[idx].visible) {
+            return true;
+        }
+        return false;
+    }
+
+    dispose() {
+        this.probe.isPickable = false;
+        this.probe.layerMask = 0x00000000;
     }
 }
 
@@ -4004,6 +4192,7 @@ class UserInterface {
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerYup = document.getElementById('input-voxelizer-yup');
         this.domBakeryBackface = document.getElementById('input-bakery-backface');
+        this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
         this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
@@ -4043,7 +4232,8 @@ class UserInterface {
         this.domInfoTool = document.getElementById('info_tool');
         this.domInfoRender = document.getElementById('info_render');
         this.domProgressBar = document.getElementById('progressbar');
-        
+        this.domDebugPick = document.getElementById('debug_pick');
+
         this.notificationTimer = undefined;
     }
 
@@ -4138,9 +4328,11 @@ class UserInterface {
     }
 
     updateStatus() {
-        this.domInfo[0].innerHTML = engine.getFps();
+        (MODE === 0) ?
+            this.domInfo[0].innerHTML = `${ engine.getFps() } FPS (${ builder.latency } ms)` :
+            this.domInfo[0].innerHTML = `${ engine.getFps() } FPS`;
         this.domInfo[1].innerHTML = builder.voxels.length + ' VOX';
-        this.domInfo[2].innerHTML = palette.uniqueColors.length + ' COL';
+        this.domInfo[2].innerHTML = `${ palette.invisibleColors.length }/${ palette.uniqueColors.length } COL`;
         this.domInfo[3].innerHTML = pool.meshes.length + ' MSH';
     }
 
@@ -4230,7 +4422,7 @@ class UserInterface {
 
             if (isMobile) {
                 this.domCameraAutoFrame.checked = true;
-                this.domCameraOffset.value = 1.2;
+                this.domCameraOffset.value = 1.3;
                 this.domTransformReactive.checked = false;
             }
         }
@@ -4609,6 +4801,7 @@ class Preferences {
 export const axisView = new AxisViewScene();
 export const builder = new Builder();
 export const camera = new Camera();
+export const faceNormalProbe = new FaceNormalProbe();
 export const ghosts = new Ghosts();
 export const hdri = new HDRI();
 export const helper = new Helper();
@@ -4691,7 +4884,11 @@ window.addEventListener('pointerdown', (ev) => {
     pointer.y = ev.clientY;
     pointer.isDown = true;
     if (ev.target === canvas && !axisView.registerEvent() && !uix.isActive()) {
-        if (MODE == 0) tool.handleToolDown();
+        if (MODE == 0) {
+            renderTarget.point.x = Math.floor(pointer.x);
+            renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
+            tool.handleToolDown();
+        }
         if (MODE == 2) toolMesh.handleToolDown();
     }
 }, false);
@@ -4700,8 +4897,11 @@ window.addEventListener('pointerdown', (ev) => {
 window.addEventListener('pointermove', (ev) => {
     pointer.x = ev.clientX;
     pointer.y = ev.clientY;
-    if (ev.target === canvas && MODE == 0 && !uix.isActive())
+    if (ev.target === canvas && MODE == 0 && !uix.isActive()) {
+        renderTarget.point.x = Math.floor(pointer.x);
+        renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
         tool.handleToolMove();
+    }
 }, false);
 
 
@@ -4807,7 +5007,7 @@ document.addEventListener("keydown", (ev) => {
 document.addEventListener("keyup", () => {
     if (tool.last) {
         tool.toolSelector(tool.last);
-        tool.last = null;
+        tool.last = undefined;
     }
 }, false);
 
@@ -5263,6 +5463,12 @@ ui.domPbrAlpha.onchange = () => {
         ui.notification('select a mesh');
 };
 
+ui.domDebugPick.onchange = (ev) => {
+    (ev.target.checked) ?
+        helper.overlayPlane.renderingGroupId = 2 :
+        helper.overlayPlane.renderingGroupId = 0;
+};
+
 document.getElementById('normalize_voxels').onclick = async () => {
     if (ui.checkMode(0)) {
         if (await ui.showConfirm('normalize voxel positions?')) {
@@ -5304,6 +5510,7 @@ document.getElementById('symm_p_half').onclick = () =>              { if (ui.che
 document.getElementById('symm_n_half').onclick = () =>              { if (ui.checkMode(0)) symmetry.deleteHalfVoxels(1) };
 document.getElementById('btn_tool_add').onclick = () =>             { if (ui.checkMode(0)) tool.toolSelector('add') };
 document.getElementById('btn_tool_remove').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('remove') };
+document.getElementById('btn_tool_bridge').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bridge') };
 document.getElementById('btn_tool_box_add').onclick = () =>         { if (ui.checkMode(0)) tool.toolSelector('box_add') };
 document.getElementById('btn_tool_box_remove').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('box_remove') };
 document.getElementById('btn_tool_rect_add').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('rect_add') };
@@ -5418,4 +5625,25 @@ function distanceVectors(v1, v2) {
     const dy = v2.y - v1.y;
     const dz = v2.z - v1.z;
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+function mostDuplicatedItem(arr) {
+    const countMap = {};
+    let maxCount = 0;
+    let mostDuplicated;
+
+    for (const item of arr) {
+        if (countMap[item]) {
+            countMap[item]++;
+        } else {
+            countMap[item] = 1;
+        }
+
+        if (countMap[item] > maxCount) {
+            maxCount = countMap[item];
+            mostDuplicated = item;
+        }
+    }
+
+    return mostDuplicated;
 }
