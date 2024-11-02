@@ -7,7 +7,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { ui, camera, builder, xformer, project } from '../core.js';
+import { ui, builder, xformer, project } from '../core.js';
 
 
 const COL_ICE = '#8398AF';
@@ -23,18 +23,6 @@ class Generator {
                 for (let z = 0; z < size; z++) {
                     builder.add(Vector3(x, y, z), color, true);
                 }
-            }
-        }
-    }
-
-    newBoxPosition(ev, elem, currentColor) {
-        if (ev.key == 'Enter') {
-            const str = elem.value.split(',');
-            if (str.length == 3 && parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
-                builder.add(Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), currentColor, true);
-                builder.create();
-            } else {
-                ui.notification("invalid coord (e.g. 20,20,20)");
             }
         }
     }
