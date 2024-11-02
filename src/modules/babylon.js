@@ -84,8 +84,8 @@ export function Vector3Project(target, scene, camera) {
         BABYLON.Matrix.IdentityReadOnly,
         scene.getTransformMatrix(),
         camera.viewport.toGlobal(
-            scene.getEngine().getRenderWidth(),
-            scene.getEngine().getRenderHeight()));
+            window.innerWidth,
+            window.innerHeight));
 }
 
 

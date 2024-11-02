@@ -2,12 +2,11 @@
     Nov 2023
     @nimadez
 
-    Raycasters and Voxelizers
+    Raycasters
 */
 
 import { THREE } from '../three.js';
 import { Vector3, PositionKind, ColorKind } from '../babylon.js';
-import { builder } from '../core.js';
 
 
 const nullMaterial = new THREE.MeshBasicMaterial();
@@ -21,102 +20,10 @@ const directions = [
 ];
 
 
-// Raycast Voxels
-
-class Raycaster {
-    constructor() {
-        this.mesh = undefined;
-        this.batchedMesh = undefined;
-        this.ray = new THREE.Ray();
-        this.raycaster = new THREE.Raycaster();
-        this.raycaster.firstHitOnly = true;
-        this.boxGeo = new THREE.BoxGeometry(1, 1, 1);
-    }
-
-    create() {
-        if (this.mesh) {
-            this.mesh.geometry.boundsTree.geometry.dispose();
-            this.mesh.geometry.dispose();
-        }
-
-        builder.fillMeshBuffers();
-        const geom = new THREE.BufferGeometry();
-        geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
-        geom.setIndex(new THREE.BufferAttribute(builder.indices, 1));
-
-        this.buildBvh(geom);
-        this.mesh = new THREE.Mesh(geom, nullMaterial);
-    }
-
-    /* createBatchedMesh() {
-        this.batchedMesh = new THREE.BatchedMesh(
-            builder.voxels.length,
-            builder.vPositions.length, builder.vIndices.length,
-            nullMaterial);
-        const boxGeoId = this.batchedMesh.addGeometry(this.boxGeo);
-        for (let i = 0; i < builder.voxels.length; i++) {
-            const boxInst = this.batchedMesh.addInstance(boxGeoId);
-            this.batchedMesh.setMatrixAt(boxInst, builder.bufferWorld[i]);
-        }
-        this.buildBvhBatched(this.batchedMesh);
-    } */
-
-    buildBvh(geometry) {
-        geometry.computeBoundsTree({
-            strategy: 0,     // CENTER
-            maxDepth: 40,    // def: 40
-            maxLeafTris: 10, // def: 10
-            indirect: true
-        });
-    }
-
-    buildBvhBatched(batchedMesh) {
-        batchedMesh.computeBoundsTree(-1, {
-            strategy: 0,
-            maxDepth: 40,
-            maxLeafTris: 10,
-            indirect: false
-        });
-    }
-
-    raycast(ox, oy, oz, dx, dy, dz) {
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction.set(dx, dy, dz);
-        return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
-    }
-
-    raycastToPoint(ox, oy, oz, px, py, pz) {
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction = new THREE.Vector3(px, py, pz).sub(this.ray.origin).normalize();
-        return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
-    }
-
-    raycastBatchedMesh(ox, oy, oz, dx, dy, dz) {
-        this.ray.origin.set(ox, oy, oz);
-        this.ray.direction.set(dx, dy, dz);
-        this.raycaster.set(this.ray.origin, this.ray.direction);
-        const res = this.raycaster.intersectObject(this.batchedMesh, false);
-        if (res && res.length > 0)
-            return res[0];
-        return undefined;
-    }
-
-    dispose() {
-        if (this.ray) {
-            this.mesh.geometry.boundsTree.geometry.dispose();
-            this.mesh.geometry.dispose();
-            this.mesh = null;
-            this.ray = null;
-            this.raycaster.dispose();
-            this.raycaster = null;
-        }
-    }
-}
+// Raycast Mesh
 
 
-// Raycast Meshes
-
-class RaycasterMesh {
+class RaycastMesh {
     constructor() {
         this.mesh = undefined;
         this.ray = new THREE.Ray();
@@ -193,13 +100,14 @@ class RaycasterMesh {
 }
 
 
-// Voxelize Meshes
+// Raycast Voxelize
 
-class RaycasterVoxelizer {
+
+class RaycastVoxelize {
     constructor() {}
 
     mesh_voxel(mesh, color) {
-        const rcm = new RaycasterMesh();
+        const rcm = new RaycastMesh();
         
         rcm.createFromData(
             mesh.getVerticesData(PositionKind),
@@ -233,7 +141,7 @@ class RaycasterVoxelizer {
     }
     
     bake_voxel(mesh) {
-        const rcm = new RaycasterMesh();
+        const rcm = new RaycastMesh();
     
         rcm.createFromDataWithColor(
             mesh.getVerticesData(PositionKind),
@@ -278,5 +186,4 @@ class RaycasterVoxelizer {
     }    
 }
 
-export const rc = new Raycaster();
-export const rcv = new RaycasterVoxelizer();
+export const rcv = new RaycastVoxelize();

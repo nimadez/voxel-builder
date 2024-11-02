@@ -13,7 +13,7 @@
     - Material
 
     - Builder
-    - XFormer
+    - Bakery
     - Mesh Pool
 
     - Ghosts
@@ -22,11 +22,14 @@
     - Symmetry
     - Tool
     - Tool Mesh
+    - XFormer
 
     - Project
     - Palette
     - Memory
     - Snapshot
+
+    - Voxelizer
 
     - Render Target
     - Face Normal Probe
@@ -50,11 +53,12 @@ import {
     PositionKind, NormalKind, UVKind, ColorKind,
     DOUBLESIDE, FRONTSIDE, BACKSIDE, AXIS_X, AXIS_Y, AXIS_Z,
     Vector3, Color3, Color4,
-    Vector3Distance, Vector3Minimize, Vector3Maximize,
+    Vector3Minimize, Vector3Maximize,
     Vector3TransformCoordinates, Vector3Project,
     MatrixIdentity, MatrixTranslation, MatrixScaling,
     CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
     MergeMeshes, Animator,
+    LoadAssetContainerAsync,
     ExportGLB, ExportGLTF, ExportOBJ, ExportSTL
 } from './babylon.js';
 
@@ -89,7 +93,7 @@ const COL_AXIS_Z_RGBA = color4FromHex(COL_AXIS_Z + 'FF');
 const COL_ICE = '#8398AF';
 const COL_RED = '#FF0000';
 const COL_RED_RGB = color3FromHex(COL_RED);
-const COL_WHITE_RGBA = Color4(1, 1, 1, 1);
+const COL_WHITE_RGBA = Color4(1, 1, 1, 0);
 const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
 
 const PI2 = Math.PI * 2;
@@ -106,8 +110,16 @@ const VEC6_ONE = [
     Vector3(0, 0, 1),
     Vector3(0, 0, -1)
 ];
+const VEC6_HALF = [
+    Vector3(0.5, 0, 0),
+    Vector3(-0.5, 0, 0),
+    Vector3(0, 0.5, 0),
+    Vector3(0, -0.5, 0),
+    Vector3(0, 0, 0.5),
+    Vector3(0, 0, -0.5)
+];
 
-// plane
+// right-handed plane
 const PLANE_POSITIONS = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
 const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ];
 const PLANE_UVS = [ 0,1, 1,1, 1,0, 0,0 ];
@@ -115,7 +127,7 @@ const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
 const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
-const MAX_VOXELS_DRAW = isMobile ? 8000 : 64000;
+const MAX_VOXELS_DRAW = isMobile ? 16000 : 64000;
 const MAX_Z = isMobile ? 1500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
@@ -134,12 +146,12 @@ let duplicateFlag = 0;
 const workplaneWhiteList = [
     'add',
     'box_add', 'box_remove', 'box_paint',
-    'transform_box', 'transform_rect',
     'rect_add', 'rect_remove', 'rect_paint',
+    'transform_box', 'transform_rect',
     'measure_volume', 'frame_voxels'
 ];
 
-const bvhWhiteList = [
+const pixelReadWhiteList = [
     'rect_add'
 ];
 
@@ -199,6 +211,10 @@ class AxisViewScene {
         this.view = [ 100, 100, -5, -95 ];
     }
 
+    init() {
+        this.scene.activeCamera.viewport = this.getViewport(this.view[0], this.view[1], this.view[2], this.view[3]);
+    }
+
     create(engine) {
         this.scene = new BABYLON.Scene(engine);
         this.scene.clearColor = COL_CLEAR_RGBA;
@@ -214,7 +230,7 @@ class AxisViewScene {
         ambient.intensity = 1;
 
         const cam = new BABYLON.ArcRotateCamera("camera", 0, 0, 10, VEC3_ZERO, this.scene);
-        cam.viewport = this.getViewport(this.view[0], this.view[1], this.view[2], this.view[3]);
+        cam.viewport = this.getViewport(0, 0, 0, 0);
         cam.radius = 5.2;
         cam.fov = 0.5;
         cam.alpha = 0; // overrided
@@ -402,9 +418,8 @@ class Camera {
 
         mesh.computeWorldMatrix(true);
         const bounds = mesh.getBoundingInfo();
-        const { minimumWorld, maximumWorld } = bounds.boundingBox;
 
-        return this.getFramedBoundingBox(minimumWorld, maximumWorld);
+        return this.getFramedBoundingBox(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld);
     }
 
     getFramedBoundingBox(min, max) {
@@ -413,7 +428,7 @@ class Camera {
         const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
         const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
         
-        const radiusWithoutFraming = Vector3Distance(min, max) * 0.5;
+        const radiusWithoutFraming = distanceVectors(min, max) * 0.5;
         const radius = radiusWithoutFraming * offset;
         const distanceForHorizontalFrustum = radius / frustumSlopeX;
         const distanceForVerticalFrustum = radius / frustumSlopeY;
@@ -940,9 +955,9 @@ class Material {
 // Builder
 //
 // voxel = {
-//    position: Vector3,
+//    position: Vector3
 //    color: #HEXHEX (UPPERCASE/no alpha)
-//    visible: bool,
+//    visible: bool
 //    idx: int (read-only)
 // }
 
@@ -967,10 +982,9 @@ class Builder {
         this.vUvs = [];
         this.vIndices = [];
 
-        this.bufferWorld = [];
-        this.bufferColors = [];
-        this.bufferMatrix = [];
         this.tMatrix = MatrixIdentity();
+        this.bufferMatrix = [];
+        this.bufferColors = [];
 
         this.rttColors = [];
         this.rttColorsMap = [];
@@ -1001,15 +1015,14 @@ class Builder {
         if (this.voxels.length == 0)
             modules.generator.newBox(1, COL_ICE);
 
-        this.latency = performance.now();
+        const startTime = performance.now();
         
         this.createThinInstances().then(() => {
             if (duplicateFlag == 0) {
-
-                if (bvhWhiteList.includes(tool.name))
-                    modules.rc.create();
                 
-                this.latency = Math.trunc(performance.now() - this.latency);
+                this.latency = ~~(performance.now() - startTime);
+
+                this.fillMeshBuffersWorker();
                 
                 setTimeout(() => {
                     if (isRecord)
@@ -1035,9 +1048,10 @@ class Builder {
 
             this.fillVoxelBuffers();
             this.isWorking = false;
-            resolve();
-
+            
             if (duplicateFlag == 0) {
+                resolve();
+
                 this.mesh.dispose();
                 this.mesh = this.voxel.clone();
                 this.mesh.makeGeometryUnique();
@@ -1055,8 +1069,6 @@ class Builder {
                 light.addMesh(this.mesh);
                 light.updateShadowMap();
             }
-            
-            this.bufferMatrix = [];
         });
     }
 
@@ -1101,59 +1113,75 @@ class Builder {
         }
     }
 
-    // for raycaster, sandbox and raw export
     fillMeshBuffers() {
-        this.bufferWorld = this.mesh.thinInstanceGetWorldMatrices();
         this.positions = new Float32Array(this.vPositions.length * this.voxels.length);
+        this.normals = new Float32Array(this.vPositions.length * this.voxels.length);
         this.uvs = new Float32Array(this.vUvs.length * this.voxels.length);
         this.colors = new Float32Array(this.vUvs.length * 2 * this.voxels.length);
         this.indices = new Uint32Array(this.vIndices.length * this.voxels.length);
 
-        const lenC = this.vUvs.length * 2;
-        const lenI = this.vPositions.length / 3;
+        const mat = MatrixIdentity();
+        const p = Vector3();
 
         for (let i = 0; i < this.voxels.length; i++) {
-            const m = this.bufferWorld[i].m;
+            
+            const m = mat.fromArray(this.bufferMatrix, i * 16).m;
 
             for (let v = 0; v < this.vPositions.length; v += 3) {
-                const p = [
-                    this.vPositions[v],
-                    this.vPositions[v + 1],
-                    this.vPositions[v + 2]
-                ];
-                const transformed = [ // support visibility
-                    p[0] * m[0] + p[1] * m[4] + p[2] * m[8] + m[12],
-                    p[0] * m[1] + p[1] * m[5] + p[2] * m[9] + m[13],
-                    p[0] * m[2] + p[1] * m[6] + p[2] * m[10] + m[14]
-                ];
-                const rw = 1 / (p[0] * m[3] + p[1] * m[7] + p[2] * m[11] + m[15]);
-                this.positions[i * this.vPositions.length + v] = transformed[0] * rw;
-                this.positions[i * this.vPositions.length + v + 1] = transformed[1] * rw;
-                this.positions[i * this.vPositions.length + v + 2] = transformed[2] * rw;
+                p.x = this.vPositions[v];
+                p.y = this.vPositions[v + 1];
+                p.z = this.vPositions[v + 2];
+                p.x = p.x * m[0] + p.y * m[4] + p.z * m[8] + m[12];
+                p.y = p.x * m[1] + p.y * m[5] + p.z * m[9] + m[13];
+                p.z = p.x * m[2] + p.y * m[6] + p.z * m[10] + m[14];
+                const rw = 1 / (p.x * m[3] + p.y * m[7] + p.z * m[11] + m[15]);
+                this.positions[i * this.vPositions.length + v] = p.x * rw;
+                this.positions[i * this.vPositions.length + v + 1] = p.y * rw;
+                this.positions[i * this.vPositions.length + v + 2] = p.z * rw;
+
+                p.x = this.vNormals[v];
+                p.y = this.vNormals[v + 1];
+                p.z = this.vNormals[v + 2];
+                p.x = p.x * m[0] + p.y * m[4] + p.z * m[8];
+                p.y = p.x * m[1] + p.y * m[5] + p.z * m[9];
+                p.z = p.x * m[2] + p.y * m[6] + p.z * m[10];
+                this.normals[i * this.vNormals.length + v] = p.x;
+                this.normals[i * this.vNormals.length + v + 1] = p.y;
+                this.normals[i * this.vNormals.length + v + 2] = p.z;
             }
 
             for (let v = 0; v < this.vUvs.length; v += 2) {
                 this.uvs[i * this.vUvs.length + v] = this.vUvs[v];
                 this.uvs[i * this.vUvs.length + v + 1] = this.vUvs[v + 1];
-                this.colors[i * lenC + v * 2] = this.bufferColors[i * 4];
-                this.colors[i * lenC + v * 2 + 1] = this.bufferColors[i * 4 + 1];
-                this.colors[i * lenC + v * 2 + 2] = this.bufferColors[i * 4 + 2];
-                this.colors[i * lenC + v * 2 + 3] = 1;
+                this.colors[i * this.vUvs.length * 2 + v * 2] = this.bufferColors[i * 4];
+                this.colors[i * this.vUvs.length * 2 + v * 2 + 1] = this.bufferColors[i * 4 + 1];
+                this.colors[i * this.vUvs.length * 2 + v * 2 + 2] = this.bufferColors[i * 4 + 2];
+                this.colors[i * this.vUvs.length * 2 + v * 2 + 3] = 1;
             }
 
-            const len = i * this.vIndices.length;
             for (let v = 0; v < this.vIndices.length; v++) {
-                this.indices[len + v] = this.vIndices[v] + i * lenI;
+                this.indices[i * this.vIndices.length + v] = this.vIndices[v] + i * this.vPositions.length / 3;
             }
         }
     }
 
-    createMesh() { // for raw export only
-        this.fillMeshBuffers();
-        
-        this.normals = new Float32Array(this.vNormals.length * this.voxels.length);
-        BABYLON.VertexData.ComputeNormals(this.positions, this.indices, this.normals);
+    async fillMeshBuffersWorker() {
+        const msg = await modules.workerPool.postMessage({
+            id: 'fillMeshBuffers',
+            data: [
+                this.bufferMatrix, this.bufferColors,
+                this.vPositions, this.vNormals, this.vUvs, this.vIndices
+            ]});
+        if (msg) {
+            this.positions = msg.data[1];
+            this.normals = msg.data[2];
+            this.uvs = msg.data[3];
+            this.colors = msg.data[4];
+            this.indices = msg.data[5];
+        }
+    }
 
+    createMesh() {
         const mesh = new BABYLON.Mesh('mesh', scene);
         const vertexData = new BABYLON.VertexData();
         vertexData.positions = this.positions;
@@ -1225,8 +1253,21 @@ class Builder {
         return this.rttColorsMap[ renderTarget.readFace() ];
     }
 
-    getIndexAtPointerMost() {
-        return this.rttColorsMap[ renderTarget.readMost() ];
+    getIndexAtPointerOmni(num, pad) {
+        return this.rttColorsMap[ renderTarget.readOmni(num, pad) ];
+    }
+
+    getIndexAtPointerTarget(x, y, w, h) {
+        const indexes = [];
+        const pixels = renderTarget.readTarget(x, y, w, h);
+        for (let i = 0; i < pixels.length; i += 4) {
+            if (pixels[i + 3] !== 0) {
+                const idx = this.rttColorsMap[ `${pixels[i]}_${pixels[i + 1]}_${pixels[i + 2]}` ];
+                if (idx !== undefined)
+                    indexes.push(idx);
+            }
+        }
+        return indexes;
     }
 
     getIndexAtPosition(pos) {
@@ -1342,7 +1383,10 @@ class Builder {
     }
 
     async getReduceVoxels(voxels) {
-        const msg = await modules.workerPool.postMessage({ id: 'findInnerVoxels', data: [ voxels, this.positionsMap ] });
+        const msg = await modules.workerPool.postMessage({
+            id: 'findInnerVoxels',
+            data: [ voxels, this.positionsMap ]
+        });
         if (msg) {
             const data = [];
             for (let i = 0; i < msg.data.length; i++) {
@@ -1425,25 +1469,6 @@ class Builder {
         this.create();
     }
 
-    setStringData_backwardCompatible(data) {
-        try {
-            this.setStringData(data);
-
-        } catch (err) { // backward compability
-            const voxels = JSON.parse(data);
-            const newData = [];
-            for (let i = 0; i < voxels.length; i++) {
-                newData.push({ 
-                    position: Vector3(voxels[i].position._x, voxels[i].position._y, voxels[i].position._z),
-                    color: voxels[i].color,
-                    visible: true
-                });
-            }
-            this.voxels = newData;
-            this.create();
-        }
-    }
-
     createVoxelsFromArray(arr) {
         this.voxels = arr;
         this.create();
@@ -1506,144 +1531,64 @@ class Builder {
 
 
 // -------------------------------------------------------
-// XFormer
+// Bakery
 
 
-class XFormer {
+class Bakery {
     constructor() {
-        this.root = undefined;
-        this.isActive = false;
-        this.isNewObject = false;
-        this.xforms = [];
-        this.startPos = undefined;
-        this.useColors = false;
+        this.planes = [];
     }
 
-    init() {
-        this.root = new BABYLON.TransformNode('xformer');
+    bake(voxels) {
+        this.planes = [];
+
+        voxels.forEach((voxel) => {
+            this.constructFace(voxel, VEC6_HALF[0], VEC6_ONE[0], 0, PIH);     // Left
+            this.constructFace(voxel, VEC6_HALF[1], VEC6_ONE[1], 0, -PIH);    // Right
+            this.constructFace(voxel, VEC6_HALF[2], VEC6_ONE[2], -PIH, 0);    // Top
+            this.constructFace(voxel, VEC6_HALF[3], VEC6_ONE[3], PIH, 0);     // Bottom
+            this.constructFace(voxel, VEC6_HALF[4], VEC6_ONE[4], 0, 0);       // Front
+            this.constructFace(voxel, VEC6_HALF[5], VEC6_ONE[5], 0, Math.PI); // Back
+        });
+
+        return MergeMeshes(this.planes, true, true);
     }
 
-    begin(voxels) {
-        if (voxels.length == 0) return;
-
-        if (ui.domTransformClone.checked) {
-            this.beginClone(voxels);
-            return;
-        }
-
-        this.xforms = voxels.slice(0);
-
-        ghosts.createThin(voxels);
-
-        this.root.position.copyFrom(ghosts.getCenter());
-        ghosts.thin.setParent(this.root);
-
-        uix.bindVoxelGizmo(this.root);
-        this.startPos = this.root.position.clone();
-
-        for (let i = 0; i < this.xforms.length; i++)
-            builder.voxels[ this.xforms[i].idx ].visible = false;
-        builder.create(false);
-
-        this.isActive = true;
-    }
-
-    beginClone(voxels) {
-        this.xforms = voxels.slice(0);
-        this.useColors = true;
-
-        ghosts.createThin(voxels);
-        
-        this.root.position.copyFrom(ghosts.getCenter());
-        ghosts.thin.setParent(this.root);
-
-        uix.bindVoxelGizmo(this.root);
-        this.startPos = this.root.position.clone();
-
-        this.isActive = true;
-        this.isNewObject = true;
-    }
-
-    beginNewObject(voxels, useColors = false) {
-        if (voxels.length == 0) return;
-
-        this.xforms = voxels.slice(0);
-        this.useColors = useColors;
-
-        tool.toolSelector('camera');
-        ghosts.createThin(voxels);
-        
-        this.root.position.copyFrom(ghosts.getCenter());
-        ghosts.thin.setParent(this.root);
-
-        uix.bindVoxelGizmo(this.root);
-        this.startPos = this.root.position.clone();
-
-        this.isActive = true;
-        this.isNewObject = true;
-    }
-
-    finish() {
-        if (!this.isNewObject) {
-            const p = this.root.position.subtract(this.startPos);
-
-            if (!p.equals(VEC3_ZERO)) { // change on move
-
-                for (let i = 0; i < this.xforms.length; i++) {
-                    builder.voxels[ this.xforms[i].idx ].position.addInPlace(p);
-                    builder.voxels[ this.xforms[i].idx ].visible = true;
-                }
-            } else {
-                for (let i = 0; i < this.xforms.length; i++)
-                    builder.voxels[ this.xforms[i].idx ].visible = true;
+    constructFace(voxel, position, nearby, rotX, rotY) {
+        const idx = builder.getIndexAtPosition(voxel.position.add(nearby));
+        if (idx === undefined) {
+            const plane = this.constructPlane(voxel.color);
+            plane.position = voxel.position.add(position);
+            plane.rotation.x = rotX;
+            plane.rotation.y = rotY;
+            this.planes.push(plane);
+        } else {
+            if (voxel.color !== builder.voxels[idx].color) {
+                const plane = this.constructPlane(voxel.color);
+                plane.position = voxel.position.add(position);
+                plane.rotation.x = rotX;
+                plane.rotation.y = rotY;
+                this.planes.push(plane);
             }
         }
     }
 
-    finishNewObject() {
-        if (this.isNewObject) {
-            const p = this.root.position.subtract(this.startPos);
-            
-            if (this.useColors) {
-                for (let i = 0; i < this.xforms.length; i++) {
-                    builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
-                }
-            } else {
-                for (let i = 0; i < this.xforms.length; i++) {
-                    builder.add(this.xforms[i].position.add(p), COL_ICE, true);
-                }
-            }
-        }
-    }
-
-    apply() {
-        if (this.isActive || this.isNewObject) {
-            this.finish();
-            this.finishNewObject();
-            this.dispose();
-
-            builder.create();
-        }
-    }
-
-    dispose() {
-        this.isActive = false;
-        this.isNewObject = false;
-
-        uix.unbindVoxelGizmo();
-        
-        ghosts.thin.setParent(null);
-        ghosts.disposeThin();
-        
-        this.xforms = [];
-    }
-
-    deleteSelected() {
-        if (this.isActive) {
-            builder.removeArray(this.xforms);
-            builder.create();
-            this.dispose();
-        }
+    constructPlane(hex) {
+        const col = hexToRgbFloat(hex, 2.2);
+        const mesh = new BABYLON.Mesh('plane', scene);
+        const vertexData = new BABYLON.VertexData();
+        vertexData.positions = PLANE_POSITIONS;
+        vertexData.normals = PLANE_NORMALS;
+        vertexData.uvs = PLANE_UVS;
+        vertexData.indices = PLANE_INDICES;
+        vertexData.colors = [
+            col.r, col.g, col.b, 1,
+            col.r, col.g, col.b, 1,
+            col.r, col.g, col.b, 1,
+            col.r, col.g, col.b, 1
+        ];
+        vertexData.applyToMesh(mesh);
+        return mesh;
     }
 }
 
@@ -1676,8 +1621,8 @@ class MeshPool {
     bakeToMesh(voxels = builder.voxels) {
         ui.showProgress(1);
         setTimeout(() => {
-            const planes = modules.bakery.bake(voxels);
-            const baked = MergeMeshes(planes, true, true);
+            const baked = bakery.bake(voxels);
+
             baked.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
             baked.name = '_mesh';
             this.resetPivot(baked);
@@ -1845,6 +1790,7 @@ class MeshPool {
         (this.selected) ?
             this.setVertexColors(this.selected, hex, 2.2) :
             ui.notification('select a mesh');
+        this.createMeshList();
     }
 
     createMeshList() {
@@ -1913,25 +1859,6 @@ class MeshPool {
             i.firstChild.classList.remove("mesh_select");
     }
 
-    constructPlane(hex) {
-        //BABYLON.VertexData.ComputeNormals(positions, indices, normals, { useRightHandedSystem: true });
-        const col = hexToRgbFloat(hex, 2.2);
-        const mesh = new BABYLON.Mesh('plane', scene);
-        const vertexData = new BABYLON.VertexData();
-        vertexData.positions = PLANE_POSITIONS;
-        vertexData.normals = PLANE_NORMALS;
-        vertexData.uvs = PLANE_UVS;
-        vertexData.indices = PLANE_INDICES;
-        vertexData.colors = [
-            col.r, col.g, col.b, 1,
-            col.r, col.g, col.b, 1,
-            col.r, col.g, col.b, 1,
-            col.r, col.g, col.b, 1
-        ];
-        vertexData.applyToMesh(mesh);
-        return mesh;
-    }
-
     clearMeshArray() {
         scene.blockfreeActiveMeshesAndRenderingGroups = true; // save unnecessary
         for (let i = 0; i < this.meshes.length; i++) { // dispose() computation
@@ -1955,8 +1882,6 @@ class MeshPool {
             colors[i + 2] = rgb.b;
         }
         mesh.setVerticesData(ColorKind, colors);
-
-        this.createMeshList();
     }
 
     normalizeMesh(mesh, scale) {
@@ -1993,11 +1918,8 @@ class MeshPool {
 
         this.meshes.forEach((mesh) => {
             const boundingBox = mesh.getBoundingInfo().boundingBox;
-            const min = boundingBox.minimumWorld;
-            const max = boundingBox.maximumWorld;
-        
-            boxSum.min = Vector3Minimize(boxSum.min, min);
-            boxSum.max = Vector3Maximize(boxSum.max, max);
+            boxSum.min = Vector3Minimize(boxSum.min, boundingBox.minimumWorld);
+            boxSum.max = Vector3Maximize(boxSum.max, boundingBox.maximumWorld);
         });
 
         return boxSum;
@@ -2189,7 +2111,7 @@ class Helper {
         this.workplaneY = CreatePlane("workplaneY", WORKPLANE_SIZE, BACKSIDE, scene);
         this.workplaneZ = CreatePlane("workplaneZ", WORKPLANE_SIZE, BACKSIDE, scene);
         this.axisPlane = CreatePlane("axisplane", 1.2, DOUBLESIDE, axisView.scene);
-        this.overlayPlane = CreatePlane("overlay_plane", 0.95, BACKSIDE, scene);
+        this.overlayPlane = CreatePlane("overlay_plane", 1, BACKSIDE, scene);
         this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
@@ -2467,6 +2389,7 @@ class Helper {
             size.y + 0.001,
             size.z + 0.001);
         this.bbox.position.copyFrom(mesh.position);
+        this.fixEdgesWidth(this.bbox);
     }
 
     hideBoundingBox() {
@@ -2695,9 +2618,8 @@ class Tool {
         this.name = 'camera';
         this.last = undefined;
 
-        this.lastIndex = -1;
         this.pick = undefined;
-        this.pickIndex = undefined;
+        this.pickIndx = undefined;
         this.pickNorm = undefined;
 
         this.isSymmetry = false;
@@ -2711,6 +2633,7 @@ class Tool {
         this.fixedHeight = 0;
 
         this.selected = [];
+        this.indexes = [];
         this.tmp = [];
 
         this.then = performance.now();
@@ -2869,12 +2792,11 @@ class Tool {
     }
 
     getVoxelsFromRectangleSelection(start) {
-        const end = { x: pointer.x, y: pointer.y };
         const bounds = {
-            left: Math.min(start.x, end.x),
-            top: Math.min(start.y, end.y),
-            right: Math.max(start.x, end.x),
-            bottom: Math.max(start.y, end.y)
+            left: Math.min(start.x, pointer.x),
+            top: Math.min(start.y, pointer.y),
+            right: Math.max(start.x, pointer.x),
+            bottom: Math.max(start.y, pointer.y)
         };
 
         ui.domMarquee.style.top = `${bounds.top}px`;
@@ -2882,42 +2804,32 @@ class Tool {
         ui.domMarquee.style.width = `${bounds.right - bounds.left}px`;
         ui.domMarquee.style.height = `${bounds.bottom - bounds.top}px`;
         
-        return builder.voxels.filter((i) => 
-            this.isTargetIn(start, end, i.position, camera.camera0, scene));
+        return builder.voxels.filter((i) =>
+            i.visible &&
+            this.isTargetIn(start, pointer, i.position, camera.camera0, scene));
     }
 
     rectSelect(start) {
         this.selected = this.getVoxelsFromRectangleSelection(start);
-        this.selected = this.selected.filter((i) => i.visible);
         ghosts.createThin(this.selected);
     }
 
     rectSelectPaint(start) {
         this.selected = this.getVoxelsFromRectangleSelection(start);
-        this.selected = this.selected.filter((i) => i.visible);
         ghosts.createThin(this.selected, 0.8, color3FromHex(currentColor));
     }
 
-    rectSelectFirst(start, norm, pick) {
+    rectSelectAdd(start, norm) {
         this.tmp = this.getVoxelsFromRectangleSelection(start);
-        this.tmp = this.tmp.filter((i) => i.visible);
 
         this.selected = [];
         for (let i = 0; i < this.tmp.length; i++) {
-            const pos = this.tmp[i].position.add(norm);
-
-            if (!modules.rc.raycast(
-                    pos.x, pos.y, pos.z,
-                    -pick.ray.direction.x,
-                    -pick.ray.direction.y,
-                    -pick.ray.direction.z)) {
-
-                this.selected.push({
-                    position: pos,
-                    color: currentColor,
-                    visible: this.tmp[i].visible
-                });
-            }
+            this.selected.push({
+                position: this.tmp[i].position.add(norm),
+                color: currentColor,
+                visible: true,
+                idx: this.tmp[i].idx
+            });
         }
 
         ghosts.createThin(this.selected, 0);
@@ -3106,7 +3018,7 @@ class Tool {
                 break;
             case 'rect_add':
                 if (this.startRect)
-                    this.rectSelectFirst(this.startRect, norm, pick);
+                    this.rectSelectAdd(this.startRect, norm);
                 break;
             case 'rect_remove':
                 if (this.startRect)
@@ -3180,6 +3092,8 @@ class Tool {
                 break;
             case 'rect_add':
                 if (this.selected.length > 0) {
+                    if (!ui.domToolRectAddBypass.checked)
+                        this.selected = this.selected.filter((i) => this.indexes.includes(i.idx));
                     builder.addArray(this.selected);
                     builder.create();
                 }
@@ -3203,8 +3117,9 @@ class Tool {
                 }
                 break;
             case 'transform_rect':
-                if (this.selected.length > 0)
+                if (this.selected.length > 0) {
                     xformer.begin(this.selected);
+                }
                 break;
             case 'transform_visible':
                 if (this.selected.length > 0) {
@@ -3246,8 +3161,13 @@ class Tool {
                     }
                     return;
                 }
+                
                 scene.stopAnimation(camera.camera0);
                 scene.activeCamera.detachControl(canvas);
+
+                if (pixelReadWhiteList.includes(this.name))
+                    this.indexes = builder.getIndexAtPointerTarget(0, 0, window.innerWidth, window.innerHeight);
+
                 this.onToolDown(pick);
             });
         }
@@ -3271,9 +3191,8 @@ class Tool {
         if (this.name !== 'camera') {
             this.onToolUp();
 
-            this.lastIndex = -1;
             this.pick = undefined;
-            this.pickIndex = undefined;
+            this.pickIndx = undefined;
             this.pickNorm = undefined;
 
             this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
@@ -3284,6 +3203,7 @@ class Tool {
             this.posNorm = undefined;
 
             this.selected = [];
+            this.indexes = [];
             this.tmp = [];
 
             faceNormalProbe.dispose();
@@ -3326,38 +3246,46 @@ class Tool {
         if (index !== undefined) {
             this.pick = scene.pick(pointer.x, pointer.y, () => { return undefined });
 
-            if (index === builder.getIndexAtPointerFace()) { // face
-                this.pickIndex = index;
-                this.pickNorm = faceNormalProbe.getNormal(this.pick, index);
-            } else { // gap
-                const index_most = builder.getIndexAtPointerMost();
-                if (index_most !== undefined) {
-                    this.pickIndex = index_most;
-                    this.pickNorm = faceNormalProbe.getNormal(this.pick, index_most);
+            this.pickIndx = index;
+            this.pickNorm = faceNormalProbe.getNormal(this.pick, index);
+
+            if (!this.pickNorm) {
+                for (let i = 0; i < 4; i++) {
+                    const _index = builder.getIndexAtPointerOmni(i, 1);
+                    if (_index !== undefined) {
+                        this.pickNorm = faceNormalProbe.getNormal(this.pick, _index);
+                        if (this.pickNorm) {
+                            this.pickIndx = _index;
+                            break;
+                        }
+                    }
+                }
+
+                if (!this.pickNorm) {
+                    for (let i = 0; i < 4; i++) {
+                        const _index = builder.getIndexAtPointerOmni(i, 2);
+                        if (_index !== undefined) {
+                            this.pickNorm = faceNormalProbe.getNormal(this.pick, _index);
+                            if (this.pickNorm) {
+                                this.pickIndx = _index;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
-            if (this.pickNorm) {
-                this.lastIndex = this.pickIndex;
-                this.pick.INDEX = this.pickIndex;
+            if (this.pickNorm && builder.voxels[this.pickIndx]) {
+                this.pick.INDEX = this.pickIndx;
                 this.pick.NORMAL = this.pickNorm;
                 this.pick.WORKPLANE = undefined;
                 onHit(this.pick);
             } else {
-                if (this.lastIndex > -1 && builder.voxels[this.lastIndex]) {
-                    this.pickNorm = faceNormalProbe.getNormal(this.pick, this.lastIndex);
-                    if (this.pickNorm) {
-                        this.pick.INDEX = this.lastIndex;
-                        this.pick.NORMAL = this.pickNorm;
-                        this.pick.WORKPLANE = undefined;
-                        onHit(this.pick);
-                    } else {
-                        this.clearPick();
-                    }
-                } else {
-                    this.clearPick();
-                }
+                helper.clearOverlays();
+                if (pointer.isDown && !camera.isCameraChange())
+                    scene.activeCamera.detachControl(canvas);
             }
+
         } else {
             this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
 
@@ -3379,12 +3307,6 @@ class Tool {
         }
     }
 
-    clearPick() {
-        helper.clearOverlays();
-        if (pointer.isDown && !camera.isCameraChange())
-            scene.activeCamera.detachControl(canvas);
-    }
-
     toolSelector(toolName, finishTransforms = false) {
         this.name = toolName;
 
@@ -3401,11 +3323,7 @@ class Tool {
         if (xformer.isActive && finishTransforms)
             xformer.apply();
 
-        if (bvhWhiteList.includes(this.name) && !modules.rc.mesh)
-            modules.rc.create();
-
-        helper.clearOverlays();
-        ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ').toUpperCase() }`;
+        ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ') }`;
     }
 }
 
@@ -3452,7 +3370,150 @@ class ToolMesh {
 
         pool.deselectMesh();
 
-        ui.domInfoTool.innerHTML = `${ this.name.toUpperCase() }`;
+        ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ') }`;
+    }
+}
+
+
+// -------------------------------------------------------
+// XFormer
+
+
+class XFormer {
+    constructor() {
+        this.root = undefined;
+        this.isActive = false;
+        this.isNewObject = false;
+        this.xforms = [];
+        this.startPos = undefined;
+        this.useColors = false;
+    }
+
+    init() {
+        this.root = new BABYLON.TransformNode('xformer');
+    }
+
+    begin(voxels) {
+        if (voxels.length == 0) return;
+
+        if (ui.domTransformClone.checked) {
+            this.beginClone(voxels);
+            return;
+        }
+
+        this.xforms = voxels.slice(0);
+
+        ghosts.createThin(voxels);
+
+        this.root.position.copyFrom(ghosts.getCenter());
+        ghosts.thin.setParent(this.root);
+
+        uix.bindVoxelGizmo(this.root);
+        this.startPos = this.root.position.clone();
+
+        for (let i = 0; i < this.xforms.length; i++)
+            builder.voxels[ this.xforms[i].idx ].visible = false;
+        builder.create(false);
+
+        this.isActive = true;
+    }
+
+    beginClone(voxels) {
+        this.xforms = voxels.slice(0);
+        this.useColors = true;
+
+        ghosts.createThin(voxels);
+        
+        this.root.position.copyFrom(ghosts.getCenter());
+        ghosts.thin.setParent(this.root);
+
+        uix.bindVoxelGizmo(this.root);
+        this.startPos = this.root.position.clone();
+
+        this.isActive = true;
+        this.isNewObject = true;
+    }
+
+    beginNewObject(voxels, useColors = false) {
+        if (voxels.length == 0) return;
+
+        this.xforms = voxels.slice(0);
+        this.useColors = useColors;
+
+        tool.toolSelector('camera');
+        ghosts.createThin(voxels);
+        
+        this.root.position.copyFrom(ghosts.getCenter());
+        ghosts.thin.setParent(this.root);
+
+        uix.bindVoxelGizmo(this.root);
+        this.startPos = this.root.position.clone();
+
+        this.isActive = true;
+        this.isNewObject = true;
+    }
+
+    finish() {
+        if (!this.isNewObject) {
+            const p = this.root.position.subtract(this.startPos);
+
+            if (!p.equals(VEC3_ZERO)) { // change on move
+
+                for (let i = 0; i < this.xforms.length; i++) {
+                    builder.voxels[ this.xforms[i].idx ].position.addInPlace(p);
+                    builder.voxels[ this.xforms[i].idx ].visible = true;
+                }
+            } else {
+                for (let i = 0; i < this.xforms.length; i++)
+                    builder.voxels[ this.xforms[i].idx ].visible = true;
+            }
+        }
+    }
+
+    finishNewObject() {
+        if (this.isNewObject) {
+            const p = this.root.position.subtract(this.startPos);
+            
+            if (this.useColors) {
+                for (let i = 0; i < this.xforms.length; i++) {
+                    builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
+                }
+            } else {
+                for (let i = 0; i < this.xforms.length; i++) {
+                    builder.add(this.xforms[i].position.add(p), COL_ICE, true);
+                }
+            }
+        }
+    }
+
+    apply() {
+        if (this.isActive || this.isNewObject) {
+            this.finish();
+            this.finishNewObject();
+            this.dispose();
+
+            builder.create();
+        }
+    }
+
+    dispose() {
+        this.isActive = false;
+        this.isNewObject = false;
+
+        uix.unbindVoxelGizmo();
+        
+        ghosts.thin.setParent(null);
+        ghosts.disposeThin();
+        
+        this.xforms = [];
+    }
+
+    deleteSelected() {
+        if (this.isActive) {
+            builder.removeArray(this.xforms);
+            builder.create();
+            this.dispose();
+        }
     }
 }
 
@@ -3466,7 +3527,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.5",
+            version: "Voxel Builder 4.5.6",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3495,14 +3556,6 @@ class Project {
         }, 10);
     }
 
-    async newProject() {
-        if (!await ui.showConfirm('create new project?')) return;
-        modules.generator.newBox(2, COL_ICE);
-        builder.create();
-        this.clearSceneAndReset();
-        ui.domProjectName.value = 'untitled';
-    }
-
     newProjectStartup(size = 20) {
         let color = COL_ICE;
         if (size > 5)
@@ -3519,6 +3572,14 @@ class Project {
         
         builder.create();
         project.clearSceneAndReset();
+        ui.domProjectName.value = 'untitled';
+    }
+
+    async newProject() {
+        if (!await ui.showConfirm('create new project?')) return;
+        modules.generator.newBox(2, COL_ICE);
+        builder.create();
+        this.clearSceneAndReset();
         ui.domProjectName.value = 'untitled';
     }
 
@@ -3547,7 +3608,7 @@ class Project {
 
     importBakes(url) {
         ui.setMode(0);
-        modules.voxelizer.importBakedVoxels(url);
+        voxelizer.importBakedVoxels(url);
     }
 
     exportVoxels() {
@@ -3610,7 +3671,10 @@ class Project {
 
     async loadMagicaVoxel(buffer) {
         ui.showProgress(1);
-        const msg = await modules.workerPool.postMessage({ id: 'parseMagicaVoxel', data: buffer });
+        const msg = await modules.workerPool.postMessage({
+            id: 'parseMagicaVoxel',
+            data: buffer
+        });
         if (msg) {
             const voxels = [];
             for (let i = 0; i < msg.data.length; i++) {
@@ -3867,12 +3931,23 @@ class Snapshot {
         }
 
         if (this.newScene.checked) {
-            builder.setStringData_backwardCompatible(data);
+            builder.setStringData(data);
             project.clearSceneAndReset();
         } else {
             const voxels = builder.createArrayFromStringData(data);
             xformer.beginNewObject(voxels, true);
         }
+    }
+
+    getStorageVoxelsNewScene() {
+        const data = localStorage.getItem(vbstoreVoxels);
+        if (!data) {
+            ui.notification("empty storage");
+            return;
+        }
+
+        builder.setStringData(data);
+        project.clearSceneAndReset();
     }
 
     delStorage(name) {
@@ -3927,6 +4002,216 @@ class Snapshot {
 
 
 // -------------------------------------------------------
+// Voxelizer
+
+
+class Voxelizer {
+    constructor() {}
+
+    voxelizeMesh(mesh) {
+        const scale = parseInt(ui.domVoxelizerScale.value);
+
+        pool.normalizeMesh(mesh, scale);
+        const data = modules.rcv.mesh_voxel(mesh, COL_ICE);
+        
+        builder.createVoxelsFromArray(data);
+        project.clearSceneAndReset();
+    }
+
+    voxelizeBake(meshes) {
+        const mesh = MergeMeshes(meshes, true, true);
+        pool.resetPivot(mesh);
+
+        const data = modules.rcv.bake_voxel(mesh);
+        mesh.dispose();
+
+        let isValidGLB = 0;
+        for (const v in data)
+            if (data[v].color == '#000NAN')
+                isValidGLB++;
+
+        if (data.length == 0 || isValidGLB == data.length) {
+            ui.errorMessage('Invalid GLB (not baked)');
+        } else {
+            builder.createVoxelsFromArray(data);
+            builder.normalizeVoxelPositions();
+            project.clearSceneAndReset();
+        }
+    }
+
+    voxelize2D(imgData) {
+        ui.showProgress(1);
+        const ratio = parseFloat(ui.domVoxelizerRatio.value);
+        const yUp = ui.domVoxelizerYup.checked;
+
+        const img = new Image();
+        img.src = imgData;
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const c = document.createElement('canvas');
+            const cx = c.getContext('2d');
+
+            const dim = aspectRatioFit(img.width, img.height, 10*ratio, 10*ratio);
+            c.width = dim.width;
+            c.height = dim.height;
+
+            cx.msImageSmoothingEnabled = false;
+            cx.mozImageSmoothingEnabled = false;
+            cx.webkitImageSmoothingEnabled = false;
+            cx.imageSmoothingEnabled = false;
+            cx.drawImage(img, 0, 0, c.width, c.height);
+
+            const data = [];
+            const imageData = cx.getImageData(0, 0, c.width, c.height).data;
+            let x,y,r,g,b;
+            for (let i = 0; i < imageData.length; i += 4) {
+                if (imageData[i + 3] > 0) {
+                    r = imageData[i];
+                    g = imageData[i + 1];
+                    b = imageData[i + 2];
+                    x = (i / 4) % c.width;
+                    y = ~~(i / 4 / c.width);
+                    if (yUp) {
+                        data.push({
+                            position: Vector3(x, dim.height-y-1, 0).floor(),
+                            color: rgbIntToHex(r, g, b),
+                            visible: true
+                        });
+                    } else {
+                        data.push({
+                            position: Vector3(x, 0, y).floor(),
+                            color: rgbIntToHex(r, g, b),
+                            visible: true
+                        });
+                    }
+                }
+            }
+
+            builder.createVoxelsFromArray(data);
+            builder.normalizeVoxelPositions();
+            project.clearSceneAndReset();
+            ui.showProgress(0);
+        }
+    }
+
+    importBakedVoxels(url) {
+        ui.showProgress(1);
+        LoadAssetContainerAsync(url, '.glb', scene, (container) => {
+            const meshes = [];
+            for (let i = 0; i < container.meshes.length; i++) {
+                if (container.meshes[i].name !== '__root__')
+                    meshes.push(container.meshes[i].clone(container.meshes[i].name));
+            }
+            container.removeAllFromScene();
+            if (meshes.length > 0) {
+                this.voxelizeBake(meshes);
+            } else {
+                ui.errorMessage('unable to load baked meshes');
+            }
+            ui.showProgress(0);
+        }, () => {
+            ui.errorMessage('unable to load baked meshes');
+            ui.showProgress(0);
+        });
+    }
+
+    importMeshOBJ(url) {
+        ui.showProgress(1);
+        LoadAssetContainerAsync(url, ".obj", scene, (container) => {
+            const mesh = MergeMeshes(container.meshes, true, true);
+            container.removeAllFromScene();
+            this.voxelizeMesh(mesh);
+            mesh.dispose();
+            ui.showProgress(0);
+        }, (err) => {
+            ui.notification("unable to import/merge meshes");
+            ui.showProgress(0);
+            console.error(err);
+        });
+    }
+
+    importMeshGLB(url) {
+        ui.showProgress(1);
+        LoadAssetContainerAsync(url, ".glb", scene, (container) => {
+            const meshes = [];
+            for (let i = 0; i < container.meshes.length; i++) {
+                if (container.meshes[i].name !== '__root__')
+                    meshes.push(container.meshes[i]);
+            }
+            container.removeAllFromScene();
+            if (meshes.length > 0) {
+                const mesh = MergeMeshes(meshes, true, true);
+                this.voxelizeMesh(mesh);
+                mesh.dispose();
+            } else {
+                ui.notification('unable to find meshes');
+            }
+            ui.showProgress(0);
+        }, (err) => {
+            ui.notification("unable to import/merge meshes");
+            ui.showProgress(0);
+            console.error(err);
+        });
+    }
+
+    loadFromUrl(url) {
+        if (url === '') return;
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                if (url.toLowerCase().includes('.obj') || url.endsWith('.obj')) {
+                    this.importMeshOBJ(url);
+                } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
+                    this.importMeshGLB(url);
+                } else {
+                    ui.notification("unsupported file format");
+                }
+            } else {
+                ui.notification("unable to read url");
+            }
+        }).catch(err => {
+            ui.notification("unable to read url");
+        });
+    }
+
+    loadFromUrlImage(url) {
+        if (url === '') return;
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                res.blob().then(data => {
+                    if (data.type &&
+                        (data.type == 'image/png'  ||
+                         data.type == 'image/jpeg' ||
+                         data.type == 'image/svg+xml')) {
+                            this.voxelize2D(url);
+                    } else {
+                        ui.notification("unsupported file format");
+                    }
+                });
+            } else {
+                ui.notification("unable to read url");
+            }
+        }).catch(err => {
+            ui.notification("unable to read url");
+        });
+    }
+
+    pasteBase64Image() {
+        navigator.clipboard.readText()
+            .then(url => {
+                if (url.startsWith('data:image/')) {
+                    this.voxelize2D(url);
+                } else {
+                    ui.notification('invalid base64 image');
+                }
+            })
+            .catch(err => {
+                ui.notification('failed to read clipboard data');
+            });
+    }
+}
+
+
+// -------------------------------------------------------
 // Render Target
 
 
@@ -3937,7 +4222,6 @@ class RenderTarget {
         this.pixels = undefined;
         this.point = { x: 0, y: 0 };
         this.quad = new Array(4);
-        this.part = new Array(16);
     }
 
     init() {
@@ -3991,28 +4275,39 @@ class RenderTarget {
             return this.quad[0];
     }
 
-    readMost() {
-        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
-            this.point.x - 2, this.point.y - 2, 4, 4);
+    readOmni(num, pad) {
+        switch (num) {
+            case 0:
+                this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+                    this.point.x + pad, this.point.y + pad, 2, 2);
+                break;
+            case 1:
+                this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+                    this.point.x - pad, this.point.y - pad, 2, 2);
+                break;
+            case 2:
+                this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+                    this.point.x + pad, this.point.y - pad, 2, 2);
+                break;
+            case 3:
+                this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+                    this.point.x - pad, this.point.y + pad, 2, 2);
+                break;
+        }
         
-        this.part[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
-        this.part[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
-        this.part[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
-        this.part[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
-        this.part[4] = `${this.pixels[16]}_${this.pixels[17]}_${this.pixels[18]}`;
-        this.part[5] = `${this.pixels[20]}_${this.pixels[21]}_${this.pixels[22]}`;
-        this.part[6] = `${this.pixels[24]}_${this.pixels[25]}_${this.pixels[26]}`;
-        this.part[7] = `${this.pixels[28]}_${this.pixels[29]}_${this.pixels[30]}`;
-        this.part[8] = `${this.pixels[32]}_${this.pixels[33]}_${this.pixels[34]}`;
-        this.part[9] = `${this.pixels[36]}_${this.pixels[37]}_${this.pixels[38]}`;
-        this.part[10] = `${this.pixels[40]}_${this.pixels[41]}_${this.pixels[42]}`;
-        this.part[11] = `${this.pixels[44]}_${this.pixels[45]}_${this.pixels[46]}`;
-        this.part[12] = `${this.pixels[48]}_${this.pixels[49]}_${this.pixels[50]}`;
-        this.part[13] = `${this.pixels[52]}_${this.pixels[53]}_${this.pixels[54]}`;
-        this.part[14] = `${this.pixels[56]}_${this.pixels[57]}_${this.pixels[58]}`;
-        this.part[15] = `${this.pixels[60]}_${this.pixels[61]}_${this.pixels[62]}`;
+        this.quad[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+        this.quad[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
+        this.quad[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
+        this.quad[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
+        
+        return mostDuplicatedItem(this.quad);
+    }
 
-        return mostDuplicatedItem(this.part);
+    readTarget(x, y, w, h) {
+        this.readTexturePixels(engine.engine._gl, this.pickTexture._texture._hardwareTexture.underlyingResource,
+            x, y, w, h);
+        
+        return this.pixels;
     }
     
     readTexturePixels(gl, texture, x, y, w, h) {
@@ -4049,16 +4344,17 @@ class RenderTarget {
 class FaceNormalProbe {
     constructor() {
         this.probe = undefined;
-        this.ray = undefined;
         this.normal = undefined;
+        this.ray = undefined;
     }
 
     init() {
-        this.probe = CreateBox('facenorm_probe', 1.05, FRONTSIDE, scene);
+        this.probe = CreateBox('facenorm_probe', 1, FRONTSIDE, scene);
         this.probe.isVisible = true;
         this.probe.isPickable = false;
         this.probe.doNotSerialize = true;
         this.probe.layerMask = 0x00000000;
+        this.probe.renderingGroupId = 1;
         helper.highlightOverlayMesh(this.probe, COL_AXIS_X_RGB);
 
         this.ray = new BABYLON.Ray();
@@ -4084,7 +4380,6 @@ class FaceNormalProbe {
         const res = scene.pickWithRay(this.ray, this.predicate);
         if (res.hit)
             this.normal = this.getFaceNormal(voxel.position, res.pickedPoint);
-        // else { a moment of no surface probe (jumps) }
 
         helper.setWorkplanesPickable(true);
 
@@ -4096,8 +4391,6 @@ class FaceNormalProbe {
         
         if (this.isNormalValid(position, this.normal))
             return this.normal.clone();
-
-        // neutral pick
 
         return undefined;
     }
@@ -4152,7 +4445,6 @@ class UserInterface {
         this.domToolbarTop = document.getElementById('toolbar_top');
         this.domToolbarTopCen = document.getElementById('toolbar_top_cen');
         this.domToolbarTopMem = document.getElementById('toolbar_top_mem');
-        this.domToolbarMinimal = document.getElementById('toolbar_minimal');
         this.domModes = document.querySelectorAll('#toolbar_top_cen li.mode');
         this.domMenus = document.getElementById('menus');
         this.domMenuInScreenStore = document.getElementById('menu-inscreen-store');
@@ -4193,6 +4485,7 @@ class UserInterface {
         this.domVoxelizerYup = document.getElementById('input-voxelizer-yup');
         this.domBakeryBackface = document.getElementById('input-bakery-backface');
         this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
+        this.domToolRectAddBypass = document.getElementById('input-tool-rectadd-bypass');
         this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
@@ -4248,8 +4541,6 @@ class UserInterface {
         if (MODE == mode) return;
         MODE = mode;
 
-        helper.clearOverlays();
-
         if (mode == 0) {
             modules.sandbox.deactivate();
             builder.setMeshVisibility(true);
@@ -4292,7 +4583,7 @@ class UserInterface {
             this.domMenuInScreenStore.style.display = 'flex';
             this.domMenuInScreenRight.style.display = 'flex';
             this.domPalette.style.display = 'unset';
-            this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ').toUpperCase() }`;
+            this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
             this.domToolbarL.children[5].style.display = 'none';  // VOXELIZE
@@ -4383,7 +4674,6 @@ class UserInterface {
 
     showInterface() { // for startup
         if (!preferences.isMinimal()) {
-            this.domToolbarMinimal.style.display = 'none';
             this.domMenus.style.display = 'unset';
             this.domHover.style.display = 'unset';
             this.domPalette.style.display = 'unset';
@@ -4395,7 +4685,6 @@ class UserInterface {
             this.domMenus.style.display = 'unset';
             this.domHover.style.display = 'unset';
             this.domPalette.style.display = 'unset';
-            this.domToolbarMinimal.style.display = 'flex';
             this.domToolbarTopCen.style.display = 'none';
             this.domInfoParent.style.display = 'unset';
             this.domInfoTool.style.display = 'unset';
@@ -4403,15 +4692,15 @@ class UserInterface {
             this.domToolbarTop.style.top = '10px';
             this.domInfoTool.style.top = '16px';
 
-            this.domPalette.style.top = '10px';
-            this.domPalette.style.bottom = '250px';
-
             for (const item of this.domToolbarL.children)
                 item.style.display = 'none';
             this.domToolbarL.children[0].style.display = 'unset';
+            this.domToolbarL.children[1].style.display = 'unset';
 
+            this.domMenuInScreenStore.style.display = 'flex';
             this.domMenuInScreenRight.style.display = 'flex';
-            this.domMenuInScreenRight.children[3].style.display = 'none';
+            this.domMenuInScreenRight.children[3].style.opacity = '0.5';
+            this.domMenuInScreenRight.children[3].style.pointerEvents = 'none';
             this.domMenuInScreenBottom.style.display = 'flex';
             this.domMenuInScreenBottom.style.gap = '5px';
             this.domMenuInScreenBottom.children[1].style.display = 'none';
@@ -4425,26 +4714,6 @@ class UserInterface {
                 this.domCameraOffset.value = 1.3;
                 this.domTransformReactive.checked = false;
             }
-        }
-    }
-
-    toggleDebugLayer() {
-        if (scene.debugLayer.isVisible()) {
-            scene.debugLayer.hide();
-        } else {
-            scene.debugLayer.show({
-                embedMode: false,
-                additionalNodes: [
-                    {
-                        name: "Baked Meshes",
-                        getContent: () => pool.meshes
-                    }
-                ]
-            }).then(() => {
-                document.getElementById('sceneExplorer').style.position = 'fixed';
-                document.getElementById('sceneExplorer').style.zIndex = '2000';
-                document.getElementById('inspector-host').style.zIndex = '2000';
-            });
         }
     }
 
@@ -4484,6 +4753,26 @@ class UserInterface {
             return false;
         }
         return true;
+    }
+
+    toggleDebugLayer() {
+        if (scene.debugLayer.isVisible()) {
+            scene.debugLayer.hide();
+        } else {
+            scene.debugLayer.show({
+                embedMode: false,
+                additionalNodes: [
+                    {
+                        name: "Baked Meshes",
+                        getContent: () => pool.meshes
+                    }
+                ]
+            }).then(() => {
+                document.getElementById('sceneExplorer').style.position = 'fixed';
+                document.getElementById('sceneExplorer').style.zIndex = '2000';
+                document.getElementById('inspector-host').style.zIndex = '2000';
+            });
+        }
     }
 }
 
@@ -4727,11 +5016,12 @@ class Preferences {
                 this.postFinish();
             }
         });
-
-        palette.expand(this.getPaletteSize());
     }
 
     postFinish() {
+        axisView.init();
+        palette.expand(this.getPaletteSize());
+
         // inject extra babylon libs
         const scriptSerializers = document.createElement('script');
         scriptSerializers.src = 'libs/babylonjs.serializers.min.js';
@@ -4740,8 +5030,7 @@ class Preferences {
         scriptInspector.src = 'libs/babylon.inspector.bundle.js';
         document.body.appendChild(scriptInspector);
 
-        console.log(`mobile device: ${isMobile}`);
-        console.log(`webgpu capability: ${ navigator.gpu !== undefined }`);
+        console.log(`mobile: ${isMobile}`);
         console.log('done');
         this.isInitialized = true;
 
@@ -4799,6 +5088,7 @@ class Preferences {
 
 
 export const axisView = new AxisViewScene();
+export const bakery = new Bakery();
 export const builder = new Builder();
 export const camera = new Camera();
 export const faceNormalProbe = new FaceNormalProbe();
@@ -4820,6 +5110,7 @@ export const tool = new Tool();
 export const toolMesh = new ToolMesh();
 export const ui = new UserInterface();
 export const uix = new UserInterfaceAdvanced();
+export const voxelizer = new Voxelizer();
 export const xformer = new XFormer();
 
 
@@ -4850,12 +5141,12 @@ export function registerRenderLoops() {
                     duplicateFlag = 0;
                     builder.removeDuplicates();
                 }
+
+                ui.updateStatus();
             }
 
             if (camera.camera0.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
                 camera.setOrthoMode();
-
-            ui.updateStatus();
         }
     });
 }
@@ -4988,17 +5279,13 @@ document.addEventListener("keydown", (ev) => {
     if (ev.ctrlKey && ev.key.toLowerCase() === 'l')
         document.getElementById('openfile_json').click();
     
-    if (MODE == 0) {
+    if (MODE == 0 && !xformer.isActive) {
         if (ev.ctrlKey && ev.key.toLowerCase() === 'z') {
             ev.preventDefault();
-            if (xformer.isActive)
-                xformer.apply();
             memory.undo();
         }
         if (ev.ctrlKey && ev.key.toLowerCase() === 'x') {
             ev.preventDefault();
-            if (xformer.isActive)
-                xformer.apply();
             memory.redo();
         }
     }
@@ -5022,13 +5309,13 @@ function fileHandler(file) {
     const reader = new FileReader();
     reader.onload = () => {
         if (ext == 'json') project.load(reader.result);
-        if (ext == 'obj') if (MODE == 0) modules.voxelizer.importMeshOBJ(url);
-        if (ext == 'glb') if (MODE == 0) modules.voxelizer.importMeshGLB(url);
+        if (ext == 'obj') if (MODE == 0) voxelizer.importMeshOBJ(url);
+        if (ext == 'glb') if (MODE == 0) voxelizer.importMeshGLB(url);
         if (ext == 'vox') project.loadMagicaVoxel(reader.result);
         if (ext == 'hdr') hdri.loadHDR(url);
         if (MODE == 0) {
             if (['jpg','png','svg'].includes(ext))
-                modules.voxelizer.voxelize2D(reader.result);
+                voxelizer.voxelize2D(reader.result);
         }
         URL.revokeObjectURL(url);
     }
@@ -5122,24 +5409,35 @@ document.getElementById('tab-render').onclick = () => {
 
 document.getElementById('tab-export').onclick = () => {
     ui.setMode(2);
-
-    if (tool.name == 'bake_color')
-        tool.toolSelector('camera');
     
     if (pool.meshes.length == 0 || (ghosts.cloud && ghosts.cloud.mesh.isVisible))
         ghosts.createPointCloud();
 };
 
 ui.domToolbarTopMem.children[0].onclick = () => {
-    memory.undo();
+    if (!xformer.isActive)
+        memory.undo();
 };
 
 ui.domToolbarTopMem.children[1].onclick = () => {
-    memory.redo();
+    if (!xformer.isActive)
+        memory.redo();
+};
+
+ui.domMenus.onpointerdown = (ev) => {
+    if (MODE == 0 && ev.target.parentElement !== ui.domToolbarTopMem) {
+        if (xformer.isActive)
+            xformer.apply();
+    }
+};
+
+ui.domMenuInScreenStore.onpointerdown = () => {
+    if (xformer.isActive)
+        xformer.apply();
 };
 
 ui.domMenuInScreenStore.children[0].onclick = () => {
-    snapshot.getStorageVoxels();
+    snapshot.getStorageVoxelsNewScene();
 };
 
 ui.domMenuInScreenStore.children[1].onclick = () => {
@@ -5193,24 +5491,9 @@ ui.domMenuInScreenRender.children[2].onclick = () => {
         modules.sandbox.shot();
 };
 
-ui.domMenus.onpointerdown = () => {
-    if (MODE == 0) {
-        if (xformer.isActive)
-            xformer.apply();
-        helper.clearOverlays();
-    }
-};
-
-ui.domMenuInScreenStore.onpointerdown = () => {
-    if (xformer.isActive)
-        xformer.apply();
-    helper.clearOverlays();
-};
-
 ui.domHover.onpointerdown = () => {
     if (xformer.isActive)
         xformer.apply();
-    helper.clearOverlays();
 };
 
 ui.domHoverItems[0].onclick = () => {
@@ -5478,6 +5761,18 @@ document.getElementById('normalize_voxels').onclick = async () => {
     }
 };
 
+document.getElementById('input-newbox-coord').onkeydown = (ev) => {
+    if (ev.key == 'Enter' && ui.checkMode(0)) {
+        const str = ev.target.value.split(',');
+        if (str.length == 3 && parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
+            builder.add(Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), currentColor, true);
+            builder.create();
+        } else {
+            ui.notification("invalid coord (e.g. 20,20,20)");
+        }
+    }
+};
+
 document.getElementById('fullscreen').onclick = () =>               { toggleFullscreen() };
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
@@ -5500,9 +5795,9 @@ document.getElementById('create_plane').onclick = () =>             { if (ui.che
 document.getElementById('create_isometric').onclick = () =>         { if (ui.checkMode(0)) modules.generator.createIsometric() };
 document.getElementById('create_sphere').onclick = () =>            { if (ui.checkMode(0)) modules.generator.createSphere() };
 document.getElementById('create_terrain').onclick = () =>           { if (ui.checkMode(0)) modules.generator.createTerrain() };
-document.getElementById('import_mesh_url').onclick = (ev) =>        { if (ui.checkMode(0)) modules.voxelizer.loadFromUrl(ev.target.previousElementSibling.value) };
-document.getElementById('import_image_paste').onclick = () =>       { if (ui.checkMode(0)) modules.voxelizer.pasteBase64Image() };
-document.getElementById('import_image_url').onclick = (ev) =>       { if (ui.checkMode(0)) modules.voxelizer.loadFromUrlImage(ev.target.previousElementSibling.value) };
+document.getElementById('import_mesh_url').onclick = (ev) =>        { if (ui.checkMode(0)) voxelizer.loadFromUrl(ev.target.previousElementSibling.value) };
+document.getElementById('import_image_paste').onclick = () =>       { if (ui.checkMode(0)) voxelizer.pasteBase64Image() };
+document.getElementById('import_image_url').onclick = (ev) =>       { if (ui.checkMode(0)) voxelizer.loadFromUrlImage(ev.target.previousElementSibling.value) };
 document.getElementById('symm_p2n').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(1) };
 document.getElementById('symm_n2p').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(-1) };
 document.getElementById('symm_mirror').onclick = () =>              { if (ui.checkMode(0)) symmetry.mirrorVoxels() };
@@ -5515,7 +5810,6 @@ document.getElementById('btn_tool_box_add').onclick = () =>         { if (ui.che
 document.getElementById('btn_tool_box_remove').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('box_remove') };
 document.getElementById('btn_tool_rect_add').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('rect_add') };
 document.getElementById('btn_tool_rect_remove').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('rect_remove') };
-document.getElementById('input-newbox-coord').onkeydown = (ev) =>   { if (ui.checkMode(0)) modules.generator.newBoxPosition(ev, ev.target, currentColor) };
 document.getElementById('btn_tool_paint').onclick = () =>           { if (ui.checkMode(0)) tool.toolSelector('paint') };
 document.getElementById('btn_tool_box_paint').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('box_paint') };
 document.getElementById('btn_tool_rect_paint').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('rect_paint') };
@@ -5540,46 +5834,14 @@ document.getElementById('invert_visibility').onclick = () =>        { if (ui.che
 document.getElementById('unhide_all').onclick = () =>               { if (ui.checkMode(0)) builder.setAllVisibilityAndUpdate(true) };
 document.getElementById('btn_tool_delete_color').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('delete_color') };
 document.getElementById('delete_hidden').onclick = () =>            { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
-document.getElementById('btn_minimal_new').onclick = () =>          { project.newProject() };
-document.getElementById('btn_minimal_load').onclick = () =>         { document.getElementById('openfile_json').click() };
-document.getElementById('btn_minimal_save').onclick = () =>         { project.save() };
-document.getElementById('btn_minimal_quicksave').onclick = () =>    { snapshot.getStorageVoxels() };
-document.getElementById('btn_minimal_quickload').onclick = () =>    { snapshot.setStorageVoxels() };
 
 
 // -------------------------------------------------------
 // Utils
 
 
-function downloadJson(data, filename) {
-    const blob = new Blob([ data ], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
 function toggleFullscreen() {
     (document.fullscreenElement) ? document.exitFullscreen() : document.body.requestFullscreen();
-}
-
-function isMobileDevice() {
-    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(navigator.userAgent) 
-        || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(navigator.userAgent.substr(0,4))) { 
-        return true;
-    }
-    return false;
 }
 
 function getStyleRoot(key) {
@@ -5616,6 +5878,11 @@ function rgbIntToHex(r, g, b) {
     return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
 }
 
+function aspectRatioFit(srcW, srcH, maxW, maxH) {
+    const ratio = Math.min(maxW / srcW, maxH / srcH);
+    return { width: srcW * ratio, height: srcH * ratio };
+}
+
 function parseBool(val) {
     return val === true || val === "true";
 }
@@ -5646,4 +5913,31 @@ function mostDuplicatedItem(arr) {
     }
 
     return mostDuplicated;
+}
+
+function downloadJson(data, filename) {
+    const blob = new Blob([ data ], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function isMobileDevice() {
+    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(navigator.userAgent) 
+        || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(navigator.userAgent.substr(0,4))) { 
+        return true;
+    }
+    return false;
 }

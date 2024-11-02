@@ -117,13 +117,6 @@ Browser storage is limited, use Electron for much higher capacity.
 ```
 
 ## FAQ
-How to go back to the previous version?
-```
-git clone https://github.com/nimadez/voxel-builder
-cd voxel-builder
-git log -2 (copy the hash of the previous commit)
-git reset --hard $HASH
-```
 How to merge vertices after export to GLB?
 ```
 1- Open exported GLB file in Blender
@@ -137,6 +130,13 @@ How to run Blender importer script?
 2- Open Blender and go to "Scripting" tab
 3- Click "Open" and select "blender-importer.py"
 4- Run the script and select a JSON file
+```
+How to go back to the previous version?
+```
+git clone https://github.com/nimadez/voxel-builder
+cd voxel-builder
+git log -2 (copy the hash of the previous commit)
+git reset --hard $HASH
 ```
 
 ## History
