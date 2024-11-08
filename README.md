@@ -42,7 +42,7 @@
 **Export Meshes**
 - Bake voxels to editable meshes
 - Bake voxels by color groups
-- Unbake exported GLB to voxels
+- Unbake exported GLB back to voxels
 - glTF compatible editor
 
 **Extensibility**
@@ -52,7 +52,7 @@
 - Blender importer script
 
 **More**
-- Average startup time 300 ms
+- Average startup time 300 ms *(after the first launch)*
 - Unique handcrafted user-interface
 - Minimum dependency, portable, online and offline
 - Ad-free, no trackers, no logging, no loading screens
@@ -141,8 +141,9 @@ git reset --hard $HASH
 
 ## History
 ```
+↑ Unsafe WebGPU support
 ↑ Core initialization
-↑ Rendering was left to three and three-gpu-pathtracer
+↑ Rendering was left to Three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
 ↑ x1.5 faster startup (2s to 300ms)
 ↑ Migrating to Linux: Firefox ready

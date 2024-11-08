@@ -14,7 +14,10 @@ class Engine {
         this.isRendering = false;
     }
 
-    init() {
+    init(useWebGPU) {
+        if (useWebGPU)
+            return this.initWebGPU();
+
         return new Promise(resolve => {
             this.engine = new BABYLON.Engine(this.canvas, true, {});
             this.engine.disablePerformanceMonitorInBackground = true;
@@ -22,6 +25,21 @@ class Engine {
             this.engine.premultipliedAlpha = false;
             this.engine.enableOfflineSupport = false;
             this.engine.doNotHandleContextLost = true;
+
+            resolve(this.engine);
+        });
+    }
+
+    initWebGPU() {
+        return new Promise(async resolve => {
+            this.engine = new BABYLON.WebGPUEngine(this.canvas);
+            this.engine.disablePerformanceMonitorInBackground = true;
+            this.engine.preserveDrawingBuffer = false;
+            this.engine.premultipliedAlpha = true;
+            this.engine.enableOfflineSupport = false;
+            this.engine.doNotHandleContextLost = true;
+
+            await this.engine.initAsync();
 
             resolve(this.engine);
         });

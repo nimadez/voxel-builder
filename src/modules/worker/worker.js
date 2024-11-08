@@ -77,6 +77,7 @@ onmessage = (ev) => {
                     indices[i * vIndices.length + v] = vIndices[v] + i * vPositions.length / 3;
                 }
             }
+            // return bufferMatrix to resolve DataCloneError after 1 million voxels
             postMessage([ bufferMatrix, positions, normals, uvs, colors, indices ]);
             break;
 

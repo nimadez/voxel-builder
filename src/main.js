@@ -11,11 +11,12 @@ import * as CORE from './modules/core.js';
 
 
 const startTime = performance.now();
+const adapter = navigator.gpu && await navigator.gpu.requestAdapter();
 
 
-engine.init().then(eng => {
+CORE.preferences.init(adapter);
 
-    CORE.preferences.init();
+engine.init(CORE.preferences.isWebGPU()).then(eng => {
 
     CORE.mainScene.create(eng).then(scn => {
 
@@ -25,6 +26,7 @@ engine.init().then(eng => {
         CORE.light.init();
         CORE.material.init();
 
+        CORE.vMesh.init();
         CORE.builder.init();
         CORE.xformer.init();
 

@@ -12,9 +12,8 @@ import { OrbitControls } from '../../libs/addons/OrbitControls.js';
 import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
 import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
 
-import { engine, Vector3, PositionKind, UVKind, ColorKind } from '../babylon.js';
-import { ui, camera, hdri, light, builder, ghosts, palette } from '../core.js';
-
+import { engine, Vector3 } from '../babylon.js';
+import { ui, camera, hdri, light, vMesh, builder } from '../core.js';
 
 const TILE = 1;
 const DPR_FAST = 0.6;
@@ -105,7 +104,7 @@ class Sandbox {
 
     createScene() {
         this.ambient = new THREE.AmbientLight(0xAAAAAA, 1);
-        this.hemisphere = new THREE.HemisphereLight(0x666666, 0x333333, 1);
+        this.hemisphere = new THREE.HemisphereLight(0x888888, 0x444444, 1);
         this.scene.add(this.ambient, this.hemisphere);
 
         this.light = new THREE.DirectionalLight(0xCCCCCC, 1); // overrided
@@ -164,30 +163,33 @@ class Sandbox {
     }
 
     createBatchedMesh() {
-        const box = new THREE.BoxGeometry(1, 1, 1);
         const batchedMesh = new THREE.BatchedMesh(
             builder.voxels.length,
-            builder.vPositions.length, builder.vIndices.length,
+            vMesh.positions.length, vMesh.indices.length,
             this.mat_pbr.clone());
-        const boxGeoId = batchedMesh.addGeometry(box);
+        const boxId = batchedMesh.addGeometry(new THREE.BoxGeometry(1, 1, 1));
+        const mat = new THREE.Matrix4();
         const col = new THREE.Color();
+
         for (let i = 0; i < builder.voxels.length; i++) {
-            const boxInst = batchedMesh.addInstance(boxGeoId);
-            batchedMesh.setMatrixAt(boxInst, builder.bufferWorld[i]);
+            const boxInst = batchedMesh.addInstance(boxId);
+            mat.fromArray(builder.bufferMatrix, i * 16);
+            batchedMesh.setMatrixAt(boxInst, mat);
             col.r = builder.bufferColors[i * 4];
             col.g = builder.bufferColors[i * 4 + 1];
             col.b = builder.bufferColors[i * 4 + 2];
             batchedMesh.setColorAt(boxInst, col);
         }
+
         batchedMesh.frustumCulled = true;
         batchedMesh.sortObjects = false;
 		batchedMesh.perObjectFrustumCulled = true;
         batchedMesh.material.vertexColors = false;
         batchedMesh.material.side = THREE.FrontSide;
-        return batchedMesh;
+        return [ batchedMesh ];
     }
 
-    createMeshFromBuffersFast() {        
+    createMeshFromBuffers() {        
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', new THREE.BufferAttribute(builder.positions, 3));
         geom.setAttribute('uv', new THREE.BufferAttribute(builder.uvs, 2));
@@ -208,7 +210,7 @@ class Sandbox {
         this.mat_pbr.metalness = ui.domRenderMaterialMetalness.value;
         this.mat_pbr.transmission = ui.domRenderMaterialTransmission.value;
 
-        this.meshes = this.createMeshFromBuffersFast();
+        this.meshes = this.createMeshFromBuffers();
 
         for (let i = 0; i < this.meshes.length; i++) {
             this.meshes[i].castShadow = true;
