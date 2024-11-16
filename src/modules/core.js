@@ -1700,7 +1700,8 @@ class MeshPool {
         this.meshListSelect(mesh);
         this.getMaterial();
         helper.showBoundingBox(this.selected);
-        helper.highlightOutlineMesh(this.selected, COL_ORANGE_RGB);
+        if (!engine.engine.isWebGPU)
+            helper.highlightOutlineMesh(this.selected, COL_ORANGE_RGB);
     }
 
     deselectMesh() {
@@ -2352,7 +2353,7 @@ class Helper {
     }
 
     setBoxShapeSymmetry(pos, scale, color) {
-        this.boxShapeSymm.isVisible = true;
+        this.boxShapeSymm.isVisible = ui.domSymmPreview.checked;
         this.boxShapeSymm.position = pos;
         this.boxShapeSymm.scaling = scale;
         this.boxShapeSymm.overlayColor = color;
@@ -2693,7 +2694,7 @@ class Tool {
         }
     }
 
-    eyedrop(hex) {
+    eyedropper(hex) {
         currentColor = hex;
         uix.colorPicker.value = color3FromHex(currentColor);
     }
@@ -2718,7 +2719,7 @@ class Tool {
         helper.setBoxShape(start.add(end).divide(VEC3_TWO), scale, color, this.boxCount < MAX_VOXELS_DRAW);
         this.boxCount = helper.boxShape.scaling.x * helper.boxShape.scaling.y * helper.boxShape.scaling.z;
 
-        if (this.isSymmetry && ui.domSymmPreview.checked) {
+        if (this.isSymmetry) {
             helper.setBoxShapeSymmetry(
                 symmetry.invertPos(start).add(symmetry.invertPos(end)).divide(VEC3_TWO),
                 scale, color);
@@ -2879,8 +2880,8 @@ class Tool {
             case 'paint':
                 this.paint(index, this.pos);
                 break;
-            case 'eyedrop':
-                this.eyedrop(builder.voxels[index].color);
+            case 'eyedropper':
+                this.eyedropper(builder.voxels[index].color);
                 break;
             case 'bucket':
                 this.bucket(builder.voxels[index].color);
@@ -2989,8 +2990,8 @@ class Tool {
             case 'paint':
                 this.paint(index, this.pos);
                 break;
-            case 'eyedrop':
-                this.eyedrop(builder.voxels[index].color);
+            case 'eyedropper':
+                this.eyedropper(builder.voxels[index].color);
                 break;
             case 'box_add':
                 if (this.startBox)
@@ -3535,7 +3536,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.7",
+            version: "Voxel Builder 4.5.8",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -4709,6 +4710,8 @@ class UserInterface {
                 item.style.display = 'none';
             this.domToolbarL.children[0].style.display = 'unset';
             this.domToolbarL.children[1].style.display = 'unset';
+            this.domToolbarL.children[2].style.display = 'unset';
+            this.domToolbarL.children[3].style.display = 'unset';
 
             this.domMenuInScreenStore.style.display = 'flex';
             this.domMenuInScreenRight.style.display = 'flex';
@@ -4716,9 +4719,9 @@ class UserInterface {
             this.domMenuInScreenRight.children[3].style.pointerEvents = 'none';
             this.domMenuInScreenBottom.style.display = 'flex';
             this.domMenuInScreenBottom.style.gap = '5px';
-            this.domMenuInScreenBottom.children[1].style.display = 'none';
             this.domMenuInScreenBottom.children[2].style.display = 'none';
-            
+            this.domMenuInScreenBottom.children[4].style.display = 'none';
+
             this.domInfo[3].style.display = 'none';
             this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
 
@@ -5286,7 +5289,7 @@ document.addEventListener("keydown", (ev) => {
             tool.toolSelector('bucket', true);
             break;
         case '8':
-            tool.toolSelector('eyedrop', true);
+            tool.toolSelector('eyedropper', true);
             break;
         case 't':
             tool.toolSelector('transform_box', true);
@@ -5508,7 +5511,7 @@ ui.domMenuInScreenRight.children[1].onclick = () => {
 
 ui.domMenuInScreenRight.children[2].onclick = () => {
     if (ui.checkMode(0))
-        tool.toolSelector('eyedrop', true);
+        tool.toolSelector('eyedropper', true);
 };
 
 ui.domMenuInScreenRight.children[3].onclick = () => {
@@ -5854,7 +5857,7 @@ document.getElementById('btn_tool_box_paint').onclick = () =>       { if (ui.che
 document.getElementById('btn_tool_rect_paint').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('rect_paint') };
 document.getElementById('btn_tool_bucket').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bucket') };
 document.getElementById('paint_all').onclick = () =>                { if (ui.checkMode(0)) builder.setAllColorsAndUpdate() };
-document.getElementById('btn_tool_eyedrop').onclick = () =>         { if (ui.checkMode(0)) tool.toolSelector('eyedrop') };
+document.getElementById('btn_tool_eyedropper').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('eyedropper') };
 document.getElementById('btn_tool_transform_box').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('transform_box') };
 document.getElementById('btn_tool_transform_rect').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('transform_rect') };
 document.getElementById('btn_tool_transform_group').onclick = () => { if (ui.checkMode(0)) tool.toolSelector('transform_group') };

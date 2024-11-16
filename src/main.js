@@ -16,7 +16,7 @@ const adapter = navigator.gpu && await navigator.gpu.requestAdapter();
 
 CORE.preferences.init(adapter);
 
-engine.init(CORE.preferences.isWebGPU()).then(eng => {
+engine.init(adapter && CORE.preferences.isWebGPU()).then(eng => {
 
     CORE.mainScene.create(eng).then(scn => {
 
