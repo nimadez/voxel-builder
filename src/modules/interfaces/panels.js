@@ -108,6 +108,13 @@ class Panels {
         };
 
         div_reset.onclick = () => {
+            this.panels.forEach(panel => {
+                if (!panel.detach && panel.x == 0 && panel.y == 0) {
+                    panel.elem.style.display = 'none';
+                    if (panel.button)
+                        panel.button.style.textDecoration = 'none';
+                }
+            });
             this.resetPanel(idx);
         };
         
@@ -177,9 +184,7 @@ class Panels {
         this.panels[idx].elem.style.borderRadius = '3px';
         this.panels[idx].elem.style.borderTopLeftRadius = '0';
         this.panels[idx].elem.style.borderTopRightRadius = '0';
-        this.panels[idx].elem.style.display = 'none';
         this.panels[idx].elem.style.zIndex = 1000;
-        this.panels[idx].button.style.textDecoration = 'none';
     }
 
     setTranslate(idx, x, y) {

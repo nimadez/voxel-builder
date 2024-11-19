@@ -558,8 +558,8 @@ class PathTracer {
     constructor() {
         this.pt = new WebGLPathTracer(renderer);
         this.pt.bounces = 1;
-        this.pt.renderDelay = 300;
-        this.pt.fadeDuration = 300;
+        this.pt.renderDelay = 100;
+        this.pt.fadeDuration = 250;
         this.pt.minSamples = 1;
         this.pt.renderToCanvas = true;
         this.pt.textureSize = new THREE.Vector2(512, 512);
