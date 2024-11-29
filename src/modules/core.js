@@ -3536,7 +3536,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.8",
+            version: "Voxel Builder 4.5.9",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
