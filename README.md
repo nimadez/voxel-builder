@@ -10,6 +10,7 @@
 
 [Changelog](https://github.com/nimadez/voxel-builder/releases)<br>
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
+[Wiki](https://github.com/nimadez/voxel-builder/wiki)<br>
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
 [FAQ](https://github.com/nimadez/voxel-builder#faq)<br>
 [Bug Report](https://github.com/nimadez/voxel-builder/issues)
