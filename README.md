@@ -143,7 +143,7 @@ git reset --hard $HASH
 ## History
 ```
 ↑ Unsafe WebGPU support
-↑ Core initialization
+↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
 ↑ x1.5 faster startup (2s to 300ms)
@@ -157,6 +157,8 @@ git reset --hard $HASH
 ↑ Changed default handiness to right-handed coordinate
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
+
+"You may be inherently deceived, but you should not inherently change."
 ```
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
