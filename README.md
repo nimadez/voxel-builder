@@ -143,7 +143,7 @@ git reset --hard $HASH
 ## History
 ```
 ↑ Unsafe WebGPU support
-↑ Core initialization
+↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
 ↑ x1.5 faster startup (2s to 300ms)
