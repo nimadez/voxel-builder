@@ -248,6 +248,7 @@
 
         <ul class="menu_L panel" id="menu-about">
             <li class="category">HELP</li>
+            <li><button onclick="window.open('https://github.com/nimadez/voxel-builder/wiki', '_blank').focus()">Documentation</button></li>
             <li><button id="about_shortcuts">Shortcuts</button></li>
             <li class="category">EXAMPLES</li>
             <li>
@@ -276,7 +277,7 @@
             <li class="spacer"></li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 Beta
+                <br>&#8627; 4.5.9 R1 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -305,6 +306,7 @@
             <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
             <li class="spacer"></li>
+            <li title="BVH normal picking (slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
             <li title="For debugging"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
             <li title="Unsafe WebGPU support"><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
             <li class="category">WEBSOCKETS</li>

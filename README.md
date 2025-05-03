@@ -10,6 +10,7 @@
 
 [Changelog](https://github.com/nimadez/voxel-builder/releases)<br>
 [Installation](https://github.com/nimadez/voxel-builder#installation)<br>
+[Wiki](https://github.com/nimadez/voxel-builder/wiki)<br>
 [Known Issues](https://github.com/nimadez/voxel-builder#known-issues)<br>
 [FAQ](https://github.com/nimadez/voxel-builder#faq)<br>
 [Bug Report](https://github.com/nimadez/voxel-builder/issues)
@@ -142,7 +143,7 @@ git reset --hard $HASH
 ## History
 ```
 ↑ Unsafe WebGPU support
-↑ Core initialization
+↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
 ↑ x1.5 faster startup (2s to 300ms)

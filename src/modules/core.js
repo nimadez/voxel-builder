@@ -1186,6 +1186,9 @@ class Builder {
             this.uvs = msg.data[3];
             this.colors = msg.data[4];
             this.indices = msg.data[5];
+
+            if (preferences.isBVHPick())
+                modules.rcm.createFromData(this.positions, this.indices);
         }
     }
 
@@ -3260,15 +3263,36 @@ class Tool {
 
                 // dodging gaps at unreachable distances
                 if (!this.pickNorm) {
-                    for (let i = 0; i < 4; i++) {
-                        const _index = await builder.getIndexAtPointerOmni(i, 2);
-                        if (_index !== undefined) {
-    
-                            this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
-                            this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
-                            if (this.pickNorm) {
-                                this.pickIndx = _index;
-                                break;
+
+                    if (preferences.isBVHPick()) {
+                        // BVH method
+                        const res = modules.rcm.raycastFace(
+                            this.pick.ray.origin.x,
+                            this.pick.ray.origin.y,
+                            this.pick.ray.origin.z,
+                            this.pick.ray.direction.x,
+                            this.pick.ray.direction.y,
+                            this.pick.ray.direction.z
+                        );
+                        if (res && res.face.normal) {
+                            this.pickIndx = index;
+                            this.pickNorm = Vector3(
+                                res.face.normal.x,
+                                res.face.normal.y,
+                                res.face.normal.z).negate();
+                        }
+                    } else {
+                        // brute-force method (doesn't work in all cases)
+                        for (let i = 0; i < 4; i++) {
+                            const _index = await builder.getIndexAtPointerOmni(i, 2);
+                            if (_index !== undefined) {
+        
+                                this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                                this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
+                                if (this.pickNorm) {
+                                    this.pickIndx = _index;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -3536,7 +3560,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.9",
+            version: "Voxel Builder 4.5.9 R1",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -4954,6 +4978,7 @@ class UserInterfaceAdvanced {
 // Preferences
 
 
+const KEY_BVHPICK = "pref_bvhpick";
 const KEY_WEBGPU = "pref_webgpu";
 const KEY_MINIMAL = "pref_minimal";
 const KEY_USER_STARTUP = "pref_user_startup";
@@ -4970,6 +4995,7 @@ class Preferences {
     }
 
     init(adapter) {
+        document.getElementById(KEY_BVHPICK).checked = true;
         document.getElementById(KEY_WEBGPU).disabled = !adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
         document.getElementById(KEY_MINIMAL).checked = isMobile;
@@ -4980,6 +5006,8 @@ class Preferences {
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#272A2F";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
+
+        this.setPrefCheck(KEY_BVHPICK);
 
         this.setPrefCheck(KEY_WEBGPU, () => {
             window.location.reload();
@@ -5066,6 +5094,10 @@ class Preferences {
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
+    }
+
+    isBVHPick() {
+        return document.getElementById(KEY_BVHPICK).checked;
     }
 
     isWebGPU() {
