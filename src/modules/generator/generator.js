@@ -107,17 +107,17 @@ class Generator {
         const isNewScene = document.getElementById('create_sphere_new').checked;
         if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
 
-        const size = parseInt(document.getElementById('create_sphere_size').value);
+        const outer = parseInt(document.getElementById('create_sphere_outer').value);
         let inner = parseInt(document.getElementById('create_sphere_inner').value);
-        if (inner >= size) {
-            inner = size - 1;
+        if (inner >= outer) {
+            inner = outer - 1;
             document.getElementById('create_sphere_inner').value = inner;
         }
         inner -= 1;
 
-        const rrmax = size * size;
+        const rrmax = outer * outer;
         const rrmin = inner * inner;
-        const center = size - 1;
+        const center = outer - 1;
         const data = [];
 
         function isSurface(x, y, z) {
@@ -128,9 +128,9 @@ class Generator {
             return (rrmin <= rr) && (rr <= rrmax);
         }
 
-        for (let z = 0; z < size; z++) {
-            for (let y = 0; y < size; y++) {
-                for (let x = 0; x < size; x++) {
+        for (let z = 0; z < outer; z++) {
+            for (let y = 0; y < outer; y++) {
+                for (let x = 0; x < outer; x++) {
                     if (isSurface(x, y, z)) {
                         data.push({
                             position: Vector3(x, y, z),

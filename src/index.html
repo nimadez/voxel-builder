@@ -86,7 +86,7 @@
         ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); }
         #introscreen { z-index: 99999; display: unset; position: absolute; width: 100%; height: 100%; }
         #introscreen .logo { width: fit-content; padding: 10px 15px 10px 15px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 10px; text-align: center; }
-        #introscreen .logo img { width: 192px; height: 192px; image-rendering: optimizeQuality; }
+        #introscreen .logo img { width: 160px; height: 160px; image-rendering: optimizeQuality; }
         #canvas { z-index: 0; pointer-events: none; background: #3c4253; position: absolute; width: 100%; height: 100%; }
         #canvas_three { z-index: 300; display: none; width: 100%; height: 100%; position: absolute;
             background-color: #363d46;
@@ -248,6 +248,7 @@
 
         <ul class="menu_L panel" id="menu-about">
             <li class="category">HELP</li>
+            <li><button onclick="window.open('https://github.com/nimadez/voxel-builder/wiki', '_blank').focus()">Documentation</button></li>
             <li><button id="about_shortcuts">Shortcuts</button></li>
             <li class="category">EXAMPLES</li>
             <li>
@@ -276,7 +277,7 @@
             <li class="spacer"></li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 Beta
+                <br>&#8627; 4.5.9 R1 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -305,6 +306,7 @@
             <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
             <li class="spacer"></li>
+            <li title="BVH normal picking (slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
             <li title="For debugging"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
             <li title="Unsafe WebGPU support"><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
             <li class="category">WEBSOCKETS</li>
@@ -358,7 +360,7 @@
             <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li><button id="camera_topview">Top View</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.6" min="0" step="0.01"></li>
+            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.8" min="0" step="0.01"></li>
             <li class="category">SETTINGS</li>
             <li><button id="btn-ortho">Perspective</button></li>
             <li class="spacer"></li>
@@ -466,7 +468,7 @@
             </li>
             <li class="category">SPHERE</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 13px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 6px">Outer</label>&nbsp;<input id="create_sphere_outer" type="number" class="ignorekeys" value="20" min="3"></div>
                 <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0"></div>
                 <input type="checkbox" id="create_sphere_new" checked> <label for="create_sphere_new">New Scene</label><br>
                 <button id="create_sphere">Sphere</button>

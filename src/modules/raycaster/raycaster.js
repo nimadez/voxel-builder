@@ -86,6 +86,12 @@ class RaycastMesh {
         return this.mesh.geometry.boundsTree.intersectsBox(this.box, this.invMat);
     }
 
+    raycastFace(ox, oy, oz, dx, dy, dz) {
+        this.ray.origin.set(ox, oy, oz);
+        this.ray.direction.set(dx, dy, dz);
+        return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
+    }
+
     dispose() {
         if (this.mesh) {
             this.mesh.geometry.boundsTree.geometry.dispose();
@@ -186,4 +192,5 @@ class RaycastVoxelize {
     }    
 }
 
+export const rcm = new RaycastMesh();
 export const rcv = new RaycastVoxelize();

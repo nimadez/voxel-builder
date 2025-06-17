@@ -129,7 +129,7 @@ const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
 const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
-const MAX_VOXELS_DRAW = isMobile ? 16000 : 64000;
+const MAX_VOXELS_DRAW = isMobile ? 32000 : 256000;
 const MAX_Z = isMobile ? 1500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
@@ -1186,6 +1186,9 @@ class Builder {
             this.uvs = msg.data[3];
             this.colors = msg.data[4];
             this.indices = msg.data[5];
+
+            if (preferences.isBVHPick())
+                modules.rcm.createFromData(this.positions, this.indices);
         }
     }
 
@@ -3260,15 +3263,36 @@ class Tool {
 
                 // dodging gaps at unreachable distances
                 if (!this.pickNorm) {
-                    for (let i = 0; i < 4; i++) {
-                        const _index = await builder.getIndexAtPointerOmni(i, 2);
-                        if (_index !== undefined) {
-    
-                            this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
-                            this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
-                            if (this.pickNorm) {
-                                this.pickIndx = _index;
-                                break;
+
+                    if (preferences.isBVHPick()) {
+                        // BVH method
+                        const res = modules.rcm.raycastFace(
+                            this.pick.ray.origin.x,
+                            this.pick.ray.origin.y,
+                            this.pick.ray.origin.z,
+                            this.pick.ray.direction.x,
+                            this.pick.ray.direction.y,
+                            this.pick.ray.direction.z
+                        );
+                        if (res && res.face.normal) {
+                            this.pickIndx = index;
+                            this.pickNorm = Vector3(
+                                res.face.normal.x,
+                                res.face.normal.y,
+                                res.face.normal.z).negate();
+                        }
+                    } else {
+                        // brute-force method (doesn't work in all cases)
+                        for (let i = 0; i < 4; i++) {
+                            const _index = await builder.getIndexAtPointerOmni(i, 2);
+                            if (_index !== undefined) {
+        
+                                this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                                this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
+                                if (this.pickNorm) {
+                                    this.pickIndx = _index;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -3536,7 +3560,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.9",
+            version: "Voxel Builder 4.5.9 R1",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -4600,19 +4624,21 @@ class UserInterface {
             this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
-            this.domToolbarL.children[5].style.display = 'none';  // VOXELIZE
-            this.domToolbarL.children[6].style.display = 'none';  // CREATE
-            this.domToolbarL.children[7].style.display = 'none';  // SYMM
-            this.domToolbarL.children[8].style.display = 'none';  // DRAW
-            this.domToolbarL.children[9].style.display = 'none';  // PAINT
-            this.domToolbarL.children[10].style.display = 'none'; // VOXELS
-            this.domToolbarL.children[11].style.display = 'none'; // COLORS
-            this.domToolbarL.children[12].style.display = 'none'; // BAKERY
-            this.domToolbarL.children[13].style.display = 'none'; // PBR
+            this.domToolbarL.children[2].firstChild.disabled = true; // STORAGE
+            this.domToolbarL.children[5].style.display = 'none';     // VOXELIZE
+            this.domToolbarL.children[6].style.display = 'none';     // CREATE
+            this.domToolbarL.children[7].style.display = 'none';     // SYMM
+            this.domToolbarL.children[8].style.display = 'none';     // DRAW
+            this.domToolbarL.children[9].style.display = 'none';     // PAINT
+            this.domToolbarL.children[10].style.display = 'none';    // VOXELS
+            this.domToolbarL.children[11].style.display = 'none';    // COLORS
+            this.domToolbarL.children[12].style.display = 'none';    // BAKERY
+            this.domToolbarL.children[13].style.display = 'none';    // PBR
             this.domMenuInScreenRender.style.display = 'flex';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
         } else if (mode == 2) {
+            this.domToolbarL.children[2].firstChild.disabled = true;  // STORAGE
             this.domToolbarL.children[5].firstChild.disabled = true;  // VOXELIZE
             this.domToolbarL.children[6].firstChild.disabled = true;  // CREATE
             this.domToolbarL.children[7].firstChild.disabled = true;  // SYMM
@@ -4954,6 +4980,7 @@ class UserInterfaceAdvanced {
 // Preferences
 
 
+const KEY_BVHPICK = "pref_bvhpick";
 const KEY_WEBGPU = "pref_webgpu";
 const KEY_MINIMAL = "pref_minimal";
 const KEY_USER_STARTUP = "pref_user_startup";
@@ -4970,6 +4997,7 @@ class Preferences {
     }
 
     init(adapter) {
+        document.getElementById(KEY_BVHPICK).checked = true;
         document.getElementById(KEY_WEBGPU).disabled = !adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
         document.getElementById(KEY_MINIMAL).checked = isMobile;
@@ -4980,6 +5008,8 @@ class Preferences {
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#272A2F";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
+
+        this.setPrefCheck(KEY_BVHPICK);
 
         this.setPrefCheck(KEY_WEBGPU, () => {
             window.location.reload();
@@ -5066,6 +5096,10 @@ class Preferences {
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
+    }
+
+    isBVHPick() {
+        return document.getElementById(KEY_BVHPICK).checked;
     }
 
     isWebGPU() {

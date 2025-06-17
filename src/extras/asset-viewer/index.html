@@ -112,8 +112,8 @@
 <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/jsm/"
+            "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
         }
     }
 </script>
@@ -132,7 +132,7 @@
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
     import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
     import { VertexNormalsHelper } from 'three/addons/helpers/VertexNormalsHelper.js';
-    const DRACO_URL = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/jsm/libs/draco/';
+    const DRACO_URL = 'https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/libs/draco/';
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath(DRACO_URL);
     
@@ -214,7 +214,7 @@
     mat_over.color.convertSRGBToLinear();
 
     loadGLB('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb');
-    loadHDR('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr');
+    loadHDR('https://raw.githubusercontent.com/mrdoob/three.js/refs/heads/dev/examples/textures/equirectangular/venice_sunset_1k.hdr');
     animate();
 
     setTimeout(() => {

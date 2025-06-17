@@ -21,7 +21,7 @@ export { hover } from './interfaces/hover.js';
 export { panels } from './interfaces/panels.js';
 export { sandbox } from './sandbox/sandbox.js';
 export { generator } from './generator/generator.js';
-export { rcv } from './raycaster/raycaster.js';
+export { rcm, rcv } from './raycaster/raycaster.js';
 export { ws_client } from './websockets/client.js';
 
 
