@@ -11,10 +11,6 @@ from zipfile import ZipFile
 
 VBUILDER = 'https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip'
 EXCLUDE = [ "voxel-builder-main", "electron", ".user_backup" ]
-run_bat = """@echo off
-title Voxel Builder
-start "" electron\electron .
-"""
 
 cwd = os.getcwd()
 
@@ -65,8 +61,6 @@ def main():
         shutil.move(os.path.join(DIR_SRC, f), DIR_DST)
     os.rmdir(DIR_SRC)
 
-    with open(DIR_DST + "/run.bat", "w") as f:
-        f.write(run_bat)
     print('Done')
 
 
@@ -91,4 +85,3 @@ def remove_directory(dir):
 if __name__== "__main__":
     main()
     print("\nUpdate complete.")
-    input()

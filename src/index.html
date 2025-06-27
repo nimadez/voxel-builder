@@ -38,6 +38,7 @@
             --input-bg: #222833CC;
             --input-color: #788499;
             --label: #788599;
+            --label-info: #657183;
             --cat-bg: #292e38;
             --cat-color: #636f85;
             --cat-border: #3e485caa;
@@ -77,22 +78,25 @@
         button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
         label { font-family: var(--font); font-size: var(--font-size); color: var(--label); letter-spacing: 0.04em; margin: 0; }
-        label:hover { color: var(--white); }
+        label:hover { color: var(--white); cursor: pointer; }
+        label.info, label:hover.info { font-size: 10px; color: var(--label-info); cursor: default; }
         select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--menu-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
         select:hover { color: orange; cursor: pointer; }
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
         ul { list-style-type: none; }
         ul li { font-family: var(--font); font-size: var(--font-size); color: var(--btn-color); border-radius: 2px; text-align: center; }
         ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); }
-        #introscreen { z-index: 99999; display: unset; position: absolute; width: 100%; height: 100%; }
-        #introscreen .logo { width: fit-content; padding: 10px 15px 10px 15px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 10px; text-align: center; }
-        #introscreen .logo img { width: 192px; height: 192px; image-rendering: optimizeQuality; }
+        #introscreen { z-index: 5000; background: #181b22DD; position: absolute; width: 100%; height: 100%; }
+        #introscreen .anim { transform-style: preserve-3d; width: 30px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -20px; }
+        #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
+        #introscreen .logo :first-child { font-weight: normal; color: var(--white); }
+        #introscreen .progress { color: slategray; font-size: 11px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
         #canvas { z-index: 0; pointer-events: none; background: #3c4253; position: absolute; width: 100%; height: 100%; }
         #canvas_three { z-index: 300; display: none; width: 100%; height: 100%; position: absolute;
             background-color: #363d46;
             background-image: linear-gradient(45deg, #30373d 25%, transparent 20%), linear-gradient(-45deg, #30373d 25%, transparent 25%),
                               linear-gradient(45deg, transparent 75%, #30373d 75%), linear-gradient(-45deg, transparent 75%, #30373d 75%);
-            background-size: 38px 38px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
+            background-size: 39px 39px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
         #canvas_palette { z-index: 1; image-rendering: pixelated; background: #31394b80; position: relative; width: 100%; height: 32000px; }
         #menus { display: none; }
         .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 76px; padding: 0 4px 4px 4px; width: 125px; height: fit-content; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
@@ -205,6 +209,21 @@
             #meshlist .item_name { width: 60px; }
             #menu-inscreen-bottom { bottom: 25px; }
         }
+
+        .cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
+        .cube-faces { transform-style: preserve-3d; height: 30px; width: 30px; position: relative; transform-origin: 0 0; transform: translateX(0) translateY(0) translateZ(-30px); }
+        .cube-face { position: absolute; inset: 0; background: #38a5ff60; border: solid 1px #ffa500; outline: 1px solid transparent; }
+        .cube-face.shadow { transform: translateZ(-40px); background: #11111130; border-color: #11111160; }
+        .cube-face.top { transform: translateZ(30px); }
+        .cube-face.front { transform-origin: 0 50%; transform: rotateY(-90deg); }
+        .cube-face.back { transform-origin: 0 50%; transform: rotateY(-90deg) translateZ(-30px); }
+        .cube-face.right { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px); }
+        .cube-face.left { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px) translateZ(30px); }
+        @keyframes rotation {
+            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
+            50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.76, 0.05, 0.86, 0.06); }
+            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
+        }
     </style>
 </head>
 <body>
@@ -222,15 +241,16 @@
             <li><button id="toolbar_btn_storage">STORAGE</button></li>
             <li class="sep"><button id="toolbar_btn_camera">CAMERA</button></li>
             <li><button id="toolbar_btn_render">RENDER</button></li>
-            <li class="sep"><button id="toolbar_btn_voxelize">VOXELIZE</button></li>
-            <li><button id="toolbar_btn_create">CREATE</button></li>
-            <li title="Symmetry"><button id="toolbar_btn_symm">SYMM.</button></li>
+            <li class="sep"><button id="toolbar_btn_create">CREATE</button></li>
+            <li><button id="toolbar_btn_voxelize">VOXELIZE</button></li>
+            <li class="sep" title="Symmetry"><button id="toolbar_btn_symm">SYMM.</button></li>
             <li><button id="toolbar_btn_draw">DRAW</button></li>
             <li><button id="toolbar_btn_paint">PAINT</button></li>
-            <li><button id="toolbar_btn_voxels">VOXELS</button></li>
-            <li title="Color Groups"><button id="toolbar_btn_colors">COLORS</button></li>
+            <li><button id="toolbar_btn_xform">XFORM</button></li>
+            <li title="Color Groups"><button id="toolbar_btn_groups">GROUPS</button></li>
             <li class="sep"><button id="toolbar_btn_bakery">BAKERY</button></li>
             <li><button id="toolbar_btn_pbr">PBR</button></li>
+            <li><button id="toolbar_btn_export">EXPORT</button></li>
         </ul>
 
         <div id="toolbar_top">
@@ -248,6 +268,7 @@
 
         <ul class="menu_L panel" id="menu-about">
             <li class="category">HELP</li>
+            <li><button onclick="window.open('https://github.com/nimadez/voxel-builder/wiki', '_blank').focus()">Documentation</button></li>
             <li><button id="about_shortcuts">Shortcuts</button></li>
             <li class="category">EXAMPLES</li>
             <li>
@@ -276,7 +297,7 @@
             <li class="spacer"></li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 Beta
+                <br>&#8627; 4.5.9 R1 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -303,8 +324,10 @@
             <li title="Not persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Shadows</label></li>
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
+            <li title="Reset all input elements to default values (useful in Firefox)"><button id="reset_inputs">Reset All Inputs</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
             <li class="spacer"></li>
+            <li title="BVH normal picking (maximum accuracy, but slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
             <li title="For debugging"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
             <li title="Unsafe WebGPU support"><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
             <li class="category">WEBSOCKETS</li>
@@ -358,13 +381,15 @@
             <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li><button id="camera_topview">Top View</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.6" min="0" step="0.01"></li>
-            <li class="category">SETTINGS</li>
-            <li><button id="btn-ortho">Perspective</button></li>
+            <li class="row_input" title="Offset varies in different dimensions"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.8" min="0" step="0.01"></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>FOV</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" step="0.01"></li>
+            <li><button id="btn-ortho">Perspective</button></li>
+            <li class="category">SETTINGS</li>
+            <li class="row_input"><label>FOV *</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" step="0.01"></li>
             <li class="row_input"><label>F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
             <li class="row_input"><label>Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
+            <li class="spacer"></li>
+            <li><label class="info">* Supported Rendering</label></li>
             <li class="category">ANIMATION</li>
             <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
             <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
@@ -413,7 +438,7 @@
             <li class="row_input"><label>Blur</label> <input type="number" id="input-pt-hdri-blur" class="ignorekeys" value="0.05" min="0" step="0.01"></li>
             <li class="row_input"><label>Light</label> <input type="color" id="input-pt-light-color" value="#FFE484"></li>
             <li class="row_input"><label>Intensity</label> <input type="number" id="input-pt-light-intensity" class="ignorekeys" value="0.8" min="0" step="0.01"></li>
-            <li class="category">MATERIAL</li>
+            <li class="category">MATERIALS</li>
             <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-transmission" style="font-size: 10px; margin-right: -1px">Transmission</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
@@ -466,10 +491,10 @@
             </li>
             <li class="category">SPHERE</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 13px">Size</label>&nbsp;<input id="create_sphere_size" type="number" class="ignorekeys" value="20" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 6px">Outer</label>&nbsp;<input id="create_sphere_outer" type="number" class="ignorekeys" value="20" min="3"></div>
                 <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0"></div>
                 <input type="checkbox" id="create_sphere_new" checked> <label for="create_sphere_new">New Scene</label><br>
-                <button id="create_sphere">Sphere</button>
+                <button id="create_sphere">Create Sphere</button>
             </li>
             <li class="category">TERRAIN</li>
             <li>
@@ -478,12 +503,12 @@
                 <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3"></div>
                 <input type="checkbox" id="create_terrain_grad" checked> <label for="create_terrain_grad">Height Gradient</label><br>
                 <input type="checkbox" id="create_terrain_new" checked> <label for="create_terrain_new">New Scene</label><br>
-                <button id="create_terrain">Terrain</button>
+                <button id="create_terrain">Create Terrain</button>
             </li>
         </ul>
 
         <ul class="menu_L panel" id="menu-symm">
-            <li class="category">AXIS</li>
+            <li class="category">SYMMETRY AXIS</li>
             <li class="row">
                 <button id="btn-symm-axis-s">S</button>
                 <button id="btn-symm-axis-x" style="font-weight: bold;">X</button>
@@ -520,6 +545,8 @@
             <li><button id="btn_tool_rect_remove" class="tool_rect_remove">Rect Remove</button></li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="input-tool-rectadd-bypass"> <label for="input-tool-rectadd-bypass">Bypass Add</label></li>
+            <li class="spacer"></li>
+            <li><label class="info">? Best in Orthographic</label></li>
             <li class="category">COORDINATE</li>
             <li><input id="input-newbox-coord" type="text" class="ignorekeys" placeholder="X, Y, Z"></li>
             <li class="spacer"></li>
@@ -538,7 +565,7 @@
             <li><button id="btn_tool_eyedropper" class="tool_eyedropper">Eyedropper</button></li>
         </ul>
 
-        <ul class="menu_L panel" id="menu-voxels">
+        <ul class="menu_L panel" id="menu-xform">
             <li class="category">TRANSFORM</li>
             <li><button id="btn_tool_transform_box" class="tool_transform_box">Box Shape</button></li>
             <li><button id="btn_tool_transform_rect" class="tool_transform_rect">Rectangle</button></li>
@@ -547,40 +574,28 @@
             <li class="spacer"></li>
             <li title="Check this to apply transformations on mesh picks"><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone Voxels</label></li>
+            <li class="spacer"></li>
+            <li><label class="info">? No Symmetry</label></li>
             <li class="category">MANIPULATE</li>
             <li><button id="normalize_voxels">Normalize Voxels</button></li>
             <li><button id="btn_reduce_voxels">Reduce Voxels</button></li>
         </ul>
 
-        <ul class="menu_L panel" id="menu-colors">
-            <li class="category">HIDE</li>
+        <ul class="menu_L panel" id="menu-groups">
+            <li class="category">COLOR GROUPS</li>
             <li><button id="btn_tool_isolate_color" class="tool_isolate_color">Isolate Color</button></li>
             <li><button id="btn_tool_hide_color" class="tool_hide_color">Hide Color</button></li>
-            <li class="category">UNHIDE</li>
             <li><button id="invert_visibility">Invert Visibility</button></li>
-            <li><button id="unhide_all">Unhide All</button></li>
             <li class="category">CLEAR</li>
-            <li><button id="delete_hidden">Delete Hidden</button></li>
+            <li><button id="unhide_all">Unhide All</button></li>
             <li><button id="btn_tool_delete_color" class="tool_delete_color">Delete Color</button></li>
+            <li><button id="delete_hidden">Delete Hidden</button></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-bakery">
             <li class="category">BAKERY</li>
             <li><button id="bakery_bake">Bake</button></li>
             <li><button id="btn_tool_bakecolor" class="tool_bake_color">Bake Color Group</button></li>
-            <li class="category">EXPORT</li>
-            <li class="row_input">
-                <label style="width: 60%;">Format</label><select id="export_format">
-                    <option value="glb">GLB</option>
-                    <option value="gltf">GLTF</option>
-                    <option value="obj">OBJ</option>
-                    <option value="stl">STL</option>
-                </select>
-            </li>
-            <li class="spacer"></li>
-            <li><button id="export_meshes">Export Meshes</button></li>
-            <li class="spacer"></li>
-            <li><input type="checkbox" id="export_selected_bake"> <label for="export_selected_bake">Selected Mesh</label></li>
             <li class="category">POINT CLOUD</li>
             <li class="row">
                 <button id="delete_pointcloud">Delete</button>
@@ -588,7 +603,7 @@
             </li>
             <li class="category">CLEAR<li>
             <li><button id="delete_bake">Delete Selected</button></li>
-            <li><button id="clear_bakes">Clear Meshes</button></li>
+            <li><button id="delete_bake_all">Delete All Bakes</button></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-pbr">
@@ -611,6 +626,22 @@
             <li><input type="color" id="input-pbr-vertexcolor" value="#899AAE"></li>
             <li class="category">DISPLAY<li>
             <li><input type="checkbox" id="input-pbr-wireframe"> <label for="input-pbr-wireframe">Wireframe</label></li>
+        </ul>
+
+        <ul class="menu_L panel" id="menu-export">
+            <li class="category">EXPORT</li>
+            <li class="row_input">
+                <label style="width: 60%;">Format</label><select id="export_format">
+                    <option value="glb">GLB</option>
+                    <option value="gltf">GLTF</option>
+                    <option value="obj">OBJ</option>
+                    <option value="stl">STL</option>
+                </select>
+            </li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="export_selected_bake"> <label for="export_selected_bake">Selected Mesh</label></li>
+            <li class="spacer"></li>
+            <li><button id="export_meshes">Export Meshes</button></li>
         </ul>
     </div>
 
@@ -663,7 +694,10 @@
     <div id="info_render"><span>0</span> &nbsp; SL <span>0</span> / <span>0</span> &nbsp; <span>0</span> &nbsp; BOUNCE <span>0</span></div>
     <div id="info_tool"></div>
     <div id="progressbar"></div>
-    <div id="introscreen"><div class="logo"><img src="assets/appicon.png"></div></div>
+    <div id="introscreen">
+        <div class="anim"><div class="cube"><div class="cube-faces"><div class="cube-face shadow"></div><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div></div></div></div>
+        <div class="logo">V<span class="logo_white">OXEL BUILDER</span></div><div class="progress">- LOADING -</div>
+    </div>
     <div id="confirm"><span>title here</span> <button>Cancel</button> <button>Ok</button></div>
     <div id="confirmblocker"></div>
     <div id="notifier"></div>
