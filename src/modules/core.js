@@ -129,7 +129,7 @@ const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
 const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
-const MAX_VOXELS_DRAW = isMobile ? 16000 : 64000;
+const MAX_VOXELS_DRAW = isMobile ? 32000 : 256000;
 const MAX_Z = isMobile ? 1500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
@@ -1023,17 +1023,18 @@ class Builder {
     }
 
     create(isRecord = true) {
+        const startTime = performance.now();
+
         if (this.voxels.length == 0)
             modules.generator.newBox(1, COL_ICE);
-
-        const startTime = performance.now();
         
         this.createThinInstances().then(() => {
-            this.latency = (performance.now() - startTime).toFixed(1);
+            this.latency = (performance.now() - startTime).toFixed(0);
 
-            this.fillMeshBuffersWorker();
-            
-            setTimeout(() => {
+            this.fillMeshBuffersWorker().then(() => {
+                if (preferences.isBVHPick())
+                    modules.rcm.createFromData(this.positions, this.indices);
+
                 if (isRecord)
                     memory.record();
 
@@ -1045,7 +1046,7 @@ class Builder {
                 
                 if (preferences.isWebsocket())
                     modules.ws_client.sendMessage(this.voxels, 'get');
-            }, 100);
+            });
         });
     }
 
@@ -1173,20 +1174,23 @@ class Builder {
         }
     }
 
-    async fillMeshBuffersWorker() {
-        const msg = await modules.workerPool.postMessage({
-            id: 'fillMeshBuffers',
-            data: [
-                this.bufferMatrix, this.bufferColors,
-                vMesh.positions, vMesh.normals, vMesh.uvs, vMesh.indices
-            ]});
-        if (msg) {
-            this.positions = msg.data[1];
-            this.normals = msg.data[2];
-            this.uvs = msg.data[3];
-            this.colors = msg.data[4];
-            this.indices = msg.data[5];
-        }
+    fillMeshBuffersWorker() {
+        return new Promise(async resolve => {
+            const msg = await modules.workerPool.postMessage({
+                id: 'fillMeshBuffers',
+                data: [
+                    this.bufferMatrix, this.bufferColors,
+                    vMesh.positions, vMesh.normals, vMesh.uvs, vMesh.indices
+                ]});
+            if (msg) {
+                this.positions = msg.data[1];
+                this.normals = msg.data[2];
+                this.uvs = msg.data[3];
+                this.colors = msg.data[4];
+                this.indices = msg.data[5];
+                resolve();
+            }
+        });
     }
 
     createMesh() {
@@ -1467,7 +1471,7 @@ class Builder {
         let data = '';
         for (let i = 0; i < this.voxels.length; i++) {
             const v = this.voxels[i];
-            data += `${ Math.trunc(v.position.x) },${ Math.trunc(v.position.y) },${ Math.trunc(v.position.z) },${ v.color },${ v.visible ? 1 : 0 };`;
+            data += `${ Math.trunc(v.position.x) },${ Math.trunc(v.position.y) },${ Math.trunc(v.position.z) },${ v.color.slice(1) },${ v.visible ? 1 : 0 };`;
         }
         return data;
     }
@@ -1490,8 +1494,8 @@ class Builder {
             const [x, y, z, color, visible] = voxels[i].split(',');
             arr.push({
                 position: Vector3(Math.trunc(x), Math.trunc(y), Math.trunc(z)),
-                color: color.toUpperCase(), // backward compability for "true"
-                visible: visible === "1" || visible === "true"
+                color: color.startsWith('#') ? color.toUpperCase() : '#' + color.toUpperCase(),
+                visible: visible === "1" || visible === "true" // backward compability for "true"
             });
         }
         return arr;
@@ -2968,7 +2972,7 @@ class Tool {
 
         if (!this.isWorkplane) {
             this.pos = builder.voxels[index].position;
-            helper.setOverlayCube(this.pos);
+            //helper.setOverlayCube(this.pos); // enable for debug
         } else {
             if (!workplaneWhiteList.includes(this.name)) return;
             this.pos = pick.WORKPLANE;
@@ -3260,15 +3264,36 @@ class Tool {
 
                 // dodging gaps at unreachable distances
                 if (!this.pickNorm) {
-                    for (let i = 0; i < 4; i++) {
-                        const _index = await builder.getIndexAtPointerOmni(i, 2);
-                        if (_index !== undefined) {
-    
-                            this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
-                            this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
-                            if (this.pickNorm) {
-                                this.pickIndx = _index;
-                                break;
+
+                    if (preferences.isBVHPick()) {
+                        // BVH method
+                        const res = modules.rcm.raycastFace(
+                            this.pick.ray.origin.x,
+                            this.pick.ray.origin.y,
+                            this.pick.ray.origin.z,
+                            this.pick.ray.direction.x,
+                            this.pick.ray.direction.y,
+                            this.pick.ray.direction.z
+                        );
+                        if (res && res.face.normal) {
+                            this.pickIndx = index;
+                            this.pickNorm = Vector3(
+                                res.face.normal.x,
+                                res.face.normal.y,
+                                res.face.normal.z).negate();
+                        }
+                    } else {
+                        // brute-force method (doesn't work in all cases)
+                        for (let i = 0; i < 4; i++) {
+                            const _index = await builder.getIndexAtPointerOmni(i, 2);
+                            if (_index !== undefined) {
+        
+                                this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                                this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
+                                if (this.pickNorm) {
+                                    this.pickIndx = _index;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -3536,7 +3561,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.9",
+            version: "Voxel Builder 4.5.9 R1",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -4600,26 +4625,29 @@ class UserInterface {
             this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
             uix.colorPicker.isVisible = true;
         } else if (mode == 1) {
-            this.domToolbarL.children[5].style.display = 'none';  // VOXELIZE
-            this.domToolbarL.children[6].style.display = 'none';  // CREATE
-            this.domToolbarL.children[7].style.display = 'none';  // SYMM
-            this.domToolbarL.children[8].style.display = 'none';  // DRAW
-            this.domToolbarL.children[9].style.display = 'none';  // PAINT
-            this.domToolbarL.children[10].style.display = 'none'; // VOXELS
-            this.domToolbarL.children[11].style.display = 'none'; // COLORS
-            this.domToolbarL.children[12].style.display = 'none'; // BAKERY
-            this.domToolbarL.children[13].style.display = 'none'; // PBR
+            this.domToolbarL.children[2].firstChild.disabled = true; // STORAGE
+            this.domToolbarL.children[5].style.display = 'none';     // CREATE
+            this.domToolbarL.children[6].style.display = 'none';     // VOXELIZE
+            this.domToolbarL.children[7].style.display = 'none';     // SYMM
+            this.domToolbarL.children[8].style.display = 'none';     // DRAW
+            this.domToolbarL.children[9].style.display = 'none';     // PAINT
+            this.domToolbarL.children[10].style.display = 'none';    // XFORM
+            this.domToolbarL.children[11].style.display = 'none';    // GROUPS
+            this.domToolbarL.children[12].style.display = 'none';    // BAKERY
+            this.domToolbarL.children[13].style.display = 'none';    // PBR
+            this.domToolbarL.children[14].style.display = 'none';    // EXPORT
             this.domMenuInScreenRender.style.display = 'flex';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
         } else if (mode == 2) {
-            this.domToolbarL.children[5].firstChild.disabled = true;  // VOXELIZE
-            this.domToolbarL.children[6].firstChild.disabled = true;  // CREATE
+            this.domToolbarL.children[2].firstChild.disabled = true;  // STORAGE
+            this.domToolbarL.children[5].firstChild.disabled = true;  // CREATE
+            this.domToolbarL.children[6].firstChild.disabled = true;  // VOXELIZE
             this.domToolbarL.children[7].firstChild.disabled = true;  // SYMM
             this.domToolbarL.children[8].firstChild.disabled = true;  // DRAW
             this.domToolbarL.children[9].firstChild.disabled = true;  // PAINT
-            this.domToolbarL.children[10].firstChild.disabled = true; // VOXELS
-            this.domToolbarL.children[11].firstChild.disabled = true; // COLORS
+            this.domToolbarL.children[10].firstChild.disabled = true; // XFORM
+            this.domToolbarL.children[11].firstChild.disabled = true; // GROUPS
             this.domMenuInScreenExport.style.display = 'flex';
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
@@ -4954,6 +4982,7 @@ class UserInterfaceAdvanced {
 // Preferences
 
 
+const KEY_BVHPICK = "pref_bvhpick";
 const KEY_WEBGPU = "pref_webgpu";
 const KEY_MINIMAL = "pref_minimal";
 const KEY_USER_STARTUP = "pref_user_startup";
@@ -4970,6 +4999,7 @@ class Preferences {
     }
 
     init(adapter) {
+        document.getElementById(KEY_BVHPICK).checked = true;
         document.getElementById(KEY_WEBGPU).disabled = !adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
         document.getElementById(KEY_MINIMAL).checked = isMobile;
@@ -4980,6 +5010,8 @@ class Preferences {
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#272A2F";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
+
+        this.setPrefCheck(KEY_BVHPICK);
 
         this.setPrefCheck(KEY_WEBGPU, () => {
             window.location.reload();
@@ -5066,6 +5098,10 @@ class Preferences {
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
+    }
+
+    isBVHPick() {
+        return document.getElementById(KEY_BVHPICK).checked;
     }
 
     isWebGPU() {
@@ -5819,6 +5855,7 @@ document.getElementById('fullscreen').onclick = () =>               { toggleFull
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('reset_inputs').onclick = async () =>       { if (await ui.showConfirm("reset all input elements to default values?")) { resetAllInputElements(); window.location.reload(); } };
 document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
 document.getElementById('ws_connect').onclick = () =>               { if (ui.checkMode(0)) modules.ws_client.connect() };
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
@@ -5955,6 +5992,22 @@ function mostDuplicatedItem(arr) {
     }
 
     return mostDuplicated;
+}
+
+function resetAllInputElements() {
+    const inputs = document.querySelectorAll('input, select');
+
+    inputs.forEach(elem => {
+        if (elem.type === 'checkbox' || elem.type === 'radio') {
+            elem.checked = elem.defaultChecked;
+        } else if (elem.tagName === 'SELECT') {
+            Array.from(elem.options).forEach(option => {
+                option.selected = option.defaultSelected;
+            });
+        } else {
+            elem.value = elem.defaultValue;
+        }
+    });
 }
 
 function downloadJson(data, filename) {

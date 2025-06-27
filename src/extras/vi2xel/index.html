@@ -30,10 +30,10 @@
         <span style="color:#ffffff90"><i><b>V I ² X E L</b><br>A simple touch prototype!<br>- Touch: Select <br>- Short Touch: Add<br>- Long Touch: Remove<br>- Double Touch: Change Color<br>Made with Three.js</i></span>
     </div>
 
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/build/three.module.js" } }</script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js" } }</script>
 <script type="module">
     import * as THREE from 'three';
-    import { OrbitControls } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/jsm/controls/OrbitControls.js';
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/controls/OrbitControls.js';
 
     const canvas = document.getElementsByTagName('canvas')[0];
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });

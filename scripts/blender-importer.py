@@ -43,13 +43,15 @@ def create(filePath):
     uniqueColors = []
     for voxel in voxdata:
         hex = voxel.split(',')[3]
+        if not hex.startswith('#'):
+            hex = '#' + hex
         if hex not in uniqueColors:
             uniqueColors.append(hex)
 
     materials = []
     for hex in uniqueColors:
         rgb = tuple(pow(int(hex[i:i + 2], 16) / 255, 2.2) for i in (1, 3, 5))
-        mat = bpy.data.materials.new("voxel_%s" %(hex))
+        mat = bpy.data.materials.new(f"voxel_{hex}")
         mat.use_nodes = True
         principled = mat.node_tree.nodes['Principled BSDF']
         principled.inputs['Base Color'].default_value = (rgb[0],rgb[1],rgb[2],1)
@@ -61,6 +63,8 @@ def create(filePath):
         y = float(voxel.split(',')[1])
         z = float(voxel.split(',')[2])
         hex = voxel.split(',')[3]
+        if not hex.startswith('#'):
+            hex = '#' + hex
 
         # instance original cube
         copy = cube.data.copy()
@@ -69,7 +73,7 @@ def create(filePath):
 
         # apply related material
         for mat in materials:
-            if mat.name.split('.')[0] == "voxel_%s"%(hex): # compare names
+            if mat.name.split('.')[0] == f"voxel_{hex}": # compare names
                 obj.data.materials.append(mat)
 
         # add to collection

@@ -86,15 +86,17 @@ class RaycastMesh {
         return this.mesh.geometry.boundsTree.intersectsBox(this.box, this.invMat);
     }
 
+    raycastFace(ox, oy, oz, dx, dy, dz) {
+        this.ray.origin.set(ox, oy, oz);
+        this.ray.direction.set(dx, dy, dz);
+        return this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.FrontSide);
+    }
+
     dispose() {
         if (this.mesh) {
             this.mesh.geometry.boundsTree.geometry.dispose();
             this.mesh.geometry.dispose();
             this.mesh = null;
-            this.ray = null;
-            this.box = null;
-            this.position = null;
-            this.invMat = null;
         }
     }
 }
@@ -186,4 +188,5 @@ class RaycastVoxelize {
     }    
 }
 
+export const rcm = new RaycastMesh();
 export const rcv = new RaycastVoxelize();
