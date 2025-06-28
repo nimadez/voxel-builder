@@ -162,6 +162,7 @@ class Sandbox {
         this.textures.push(new THREE.TextureLoader().load(TEX_CHECKER));
     }
 
+    // Currently not supported by three-gpu-pathtracer
     createBatchedMesh() {
         const batchedMesh = new THREE.BatchedMesh(
             builder.voxels.length,

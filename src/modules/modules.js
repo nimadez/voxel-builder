@@ -24,5 +24,7 @@ export { generator } from './generator/generator.js';
 export { rcm, rcv } from './raycaster/raycaster.js';
 export { ws_client } from './websockets/client.js';
 
+export { ReinventedColorWheel } from "../libs/utils/reinvented-color-wheel.bundle.js";
+
 
 console.log('load modules');

@@ -56,6 +56,7 @@
 - Average startup time 300 ms *(after the first launch)*
 - Unique handcrafted user-interface
 - Minimum dependency, portable, online and offline
+- Vanilla open-source, no compressed or encrypted code
 - Ad-free, no trackers, no logging, no loading screens
 
 ## Installation
@@ -89,6 +90,20 @@ python3 update.py
 - Mozilla Firefox
 > - PWA A2HS-ready *(add to home screen)*
 > - For the best experience, a tablet with pen or Wacom is recommended
+
+#### Enable Unsafe WebGPU
+- Electron:
+    - Start Electron with ```--enable-unsafe-webgpu```
+    - In Linux, add ```--enable-features=Vulkan``` for hardware acceleration
+    - ```$ electron --enable-unsafe-webgpu --enable-features=Vulkan .```
+- Chrome:
+    - Use ```chrome://flags``` to enable "Unsafe WebGPU Support"
+    - In Linux, start Chrome with ```--enable-features=Vulkan``` for hardware acceleration
+- Firefox (dev edition):
+    - Use ```about:config``` to enable "dom.webgpu.enabled"
+    - Not officially supported, may not work at all.
+
+✔️ If WebGPU is supported in your browser, the option to enable it will be available in the Preferences menu and you can enable or disable it.
 
 ## Known Issues
 Higher than 512K is not recommended
@@ -175,6 +190,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [Electron](https://www.electronjs.org/)
 - [MagicaVoxel](https://ephtracy.github.io/)
 - [Google Material Icons](https://github.com/google/material-design-icons)
+- [Reinvented Color Wheel](https://github.com/luncheon/reinvented-color-wheel)
 - [Blender](https://blender.org/)
 - [Sketchfab](https://sketchfab.com/)
 - [KhronosGroup](https://github.com/KhronosGroup/)

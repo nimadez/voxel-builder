@@ -52,15 +52,27 @@
 import {
     engine,
     PositionKind, NormalKind, UVKind, ColorKind,
-    DOUBLESIDE, FRONTSIDE, BACKSIDE, AXIS_X, AXIS_Y, AXIS_Z,
-    Vector3, Color3, Color4,
-    Vector3Minimize, Vector3Maximize,
-    Vector3TransformCoordinates, Vector3Project,
-    MatrixIdentity, MatrixTranslation, MatrixScaling,
-    CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
-    MergeMeshes, Animator,
-    LoadAssetContainerAsync,
-    ExportGLB, ExportGLTF, ExportOBJ, ExportSTL
+    DOUBLESIDE, FRONTSIDE, BACKSIDE,
+    AXIS_X, AXIS_Y, AXIS_Z,
+    ORTHOGRAPHIC_CAMERA, PERSPECTIVE_CAMERA,
+    REFRESHRATE_RENDER_ONCE, ShadowGenerator_QUALITY_LOW, ShadowGenerator_QUALITY_MEDIUM,
+    Texture_CUBIC_MODE, Texture_SKYBOX_MODE, Texture_NEAREST_SAMPLINGMODE, Texture_LINEAR_LINEAR_MIPLINEAR,
+    PBRMATERIAL_ALPHABLEND, EffectShadersStore, CounterClockWiseSideOrientation,
+    
+    Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
+    Color3, Color4,
+    MatrixIdentity, MatrixTranslation, MatrixScaling, QuaternionRotationAxis,
+    CreateScene, UtilityLayerRenderer,
+    ArcRotateCamera, Viewport,
+    DirectionalLight, HemisphericLight, ShadowGenerator,
+    StandardMaterial, PBRMaterial, ShadowOnlyMaterial, NormalMaterial, GridMaterial, ShaderMaterial,
+    CreateTexture, HDRCubeTexture, RenderTargetTexture,
+    TransformNode, PositionGizmo, AxisScaleGizmo, PlaneRotationGizmo, AxesViewer,
+    CreateMesh, CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
+    PointsCloudSystem, SolidParticleSystem,
+    VertexData, MergeMeshes,
+    LoadAssetContainerAsync, ExportGLB, ExportGLTF, ExportOBJ, ExportSTL,
+    Animator, CreateScreenshot, CreateScreenshotWithResizeAsync
 } from './babylon.js';
 
 import { scene } from '../main.js';
@@ -167,7 +179,7 @@ class MainScene {
 
     create(engine) {
         return new Promise(resolve => {
-            const scene = new BABYLON.Scene(engine);
+            const scene = CreateScene(engine);
             scene.clearColor = COL_CLEAR_RGBA;
             scene.autoClear = true;
             scene.autoClearDepthAndStencil = true;
@@ -175,12 +187,12 @@ class MainScene {
             scene.collisionsEnabled = false;
             scene.useRightHandedSystem = true;
     
-            const ambient = new BABYLON.HemisphericLight("ambient", Vector3(0, 0, -1), scene);
+            const ambient = HemisphericLight("ambient", Vector3(0, 0, -1), scene);
             ambient.diffuse = Color3(0.4, 0.4, 0.4);
             ambient.groundColor = Color3(0.2, 0.2, 0.2);
             
             const shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
-            shadowcatcher.material = new BABYLON.ShadowOnlyMaterial('shadowcatcher', scene);
+            shadowcatcher.material = ShadowOnlyMaterial('shadowcatcher', scene);
             shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
             //shadowcatcher.material.activeLight = light.directional; // later
             shadowcatcher.material.backFaceCulling = true;
@@ -218,7 +230,7 @@ class AxisViewScene {
     }
 
     create(engine) {
-        this.scene = new BABYLON.Scene(engine);
+        this.scene = CreateScene(engine);
         this.scene.clearColor = COL_CLEAR_RGBA;
         this.scene.autoClear = false;
         this.scene.autoClearDepthAndStencil = true;
@@ -226,12 +238,12 @@ class AxisViewScene {
         this.scene.collisionsEnabled = false;
         this.scene.useRightHandedSystem = true;
 
-        const ambient = new BABYLON.HemisphericLight("ambient", Vector3(0, 0, -1), this.scene);
+        const ambient = HemisphericLight("ambient", Vector3(0, 0, -1), this.scene);
         ambient.diffuse = Color3(1, 1, 1);
         ambient.groundColor = Color3(1, 1, 1);
         ambient.intensity = 1;
 
-        const cam = new BABYLON.ArcRotateCamera("camera", 0, 0, 10, VEC3_ZERO, this.scene);
+        const cam = ArcRotateCamera("camera", 10, VEC3_ZERO, this.scene);
         cam.viewport = this.getViewport(0, 0, 0, 0);
         cam.radius = 5.2;
         cam.fov = 0.5;
@@ -239,7 +251,7 @@ class AxisViewScene {
         cam.beta = 0;
 
         this.viewCube = CreateBox("viewcube", 0.52, FRONTSIDE, this.scene);
-        this.viewCube.material = new BABYLON.NormalMaterial("viewcube", this.scene);
+        this.viewCube.material = NormalMaterial("viewcube", this.scene);
         this.viewCube.material.backFaceCulling = true;
         this.viewCube.material.freeze();
         this.viewCube.doNotSyncBoundingInfo = true;
@@ -247,7 +259,7 @@ class AxisViewScene {
         this.viewCube.freezeWorldMatrix();
         this.viewCube.freezeNormals();
 
-        const axisHelper = new BABYLON.AxesViewer(this.scene, 0.65, 0, null,null,null, 6);
+        const axisHelper = AxesViewer(this.scene, 0.65, 6);
         axisHelper.xAxis.getScene().materials[1].emissiveColor = COL_AXIS_X_RGB;
         axisHelper.yAxis.getScene().materials[2].emissiveColor = COL_AXIS_Y_RGB;
         axisHelper.yAxis.getScene().materials[3].emissiveColor = COL_AXIS_Z_RGB;
@@ -304,8 +316,8 @@ class AxisViewScene {
     }
 
     getViewport(w, h, bottom, right) {
-        //return new BABYLON.Viewport(1 - (w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
-        return new BABYLON.Viewport((w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
+        //return Viewport(1 - (w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
+        return Viewport((w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
     }
 
     predicate = (mesh) => {
@@ -345,10 +357,10 @@ class Camera {
     }
 
     init() {
-        this.camera0 = new BABYLON.ArcRotateCamera("camera", 0, 0, 10, VEC3_ZERO, scene);
+        this.camera0 = ArcRotateCamera("camera", 10, VEC3_ZERO, scene);
 
         this.camera0.setPosition(Vector3(100, 100, 100));
-        this.camera0.setTarget(VEC3_ZERO);
+        this.camera0.setTarget(VEC3_ZERO.clone());
         this.camera0.lowerRadiusLimit = 2;
         this.camera0.upperRadiusLimit = 1500;
         this.camera0.lowerBetaLimit = 0.0001;   // fix ortho Y inaccuracy
@@ -468,7 +480,7 @@ class Camera {
     }
 
     switchOrtho() {
-        (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA) ?
+        (scene.activeCamera.mode == ORTHOGRAPHIC_CAMERA) ?
             this.setPersp() : this.setOrtho();
     }
 
@@ -483,7 +495,6 @@ class Camera {
     }
 
     setView(name) {
-        const center = builder.getCenter();
         let position = undefined;
 
         switch (name) {
@@ -506,21 +517,22 @@ class Camera {
                 position = Vector3(0, 0, -1);
                 break;
             case 'ortho':
-                scene.activeCamera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+                scene.activeCamera.mode = ORTHOGRAPHIC_CAMERA;
                 ui.domCameraOrtho.innerHTML = 'Orthographic';
                 break;
             case 'persp':
-                scene.activeCamera.mode = BABYLON.Camera.PERSPECTIVE_CAMERA;
+                scene.activeCamera.mode = PERSPECTIVE_CAMERA;
                 ui.domCameraOrtho.innerHTML = 'Perspective';
                 break;
         }
 
         if (position) {
+            const center = builder.getCenter();
             scene.activeCamera.setPosition(position.multiplyByFloats(
                 scene.activeCamera.radius,
                 scene.activeCamera.radius,
                 scene.activeCamera.radius).add(center));
-            scene.activeCamera.setTarget(center);
+            scene.activeCamera.setTarget(center.clone());
         }
     }
 
@@ -563,12 +575,12 @@ class HDRI {
         }
 
         // HDRCubeTexture locks the thread, start with smaller texture size
-        this.hdrMap = new BABYLON.HDRCubeTexture(ENVMAP, scene, 16, false, false, false, undefined, () => {
+        this.hdrMap = HDRCubeTexture(ENVMAP, scene, 16, () => {
             this.createSkybox(this.hdrMap);
             scene.environmentTexture = this.hdrMap;
             scene.environmentIntensity = 0.6;
             material.mat_pbr_vox.reflectionTexture = hdri.hdrMap;
-            material.mat_pbr_vox.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
+            material.mat_pbr_vox.reflectionTexture.coordinatesMode = Texture_CUBIC_MODE;
             onLoad();
         });
 
@@ -591,9 +603,9 @@ class HDRI {
 
     createSkybox(tex) {
         this.skybox = CreateBox('skybox', MAX_Z, BACKSIDE, scene);
-        this.skybox.material = new BABYLON.StandardMaterial("skybox", scene);
+        this.skybox.material = StandardMaterial("skybox", scene);
         this.skybox.material.reflectionTexture = tex;
-        this.skybox.material.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+        this.skybox.material.reflectionTexture.coordinatesMode = Texture_SKYBOX_MODE;
         this.skybox.material.disableLighting = true;
         this.skybox.material.twoSidedLighting = true;
         this.skybox.material.backFaceCulling = false;
@@ -622,7 +634,7 @@ class Light {
     }
 
     init() {
-        this.directional = new BABYLON.DirectionalLight("directional", Vector3(0, 0, -1), scene);
+        this.directional = DirectionalLight("directional", Vector3(0, 0, -1), scene);
         this.directional.autoUpdateExtends = true;  // enable REFRESHRATE_RENDER_ONCE
         this.directional.position.copyFrom(this.location);
         this.directional.diffuse = Color3(0.8, 0.8, 0.8);
@@ -634,11 +646,11 @@ class Light {
         scene.getNodeByName("shadowcatcher").material.activeLight = this.directional;
 
         const shadowSize = isMobile ? 256 : 1024;
-        const shadowGen = new BABYLON.ShadowGenerator(shadowSize, this.directional);
-        shadowGen.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        const shadowGen = ShadowGenerator(shadowSize, this.directional);
+        shadowGen.getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
         shadowGen.filteringQuality = isMobile ? 
-            BABYLON.ShadowGenerator.QUALITY_LOW :
-            BABYLON.ShadowGenerator.QUALITY_MEDIUM;
+            ShadowGenerator_QUALITY_LOW :
+            ShadowGenerator_QUALITY_MEDIUM;
         shadowGen.useExponentialShadowMap = true;       // def true
         shadowGen.usePercentageCloserFiltering = true;  // webgl2 only, fallback -> usePoissonSampling
         shadowGen.forceBackFacesOnly = false;
@@ -647,7 +659,7 @@ class Light {
     }
 
     updateShadowMap() {
-        this.directional.getShadowGenerator().getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+        this.directional.getShadowGenerator().getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
     }
     
     updateAngle(angle) {
@@ -713,8 +725,8 @@ class Material {
 
     init() {
         this.textures.push(this.loadTexture('tex_null', TEX_NULL));
-        this.textures.push(this.loadTexture('tex_grid', this.createVoxelTexture(), BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR));
-        this.textures.push(this.loadTexture('tex_checker', TEX_CHECKER, BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_grid', this.createVoxelTexture(), Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_checker', TEX_CHECKER, Texture_LINEAR_LINEAR_MIPLINEAR));
 
         this.tex_pbr = this.textures[2];
 
@@ -730,7 +742,7 @@ class Material {
     }
 
     createPBRMaterialVoxel() {
-        const mat = new BABYLON.PBRMaterial("PBR_V", scene);
+        const mat = PBRMaterial("PBR_V", scene);
         mat.albedoColor = Color3(1, 1, 1);
         mat.albedoTexture = this.textures[1];
         mat.roughness = 0.8;
@@ -750,19 +762,19 @@ class Material {
                 this.mat_pbr_msh.reflectionTexture.dispose();
             this.mat_pbr_msh.dispose();
         }
-        const mat = new BABYLON.PBRMaterial("PBR", scene);
+        const mat = PBRMaterial("PBR", scene);
         mat.albedoColor = Color3(1, 1, 1);
         mat.albedoTexture = this.tex_pbr.clone();
         if (hdri.hdrMap) {
             mat.reflectionTexture = hdri.hdrMap.clone();
-            mat.reflectionTexture.coordinatesMode = BABYLON.Texture.CUBIC_MODE;
+            mat.reflectionTexture.coordinatesMode = Texture_CUBIC_MODE;
         }
         mat.roughness = 0.8;
         mat.metallic = 0.1;
         mat.metallicF0Factor = 0;
         mat.alpha = 1;
         mat.alphaCutOff = 0.5;
-        mat.alphaMode = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
+        mat.alphaMode = PBRMATERIAL_ALPHABLEND;
         mat.transparencyMode = 1;
         mat.useAlphaFromAlbedoTexture = true;
         mat.backFaceCulling = true;
@@ -774,7 +786,7 @@ class Material {
     }
 
     createHighlightMaterial() {
-        const mat = new BABYLON.StandardMaterial("highlight", scene);
+        const mat = StandardMaterial("highlight", scene);
         mat.diffuseColor = Color3(1, 1, 1); // overrided
         mat.specularColor = Color3(0, 0, 0);
         mat.emissiveColor = Color3(0.5, 0.5, 0.5);
@@ -787,7 +799,7 @@ class Material {
     }
 
     createGridPlaneMaterial() {
-        const mat = new BABYLON.GridMaterial("gridplane", scene);
+        const mat = GridMaterial("gridplane", scene);
         mat.gridRatio = 1;
         mat.majorUnitFrequency = 20;
         mat.minorUnitVisibility = 0.4;
@@ -799,7 +811,7 @@ class Material {
     }
 
     createWhiteMaterial() {
-        const mat = new BABYLON.StandardMaterial("white", scene);
+        const mat = StandardMaterial("white", scene);
         mat.disableLighting = true;
         mat.emissiveColor = Color3(1, 1, 1);
         mat.zOffset = -1;
@@ -821,8 +833,8 @@ class Material {
         return canvas.toDataURL("image/png");
     }
 
-    loadTexture(name, url, sampling = BABYLON.Texture.NEAREST_SAMPLINGMODE) {
-        const tex = new BABYLON.Texture(url, scene, undefined, undefined, sampling);
+    loadTexture(name, url, sampling = Texture_NEAREST_SAMPLINGMODE) {
+        const tex = CreateTexture(url, scene, sampling);
         tex.name = name;
         tex.uScale = 1;
         tex.vScale = 1;
@@ -857,7 +869,7 @@ class Material {
     }
 
     createCELMaterial() {
-        BABYLON.Effect.ShadersStore['celVertexShader'] = `
+        EffectShadersStore['celVertexShader'] = `
         precision highp float;
 
         attribute vec3 position;
@@ -887,7 +899,7 @@ class Material {
             vUv = uv;
         }`;
         
-        BABYLON.Effect.ShadersStore['celFragmentShader'] = `
+        EffectShadersStore['celFragmentShader'] = `
         precision highp float;
         
         varying vec3 vPositionW;
@@ -926,7 +938,7 @@ class Material {
             gl_FragColor = vec4(col, 1.0);
         }`;
         
-        this.mat_cel = new BABYLON.ShaderMaterial('CEL', scene, {
+        this.mat_cel = ShaderMaterial('CEL', scene, {
                 vertex: "cel", fragment: "cel",
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
@@ -1061,8 +1073,8 @@ class Builder {
                 this.isWorking = false;
                 resolve();
 
-                this.mesh.dispose();
-                this.mesh = vMesh.mesh.clone();
+                //this.mesh.dispose();  // not needed after 7.35.0
+                //this.mesh = vMesh.mesh.clone();
                 this.mesh.makeGeometryUnique();
                 this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
                 this.mesh.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
@@ -1194,8 +1206,8 @@ class Builder {
     }
 
     createMesh() {
-        const mesh = new BABYLON.Mesh('mesh', scene);
-        const vertexData = new BABYLON.VertexData();
+        const mesh = CreateMesh('mesh', scene);
+        const vertexData = VertexData();
         vertexData.positions = this.positions;
         vertexData.normals = this.normals;
         vertexData.uvs = this.uvs;
@@ -1587,8 +1599,8 @@ class Bakery {
 
     constructPlane(hex) {
         const col = hexToRgbFloat(hex, 2.2);
-        const mesh = new BABYLON.Mesh('plane', scene);
-        const vertexData = new BABYLON.VertexData();
+        const mesh = CreateMesh('plane', scene);
+        const vertexData = VertexData();
         vertexData.positions = PLANE_POSITIONS;
         vertexData.normals = PLANE_NORMALS;
         vertexData.uvs = PLANE_UVS;
@@ -1635,7 +1647,7 @@ class MeshPool {
         setTimeout(() => {
             const baked = bakery.bake(voxels);
 
-            baked.sideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
+            baked.sideOrientation = CounterClockWiseSideOrientation;
             baked.name = '_mesh';
             this.resetPivot(baked);
 
@@ -2026,7 +2038,7 @@ class Ghosts {
         if (this.sps)
             this.sps.dispose();
         
-        this.sps = new BABYLON.SolidParticleSystem('ghost_sps', scene, { updatable: false, expandable: false, boundingSphereOnly: true });
+        this.sps = SolidParticleSystem('ghost_sps', scene, false, false, true);
 
         this.sps.addShape(vMesh.mesh, voxels.length, { positionFunction: (p, i, s) => {
             p.position.copyFrom(voxels[i].position);
@@ -2054,7 +2066,7 @@ class Ghosts {
         if (this.cloud)
             this.cloud.dispose();
         
-        this.cloud = new BABYLON.PointsCloudSystem('ghost_cloud', 2, scene, { updatable: false });
+        this.cloud = PointsCloudSystem('ghost_cloud', 2, scene, false);
         this.cloud.computeBoundingBox = false;
 
         const setParticles = function(particle, i, s) {
@@ -2327,13 +2339,13 @@ class Helper {
 
         if ((norm.x == 0 && norm.y == 0 && norm.z == 1) ||
             (norm.x == 0 && norm.y == 0 && norm.z == -1)) {
-            this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-                BABYLON.Axis.X,
-                Math.acos(BABYLON.Vector3.Dot(norm, BABYLON.Axis.Z)));
+            this.overlayPlane.rotationQuaternion = QuaternionRotationAxis(
+                AXIS_X,
+                Math.acos(Vector3Dot(norm, AXIS_Z)));
         } else {
-            this.overlayPlane.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
-                BABYLON.Vector3.Cross(BABYLON.Axis.Z, norm), // axis
-                Math.acos(BABYLON.Vector3.Dot(norm, BABYLON.Axis.Z))); // angle
+            this.overlayPlane.rotationQuaternion = QuaternionRotationAxis(
+                Vector3Cross(AXIS_Z, norm), // axis
+                Math.acos(Vector3Dot(norm, AXIS_Z))); // angle
         }
     }
 
@@ -2409,7 +2421,7 @@ class Helper {
     
     fixEdgesWidth(mesh) { // TODO
         mesh.edgesWidth = scene.activeCamera.radius / 8;
-        if (scene.activeCamera.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
+        if (scene.activeCamera.mode == ORTHOGRAPHIC_CAMERA)
             mesh.edgesWidth /= 6;
     }
 }
@@ -2700,7 +2712,7 @@ class Tool {
 
     eyedropper(hex) {
         currentColor = hex;
-        uix.colorPicker.value = color3FromHex(currentColor);
+        ui.colorWheel.hex = currentColor;
     }
 
     calculateBoundingBox(start, end) {
@@ -2771,7 +2783,7 @@ class Tool {
     }
 
     isTargetIn = (startPos, endPos, target, camera, scene) => {
-        const screenPosition = Vector3Project(target, scene, camera);
+        const screenPosition = Vector3Project(target, scene, camera, window.innerWidth, window.innerHeight);
         const rect = {
             x: Math.min(startPos.x, endPos.x),
             y: Math.min(startPos.y, endPos.y),
@@ -3423,7 +3435,7 @@ class XFormer {
     }
 
     init() {
-        this.root = new BABYLON.TransformNode('xformer');
+        this.root = TransformNode('xformer');
     }
 
     begin(voxels) {
@@ -3561,7 +3573,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.9 R1",
+            version: "Voxel Builder 4.5.9 R2",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3739,11 +3751,8 @@ class Project {
             const canvasHeight = canvas.height;
             engine.engine.setSize(canvasWidth * scale, canvasHeight * scale);
             isRenderAxisView = false;
-            uix.colorPicker.isVisible = false;
-            BABYLON.ScreenshotTools.CreateScreenshotWithResizeAsync(engine.engine,
-                scene.activeCamera, canvasWidth * scale, canvasHeight * scale).then(() => {
+            CreateScreenshotWithResizeAsync(engine.engine, scene.activeCamera, canvasWidth * scale, canvasHeight * scale, () => {
                     isRenderAxisView = true;
-                    uix.colorPicker.isVisible = (MODE == 0);
                     engine.engine.setSize(canvasWidth, canvasHeight);
                     scene.autoClear = true;
             });
@@ -3753,11 +3762,8 @@ class Project {
     createScreenshotBasic(width, height, callback) {
         scene.clearColor = COL_CLEAR_RGBA;
         isRenderAxisView = false;
-        uix.colorPicker.isVisible = false;
-        BABYLON.ScreenshotTools.CreateScreenshot(engine.engine,
-            scene.activeCamera, { width: width, height: height }, (data) => {
+        CreateScreenshot(engine.engine, scene.activeCamera, width, height, (data) => {
                 isRenderAxisView = true;
-                uix.colorPicker.isVisible = (MODE == 0);
                 scene.clearColor = (preferences.isBackgroundColor()) ?
                     color4FromHex(preferences.getBackgroundColor()) :
                     color4FromHex(COL_BG);
@@ -3798,7 +3804,7 @@ class Palette {
             const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
             if (hex && this.uniqueColors.includes(hex)) {
                 currentColor = hex;
-                uix.colorPicker.value = color3FromHex(hex);
+                ui.colorWheel.hex = hex;
             }
         }, false);
                 
@@ -4266,16 +4272,7 @@ class RenderTarget {
     }
 
     init() {
-        this.pickTexture = new BABYLON.RenderTargetTexture('pick_texture', {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            samplingMode: BABYLON.Constants.TEXTURE_NEAREST_NEAREST,
-            type: BABYLON.Constants.TEXTURETYPE_UNSIGNED_INT,
-            generateMipMaps: false,
-            generateDepthBuffer: false,
-            generateStencilBuffer: false,
-            useSRGBBuffer: false
-        }, scene);
+        this.pickTexture = RenderTargetTexture('pick_texture', window.innerWidth, window.innerHeight, scene);
 
         this.pickTexture.clearColor = COL_WHITE_RGBA;
         scene.customRenderTargets.push(this.pickTexture);
@@ -4503,6 +4500,7 @@ class UserInterface {
         this.domSymmCenter = document.getElementById('input-symm-center');
         this.domSymmPreview = document.getElementById('input-symm-preview');
         this.domColorPicker = document.getElementById('input-color');
+        this.domColorWheel = document.getElementById('input-color-wheel');
         this.domPalette = document.getElementById('palette');
         this.domPaletteColors = document.getElementById('palette-colors');
         this.domMeshList = document.getElementById('meshlist');
@@ -4566,7 +4564,27 @@ class UserInterface {
         this.domProgressBar = document.getElementById('progressbar');
         this.domDebugPick = document.getElementById('debug_pick');
 
+        this.colorWheel = undefined;
         this.notificationTimer = undefined;
+    }
+
+    createColorWheel() {
+        this.colorWheel = new modules.ReinventedColorWheel({
+            appendTo: ui.domColorWheel,
+            hex: currentColor,
+            wheelDiameter: 112,
+            wheelThickness: 12,
+            handleDiameter: 12,
+            wheelReflectsSaturation: false,
+
+            onChange: (col) => {
+                currentColor = col.hex.toUpperCase();
+                ui.domColorPicker.value = currentColor;
+                helper.clearOverlays();
+            },
+        });
+
+        this.colorWheel.redraw();
     }
 
     showProgress(val, max = undefined) {
@@ -4623,7 +4641,7 @@ class UserInterface {
             this.domMenuInScreenRight.style.display = 'flex';
             this.domPalette.style.display = 'unset';
             this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
-            uix.colorPicker.isVisible = true;
+            ui.domColorWheel.style.display = 'unset';
         } else if (mode == 1) {
             this.domToolbarL.children[2].firstChild.disabled = true; // STORAGE
             this.domToolbarL.children[5].style.display = 'none';     // CREATE
@@ -4639,6 +4657,7 @@ class UserInterface {
             this.domMenuInScreenRender.style.display = 'flex';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
+            ui.domColorWheel.style.display = 'none';
         } else if (mode == 2) {
             this.domToolbarL.children[2].firstChild.disabled = true;  // STORAGE
             this.domToolbarL.children[5].firstChild.disabled = true;  // CREATE
@@ -4652,7 +4671,7 @@ class UserInterface {
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
-            uix.colorPicker.isVisible = false;
+            ui.domColorWheel.style.display = 'none';
         }
 
         for (const i of this.domModes)
@@ -4723,6 +4742,7 @@ class UserInterface {
             this.domMenuInScreenBottom.style.display = 'flex';
             this.domInfoTool.style.display = 'unset';
             this.domInfoParent.style.display = 'unset';
+            this.domColorWheel.style.display = 'unset';
         } else {
             this.domMenus.style.display = 'unset';
             this.domHover.style.display = 'unset';
@@ -4730,6 +4750,7 @@ class UserInterface {
             this.domToolbarTopCen.style.display = 'none';
             this.domInfoParent.style.display = 'unset';
             this.domInfoTool.style.display = 'unset';
+            this.domColorWheel.style.display = 'unset';
 
             this.domToolbarTop.style.top = '10px';
             this.domInfoTool.style.top = '16px';
@@ -4826,65 +4847,30 @@ class UserInterface {
 
 class UserInterfaceAdvanced {
     constructor() {
-        this.advancedTexture = undefined;
         this.utilLayer = undefined;
-        this.colorPicker = undefined;
         this.gizmoVoxel = undefined;
         this.lightNode = undefined;
         this.lightGizmoUp = undefined;
         this.lightGizmoNews = undefined;
-        this.isColorPickerActive = false;
         this.isGizmoVoxelActive = false;
         this.isLightLocatorActive = false;
     }
 
     init() {
-        this.advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", {}, scene);
-        this.utilLayer = new BABYLON.UtilityLayerRenderer(scene);
+        this.utilLayer = UtilityLayerRenderer(scene);
         this.utilLayer.utilityLayerScene.autoClearDepthAndStencil = true;
 
-        this.createAdvancedColorPicker();
         this.createLightLocator();
     }
 
     isActive() {
-        return this.isColorPickerActive ||
-               this.isLightLocatorActive ||
+        return this.isLightLocatorActive ||
                this.isGizmoVoxelActive;
-    }
-
-    createAdvancedColorPicker() {
-        const panel = new BABYLON.GUI.StackPanel();
-        panel.width = "120px";
-        panel.height = "120px";
-        panel.isVertical = true;
-        panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-        panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-        this.advancedTexture.addControl(panel);  
-
-        this.colorPicker = new BABYLON.GUI.ColorPicker();
-        this.colorPicker.value = color3FromHex(currentColor);
-        this.colorPicker.height = "110px";
-        this.colorPicker.width = "110px";
-        this.colorPicker.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-        this.colorPicker.verticalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_TOP;
-        this.colorPicker.onValueChangedObservable.add((color3) => {
-            currentColor = color3.toHexString();
-            ui.domColorPicker.value = currentColor;
-            helper.clearOverlays();
-        });
-        this.colorPicker.onPointerDownObservable.add(() => {
-            this.isColorPickerActive = true;
-        });
-        this.colorPicker.onPointerUpObservable.add(() => {
-            this.isColorPickerActive = false;
-        });
-        panel.addControl(this.colorPicker);
     }
 
     bindVoxelGizmo(mesh) {
         this.unbindVoxelGizmo();
-        this.gizmoVoxel = new BABYLON.PositionGizmo(this.utilLayer);
+        this.gizmoVoxel = PositionGizmo(this.utilLayer);
 
         this.gizmoVoxel.scaleRatio = 1.2;
         this.gizmoVoxel.snapDistance = 1;
@@ -4915,7 +4901,7 @@ class UserInterfaceAdvanced {
     }
 
     createLightLocator() {
-        this.lightNode = new BABYLON.TransformNode('light_locator');
+        this.lightNode = TransformNode('light_locator');
         this.lightNode.position.x -= 0.5;
         this.lightNode.position.y -= 0.5;
         this.lightNode.position.z -= 0.5;
@@ -4924,7 +4910,7 @@ class UserInterfaceAdvanced {
         this.lightNode.isVisible = false;
         this.lightNode.doNotSerialize = true;
 
-        this.lightGizmoUp = new BABYLON.AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, undefined, 2);
+        this.lightGizmoUp = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 2);
         this.lightGizmoUp.scaleRatio = 0.7;
         this.lightGizmoUp.sensitivity = 5.0;
         this.lightGizmoUp.attachedMesh = null;
@@ -4942,7 +4928,7 @@ class UserInterfaceAdvanced {
             this.isLightLocatorActive = false;
         });
 
-        this.lightGizmoNews = new BABYLON.PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
+        this.lightGizmoNews = PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
         this.lightGizmoNews.scaleRatio = 0.6;
         this.lightGizmoNews.attachedMesh = null;
         this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
@@ -5077,10 +5063,14 @@ class Preferences {
         camera.frame();
         axisView.init();
         palette.expand(this.getPaletteSize());
+        ui.createColorWheel();
 
         canvas.style.pointerEvents = 'unset';
 
         // inject extra babylon libs
+        const scriptLoaders = document.createElement('script');
+        scriptLoaders.src = 'libs/babylonjs.loaders.min.js';
+        document.body.appendChild(scriptLoaders);
         const scriptSerializers = document.createElement('script');
         scriptSerializers.src = 'libs/babylonjs.serializers.min.js';
         document.body.appendChild(scriptSerializers);
@@ -5221,7 +5211,7 @@ export function registerRenderLoops() {
                     camera.camera0.attachControl(canvas, true);
             }
 
-            if (camera.camera0.mode == BABYLON.Camera.ORTHOGRAPHIC_CAMERA)
+            if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
                 camera.setOrthoMode();
 
             ui.updateStatus();
@@ -5283,7 +5273,7 @@ window.addEventListener('pointerup', () => {
 
 document.addEventListener("keydown", (ev) => {
     if (ev.target.matches(".ignorekeys")) return;
-    if (ev.key == '/') ui.toggleDebugLayer();
+    if (ev.ctrlKey && ev.key == '/') ui.toggleDebugLayer();
     if (scene.debugLayer.isVisible()) return;
 
     if (MODE == 0 && !tool.last && !pointer.isDown) {
@@ -5537,7 +5527,7 @@ ui.domMenuInScreenExport.children[1].onclick = () => {
 
 ui.domMenuInScreenRight.children[0].oninput = (ev) => {
     currentColor = ev.target.value.toUpperCase();
-    uix.colorPicker.value = color3FromHex(currentColor);
+    ui.colorWheel.hex = currentColor;
 };
 
 ui.domMenuInScreenRight.children[1].onclick = () => {
@@ -5855,14 +5845,14 @@ document.getElementById('fullscreen').onclick = () =>               { toggleFull
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
-document.getElementById('reset_inputs').onclick = async () =>       { if (await ui.showConfirm("reset all input elements to default values?")) { resetAllInputElements(); window.location.reload(); } };
 document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
+document.getElementById('reset_inputs').onclick = async () =>       { if (await ui.showConfirm("reset all input elements to default values?")) { resetAllInputElements(); window.location.reload(); } };
 document.getElementById('ws_connect').onclick = () =>               { if (ui.checkMode(0)) modules.ws_client.connect() };
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
 document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
 document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
 document.getElementById('camera_topview').onclick = () =>           { camera.setOrtho(); camera.setView('y'); camera.frame() };
-document.getElementById('hdr_dropdown').onclick = (ev) =>           { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('hdr_dropdown').onchange = (ev) =>          { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
 document.getElementById('new_project').onclick = () =>              { project.newProject() };
 document.getElementById('save_project').onclick = () =>             { project.save() };

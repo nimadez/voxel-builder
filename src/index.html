@@ -224,6 +224,19 @@
             50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.76, 0.05, 0.86, 0.06); }
             100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
         }
+
+        #input-color-wheel { z-index: 2; display: none; right: 10px; bottom: 8px; position: fixed; }
+        .reinvented-color-wheel,
+        .reinvented-color-wheel--hue-wheel,
+        .reinvented-color-wheel--hue-handle,
+        .reinvented-color-wheel--sv-space,
+        .reinvented-color-wheel--sv-handle { touch-action: manipulation; touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        .reinvented-color-wheel { position: relative; display: inline-block; line-height: 0; border-radius: 50%; }
+        .reinvented-color-wheel--hue-wheel { border-radius: 50%; }
+        .reinvented-color-wheel--sv-space { position: absolute; left: 0; top: 0; right: 0; bottom: 0; margin: auto; }
+        .reinvented-color-wheel--hue-handle,
+        .reinvented-color-wheel--sv-handle { position: absolute; box-sizing: border-box; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px black inset; }
+        .reinvented-color-wheel--hue-handle { pointer-events: none; }
     </style>
 </head>
 <body>
@@ -294,10 +307,10 @@
                     <option value="examples/mv_odyssey_kluchek.json">Odyssey @kluchek</option>
                 </select>
             </li>
-            <li class="spacer"></li>
+            <li class="category">ABOUT</li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 R1 Beta
+                <br>&#8627; 4.5.9 R2 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -324,8 +337,8 @@
             <li title="Not persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Shadows</label></li>
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
-            <li title="Reset all input elements to default values (useful in Firefox)"><button id="reset_inputs">Reset All Inputs</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
+            <li title="Reset all input elements to default values (useful in Firefox)"><button id="reset_inputs">Reset All Inputs</button></li>
             <li class="spacer"></li>
             <li title="BVH normal picking (maximum accuracy, but slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
             <li title="For debugging"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
@@ -494,7 +507,7 @@
                 <div class="row">&nbsp;<label style="margin-right: 6px">Outer</label>&nbsp;<input id="create_sphere_outer" type="number" class="ignorekeys" value="20" min="3"></div>
                 <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="19" min="0"></div>
                 <input type="checkbox" id="create_sphere_new" checked> <label for="create_sphere_new">New Scene</label><br>
-                <button id="create_sphere">Create Sphere</button>
+                <button id="create_sphere">Sphere</button>
             </li>
             <li class="category">TERRAIN</li>
             <li>
@@ -503,7 +516,7 @@
                 <div class="row">&nbsp;<label style="margin-right: 4px">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3"></div>
                 <input type="checkbox" id="create_terrain_grad" checked> <label for="create_terrain_grad">Height Gradient</label><br>
                 <input type="checkbox" id="create_terrain_new" checked> <label for="create_terrain_new">New Scene</label><br>
-                <button id="create_terrain">Create Terrain</button>
+                <button id="create_terrain">Terrain</button>
             </li>
         </ul>
 
@@ -687,6 +700,7 @@
     </div>
 
     <!-- dynamic -->
+    <div id="input-color-wheel"></div>
     <div id="marquee"></div>
     <div id="palette"><canvas id="canvas_palette"></canvas></div>
     <div id="meshlist"></div>
@@ -738,14 +752,12 @@
             <tr><td>CTRL + L</td> <td>Load JSON File</td></tr>
             <tr><td>CTRL + Z</td> <td>Undo (MODEL)</td></tr>
             <tr><td>CTRL + X</td> <td>Redo (MODEL)</td></tr>
-            <tr><td>/</td> <td>Toggle Debug Layer</td></tr>
+            <tr><td>CTRL + /</td> <td>Toggle Debug Layer</td></tr>
           </table>
     </div>
 
 <script src="libs/babylon.js"></script>
-<script src="libs/babylon.gui.min.js"></script>
 <script src="libs/babylonjs.materials.min.js"></script>
-<script src="libs/babylonjs.loaders.min.js"></script>
 <script type="importmap">
 {
     "imports": {
