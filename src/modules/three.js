@@ -2,7 +2,7 @@
     Nov 2023
     @nimadez
 
-    Three.js
+    Three.js module
 */
 
 
@@ -32,4 +32,4 @@ const renderer = new THREE.WebGLRenderer({
 
 export { THREE, renderer };
 
-console.log(`Three.js r${ THREE.REVISION }`);
+console.log(`Three.js r${ THREE.REVISION } - WebGL2`);

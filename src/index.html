@@ -79,7 +79,7 @@
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
         label { font-family: var(--font); font-size: var(--font-size); color: var(--label); letter-spacing: 0.04em; margin: 0; }
         label:hover { color: var(--white); cursor: pointer; }
-        label.info, label:hover.info { font-size: 10px; color: var(--label-info); cursor: default; }
+        label.help, label:hover.help { display: block; margin-top: 8px; font-size: 10px; color: var(--label-info); cursor: default; }
         select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--menu-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
         select:hover { color: orange; cursor: pointer; }
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
@@ -144,8 +144,12 @@
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #menu-about .about { font-size: 13px; line-height: 1.4em; letter-spacing: 0.05em; background: #21262e; color: #98a1ac; padding: 6px; }
-        #menu-storage img { object-fit: contain; width: 100%; height: 80px; background: #292f3aaa; box-shadow: inset 0 0 10px #25262e; border-radius: 5px; cursor: pointer; }
-        #menu-storage li div button { font-size: 11px; letter-spacing: 0.05em; width: 100%; padding: 5px 0 5px 0; }
+        #menu-storage-dynamic { height: auto; max-height: 79vh; }
+        #menu-storage-dynamic li { display: flex; flex-direction: row; gap: 2px; margin-bottom: 1px; }
+        #menu-storage-dynamic li img { object-fit: contain; width: 100%; height: 58px; background: #292f3aaa; box-shadow: inset 0 0 10px #25262e80; border-radius: 3px; overflow: hidden; cursor: pointer; }
+        #menu-storage-dynamic li div { display: flex; flex-direction: column; gap: 2px; width: 60px; height: 100%; }
+        #menu-storage-dynamic li div button { font-size: 11px; letter-spacing: 0.05em; width: 100%; padding: 10px 0 10px 0; }
+        #menu-storage-dynamic li div :first-child { padding: 3px 0 3px 0; }
         #btn-symm-axis-s:hover { background: var(--input-bg); }
         #btn-symm-axis-x:hover { background: var(--input-bg); }
         #btn-symm-axis-y:hover { background: var(--input-bg); }
@@ -165,7 +169,7 @@
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
         #info { z-index: 2; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; margin-bottom: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #info_tool { z-index: 2; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; pointer-events: none; }
+        #info_tool { z-index: 501; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
         #info_render { z-index: 301; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
         #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-align: center; }
@@ -208,6 +212,7 @@
             #meshlist { scrollbar-color: steelblue transparent; }
             #meshlist .item_name { width: 60px; }
             #menu-inscreen-bottom { bottom: 25px; }
+            #menu-storage-dynamic li div button { padding: 9px 0 9px 0; }
         }
 
         .cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
@@ -274,8 +279,8 @@
             </ul>
 
             <ul id="toolbar_top_mem">
-                <li><i class="material-icons">arrow_back_ios</i></li>
-                <li><i class="material-icons">arrow_forward_ios</i></li>
+                <li title="Undo"><i class="material-icons">arrow_back_ios</i></li>
+                <li title="Redo"><i class="material-icons">arrow_forward_ios</i></li>
             </ul>
         </div>
 
@@ -310,7 +315,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 R2 Beta
+                <br>&#8627; 4.5.9 R3 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -329,6 +334,7 @@
             <li class="spacer"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
+            <li class="row_input"><label>Snapshot</label> <input type="number" id="pref_snapshot_num" class="ignorekeys" value="6" min="1" max="100" step="1"></li>
             <li class="category">SCENE</li>
             <li>
                 <input type="checkbox" id="pref_background_check"> <label for="pref_background_check">Background</label>
@@ -340,6 +346,7 @@
             <li><button id="reset_hover">Reset Hover</button></li>
             <li title="Reset all input elements to default values (useful in Firefox)"><button id="reset_inputs">Reset All Inputs</button></li>
             <li class="spacer"></li>
+            <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
             <li title="BVH normal picking (maximum accuracy, but slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
             <li title="For debugging"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
             <li title="Unsafe WebGPU support"><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
@@ -359,9 +366,12 @@
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_json').click()">Load</button></li>
             <li><button id="save_project">Save</button></li>
-            <li class="spacer"></li>
-            <li><button onclick="document.getElementById('openfile_vox').click()">MagicaVoxel</button></li>
+            <li class="category">SNAPSHOTS</li>
+            <li><button onclick="document.getElementById('openfile_snapshot_zip').click()">Load Archive</button></li>
+            <li><button id="save_snapshots">Save Archive</button></li>
             <li class="category">IMPORT</li>
+            <li><button onclick="document.getElementById('openfile_vox').click()">MagicaVoxel</button></li>
+            <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">From JSON</button></li>
             <li title="Upload exported GLB files ONLY"><button onclick="document.getElementById('openfile_baked_glb').click()">From Baked GLB</button></li>
             <li class="category">EXPORT</li>
@@ -373,16 +383,7 @@
         <ul class="menu_L panel" id="menu-storage">
             <li class="category">SNAPSHOTS</li>
             <li><input type="checkbox" id="storage_new_scene" checked> <label for="storage_new_scene">New Scene</label></li>
-            <li class="spacer"></li>
-            <li class="storage"><img><div class="row"><button>CLEAR</button><button>SAVE</button></div></li>
-            <li class="spacer"></li>
-            <li class="storage"><img><div class="row"><button>CLEAR</button><button>SAVE</button></div></li>
-            <li class="spacer"></li>
-            <li class="storage"><img><div class="row"><button>CLEAR</button><button>SAVE</button></div></li>
-            <li class="spacer"></li>
-            <li class="storage"><img><div class="row"><button>CLEAR</button><button>SAVE</button></div></li>
-            <li class="spacer"></li>
-            <li class="storage"><img><div class="row"><button>CLEAR</button><button>SAVE</button></div></li>
+            <li id="menu-storage-dynamic"></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-camera">
@@ -401,8 +402,7 @@
             <li class="row_input"><label>FOV *</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" step="0.01"></li>
             <li class="row_input"><label>F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
             <li class="row_input"><label>Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
-            <li class="spacer"></li>
-            <li><label class="info">* Supported Rendering</label></li>
+            <li><label class="help">* Supported Rendering</label></li>
             <li class="category">ANIMATION</li>
             <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
             <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
@@ -558,8 +558,7 @@
             <li><button id="btn_tool_rect_remove" class="tool_rect_remove">Rect Remove</button></li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="input-tool-rectadd-bypass"> <label for="input-tool-rectadd-bypass">Bypass Add</label></li>
-            <li class="spacer"></li>
-            <li><label class="info">? Best in Orthographic</label></li>
+            <li><label class="help">? Best in Orthographic</label></li>
             <li class="category">COORDINATE</li>
             <li><input id="input-newbox-coord" type="text" class="ignorekeys" placeholder="X, Y, Z"></li>
             <li class="spacer"></li>
@@ -587,8 +586,7 @@
             <li class="spacer"></li>
             <li title="Check this to apply transformations on mesh picks"><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone Voxels</label></li>
-            <li class="spacer"></li>
-            <li><label class="info">? No Symmetry</label></li>
+            <li><label class="help">? Delete with Del key<br>? Paintable (no clone)<br>? No Symmetry</label></li>
             <li class="category">MANIPULATE</li>
             <li><button id="normalize_voxels">Normalize Voxels</button></li>
             <li><button id="btn_reduce_voxels">Reduce Voxels</button></li>
@@ -617,6 +615,7 @@
             <li class="category">CLEAR<li>
             <li><button id="delete_bake">Delete Selected</button></li>
             <li><button id="delete_bake_all">Delete All Bakes</button></li>
+            <li><label class="help">? The baked mesh is without mesh volume and shared faces, ready for Blender or 3D printing</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-pbr">
@@ -655,6 +654,7 @@
             <li><input type="checkbox" id="export_selected_bake"> <label for="export_selected_bake">Selected Mesh</label></li>
             <li class="spacer"></li>
             <li><button id="export_meshes">Export Meshes</button></li>
+            <li><label class="help">? Keeping the exported GLB file means you have the voxel data. see File menu, "From Baked GLB"</label></li>
         </ul>
     </div>
 
@@ -706,7 +706,7 @@
     <div id="meshlist"></div>
     <div id="info"><span>0</span> &nbsp; <span>0</span> &nbsp; <span>0</span> &nbsp; <span>0</span></div>
     <div id="info_render"><span>0</span> &nbsp; SL <span>0</span> / <span>0</span> &nbsp; <span>0</span> &nbsp; BOUNCE <span>0</span></div>
-    <div id="info_tool"></div>
+    <div id="info_tool" title="Active Tool"></div>
     <div id="progressbar"></div>
     <div id="introscreen">
         <div class="anim"><div class="cube"><div class="cube-faces"><div class="cube-face shadow"></div><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div></div></div></div>
@@ -724,6 +724,7 @@
     <input style="display: none" type="file" id="openfile_voxelizer_img" accept=".jpg,.png,.svg" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_hdr" accept=".hdr" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_baked_glb" accept=".glb" onclick="this.value = null">
+    <input style="display: none" type="file" id="openfile_snapshot_zip" accept=".zip" onclick="this.value = null">
 
     <!-- help -->
     <div id="shortcuts" ondblclick="this.style.display = 'none'">
@@ -766,5 +767,6 @@
 }
 </script>
 <script src="main.js" type="module"></script>
+<script src="libs/utils/jszip.min.js"></script>
 </body>
 </html>

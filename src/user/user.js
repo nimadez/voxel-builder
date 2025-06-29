@@ -1,12 +1,6 @@
 //
 // Do not rename this file, it's a module entry point.
 //
+// See examples/
 
-/*
-import { builder, pool } from "../modules/core";
-
-console.log( builder.voxels );
-console.log( pool.meshes );
-*/
-
-console.log('load user module');
+console.log('init user modules');

@@ -2,7 +2,7 @@
     Sep 2024
     @nimadez
 
-    Babylon.js
+    Babylon.js module
 */
 
 
@@ -191,6 +191,10 @@ export function PBRMaterial(name, scene) {
     return new BABYLON.PBRMaterial(name, scene);
 }
 
+export function ShaderMaterial(name, scene, shaders, options) {
+    return new BABYLON.ShaderMaterial(name, scene, shaders, options);
+}
+
 export function ShadowOnlyMaterial(name, scene) {
     return new BABYLON.ShadowOnlyMaterial(name, scene);
 }
@@ -201,10 +205,6 @@ export function NormalMaterial(name, scene) {
 
 export function GridMaterial(name, scene) {
     return new BABYLON.GridMaterial(name, scene);
-}
-
-export function ShaderMaterial(name, scene, shaders, options) {
-    return new BABYLON.ShaderMaterial(name, scene, shaders, options);
 }
 
 // Textures

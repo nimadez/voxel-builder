@@ -198,6 +198,12 @@ class Panels {
         this.panels[idx].y = 0;
         this.panels[idx].elem.style.transform = "translate(0, 0)";
     }
+
+    showHelpLabels(isDisplay) {
+        const elems = document.getElementsByClassName('help');
+        for (let i = 0; i < elems.length; i++)
+            elems[i].parentElement.style.display = isDisplay ? 'unset' : 'none';
+    }
 }
 
 export const panels = new Panels();

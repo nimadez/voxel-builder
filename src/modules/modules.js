@@ -27,4 +27,4 @@ export { ws_client } from './websockets/client.js';
 export { ReinventedColorWheel } from "../libs/utils/reinvented-color-wheel.bundle.js";
 
 
-console.log('load modules');
+console.log('init modules');

@@ -22,6 +22,7 @@
 - Import MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL
 - Local storages, snapshots, quicksave, undo
+- Backup and share snapshots in a ZIP archive
 
 **Model and Paint**
 - High performance voxel engine
@@ -191,6 +192,7 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [MagicaVoxel](https://ephtracy.github.io/)
 - [Google Material Icons](https://github.com/google/material-design-icons)
 - [Reinvented Color Wheel](https://github.com/luncheon/reinvented-color-wheel)
+- [JSZip](https://github.com/Stuk/jszip)
 - [Blender](https://blender.org/)
 - [Sketchfab](https://sketchfab.com/)
 - [KhronosGroup](https://github.com/KhronosGroup/)
