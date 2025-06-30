@@ -74,6 +74,7 @@ class Panels {
             this.addToolbarToPanel(i, panels[i]);
             this.panels.push({
                 idx: i,
+                button: undefined,
                 elem: panels[i],
                 x: 0, y: 0,
                 detach: false
@@ -104,7 +105,7 @@ class Panels {
 
         div_hide.onclick = () => {
             this.panels[idx].elem.style.display = 'none';
-            this.panels[idx].button.style.textDecoration = 'none';
+            this.panels[idx].button.classList.remove('panel_select');
         };
 
         div_reset.onclick = () => {
@@ -112,7 +113,7 @@ class Panels {
                 if (!panel.detach && panel.x == 0 && panel.y == 0) {
                     panel.elem.style.display = 'none';
                     if (panel.button)
-                        panel.button.style.textDecoration = 'none';
+                        panel.button.classList.remove('panel_select');
                 }
             });
             this.resetPanel(idx);
@@ -148,22 +149,22 @@ class Panels {
             if (!panel.detach && panel.elem !== exclude) {
                 panel.elem.style.display = 'none';
                 if (panel.button)
-                    panel.button.style.textDecoration = 'none';
+                    panel.button.classList.remove('panel_select');
             }
         });
     }
 
     switchPanel(panel) {
-        this.clearAllPanels(panel.elem);
-
         if (panel.elem.style.display === 'unset') {
             panel.elem.style.display = 'none';
-            panel.button.style.textDecoration = 'none';
+            panel.button.classList.remove('panel_select');
         } else {
             panel.elem.style.display = 'unset';
-            panel.button.style.textDecoration = 'underline';
-            if (!panel.detach)
+            panel.button.classList.add('panel_select');
+            if (!panel.detach) {
+                this.clearAllPanels(panel.elem);
                 this.panelToFront(panel);
+            }
         }
     }
 
@@ -180,7 +181,7 @@ class Panels {
         this.panels[idx].y = 0;
         this.panels[idx].detach = false;
         this.panels[idx].elem.style.transform = 'none';
-        this.panels[idx].elem.style.borderTop = 'none';
+        this.panels[idx].elem.style.borderTop = `solid 1px ${getComputedStyle(document.querySelector(':root')).getPropertyValue('--cat-bg')}`;
         this.panels[idx].elem.style.borderRadius = '3px';
         this.panels[idx].elem.style.borderTopLeftRadius = '0';
         this.panels[idx].elem.style.borderTopRightRadius = '0';

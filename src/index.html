@@ -8,14 +8,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <meta name="description" content="Voxel-based 3D modeling application for desktop and mobile browsers">
-    <meta name="keywords" content="model, render, export, bake, electron, terrain, modeling, voxelizer, painting, symmetry, three-js, voxels, gltf, magicavoxel, voxel-generator, voxelization, babylon-js, three-mesh-bvh, three-gpu-pathtracer">
+    <meta name="keywords" content="voxels, model, render, export, bake, electron, terrain, painting, symmetry, babylon-js, three-js, gltf, magicavoxel, voxel-generator, voxelizer, voxelization, three-mesh-bvh, three-gpu-pathtracer">
     <meta name="author" content="@nimadez">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:site" content="@nimadez">
     <meta name="twitter:creator" content="@nimadez">
     <meta name="twitter:title" content="Voxel Builder">
     <meta name="twitter:description" content="Voxel-based 3D modeling application for desktop and mobile browsers">
-    <meta name="twitter:image" content="https://repository-images.githubusercontent.com/565157149/8cd060fd-3126-4f46-bc15-7f8e26b975b5">
     <meta name="theme-color" content="#2d3644">
     <title>Voxel Builder</title>
     <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABOZJREFUWEftVmtMk2cYPd+lF6Cl5VIkXLQwpgwR0JGMSXRgFueyf5ugJMThJgiJbGYDjZONGUXjZGNZHIhsA5Nl3DJJjMu2wAZhQnXokPtFDFUYBVpYYVwKtGV5P1JSoS1FXfjjlzRN3++9nOec55y3FNb4odb4fDwDYJUBz+RiuV4PuUkizTdxNauRy/1QcZRpPstCOXgpTmlpvVUAO49+lhbqrLywXdKGe1Pe2qqRsKzaL49l2wNCllickC7/sdBXqEb92GY0jcvTra19BIAsubQcRuw1HRIsUuL3F49zP2ObT/aUn8963h4AMcdP3isLyQogc3fdOY/WiUUiAYoqUufHHjTt8yiAxOIEUHQh5TEHhk9jHSaQJLhmTPG5TvdOe/bHNme03v7qyOu2QISk5ubkBl48GiltR8ngK/hOmguxWATd9Awa6hoxbzRGm8u5TAJZcqkCjoZgnpdRxDI8eA0MzinC3ueRQz/qSVAWql6LtqYnmXPgRLrqSvAFT676jgLIo/eC7FP32y2oB0dq1AWx0eYFLANAmoei6WrWxwC+mIEXtFg/pETJlnPo08nwZlPmL9ZYCH/v4s9XQ0/tIdqndqVAGfgBPDxl0GrG8EfVzWXVEyAWm1CWWFZNORgjhH6UkKVZyIaHUO6fCbLxlYFXNWld78YsdQUBnuj7a+HZgCI5ARo/8DXkEbvAMAzqqxp0oyPaEnPtLfaAaZBY0GCkewUbKI4FxsBi29DNRRYOtB27UfNF+g5zKkNT8zruRqQEkrH9LScw+9JhTnvVgyHcvdUKhjb6WZLOqg3dk0ozaR4yRBtZlmVYCNTjyPM4B9JcS1kg1Wdv+rb8ba8q9zptEM5OZUKyZSd4DA/VP9XpddMz31uq3qoE5IWJBaE3DUd3AaCnsfHvvwzXQj9hCMUfdict2vKNtNON17d+HEbWbW/Ige/uGBDQQ31qNP/ZDvXlfVYLtXkXkECh+EyB9AUBx4LTmBY54iyOherRkMFP78d/3jHpq6kIO11Ixkj1Z5ADZ78gMDSLqqu1wLzxoLogrsiadW0CICwYaaaCJ6IDJH6OItpAw/lhz1xd6BHOliScyLcpdHY3ZRvFO96iie26Gu9D9XC4fzg/xtdWbqx4GxJ9aR5TIfEXSh0kQkgnNdg/+8NiOLGUwYe4g4ROvjQHLjIXGGYMUFTesWi7pWBWBEAWeCSXKvgSNtj1ObGISOHQ3T53I2SBBdMT3lwE75cjOe1bFF3QqseXhc6qLiPzyaaGdNskhqNECA+DBpLeRs6W5CGh0+T7DlxkUkxop9BS32lX9TZdsBSt7HBZIc2j4r23ui3YsrcbUUytnqLmDZX6PQKX0G1c5LYpunTj/0xaDJ3HZsDclq7+IkjWiTE/Byhvq7g9N0cGwEHkAK1qHD3ND6yGzhMBIItJOLF8JmN9uAdLInpSrQNNM5D5uHLaN9V06md0s2c0l/edstX55u/sakLziDaCUUi8nDxlchfu0IUPD1rVv+ht7bMZOk/MANmAhBPDZ/P8I7yFJGpJ4BAQjZXtK4bOUwHAhROYYpGbMNgnyFNEAAx0DmN0cLxfnR9rM3SeCgCuFw4VRzF8tkLgxBdSoDA1Ni1c+k/nf+kB802JFPMUvcE0tprGe+wmtLeq1cxblQtWs7G9c58BWHMG/gMiZvQwgXEJjQAAAABJRU5ErkJggg==">
@@ -34,15 +33,16 @@
             --font: Roboto;
             --font-size: 12px;
             --btn-color: #969fb1;
+            --btn-color-hover: #444;
             --btn-bg: #2e3542CC;
             --input-bg: #222833CC;
             --input-color: #788499;
             --label: #788599;
-            --label-info: #657183;
+            --label-help: #657183;
             --cat-bg: #292e38;
             --cat-color: #636f85;
             --cat-border: #3e485caa;
-            --menu-bg: #2d3542DD;
+            --menu-bg: #2e3542EE;
             --confirm: #222731EE;
             --borders: #161a2050;
             --btn-shadow: #161a2030;
@@ -67,7 +67,8 @@
         input[type=range] { accent-color: steelblue; width: 100%; height: 2px; margin: 0 0 7px 0; }
         input[type=range]::-webkit-slider-thumb { transform: scale(0.7); }
         input[type=range]::-webkit-slider-thumb:hover { cursor: pointer; }
-        input[type=checkbox] { filter: brightness(0.7); transform: scale(0.8); margin: 3px 0 3px 0; vertical-align: -2px; }
+        input[type=checkbox] { filter: brightness(0.7); transform: scale(0.8); margin: 3px 0 3px 0; vertical-align: -2px; cursor: pointer; }
+        input[type=checkbox] + label { cursor: pointer; }
         input[type=checkbox]:checked { accent-color: steelblue; filter: none; }
         input[type=checkbox]:disabled { opacity: 0.5; }
         input[type=color] { width: 100%; height: 20px; border-radius: 2px; background: none; outline: none; border: none; }
@@ -75,17 +76,17 @@
         input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; border: solid 1px transparent; }
         input[type=color]:hover { cursor: pointer; }
         button { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); letter-spacing: 0.04em; border-radius: 2px; border: 1px solid var(--borders); }
-        button:hover { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
+        button:hover { background: orange; color: var(--btn-color-hover); box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
         button:disabled { background: var(--btn-bg); opacity: 0.5; pointer-events: none; }
         label { font-family: var(--font); font-size: var(--font-size); color: var(--label); letter-spacing: 0.04em; margin: 0; }
-        label:hover { color: var(--white); cursor: pointer; }
-        label.help, label:hover.help { display: block; margin-top: 8px; font-size: 10px; color: var(--label-info); cursor: default; }
+        label:hover { color: var(--white); }
+        label.help, label:hover.help { display: block; margin-top: 8px; font-size: 10px; color: var(--label-help); cursor: default; }
         select { font-family: var(--font); font-size: var(--font-size); width: 100%; background: var(--menu-bg); color: var(--btn-color); padding: 5px 0 5px 0; border: solid 1px var(--borders); border-radius: 2px; outline: none; text-align: center; vertical-align: middle; }
         select:hover { color: orange; cursor: pointer; }
         option { font-family: var(--font); font-size: var(--font-size); color: silver; background: var(--btn-bg); }
         ul { list-style-type: none; }
         ul li { font-family: var(--font); font-size: var(--font-size); color: var(--btn-color); border-radius: 2px; text-align: center; }
-        ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: #444; box-shadow: inset 10px 10px 10px var(--btn-shadow); }
+        ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: var(--btn-color-hover); box-shadow: inset 10px 10px 10px var(--btn-shadow); }
         #introscreen { z-index: 5000; background: #181b22DD; position: absolute; width: 100%; height: 100%; }
         #introscreen .anim { transform-style: preserve-3d; width: 30px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -20px; }
         #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
@@ -99,7 +100,7 @@
             background-size: 39px 39px; background-position: 0 0, 0 19px, 19px -19px, -19px 0; }
         #canvas_palette { z-index: 1; image-rendering: pixelated; background: #31394b80; position: relative; width: 100%; height: 32000px; }
         #menus { display: none; }
-        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); position: absolute; top: 0; left: 76px; padding: 0 4px 4px 4px; width: 125px; height: fit-content; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
+        .menu_L { z-index: 1000; display: none; background: var(--menu-bg); border: solid 1px var(--cat-bg); box-shadow: 0 1px 3px #00000050; position: absolute; top: 0; left: 80px; width: 125px; height: fit-content; padding: 0 4px 4px 4px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; }
         .menu_L li { background: none; text-align: left; border: none; padding: 0; cursor: default; }
         .menu_L li:hover { background: none; box-shadow: none; }
         .menu_L li div.flex { display: flex; }
@@ -107,7 +108,6 @@
         .menu_L button { width: 100%; padding: 7px 0 7px 0; border-radius: 2px; }
         .menu_L .category { color: var(--cat-color); background: var(--cat-bg); border: solid 1px var(--cat-border); font-size: 11px; letter-spacing: 0.08em; text-shadow: var(--text-shadow); text-align: center; margin: 3px 0 3px 0; padding: 3px 0 2px 0; border-radius: 4px; }
         .menu_L .category:hover { color: var(--cat-color); background: var(--cat-bg); cursor: default; }
-        .menu_L :first-child { cursor: pointer; }
         .menu_L li div i { color: var(--cat-color); margin-top: 3px; }
         .menu_L li div:hover i { color: steelblue; }
         #toolbar_top { z-index: 500; width: 210px; left: 50%; margin-left: -105px; top: 0; text-align: center; position: fixed; }
@@ -129,6 +129,8 @@
         #toolbar_L li:nth-child(1) :first-child { width: 50%; float: left; }
         #toolbar_L li:nth-child(1) :last-child { width: 50%; border-left: none; }
         #toolbar_L button { width: 100%; height: 32px; border-top: none; border-radius: 0; }
+        #toolbar_L button.panel_select { color: steelblue; text-decoration: underline; }
+        #toolbar_L button:hover.panel_select { color: var(--btn-color-hover); text-decoration: underline; }
         #toolbar_L .sep { margin-top: 5px; border-top: 1px solid var(--borders); }
         #hover { z-index: 2200; display: none; bottom: 130px; left: 50%; margin-left: -17px; position: absolute; }
         #hover .tool_camera { z-index: 2220; position: relative; padding: 5px; top: 32px; left: 0; border: 1px solid #717b8d40; border-radius: 3px; cursor: move; }
@@ -144,8 +146,8 @@
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
         #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #menu-about .about { font-size: 13px; line-height: 1.4em; letter-spacing: 0.05em; background: #21262e; color: #98a1ac; padding: 6px; }
-        #menu-storage-dynamic { height: auto; max-height: 79vh; }
-        #menu-storage-dynamic li { display: flex; flex-direction: row; gap: 2px; margin-bottom: 1px; }
+        #menu-storage-dynamic { height: auto; max-height: 630px; }
+        #menu-storage-dynamic li { display: flex; flex-direction: row; gap: 2px; }
         #menu-storage-dynamic li img { object-fit: contain; width: 100%; height: 58px; background: #292f3aaa; box-shadow: inset 0 0 10px #25262e80; border-radius: 3px; overflow: hidden; cursor: pointer; }
         #menu-storage-dynamic li div { display: flex; flex-direction: column; gap: 2px; width: 60px; height: 100%; }
         #menu-storage-dynamic li div button { font-size: 11px; letter-spacing: 0.05em; width: 100%; padding: 10px 0 10px 0; }
@@ -176,7 +178,7 @@
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
         #confirm button { width: 48%; padding: 4px; font-size: var(--font-size); text-transform: uppercase; }
         #confirm :nth-child(3) { background: steelblue; color: #222; }
-        #confirm :nth-child(3):hover { background: orange; color: #444; }
+        #confirm :nth-child(3):hover { background: orange; color: var(--btn-color-hover); }
         #confirmblocker { z-index: 2400; display: none; background: #252a3020; position: absolute; width: 100%; height: 100%; }
         #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 80px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #ws_connect { color: indianred; }
@@ -192,7 +194,7 @@
         .row_input :first-child { width: 100%; }
         .row_panel { display: flex; width: 100%; height: 25px; align-items: center; gap: 0; }
         .row_panel div { width: 100%; padding: 5px; text-align: center; }
-        .row_panel:hover { box-shadow: none; }
+        .row_panel:hover { box-shadow: none; cursor: pointer; }
         .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 16px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
         ::placeholder { color: #45515c; }
         ::-webkit-scrollbar { width: 5px; }
@@ -315,7 +317,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 R3 Beta
+                <br>&#8627; 4.5.9 R4 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -334,22 +336,21 @@
             <li class="spacer"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
-            <li class="row_input"><label>Snapshot</label> <input type="number" id="pref_snapshot_num" class="ignorekeys" value="6" min="1" max="100" step="1"></li>
+            <li class="row_input" title="Maximum 100 Storages"><label>Snapshot</label> <input type="number" id="pref_snapshot_num" class="ignorekeys" value="6" min="1" max="100" step="1"></li>
             <li class="category">SCENE</li>
             <li>
                 <input type="checkbox" id="pref_background_check"> <label for="pref_background_check">Background</label>
-                <input type="color" id="pref_background_color" value="#272A2F">
+                <input type="color" id="pref_background_color" value="#363B45">
             </li>
-            <li title="Not persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Shadows</label></li>
+            <li title="Not Persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Shadows</label></li>
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
-            <li title="Reset all input elements to default values (useful in Firefox)"><button id="reset_inputs">Reset All Inputs</button></li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
-            <li title="BVH normal picking (maximum accuracy, but slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
-            <li title="For debugging"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
-            <li title="Unsafe WebGPU support"><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
+            <li title="BVH Normal Picking (maximum accuracy, but slower)"><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
+            <li title="Debug Picking"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
+            <li title="Unsafe WebGPU Support"><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
             <li class="category">WEBSOCKETS</li>
             <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li class="spacer"></li>
@@ -363,7 +364,6 @@
             <li><input id="project_name" type="text" class="ignorekeys" value="null" minlength="3" maxlength="100" spellcheck="false" placeholder="Project Name"></li>
             <li class="spacer"></li>
             <li><button id="new_project">New</button></li>
-            <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_json').click()">Load</button></li>
             <li><button id="save_project">Save</button></li>
             <li class="category">SNAPSHOTS</li>
@@ -371,7 +371,6 @@
             <li><button id="save_snapshots">Save Archive</button></li>
             <li class="category">IMPORT</li>
             <li><button onclick="document.getElementById('openfile_vox').click()">MagicaVoxel</button></li>
-            <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">From JSON</button></li>
             <li title="Upload exported GLB files ONLY"><button onclick="document.getElementById('openfile_baked_glb').click()">From Baked GLB</button></li>
             <li class="category">EXPORT</li>
@@ -410,8 +409,6 @@
 
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
-            <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
-            <li class="spacer"></li>
             <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.95" min="0.1" max="1" step="0.05"></li>
             <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" step="8"></li>
             <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" step="1"></li>
@@ -449,6 +446,7 @@
             <li class="spacer"></li>
             <li class="row_input"><label>Power</label> <input type="number" id="input-pt-envpower" class="ignorekeys" value="0.65" min="0.01" step="0.01"></li>
             <li class="row_input"><label>Blur</label> <input type="number" id="input-pt-hdri-blur" class="ignorekeys" value="0.05" min="0" step="0.01"></li>
+            <li class="category">DIRECT LIGHT</li>
             <li class="row_input"><label>Light</label> <input type="color" id="input-pt-light-color" value="#FFE484"></li>
             <li class="row_input"><label>Intensity</label> <input type="number" id="input-pt-light-intensity" class="ignorekeys" value="0.8" min="0" step="0.01"></li>
             <li class="category">MATERIALS</li>
@@ -456,7 +454,9 @@
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-transmission" style="font-size: 10px; margin-right: -1px">Transmission</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
             <li class="row_input" title="Black voxels are emissive"><label style="margin-right: 5px">Emissive</label> <input type="color" id="input-pt-emissive" value="#5EC3C5"></li>
-            <li class="spacer"></li>
+            <li class="category">MORE</li>
+            <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
+            <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
             <li class="row_input">
                 <label>Texture</label> <select id="input-pt-texture">
                     <option value="0">None</option>
@@ -464,7 +464,6 @@
                     <option value="2">Checker</option>
                 </select>
             </li>
-            <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-voxelize">

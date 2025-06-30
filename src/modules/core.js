@@ -143,6 +143,7 @@ const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
 const MAX_VOXELS_DRAW = isMobile ? 32000 : 256000;
+const MAX_SNAPSHOTS = 100;
 const MAX_Z = isMobile ? 1500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
@@ -3572,19 +3573,48 @@ class Project {
     constructor() {}
 
     serializeScene(voxels) {
-        const json = {
-            version: "Voxel Builder 4.5.9 R3",
+        return {
+            version: "Voxel Builder 4.5.9 R4",
             project: {
-                name: "name",
-                voxels: builder.voxels.length
+                name: "untitled",
+                voxels: 0
+            },
+            camera: {
+                offset: parseFloat(ui.domCameraOffset.value),
+                fov: parseFloat(ui.domCameraFov.value),
+                fstop: parseFloat(ui.domCameraFStop.value),
+                focal: parseFloat(ui.domCameraFocalLength.value)
+            },
+            render: {
+                dpr: parseFloat(ui.domRenderDPR.value),
+                samples: parseInt(ui.domRenderMaxSamples.value),
+                bounces: parseInt(ui.domRenderBounces.value),
+                tiles: parseInt(ui.domRenderTiles.value),
+                tonemap: ui.domRenderTonemap.selectedIndex,
+                environment: {
+                    background: ui.domRenderHdriBackground.checked,
+                    power: parseFloat(ui.domRenderEnvPower.value),
+                    blur: parseFloat(ui.domRenderHdriBlur.value),
+                },
+                lights: {
+                    directional: {
+                        color: ui.domRenderLightColor.value.toUpperCase(),
+                        intensity: parseFloat(ui.domRenderLightIntensity.value),
+                    }
+                },
+                materials: {
+                    default: {
+                        roughness: parseFloat(ui.domRenderMaterialRoughness.value),
+                        metalness: parseFloat(ui.domRenderMaterialMetalness.value),
+                        transmission: parseFloat(ui.domRenderMaterialTransmission.value),
+                        emissive: ui.domRenderMaterialEmissive.value.toUpperCase()
+                    }
+                }
             },
             data: {
-                voxels: ""
+                voxels: voxels
             }
         };
-        json.project.name = ui.domProjectName.value;
-        json.data.voxels = voxels;
-        return json;
     }
     
     clearSceneAndReset(isFrameCamera = true) {
@@ -3632,11 +3662,18 @@ class Project {
 
     save() {
         const json = this.serializeScene(builder.getStringData());
+        json.project.name = ui.domProjectName.value;
+        json.project.voxels = builder.voxels.length;
         downloadJson(JSON.stringify(json, null, 4), `${ui.domProjectName.value}.json`);
     }
 
-    save_as_text(stringData) {
-        return JSON.stringify(this.serializeScene(stringData), null, 4);
+    saveSnapshot(string, screenshot) {
+        const json = this.serializeScene(string);
+        json.project.voxels = json.data.voxels.split(';').length;
+        json.data.shot = screenshot;
+        delete json.camera;
+        delete json.render;
+        return JSON.stringify(json, null, 4);
     }
 
     load(data) {
@@ -3644,6 +3681,32 @@ class Project {
         
         // project
         ui.domProjectName.value = data.project.name;
+
+        // camera
+        if (data.camera) {
+            ui.domCameraOffset.value = parseFloat(data.camera.offset);
+            ui.domCameraFov.value = parseFloat(data.camera.fov);
+            ui.domCameraFStop.value = parseFloat(data.camera.fstop);
+            ui.domCameraFocalLength.value = parseFloat(data.camera.focal);
+        }
+
+        // render
+        if (data.render) {
+            ui.domRenderDPR.value = parseFloat(data.render.dpr);
+            ui.domRenderMaxSamples.value = parseInt(data.render.samples);
+            ui.domRenderBounces.value = parseInt(data.render.bounces);
+            ui.domRenderTiles.value = parseInt(data.render.tiles);
+            ui.domRenderTonemap.value = ui.domRenderTonemap.options[parseInt(data.render.tonemap)].value;
+            ui.domRenderHdriBackground.checked = parseBool(data.render.environment.background);
+            ui.domRenderEnvPower.value = parseFloat(data.render.environment.power);
+            ui.domRenderHdriBlur.value = parseFloat(data.render.environment.blur);
+            ui.domRenderLightColor.value = data.render.lights.directional.color.toUpperCase();
+            ui.domRenderLightIntensity.value = parseFloat(data.render.lights.directional.intensity);
+            ui.domRenderMaterialRoughness.value = parseFloat(data.render.materials.default.roughness);
+            ui.domRenderMaterialMetalness.value = parseFloat(data.render.materials.default.metalness);
+            ui.domRenderMaterialTransmission.value = parseFloat(data.render.materials.default.transmission);
+            ui.domRenderMaterialEmissive.value = data.render.materials.default.emissive.toUpperCase();
+        }
 
         // data.voxels
         builder.setStringData(data.data.voxels);
@@ -3773,10 +3836,6 @@ class Project {
                     color4FromHex(COL_BG);
                 callback(data);
         });
-    }
-
-    setProjectValues(uiDom, iniKey, defVal) {
-        (iniKey) ? uiDom.value = iniKey : uiDom.value = defVal;
     }
 }
 
@@ -4046,7 +4105,7 @@ class Snapshot {
             }, false);
 
             save.addEventListener("click", async () => {
-                if (MODE !== 0 || img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
+                if (!ui.checkMode(0) || img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
                 project.createScreenshotBasic(img.clientWidth, img.clientHeight, (data) => {
                     this.setStorageVoxels(vbstoreSnapshots + img.id);
                     if (localStorage.getItem(vbstoreSnapshots + img.id)) {
@@ -4072,12 +4131,11 @@ class Snapshot {
         const zip = new JSZip();
 
         let count = 0;
-        for (let i = 0; i < countLocalStoragesByPrefix(vbstoreSnapshots); i++) {
+        for (let i = 0; i < MAX_SNAPSHOTS; i++) {
             const data = localStorage.getItem(vbstoreSnapshots + 'shot' + i);
             if (data) {
                 const img = localStorage.getItem(vbstoreSnapshotsImages + 'shot' + i);
-                zip.file(`${i}.json`, project.save_as_text(data));
-                zip.file(`${i}.png`, img.replace('data:image/png;base64,', ''), { base64: true });
+                zip.file(`${i}.json`, project.saveSnapshot(data, img));
                 count++;
             }
         }
@@ -4090,14 +4148,13 @@ class Snapshot {
     }
 
     loadSnapshots(archive) {
+        for (let i = 0; i < MAX_SNAPSHOTS; i++) {
+            localStorage.removeItem(vbstoreSnapshots + 'shot' + i);
+            localStorage.removeItem(vbstoreSnapshotsImages + 'shot' + i);
+        }
+
         const zip = new JSZip();
-
         zip.loadAsync(archive).then(zipData => {
-
-            for (let i = 0; i < countLocalStoragesByPrefix(vbstoreSnapshots); i++) {
-                localStorage.removeItem(vbstoreSnapshots + 'shot' + i);
-                localStorage.removeItem(vbstoreSnapshotsImages + 'shot' + i);
-            }
 
             const arr = Object.keys(zipData.files);
 
@@ -4107,22 +4164,16 @@ class Snapshot {
 
                 if (fname.endsWith('.json')) {
                     zip.file(fname).async('string').then(data => {
-                        localStorage.setItem(vbstoreSnapshots + 'shot' + id, JSON.parse(data).data.voxels);
+                        const json = JSON.parse(data);
+                        localStorage.setItem(vbstoreSnapshots + 'shot' + id, json.data.voxels);
+                        localStorage.setItem(vbstoreSnapshotsImages + 'shot' + id, json.data.shot);
 
                         if (fname === arr[arr.length - 1]) {
-                            this.createElements(preferences.getSnapshotNum());
-                            this.createSnapshots();
-                        }
-                    });
-                }
-
-                if (fname.endsWith('.png')) {
-                    zip.file(fname).async('base64').then(data => {
-                        localStorage.setItem(vbstoreSnapshotsImages + 'shot' + id, `data:image/png;base64,${data}`);
-                    
-                        if (fname === arr[arr.length - 1]) {
-                            this.createElements(preferences.getSnapshotNum());
-                            this.createSnapshots();
+                            setTimeout(() => {
+                                this.createElements(preferences.getSnapshotNum());
+                                this.createSnapshots();
+                                ui.notification(`${arr.length} snapshots loaded`);
+                            }, 100);
                         }
                     });
                 }
@@ -4629,15 +4680,15 @@ class UserInterface {
         this.domRenderHdriBackground = document.getElementById('input-pt-hdri-background');
         this.domRenderHdriBlur = document.getElementById('input-pt-hdri-blur');
         this.domRenderEnvPower = document.getElementById('input-pt-envpower');
-        this.domRenderAutoStart = document.getElementById('input-pt-autostart');
         this.domRenderLightColor = document.getElementById('input-pt-light-color');
         this.domRenderLightIntensity = document.getElementById('input-pt-light-intensity');
         this.domRenderMaterialRoughness = document.getElementById('input-pt-roughness');
         this.domRenderMaterialMetalness = document.getElementById('input-pt-metalness');
         this.domRenderMaterialTransmission = document.getElementById('input-pt-transmission');
         this.domRenderMaterialEmissive = document.getElementById('input-pt-emissive');
-        this.domRenderTexture = document.getElementById('input-pt-texture');
+        this.domRenderAutoStart = document.getElementById('input-pt-autostart');
         this.domRenderShade = document.getElementById('input-pt-shade');
+        this.domRenderTexture = document.getElementById('input-pt-texture');
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
         this.domNotifier = document.getElementById('notifier');
@@ -4671,13 +4722,6 @@ class UserInterface {
         });
 
         this.colorWheel.redraw();
-    }
-
-    showProgress(val, max = undefined) {
-        if (max === undefined) max = val;
-        setTimeout(() => {
-            this.domProgressBar.style.width = ~~Math.abs((val / max) * 100) + '%';
-        });
     }
 
     setMode(mode) {
@@ -4729,7 +4773,6 @@ class UserInterface {
             this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
             ui.domColorWheel.style.display = 'unset';
         } else if (mode == 1) {
-            this.domToolbarL.children[2].firstChild.disabled = true; // STORAGE
             this.domToolbarL.children[5].style.display = 'none';     // CREATE
             this.domToolbarL.children[6].style.display = 'none';     // VOXELIZE
             this.domToolbarL.children[7].style.display = 'none';     // SYMM
@@ -4745,7 +4788,7 @@ class UserInterface {
             this.domInfoTool.innerHTML = '';
             ui.domColorWheel.style.display = 'none';
         } else if (mode == 2) {
-            this.domToolbarL.children[2].firstChild.disabled = true;  // STORAGE
+            this.domToolbarL.children[4].firstChild.disabled = true;  // RENDER
             this.domToolbarL.children[5].firstChild.disabled = true;  // CREATE
             this.domToolbarL.children[6].firstChild.disabled = true;  // VOXELIZE
             this.domToolbarL.children[7].firstChild.disabled = true;  // SYMM
@@ -4765,6 +4808,13 @@ class UserInterface {
         this.domModes[mode].classList.add("mode_select");
     }
 
+    showProgress(val, max = undefined) {
+        if (max === undefined) max = val;
+        setTimeout(() => {
+            this.domProgressBar.style.width = ~~Math.abs((val / max) * 100) + '%';
+        });
+    }
+
     updateStatus() {
         (MODE === 0) ?
             this.domInfo[0].innerHTML = `${ engine.getFps() } FPS (${ builder.latency } ms)` :
@@ -4774,7 +4824,7 @@ class UserInterface {
         this.domInfo[3].innerHTML = pool.meshes.length + ' MSH';
     }
 
-    notification(str, timeout = 2500) {
+    notification(str, timeout = 3000) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
@@ -4785,7 +4835,7 @@ class UserInterface {
         }, timeout);
     }
 
-    errorMessage(str, timeout = 2500) {
+    errorMessage(str, timeout = 3000) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
@@ -4870,7 +4920,7 @@ class UserInterface {
     offscreenCheckPanel() {
         modules.panels.panels.forEach((panel) => {
             if (this.isOffScreen(panel.elem, 60))
-                modules.panels.resetTranslate(panel.idx);
+                modules.panels.resetPanel(panel.idx);
         });
     }
 
@@ -5073,6 +5123,7 @@ class Preferences {
     }
 
     init(webgpu_adapter) {
+        resetAllInputElements();
         document.getElementById(KEY_BVHPICK).checked = true;
         document.getElementById(KEY_WEBGPU).disabled = !webgpu_adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
@@ -5082,7 +5133,7 @@ class Preferences {
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
-        document.getElementById(KEY_BACKGROUND_COLOR).value = "#272A2F";
+        document.getElementById(KEY_BACKGROUND_COLOR).value = "#363B45";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
         document.getElementById(KEY_HELP_LABELS).checked = true;
@@ -5159,15 +5210,14 @@ class Preferences {
     }
 
     postFinish() {
-        camera.frame();
         axisView.init();
-        palette.expand(this.getPaletteSize());
         ui.createColorWheel();
+        palette.expand(this.getPaletteSize());
 
         snapshot.createElements(this.getSnapshotNum());
         snapshot.createSnapshots();
 
-        canvas.style.pointerEvents = 'unset';
+        camera.frame();
 
         // inject extra babylon libs
         const scriptLoaders = document.createElement('script');
@@ -5180,6 +5230,7 @@ class Preferences {
         scriptInspector.src = 'libs/babylon.inspector.bundle.js';
         document.body.appendChild(scriptInspector);
 
+        canvas.style.pointerEvents = 'unset';
         console.log(`mobile: ${isMobile}`);
         console.log(`webgpu: ${engine.engine.isWebGPU}`);
         this.isInitialized = true;
@@ -5714,11 +5765,6 @@ ui.domInScreenOrtho.onclick = () => {
     camera.switchOrtho();
 };
 
-ui.domRenderAutoStart.onchange = (ev) => {
-    if (modules.sandbox.isActive())
-        modules.sandbox.setAutoStart(ev.target.checked);
-};
-
 ui.domRenderMaxSamples.onchange = (ev) => {
     if (ev.target.value < 8) ev.target.value = 8;
     if (modules.sandbox.isActive())
@@ -5796,16 +5842,21 @@ ui.domRenderMaterialEmissive.onchange = () => {
     }
 };
 
-ui.domRenderTexture.onchange = () => {
-    if (modules.sandbox.isActive()) {
-        modules.sandbox.updateMeshes();
-        modules.sandbox.pathTracer.updateMaterials();
-    }
+ui.domRenderAutoStart.onchange = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.setAutoStart(ev.target.checked);
 };
 
 ui.domRenderShade.onchange = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.toggleShadeMode();
+};
+
+ui.domRenderTexture.onchange = () => {
+    if (modules.sandbox.isActive()) {
+        modules.sandbox.updateMeshes();
+        modules.sandbox.pathTracer.updateMaterials();
+    }
 };
 
 ui.domCameraAutoFrame.onchange = (ev) => {
@@ -5960,7 +6011,6 @@ document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleE
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
-document.getElementById('reset_inputs').onclick = async () =>       { if (await ui.showConfirm("reset all input elements to default values?")) { resetAllInputElements(); window.location.reload(); } };
 document.getElementById('ws_connect').onclick = () =>               { if (ui.checkMode(0)) modules.ws_client.connect() };
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
 document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
@@ -6124,16 +6174,6 @@ function getFormattedDate(addTime) {
     const minutes = now.getMinutes().toString().padStart(2, '0');
     const seconds = now.getSeconds().toString().padStart(2, '0');
     return addTime ? `${year}${month}${day}_${hours}${minutes}${seconds}` : `${year}${month}${day}`;
-}
-
-function countLocalStoragesByPrefix(prefix) {
-    let count = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(prefix))
-            count++;
-    }
-    return count;
 }
 
 function downloadJson(data, filename) {

@@ -22,14 +22,15 @@
 - Import MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL
 - Local storages, snapshots, quicksave, undo
-- Backup and share snapshots in a ZIP archive
+- Backup and share up to 100 snapshots in a ZIP archive
 
 **Model and Paint**
 - High performance voxel engine
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets
 - Symmetric drawing and painting
-- Color groups and voxel transforms
+- Voxel transform and manipulation
+- Color groups and visibility options
 
 **Rendering**
 - Three.js sandbox

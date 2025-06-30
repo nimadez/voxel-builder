@@ -336,9 +336,9 @@ export function ExportSTL(meshes, filename) {
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-export function Animator(target, property, from, to, callback = undefined, fps = 2, frames = 1) {
+export function Animator(target, property, from, to, callback = undefined, fps = 60, totalFrame = 30) {
     BABYLON.Animation.CreateAndStartAnimation('animator',
-        target, property, fps, frames, from, to, 
+        target, property, fps, totalFrame, from, to, 
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
         easingFunction, callback);
 }
