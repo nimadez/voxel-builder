@@ -192,7 +192,7 @@ class Generator {
             builder.createVoxelsFromArray(data);
             project.clearSceneAndReset();
         } else {
-            xformer.beginNewObject(data, (isHeightGrad) ? true : false);
+            xformer.beginNewObject(data);
         }
     }
 }

@@ -10,7 +10,7 @@ import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer
 import { RGBELoader } from '../../libs/addons/RGBELoader.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
 import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
-import { Tween, Group, Easing } from '../../libs/addons/tween.esm.js';
+import { Tween, Group, Easing } from '../../libs/utils/tween.esm.js';
 
 import { engine, Vector3 } from '../babylon.js';
 import { ui, camera, hdri, light, vMesh, builder } from '../core.js';
@@ -99,7 +99,7 @@ class Sandbox {
 
         this.pickBox = new THREE.BoxHelper(this.scene, 0xFFA500);
 
-        console.log('load sandbox');
+        console.log('load three sandbox');
     }
 
     createScene() {

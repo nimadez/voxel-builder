@@ -51,6 +51,7 @@
 
 import {
     engine,
+
     PositionKind, NormalKind, UVKind, ColorKind,
     DOUBLESIDE, FRONTSIDE, BACKSIDE,
     AXIS_X, AXIS_Y, AXIS_Z,
@@ -65,7 +66,7 @@ import {
     CreateScene, UtilityLayerRenderer,
     ArcRotateCamera, Viewport,
     DirectionalLight, HemisphericLight, ShadowGenerator,
-    StandardMaterial, PBRMaterial, ShadowOnlyMaterial, NormalMaterial, GridMaterial, ShaderMaterial,
+    StandardMaterial, ShaderMaterial, PBRMaterial, ShadowOnlyMaterial, NormalMaterial, GridMaterial,
     CreateTexture, HDRCubeTexture, RenderTargetTexture,
     TransformNode, PositionGizmo, AxisScaleGizmo, PlaneRotationGizmo, AxesViewer,
     CreateMesh, CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
@@ -399,13 +400,13 @@ class Camera {
     frameColor(hex) {
         ghosts.createThin(builder.getVoxelsByColor(hex));
         this.setFramingBehavior(this.camera0, ghosts.thin);
-        ghosts.disposeThin();
+        ghosts.initAddThin();
     }
 
     frameVoxels(voxels) {
         ghosts.createThin(voxels);
         this.setFramingBehavior(this.camera0, ghosts.thin);
-        ghosts.disposeThin();
+        ghosts.initAddThin();
     }
 
     setFramingBehavior(cam, mesh) {
@@ -531,7 +532,7 @@ class Camera {
             scene.activeCamera.setPosition(position.multiplyByFloats(
                 scene.activeCamera.radius,
                 scene.activeCamera.radius,
-                scene.activeCamera.radius).add(center));
+                scene.activeCamera.radius).add(center.clone()));
             scene.activeCamera.setTarget(center.clone());
         }
     }
@@ -717,7 +718,6 @@ class Material {
         this.mat_pbr_vox = undefined;
         this.mat_pbr_msh = undefined;
         this.mat_gridplane = undefined;
-        this.mat_highlight = undefined;
         this.mat_white = undefined;
         this.tex_pbr = undefined;
         this.textures = [];
@@ -731,7 +731,6 @@ class Material {
         this.tex_pbr = this.textures[2];
 
         this.createCELMaterial();
-        this.createHighlightMaterial();
         this.createGridPlaneMaterial();
         this.createWhiteMaterial();
 
@@ -783,19 +782,6 @@ class Material {
         mat.directIntensity = 1;
         mat.environmentIntensity = 1;
         this.mat_pbr_msh = mat;
-    }
-
-    createHighlightMaterial() {
-        const mat = StandardMaterial("highlight", scene);
-        mat.diffuseColor = Color3(1, 1, 1); // overrided
-        mat.specularColor = Color3(0, 0, 0);
-        mat.emissiveColor = Color3(0.5, 0.5, 0.5);
-        mat.useEmissiveAsIllumination = false;
-        mat.linkEmissiveWithDiffuse = true;
-        mat.backFaceCulling = true;
-        mat.transparencyMode = 0;
-        mat.checkReadyOnEveryCall = false;
-        this.mat_highlight = mat;
     }
 
     createGridPlaneMaterial() {
@@ -1968,7 +1954,7 @@ class Ghosts {
     }
 
     init() {
-        this.disposeThin();
+        this.initAddThin();
     }
 
     createThin(voxels, highlightAlpha = 0.4, highlightColor = COL_ORANGE_RGB) {
@@ -2000,8 +1986,7 @@ class Ghosts {
         this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
         this.thin.isVisible = true;
         this.thin.thinInstanceEnablePicking = false;
-        this.thin.material = material.mat_highlight;
-        this.thin.material.diffuseColor = Color3(1, 1, 1);
+        this.thin.material = material.getMaterial();
 
         // TODO: visual artifacts with thin-instances
         if (highlightAlpha > 0)
@@ -2011,17 +1996,23 @@ class Ghosts {
         light.updateShadowMap();
 
         this.bufferMatrix = [];
-        this.bufferColors = [];
     }
 
-    addThin(pos, hex) {
-        this.thin.isVisible = true;
-        this.thin.material = material.mat_highlight;
-        this.thin.material.diffuseColor = color3FromHex(hex);
-        this.thin.thinInstanceAdd(MatrixTranslation(pos.x, pos.y, pos.z));
+    setThinColor(hex) {
+        this.thin.renderOverlay = false;
+
+        const rgb = hexToRgbFloat(hex, 2.2);
+        for (let i = 0; i < this.bufferColors.length / 4; i++) {
+            this.bufferColors[i * 4] = rgb.r;
+            this.bufferColors[i * 4 + 1] = rgb.g;
+            this.bufferColors[i * 4 + 2] = rgb.b;
+            this.bufferColors[i * 4 + 3] = 1;
+        }
+
+        this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
     }
 
-    disposeThin() {
+    initAddThin() {
         if (xformer.isActive) return;
 
         if (this.thin)
@@ -2030,6 +2021,15 @@ class Ghosts {
         this.thin = vMesh.mesh.clone();
         this.thin.isVisible = false;
         this.thin.name = "ghost_thin";
+        this.thin.material = material.getMaterial();
+        this.thin.thinInstanceRegisterAttribute("color", 4);
+    }
+
+    addThin(pos, hex) {
+        this.thin.isVisible = true;
+        const idx = this.thin.thinInstanceAdd(MatrixTranslation(pos.x, pos.y, pos.z));
+        const rgb = hexToRgbFloat(hex, 2.2);
+        this.thin.thinInstanceSetAttributeAt("color", idx, [rgb.r, rgb.g, rgb.b, 1]);
     }
 
     createSPS(voxels = builder.voxels) {
@@ -3213,7 +3213,7 @@ class Tool {
             this.tmp = [];
 
             faceNormalProbe.dispose();
-            ghosts.disposeThin();
+            ghosts.initAddThin();
             ghosts.disposeSPS();
             helper.clearBoxShape();
             setTimeout(() => {
@@ -3431,7 +3431,6 @@ class XFormer {
         this.isNewObject = false;
         this.xforms = [];
         this.startPos = undefined;
-        this.useColors = false;
     }
 
     init() {
@@ -3465,7 +3464,6 @@ class XFormer {
 
     beginClone(voxels) {
         this.xforms = voxels.slice(0);
-        this.useColors = true;
 
         ghosts.createThin(voxels);
         
@@ -3479,11 +3477,10 @@ class XFormer {
         this.isNewObject = true;
     }
 
-    beginNewObject(voxels, useColors = false) {
+    beginNewObject(voxels) {
         if (voxels.length == 0) return;
 
         this.xforms = voxels.slice(0);
-        this.useColors = useColors;
 
         tool.toolSelector('camera');
         ghosts.createThin(voxels);
@@ -3519,15 +3516,8 @@ class XFormer {
         if (this.isNewObject) {
             const p = this.root.position.subtract(this.startPos);
             
-            if (this.useColors) {
-                for (let i = 0; i < this.xforms.length; i++) {
-                    builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
-                }
-            } else {
-                for (let i = 0; i < this.xforms.length; i++) {
-                    builder.add(this.xforms[i].position.add(p), COL_ICE, true);
-                }
-            }
+            for (let i = 0; i < this.xforms.length; i++)
+                builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
         }
     }
 
@@ -3548,7 +3538,7 @@ class XFormer {
         uix.unbindVoxelGizmo();
         
         ghosts.thin.setParent(null);
-        ghosts.disposeThin();
+        ghosts.initAddThin();
         
         this.xforms = [];
     }
@@ -3559,6 +3549,16 @@ class XFormer {
                 builder.removeArray(this.xforms);
             builder.create();
             this.dispose();
+        }
+    }
+
+    colorSelected() {
+        if (this.isActive) {
+            if (!ui.domTransformClone.checked) {
+                ghosts.setThinColor(currentColor);
+                for (let i = 0; i < this.xforms.length; i++)
+                    this.xforms[i].color = currentColor;
+            }
         }
     }
 }
@@ -3573,7 +3573,7 @@ class Project {
 
     serializeScene(voxels) {
         const json = {
-            version: "Voxel Builder 4.5.9 R2",
+            version: "Voxel Builder 4.5.9 R3",
             project: {
                 name: "name",
                 voxels: builder.voxels.length
@@ -3635,6 +3635,10 @@ class Project {
         downloadJson(JSON.stringify(json, null, 4), `${ui.domProjectName.value}.json`);
     }
 
+    save_as_text(stringData) {
+        return JSON.stringify(this.serializeScene(stringData), null, 4);
+    }
+
     load(data) {
         data = JSON.parse(data);
         
@@ -3649,7 +3653,7 @@ class Project {
     importVoxels(data) {        
         ui.setMode(0);
         const voxels = builder.createArrayFromStringData(JSON.parse(data).data.voxels);
-        xformer.beginNewObject(voxels, true);
+        xformer.beginNewObject(voxels);
         camera.frame();
     }
 
@@ -3952,10 +3956,7 @@ const vbstoreSnapshotsImages = 'vbstore_voxels_snap_img';
 
 class Snapshot {
     constructor() {
-        this.shots = document.querySelectorAll('li.storage');
         this.newScene = document.getElementById('storage_new_scene');
-
-        this.createSnapshots();
 
         // free resources, no quicksave for baked meshes after 4.4.4
         localStorage.removeItem('vbstore_bakes');
@@ -3982,7 +3983,7 @@ class Snapshot {
             project.clearSceneAndReset();
         } else {
             const voxels = builder.createArrayFromStringData(data);
-            xformer.beginNewObject(voxels, true);
+            xformer.beginNewObject(voxels);
         }
     }
 
@@ -4002,20 +4003,42 @@ class Snapshot {
             localStorage.removeItem(name);
     }
 
+    createElements(num) {
+        const parent = document.getElementById("menu-storage-dynamic");
+        parent.innerHTML = "";
+
+        for (let i = 0; i < num; i++) {
+            const li = document.createElement("li");
+            const li_spacer = document.createElement("li");
+            li.classList.add("storage");
+            li_spacer.classList.add("spacer");
+            li.innerHTML = `<img src="${SNAPSHOT}" id="shot${i}"><div><button>DEL</button><button>SAVE</button></div>`;
+            parent.appendChild(li_spacer);
+            parent.appendChild(li);
+        }
+
+        if (num > 10) {
+            parent.style.overflowY = "scroll";
+            parent.style.paddingRight = "5px";
+        } else {
+            parent.style.overflowY = "unset";
+            parent.style.paddingRight = "0";
+        }
+    }
+
     createSnapshots() {
-        for (let i = 0; i < this.shots.length; i++) {
-            const img = this.shots[i].children[0];
-            const save = this.shots[i].children[1].lastChild;
-            const clear = this.shots[i].children[1].firstChild;
+        const shots = document.querySelectorAll('li.storage');
 
-            img.src = SNAPSHOT;
-            img.id = 'shot' + i;
+        for (let i = 0; i < shots.length; i++) {
+            const img = shots[i].children[0];
+            const save = shots[i].children[1].lastChild;
+            const del = shots[i].children[1].firstChild;
 
-            // restore previous on startup
-            const data = localStorage.getItem(vbstoreSnapshotsImages + img.id);
-            if (data) img.src = data;
+            // restore images on startup
+            const imgSrc = localStorage.getItem(vbstoreSnapshotsImages + img.id);
+            if (imgSrc) img.src = imgSrc;
 
-            clear.addEventListener("click", async () => {
+            del.addEventListener("click", async () => {
                 if (img.src !== SNAPSHOT && !await ui.showConfirm('delete snapshot?')) return;
                 img.src = SNAPSHOT;
                 this.delStorage(vbstoreSnapshots + img.id);
@@ -4026,8 +4049,7 @@ class Snapshot {
                 if (MODE !== 0 || img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
                 project.createScreenshotBasic(img.clientWidth, img.clientHeight, (data) => {
                     this.setStorageVoxels(vbstoreSnapshots + img.id);
-                    const isOk = localStorage.getItem(vbstoreSnapshots + img.id);
-                    if (isOk) {
+                    if (localStorage.getItem(vbstoreSnapshots + img.id)) {
                         localStorage.setItem(vbstoreSnapshotsImages + img.id, data);
                         img.src = data;
                     }
@@ -4044,6 +4066,68 @@ class Snapshot {
                 ev.preventDefault();
             }, false);
         }
+    }
+
+    saveSnapshots() {
+        const zip = new JSZip();
+
+        let count = 0;
+        for (let i = 0; i < countLocalStoragesByPrefix(vbstoreSnapshots); i++) {
+            const data = localStorage.getItem(vbstoreSnapshots + 'shot' + i);
+            if (data) {
+                const img = localStorage.getItem(vbstoreSnapshotsImages + 'shot' + i);
+                zip.file(`${i}.json`, project.save_as_text(data));
+                zip.file(`${i}.png`, img.replace('data:image/png;base64,', ''), { base64: true });
+                count++;
+            }
+        }
+
+        if (count > 0) {
+            zip.generateAsync({ type: "blob" }).then(data => {
+                downloadData(data, `snapshots_${getFormattedDate(false)}.zip`);
+            });
+        }
+    }
+
+    loadSnapshots(archive) {
+        const zip = new JSZip();
+
+        zip.loadAsync(archive).then(zipData => {
+
+            for (let i = 0; i < countLocalStoragesByPrefix(vbstoreSnapshots); i++) {
+                localStorage.removeItem(vbstoreSnapshots + 'shot' + i);
+                localStorage.removeItem(vbstoreSnapshotsImages + 'shot' + i);
+            }
+
+            const arr = Object.keys(zipData.files);
+
+            arr.forEach(fname => {
+
+                const id = parseInt(fname.split('.')[0]);
+
+                if (fname.endsWith('.json')) {
+                    zip.file(fname).async('string').then(data => {
+                        localStorage.setItem(vbstoreSnapshots + 'shot' + id, JSON.parse(data).data.voxels);
+
+                        if (fname === arr[arr.length - 1]) {
+                            this.createElements(preferences.getSnapshotNum());
+                            this.createSnapshots();
+                        }
+                    });
+                }
+
+                if (fname.endsWith('.png')) {
+                    zip.file(fname).async('base64').then(data => {
+                        localStorage.setItem(vbstoreSnapshotsImages + 'shot' + id, `data:image/png;base64,${data}`);
+                    
+                        if (fname === arr[arr.length - 1]) {
+                            this.createElements(preferences.getSnapshotNum());
+                            this.createSnapshots();
+                        }
+                    });
+                }
+            });
+        });
     }
 }
 
@@ -4581,6 +4665,8 @@ class UserInterface {
                 currentColor = col.hex.toUpperCase();
                 ui.domColorPicker.value = currentColor;
                 helper.clearOverlays();
+
+                xformer.colorSelected();
             },
         });
 
@@ -4974,28 +5060,32 @@ const KEY_MINIMAL = "pref_minimal";
 const KEY_USER_STARTUP = "pref_user_startup";
 const KEY_STARTBOX_SIZE = "pref_startbox_size";
 const KEY_PALETTE_SIZE = "pref_palette_size";
+const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
 const KEY_BACKGROUND_CHECK = "pref_background_check";
 const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_WEBSOCKET = "pref_websocket";
 const KEY_WEBSOCKET_URL = "pref_websocket_url";
+const KEY_HELP_LABELS = "pref_help_labels";
 
 class Preferences {
     constructor() {
         this.isInitialized = false;
     }
 
-    init(adapter) {
+    init(webgpu_adapter) {
         document.getElementById(KEY_BVHPICK).checked = true;
-        document.getElementById(KEY_WEBGPU).disabled = !adapter;
+        document.getElementById(KEY_WEBGPU).disabled = !webgpu_adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
         document.getElementById(KEY_MINIMAL).checked = isMobile;
         document.getElementById(KEY_USER_STARTUP).checked = false;
         document.getElementById(KEY_STARTBOX_SIZE).value = isMobile ? 2 : 20;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
+        document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#272A2F";
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
+        document.getElementById(KEY_HELP_LABELS).checked = true;
 
         this.setPrefCheck(KEY_BVHPICK);
 
@@ -5016,6 +5106,11 @@ class Preferences {
         this.setPref(KEY_PALETTE_SIZE, (val) => {
             palette.expand(val);
         });
+
+        this.setPref(KEY_SNAPSHOT_NUM, (val) => {
+            snapshot.createElements(val);
+            snapshot.createSnapshots();
+        });
         
         this.setPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
             scene.clearColor = (chk) ?
@@ -5034,6 +5129,10 @@ class Preferences {
         });
 
         this.setPref(KEY_WEBSOCKET_URL);
+
+        this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
+            modules.panels.showHelpLabels(chk);
+        });
     }
 
     finish(startTime) {
@@ -5046,14 +5145,14 @@ class Preferences {
                 project.loadFromUrl('user/startup.json', () => {
                     ui.showInterface();
                     document.getElementById('introscreen').style.display = 'none';
-                    console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
+                    console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
                     this.postFinish();
                 });
             } else {
                 project.newProjectStartup(document.getElementById(KEY_STARTBOX_SIZE).value);
                 ui.showInterface();
                 document.getElementById('introscreen').style.display = 'none';
-                console.log(`startup: ${(performance.now()-startTime).toFixed(2)} ms`);
+                console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
                 this.postFinish();
             }
         });
@@ -5064,6 +5163,9 @@ class Preferences {
         axisView.init();
         palette.expand(this.getPaletteSize());
         ui.createColorWheel();
+
+        snapshot.createElements(this.getSnapshotNum());
+        snapshot.createSnapshots();
 
         canvas.style.pointerEvents = 'unset';
 
@@ -5080,7 +5182,6 @@ class Preferences {
 
         console.log(`mobile: ${isMobile}`);
         console.log(`webgpu: ${engine.engine.isWebGPU}`);
-        console.log('done');
         this.isInitialized = true;
 
         // inject the user module entry point
@@ -5088,6 +5189,9 @@ class Preferences {
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
+
+        // extras
+        modules.panels.showHelpLabels(document.getElementById(KEY_HELP_LABELS).checked);
     }
 
     isBVHPick() {
@@ -5108,6 +5212,10 @@ class Preferences {
 
     getPaletteSize() {
         return document.getElementById(KEY_PALETTE_SIZE).value;
+    }
+
+    getSnapshotNum() {
+        return document.getElementById(KEY_SNAPSHOT_NUM).value;
     }
 
     isBackgroundColor() {
@@ -5381,6 +5489,7 @@ function fileHandler(file) {
         if (ext == 'glb') if (MODE == 0) voxelizer.importMeshGLB(url);
         if (ext == 'vox') project.loadMagicaVoxel(reader.result);
         if (ext == 'hdr') hdri.loadHDR(url);
+        if (ext == 'zip') snapshot.loadSnapshots(reader.result);
         if (MODE == 0) {
             if (['jpg','png','svg'].includes(ext))
                 voxelizer.voxelize2D(reader.result);
@@ -5389,7 +5498,7 @@ function fileHandler(file) {
     }
     if (ext == 'json') {
         reader.readAsText(file);
-    } else if (ext == 'vox') {
+    } else if (ext == 'vox' || ext == 'zip') {
         reader.readAsArrayBuffer(file);
     } else {
         reader.readAsDataURL(file);
@@ -5456,6 +5565,11 @@ document.getElementById('openfile_hdr').addEventListener("change", (ev) => {
 document.getElementById('openfile_baked_glb').addEventListener("change", (ev) => {
     if (ev.target.files.length > 0)
         fileHandlerNoDrop(ev.target.files[0], 'load_baked_glb');
+}, false);
+
+document.getElementById('openfile_snapshot_zip').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
 }, false);
 
 document.ondrop = (ev) => { dropHandler(ev) };
@@ -5856,6 +5970,7 @@ document.getElementById('hdr_dropdown').onchange = (ev) =>          { hdri.loadH
 document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
 document.getElementById('new_project').onclick = () =>              { project.newProject() };
 document.getElementById('save_project').onclick = () =>             { project.save() };
+document.getElementById('save_snapshots').onclick = () =>           { snapshot.saveSnapshots() };
 document.getElementById('export_voxels').onclick = () =>            { project.exportVoxels() };
 document.getElementById('export_meshes').onclick = () =>            { project.exportMeshes() };
 document.getElementById('screenshot').onclick = () =>               { project.createScreenshot() };
@@ -6000,6 +6115,27 @@ function resetAllInputElements() {
     });
 }
 
+function getFormattedDate(addTime) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    return addTime ? `${year}${month}${day}_${hours}${minutes}${seconds}` : `${year}${month}${day}`;
+}
+
+function countLocalStoragesByPrefix(prefix) {
+    let count = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix))
+            count++;
+    }
+    return count;
+}
+
 function downloadJson(data, filename) {
     const blob = new Blob([ data ], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -6011,6 +6147,16 @@ function downloadJson(data, filename) {
 }
 
 function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function downloadData(data, filename) {
+    const blob = new Blob([ data ], { type: "application/octet-stream" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
