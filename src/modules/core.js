@@ -338,7 +338,7 @@ class AxisViewScene {
                 else if (pick.pickedMesh == this.viewAxes[3]) camera.setView('-y');
                 else if (pick.pickedMesh == this.viewAxes[4]) camera.setView('z');
                 else if (pick.pickedMesh == this.viewAxes[5]) camera.setView('-z');
-                scene.activeCamera.detachControl(canvas);
+                camera.detachForce();
             }
             return true;
         }
@@ -369,11 +369,31 @@ class Camera {
         this.camera0.upperBetaLimit = Math.PI - 0.0001;
         this.camera0.wheelPrecision = 3;        // def 3
         this.camera0.pinchPrecision = 30;       // def 12
-        this.camera0.panningSensibility = 200;  // def 1000
         this.camera0.inertia = 0.9;             // def 0.9
+        this.camera0.panningInertia = 0.85;        // def 0.9
         //this.camera0.minZ = 0.01;
         this.camera0.maxZ = MAX_Z;
         this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
+
+        // babylon.js cannot remap mouse buttons like what is done in three.js, so a custom logic is defined here
+        this.camera0.inputs.removeByType("ArcRotateCameraPointersInput");
+        this.camera0.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
+        this.camera0.inputs.add(new CustomArcRotateCameraInput());
+    }
+
+    attach() {
+        this.camera0.attachControl(canvas, true);
+    }
+
+    detach() {
+        if (!this.isCameraChange())
+            scene.activeCamera.detachControl(canvas);
+    }
+
+    detachForce() {
+        // stop camera animation and detach control
+        scene.stopAnimation(this.camera0);
+        scene.activeCamera.detachControl(canvas);
     }
 
     frame() {
@@ -494,6 +514,13 @@ class Camera {
     setOrtho() {
         this.setView('ortho');
         ui.domInScreenOrtho.innerHTML = 'O';
+
+        const sizeY = (this.camera0.radius / 2) * this.camera0.fov;
+        const sizeX = sizeY * engine.engine.getAspectRatio(this.camera0);
+        this.camera0.orthoLeft = -sizeX;
+        this.camera0.orthoRight = sizeX;
+        this.camera0.orthoTop = sizeY;
+        this.camera0.orthoBottom = -sizeY;
     }
 
     setView(name) {
@@ -538,15 +565,6 @@ class Camera {
         }
     }
 
-    setOrthoMode() {
-        const sizeY = (this.camera0.radius / 2) * this.camera0.fov;
-        const sizeX = sizeY * engine.engine.getAspectRatio(this.camera0);
-        this.camera0.orthoLeft = -sizeX;
-        this.camera0.orthoRight = sizeX;
-        this.camera0.orthoTop = sizeY;
-        this.camera0.orthoBottom = -sizeY;
-    }
-
     setFov(value) {
         scene.activeCamera.fov = parseFloat(value);
     }
@@ -555,6 +573,115 @@ class Camera {
         return this.lastPos[0] !== this.camera0.alpha &&
                this.lastPos[1] !== this.camera0.beta;
                //this.camera0.hasMoved; // counts animations
+    }
+}
+
+class CustomArcRotateCameraInput {
+    constructor() {
+        this.angularSensibilityX = 1000.0; // def 1000
+        this.angularSensibilityY = 1000.0; // def 1000
+        this.panningSensibility = 100.0;   // def 1000
+        this.previousPosition = null;
+    }
+
+    attachControl(noPreventDefault) {
+        const engine = this.camera.getEngine();
+        const element = engine.getInputElement();
+
+        this._pointerInput = (p) => {
+            const evt = p.event;
+
+            // only deal with middle and right mouse buttons
+            if (p.type === BABYLON.PointerEventTypes.POINTERMOVE || evt.button === 1 || evt.button === 2) {
+                switch (p.type) {
+                    case BABYLON.PointerEventTypes.POINTERDOWN:
+                        this._handlePointerDown(evt, element, noPreventDefault);
+                        break;
+                    case BABYLON.PointerEventTypes.POINTERUP:
+                        this._handlePointerUp(evt, noPreventDefault);
+                        break;
+                    case BABYLON.PointerEventTypes.POINTERMOVE:
+                        this._handlePointerMove(evt, noPreventDefault);
+                        break;
+                }
+            }
+        };
+
+        this._observer = this.camera.getScene().onPointerObservable.add(
+            this._pointerInput,
+            BABYLON.PointerEventTypes.POINTERDOWN | BABYLON.PointerEventTypes.POINTERUP | BABYLON.PointerEventTypes.POINTERMOVE
+        );
+    }
+
+    _handlePointerDown(evt, element, noPreventDefault) {
+        try {
+            evt.srcElement.setPointerCapture(evt.pointerId);
+        } catch (e) {
+            console.warn("Failed to set pointer capture:", e);
+        }
+        this.previousPosition = {
+            x: evt.clientX,
+            y: evt.clientY,
+            button: evt.button
+        };
+        this._preventDefault(evt, element, noPreventDefault);
+    }
+
+    _handlePointerUp(evt, noPreventDefault) {
+        try {
+            evt.srcElement.releasePointerCapture(evt.pointerId);
+        } catch (e) {
+            console.warn("Failed to release pointer capture:", e);
+        }
+        this.previousPosition = null;
+        this._preventDefault(evt, null, noPreventDefault);
+    }
+
+    _handlePointerMove(evt, noPreventDefault) {
+        if (!this.previousPosition || this.camera.getEngine().isPointerLock) {
+            return;
+        }
+
+        const offsetX = evt.clientX - this.previousPosition.x;
+        const offsetY = evt.clientY - this.previousPosition.y;
+
+        if (this.previousPosition.button === 2) { // right button: rotate
+            this.camera.inertialAlphaOffset -= offsetX / this.angularSensibilityX;
+            this.camera.inertialBetaOffset -= offsetY / this.angularSensibilityY;
+        } else if (this.previousPosition.button === 1) { // middle button: pan (translates)
+            this.camera.inertialPanningX -= offsetX / this.panningSensibility;
+            this.camera.inertialPanningY += offsetY / this.panningSensibility;
+        }
+
+        this.previousPosition.x = evt.clientX;
+        this.previousPosition.y = evt.clientY;
+
+        this._preventDefault(evt, null, noPreventDefault);
+    }
+
+    _preventDefault(evt, element, noPreventDefault) {
+        if (!noPreventDefault) {
+            evt.preventDefault();
+            if (element) {
+                element.focus();
+            }
+        }
+    }
+
+    detachControl() {
+        if (this._observer && this.camera) {
+            this.camera.getScene().onPointerObservable.remove(this._observer);
+            this._observer = null;
+            this.previousPosition = null;
+        }
+    }
+
+    getClassName() {
+        return "CustomArcRotateCameraInput";
+    }
+
+    getSimpleName() {
+        return "customPointers";
     }
 }
 
@@ -2621,7 +2748,7 @@ class Symmetry {
 
 class Tool {
     constructor() {
-        this.name = 'camera';
+        this.name = 'frame_voxels';
         this.last = undefined;
 
         this.pick = undefined;
@@ -3156,31 +3283,27 @@ class Tool {
     }
 
     handleToolDown() {
-        if (this.name !== 'camera') {
-            this.setPickInfo().then(async pick => {
-                if (xformer.isActive) {
-                    if (ui.domTransformReactive.checked) {
-                        xformer.apply();
-                        pointer.isDown = false;
-                        scene.stopAnimation(camera.camera0);
-                        scene.activeCamera.detachControl(canvas);
-                    }
-                    return;
+        this.setPickInfo().then(async pick => {
+            if (xformer.isActive) {
+                if (ui.domTransformReactive.checked) {
+                    xformer.apply();
+                    pointer.isDown = false;
+                    camera.detachForce();
                 }
-                
-                scene.stopAnimation(camera.camera0);
-                scene.activeCamera.detachControl(canvas);
+                return;
+            }
+            
+            camera.detachForce();
 
-                if (pixelReadWhiteList.includes(this.name))
-                    this.indexes = await builder.getIndexAtPointerTarget(0, 0, window.innerWidth, window.innerHeight);
+            if (pixelReadWhiteList.includes(this.name))
+                this.indexes = await builder.getIndexAtPointerTarget(0, 0, window.innerWidth, window.innerHeight);
 
-                this.onToolDown(pick);
-            });
-        }
+            this.onToolDown(pick);
+        });
     }
 
     handleToolMove() {
-        if (this.name !== 'camera' && !xformer.isActive) {
+        if (!xformer.isActive) {
             this.now = performance.now();
             this.elapsed = this.now - this.then;
             if (this.elapsed > FPS_TOOL) {
@@ -3195,34 +3318,32 @@ class Tool {
     }
 
     handleToolUp() {
-        if (this.name !== 'camera') {
-            this.onToolUp();
+        this.onToolUp();
 
-            this.pick = undefined;
-            this.pickIndx = undefined;
-            this.pickNorm = undefined;
+        this.pick = undefined;
+        this.pickIndx = undefined;
+        this.pickNorm = undefined;
 
-            this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
-            this.boxCount = 0;
-            this.startBox = undefined;
-            this.startRect = undefined;
-            this.pos = undefined;
-            this.posNorm = undefined;
+        this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
+        this.boxCount = 0;
+        this.startBox = undefined;
+        this.startRect = undefined;
+        this.pos = undefined;
+        this.posNorm = undefined;
 
-            this.selected = [];
-            this.indexes = [];
-            this.tmp = [];
+        this.selected = [];
+        this.indexes = [];
+        this.tmp = [];
 
-            faceNormalProbe.dispose();
-            ghosts.initAddThin();
-            ghosts.disposeSPS();
-            helper.clearBoxShape();
-            setTimeout(() => {
-                helper.clearOverlays();
-            }, 10); // prevent last overlay in touchscreen
+        faceNormalProbe.dispose();
+        ghosts.initAddThin();
+        ghosts.disposeSPS();
+        helper.clearBoxShape();
+        setTimeout(() => {
+            helper.clearOverlays();
+        }, 10); // prevent last overlay in touchscreen
 
-            ui.domMarquee.style = "display: none; left: 0; top: 0; width: 0; height: 0;";
-        }
+        ui.domMarquee.style = "display: none; left: 0; top: 0; width: 0; height: 0;";
     }
 
     predicateNull() {
@@ -3319,8 +3440,7 @@ class Tool {
                     resolve(this.pick);
                 } else {
                     helper.clearOverlays();
-                    if (!camera.isCameraChange())
-                        scene.activeCamera.detachControl(canvas);
+                    camera.detach();
                 }
     
             } else {
@@ -3343,8 +3463,7 @@ class Tool {
                         resolve(this.pick);
                     } else {
                         helper.clearOverlays();
-                        if (!camera.isCameraChange())
-                            scene.activeCamera.detachControl(canvas);
+                        camera.detach();
                     }
                 }
             }
@@ -3483,7 +3602,7 @@ class XFormer {
 
         this.xforms = voxels.slice(0);
 
-        tool.toolSelector('camera');
+        tool.toolSelector('frame_voxels');
         ghosts.createThin(voxels);
         
         this.root.position.copyFrom(ghosts.getCenter());
@@ -3622,7 +3741,7 @@ class Project {
 
         memory.clear();
         symmetry.resetAxis();
-        tool.toolSelector('camera');
+        tool.toolSelector('frame_voxels');
         ghosts.disposePointCloud();
         pool.clearPool();
         uix.hideLightLocator();
@@ -4413,16 +4532,16 @@ class RenderTarget {
         scene.customRenderTargets.push(this.pickTexture);
 
         this.pickTexture.onBeforeRender = () => {
-            if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
+            if (engine.isRendering && MODE == 0)
                 builder.mesh.thinInstanceSetBuffer("color", builder.rttColors, 4, true);
         }
-        
+
         this.pickTexture.onAfterRender = () => {
-            if (engine.isRendering && MODE == 0 && tool.name !== 'camera' && !ui.domDebugPick.checked)
+            if (engine.isRendering && MODE == 0 && !ui.domDebugPick.checked)
                 builder.mesh.thinInstanceSetBuffer("color", builder.bufferColors, 4, true);
         }
 
-        //if (!engine.engine.isWebGPU)
+        // if (!engine.engine.isWebGPU)
         //    this.frameBuffer = engine.engine._gl.createFramebuffer();
 
         const w = window.innerWidth;
@@ -5367,11 +5486,8 @@ export function registerRenderLoops() {
                 }
 
                 if (!builder.isWorking)
-                    camera.camera0.attachControl(canvas, true);
+                    camera.attach();
             }
-
-            if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
-                camera.setOrthoMode();
 
             ui.updateStatus();
         }
@@ -5401,7 +5517,7 @@ window.addEventListener('pointerdown', (ev) => {
     pointer.x = ev.clientX;
     pointer.y = ev.clientY;
     pointer.isDown = true;
-    if (ev.target === canvas && !axisView.registerEvent() && !uix.isActive()) {
+    if (ev.button === 0 && ev.target === canvas && !axisView.registerEvent() && !uix.isActive()) {
         if (MODE == 0) {
             renderTarget.point.x = Math.floor(pointer.x);
             renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
@@ -5438,7 +5554,7 @@ document.addEventListener("keydown", (ev) => {
     if (MODE == 0 && !tool.last && !pointer.isDown) {
         if (ev.altKey || ev.key == ' ') {
             tool.last = tool.name;
-            tool.toolSelector('camera');
+            tool.toolSelector('frame_voxels');
             return;
         }
     }
@@ -5450,7 +5566,7 @@ document.addEventListener("keydown", (ev) => {
                 xformer.apply();
             break;
         case '`':
-            tool.toolSelector('camera', true);
+            tool.toolSelector('frame_voxels', true);
             break;
         case '1':
             tool.toolSelector('add', true);
@@ -5481,9 +5597,6 @@ document.addEventListener("keydown", (ev) => {
             break;
         case 's':
             symmetry.switchAxis();
-            break;
-        case 'c':
-            tool.toolSelector('camera', true);
             break;
         case 'delete':
             if (MODE == 0) {

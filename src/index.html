@@ -133,7 +133,7 @@
         #toolbar_L button:hover.panel_select { color: var(--btn-color-hover); text-decoration: underline; }
         #toolbar_L .sep { margin-top: 5px; border-top: 1px solid var(--borders); }
         #hover { z-index: 2200; display: none; bottom: 130px; left: 50%; margin-left: -17px; position: absolute; }
-        #hover .tool_camera { z-index: 2220; position: relative; padding: 5px; top: 32px; left: 0; border: 1px solid #717b8d40; border-radius: 3px; cursor: move; }
+        #hover .tool_frame_voxels { z-index: 2220; position: relative; padding: 5px; top: 32px; left: 0; border: 1px solid #717b8d40; border-radius: 3px; cursor: move; }
         #hover li { z-index: 2210; padding: 5px; background: var(--btn-bg); transition: all 0.2s ease-in-out; border: 1px solid #717b8d35; border-radius: 3px; position: absolute; cursor: pointer; }
         #hover li:hover { background: orange; }
         #hover li.tool_selector { background: orange; }
@@ -658,7 +658,7 @@
     </div>
 
     <div id="hover">
-        <button class="tool_camera"><i class="material-icons">control_camera</i></button>
+        <button class="tool_frame_voxels"><i class="material-icons">control_camera</i></button>
         <ul>
             <li class="tool_box_add hover_item_hide"><i class="material-icons">add</i></li>
             <li class="tool_box_remove hover_item_hide"><i class="material-icons">remove</i></li>
@@ -729,13 +729,12 @@
     <div id="shortcuts" ondblclick="this.style.display = 'none'">
         <table title="Double tap to close">
             <tr><th>Shortcut</th> <th>Description</th></tr>
-            <tr><td>SPACE / ALT</td> <td>Toggle Free Camera Tool (MODEL)</td></tr>
-            <tr><td>SPACE + CTRL</td> <td>Translate Free Camera (MODEL)</td></tr>
+            <tr><td>SPACE / ALT</td> <td>Toggle Frame Voxels Tool (MODEL)</td></tr>
             <tr><td>ENTER</td> <td>Apply Voxel Transforms (MODEL)</td></tr>
             <tr><td>DEL</td> <td>Delete Selected Voxels (Transform)</td></tr>
             <tr><td>DEL</td> <td>Delete Selected Bake (EXPORT)</td></tr>
-            <tr><td>` / C</td> <td>Free Camera Tool (MODEL)</td></tr>
             <tr><td>F</td> <td>Frame Camera (ALL MODES)</td></tr>
+            <tr><td>`</td> <td>Frame Voxels Tool (MODEL)</td></tr>
             <tr><td>F</td> <td>Frame Voxels (Transform)</td></tr>
             <tr><td>O</td> <td>Toggle Orthographic camera</td></tr>
             <tr><td>R</td> <td>Toggle Render tab</td></tr>

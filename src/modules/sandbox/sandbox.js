@@ -82,6 +82,11 @@ class Sandbox {
         this.camera.updateProjectionMatrix();
 
         this.controls = new OrbitControls(this.camera, renderer.domElement);
+        this.controls.mouseButtons = {
+            LEFT: THREE.MOUSE.NONE,    // left button: no action
+            MIDDLE: THREE.MOUSE.PAN,   // middle button: pan
+            RIGHT: THREE.MOUSE.ROTATE  // right button: rotate
+        };
         this.controls.minDistance = 2.0;
         this.controls.maxDistance = CAM_FAR;
         this.controls.zoomSpeed = 1.0;
