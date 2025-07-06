@@ -15,6 +15,9 @@
 [FAQ](https://github.com/nimadez/voxel-builder#faq)<br>
 [Bug Report](https://github.com/nimadez/voxel-builder/issues)
 
+**Open source, but not open contributions**<br>
+*It's great if you have suggestions or bugs to report in the Issues section, but Pull Requests will not be approved.*
+
 ## Features
 
 **File I/O**
@@ -29,7 +32,7 @@
 - Generators *(terrain, cube, sphere, isometric...)*
 - Interactive modeling toolsets
 - Symmetric drawing and painting
-- Voxel transform and manipulation
+- Voxel transforms and manipulation
 - Color groups and visibility options
 
 **Rendering**
@@ -41,6 +44,7 @@
 - Fast BVH voxelization
 - 3D model voxelizer
 - Image voxelizer
+- Text voxelizer *(unicode & emoji)*
 
 **Export Meshes**
 - Bake voxels to editable meshes
@@ -103,9 +107,9 @@ python3 update.py
     - In Linux, start Chrome with ```--enable-features=Vulkan``` for hardware acceleration
 - Firefox (dev edition):
     - Use ```about:config``` to enable "dom.webgpu.enabled"
-    - Not officially supported, may not work at all.
+    - It may not work
 
-✔️ If WebGPU is supported in your browser, the option to enable it will be available in the Preferences menu and you can enable or disable it.
+✔️ If WebGPU is supported in your browser, the option to enable it will be available in the Preferences menu.
 
 ## Known Issues
 Higher than 512K is not recommended
@@ -174,8 +178,6 @@ git reset --hard $HASH
 ↑ Changed default handiness to right-handed coordinate
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
-
-"The story behind this repo can only be deciphered by AI."
 ```
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>

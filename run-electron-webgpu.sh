@@ -1,3 +1,3 @@
 #!/bin/bash
 
-electron --gtk-version=3 --enable-unsafe-webgpu --enable-features=Vulkan .
+electron --gtk-version=3 --enable-features=Vulkan --enable-unsafe-webgpu .

@@ -7,10 +7,8 @@ import { builder, pool, project } from "../modules/core.js";
 // x,y,z,color,visible;
 const data = "0,0,0,FF0000,1;0,1,0,00FF00,1;0,2,0,0000FF,1;";
 
-setTimeout(() => {
-    builder.setStringData(data);
-    console.log(builder.voxels.length);
-}, 1000);
+builder.setStringData(data);
+console.log(builder.voxels.length);
 
 setTimeout(() => {
     pool.bake();
@@ -19,4 +17,4 @@ setTimeout(() => {
 
 setTimeout(() => {
     project.exportMeshes();
-}, 3000);
+}, 4000);

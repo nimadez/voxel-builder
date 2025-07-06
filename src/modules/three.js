@@ -25,7 +25,7 @@ THREE.BatchedMesh.prototype.disposeBoundsTree = disposeBatchedBoundsTree;
 
 const renderer = new THREE.WebGLRenderer({
     canvas: document.getElementById('canvas_three'),
-    preserveDrawingBuffer: true,
+    preserveDrawingBuffer: false,
     antialias: true,
     alpha: true
 });

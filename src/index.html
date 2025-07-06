@@ -73,7 +73,7 @@
         input[type=checkbox]:disabled { opacity: 0.5; }
         input[type=color] { width: 100%; height: 20px; border-radius: 2px; background: none; outline: none; border: none; }
         input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border: solid 1px transparent; }
-        input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; border: solid 1px transparent; }
+        input[type=color]::-webkit-color-swatch { border-radius: 2px; border: solid 1px transparent; border: none; }
         input[type=color]:hover { cursor: pointer; }
         button { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); letter-spacing: 0.04em; border-radius: 2px; border: 1px solid var(--borders); }
         button:hover { background: orange; color: var(--btn-color-hover); box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
@@ -88,7 +88,7 @@
         ul li { font-family: var(--font); font-size: var(--font-size); color: var(--btn-color); border-radius: 2px; text-align: center; }
         ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: var(--btn-color-hover); box-shadow: inset 10px 10px 10px var(--btn-shadow); }
         #introscreen { z-index: 5000; background: #181b22DD; position: absolute; width: 100%; height: 100%; }
-        #introscreen .anim { transform-style: preserve-3d; width: 30px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -20px; }
+        #introscreen .anim { position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -5px; }
         #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
         #introscreen .logo :first-child { font-weight: normal; color: var(--white); }
         #introscreen .progress { color: slategray; font-size: 11px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
@@ -170,11 +170,21 @@
         #menu-inscreen-export button { width: 68px; height: 32px; font-size: 11px; }
         #colorpicker { z-index: 500; width: 45px; height: 32px; }
         #colorpicker :first-child { height: 32px; }
+        #input-color-picker { z-index: 2500; display: none; padding: 8px 5px 3px 5px; background: var(--confirm); width: 130px; height: 228px; border: solid 1px #171b22; border-radius: 5px; position: fixed; }
+        #input-color-picker li:hover { background: none; box-shadow: none; }
+        #input-color-picker label { width: 40px; }
+        #input-color-picker-wheel { margin-bottom: 5px; }
+        #input-color-picker-selected { display: flex; flex-direction: row; margin-bottom: 5px; }
+        #input-color-picker-selected div { width: 100%; height: 15px; background: black; cursor: pointer; }
+        #input-color-picker-selected :first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        #input-color-picker-selected :last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+        #input-color-picker-buttons { display: flex; flex-direction: row; }
+        #input-color-picker-buttons button { width: 100%; padding: 5px; }
         #info { z-index: 2; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; margin-bottom: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #info_tool { z-index: 501; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
         #info_render { z-index: 301; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
-        #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-align: center; }
+        #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, #ffe6b8); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
+        #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-transform: uppercase; text-align: center; }
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
         #confirm button { width: 48%; padding: 4px; font-size: var(--font-size); text-transform: uppercase; }
         #confirm :nth-child(3) { background: steelblue; color: #222; }
@@ -215,24 +225,25 @@
             #meshlist .item_name { width: 60px; }
             #menu-inscreen-bottom { bottom: 25px; }
             #menu-storage-dynamic li div button { padding: 9px 0 9px 0; }
+            #input-color-picker { padding: 8px 5px 8px 5px; }
         }
 
         .cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
-        .cube-faces { transform-style: preserve-3d; height: 30px; width: 30px; position: relative; transform-origin: 0 0; transform: translateX(0) translateY(0) translateZ(-30px); }
-        .cube-face { position: absolute; inset: 0; background: #38a5ff60; border: solid 1px #ffa500; outline: 1px solid transparent; }
-        .cube-face.shadow { transform: translateZ(-40px); background: #11111130; border-color: #11111160; }
+        .cube-faces { transform-style: preserve-3d; height: 30px; width: 30px; position: relative; }
+        .cube-face { position: absolute; inset: 0; border: solid 1px orange; box-shadow: inset 0 0 20px #4581b3AA; outline: 1px solid transparent; }
+        .cube-face.shadow { transform: translateZ(-30px) scale(1.2); background: #11111140; border-color: #11111160; box-shadow: none; }
         .cube-face.top { transform: translateZ(30px); }
         .cube-face.front { transform-origin: 0 50%; transform: rotateY(-90deg); }
         .cube-face.back { transform-origin: 0 50%; transform: rotateY(-90deg) translateZ(-30px); }
         .cube-face.right { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px); }
         .cube-face.left { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px) translateZ(30px); }
         @keyframes rotation {
-            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
-            50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.76, 0.05, 0.86, 0.06); }
-            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
+            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.1, 0.8, 0.4, 1); }
+            50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.7, 0.1, 0.8, 0); }
+            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.1, 0.8, 0.4, 1); }
         }
 
-        #input-color-wheel { z-index: 2; display: none; right: 10px; bottom: 8px; position: fixed; }
+        #input-color-wheel { z-index: 301; display: none; right: 10px; bottom: 8px; position: fixed; }
         .reinvented-color-wheel,
         .reinvented-color-wheel--hue-wheel,
         .reinvented-color-wheel--hue-handle,
@@ -317,7 +328,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 R4 Beta
+                <br>&#8627; 4.6.0 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -342,6 +353,8 @@
                 <input type="checkbox" id="pref_background_check"> <label for="pref_background_check">Background</label>
                 <input type="color" id="pref_background_color" value="#363B45">
             </li>
+            <li class="row_input" title="General shade color (Startup, Generators, Voxelizers, Shade Render and Ground)"><label>Shade</label><input type="color" id="pref_render_shade" value="#8398AF"></li>
+            <li class="spacer"></li>
             <li title="Not Persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Shadows</label></li>
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
@@ -389,30 +402,30 @@
             <li class="category">VIEW</li>
             <li><input id="input-camera-autoframe" type="checkbox"></input> <label for="input-camera-autoframe">Auto Frame</label></li>
             <li class="spacer"></li>
-            <li><button id="camera_frame">Frame</button></li>
+            <li><button id="camera_frame">Frame *</button></li>
             <li><button id="btn_tool_frame_color" class="tool_frame_color">Frame Color</button></li>
             <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li><button id="camera_topview">Top View</button></li>
             <li class="spacer"></li>
-            <li class="row_input" title="Offset varies in different dimensions"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.8" min="0" step="0.01"></li>
+            <li class="row_input" title="Offset varies in different dimensions"><label>Offset *</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.8" min="0" step="0.01"></li>
             <li class="spacer"></li>
             <li><button id="btn-ortho">Perspective</button></li>
             <li class="category">SETTINGS</li>
             <li class="row_input"><label>FOV *</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" step="0.01"></li>
             <li class="row_input"><label>F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
             <li class="row_input"><label>Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
-            <li><label class="help">* Supported Rendering</label></li>
             <li class="category">ANIMATION</li>
             <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
             <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
+            <li><label class="help">* Supported Rendering</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
-            <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.95" min="0.1" max="1" step="0.05"></li>
+            <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.05"></li>
             <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" step="8"></li>
             <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" step="1"></li>
-            <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="1" min="1" step="1"></li>
+            <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="4" min="1" step="1"></li>
             <li class="spacer"></li>
             <li class="row_input">
                 <label>Tonemap</label> <select id="input-pt-tonemap">
@@ -452,7 +465,7 @@
             <li class="category">MATERIALS</li>
             <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
-            <li class="row_input"><label for="input-pt-transmission" style="font-size: 10px; margin-right: -1px">Transmission</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
+            <li class="row_input"><label for="input-pt-transmission" style="margin-right: 9px">Xmission</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
             <li class="row_input" title="Black voxels are emissive"><label style="margin-right: 5px">Emissive</label> <input type="color" id="input-pt-emissive" value="#5EC3C5"></li>
             <li class="category">MORE</li>
             <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
@@ -464,6 +477,7 @@
                     <option value="2">Checker</option>
                 </select>
             </li>
+            <li class="row_input"><label for="input-pt-plane">Plane</label> <input id="input-pt-plane" class="ignorekeys" type="number" value="0" min="0" step="1"></input></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-voxelize">
@@ -471,20 +485,29 @@
             <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1"></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
-            <li class="row" style="margin: 2px 0 0 2px">
-                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" title="GLB OBJ" spellcheck="false">
-                <button id="import_mesh_url" style="max-width: 28%"> > </button>
+            <li class="row" style="margin: 2px 0 0 2px" title="Direct URL to GLB, OBJ">
+                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" spellcheck="false">
+                <button id="import_mesh_url" style="max-width: 28%"></button>
             </li>
-            <li class="category">2D IMAGES</li>
+            <li class="category">IMAGES</li>
             <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" step="0.1"></li>
-            <li><input type="checkbox" id="input-voxelizer-yup" checked> <label for="input-voxelizer-yup">Y-Up</label></li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="input-voxelizer-vertical" checked> <label for="input-voxelizer-vertical">Vertical</label></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer_img').click()">Upload Image</button></li>
-            <li><button id="import_image_paste">Paste Base64</button></li>
-            <li class="row" style="margin: 2px 0 0 2px">
-                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" title="PNG JPG SVG" spellcheck="false">
-                <button id="import_image_url" style="max-width: 28%"> > </button>
+            <li class="row" style="margin: 2px 0 0 2px" title="Direct URL to PNG, JPG, SVG" >
+                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" spellcheck="false">
+                <button id="import_image_url" style="max-width: 28%"></button>
             </li>
+            <li class="category">TEXTS</li>
+            <li><input type="text" id="input-voxelizer-font" class="ignorekeys" value="48px Roboto" placeholder="Size Font" spellcheck="false"></li>
+            <li><input type="text" id="input-voxelizer-text" class="ignorekeys" placeholder="Type here" spellcheck="false"></li>
+            <li class="row"><label style="margin-right: 10px">Extrude</label> <input type="number" class="ignorekeys" id="input-voxelizer-text-extrude" value="5" min="1" step="1"></li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="input-voxelizer-text-vertical" checked> <label for="input-voxelizer-text-vertical">Vertical</label></li>
+            <li><input type="checkbox" id="input-voxelizer-text-emoji"> <label for="input-voxelizer-text-emoji">Colored Emoji</label></li>
+            <li class="spacer"></li>
+            <li><button id="voxelize_text">Generate Text</button></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-create">
@@ -627,8 +650,8 @@
                 </select>
             </li>
             <li class="category">COLORS</li>
-            <li class="row"><label style="margin-right: 22px">Albedo</label> <input type="color" id="input-pbr-albedo" value="#FFFFFF"></li>
-            <li class="row"><label style="margin-right: 10px">Emissive</label> <input type="color" id="input-pbr-emissive" value="#000000"></li>
+            <li class="row"><label style="margin-right: 23px">Albedo</label> <input type="color" id="input-pbr-albedo" value="#FFFFFF"></li>
+            <li class="row"><label style="margin-right: 12px">Emissive</label> <input type="color" id="input-pbr-emissive" value="#000000"></li>
             <li class="category">PROPERTIES</li>
             <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-pbr-roughness" type="number" class="ignorekeys" value="1" min="0" step="0.01"></li>
             <li class="row"><label style="margin-right: 22px">Metallic</label> <input id="input-pbr-metallic" type="number" class="ignorekeys" value="0" min="0" step="0.01"></li>
@@ -700,6 +723,16 @@
 
     <!-- dynamic -->
     <div id="input-color-wheel"></div>
+    <div id="input-color-picker">
+        <ul>
+            <li id="input-color-picker-wheel"></li>
+            <li id="input-color-picker-selected"><div title="Previous"></div><div title="Current"></div></li>
+            <li class="row_input"><label>HEX</label> <input type="text" id="input-color-picker-hex" class="ignorekeys" value="#FFFFFF" spellcheck="false"></li>
+            <li class="row_input"><label>RGB</label> <input type="text" id="input-color-picker-rgb" class="ignorekeys" value="255, 255, 255" spellcheck="false"></li>
+            <li class="spacer"></li>
+            <li id="input-color-picker-buttons"><button>Cancel</button><button>Apply</button></li>
+        </ul>
+    </div>
     <div id="marquee"></div>
     <div id="palette"><canvas id="canvas_palette"></canvas></div>
     <div id="meshlist"></div>
@@ -709,9 +742,9 @@
     <div id="progressbar"></div>
     <div id="introscreen">
         <div class="anim"><div class="cube"><div class="cube-faces"><div class="cube-face shadow"></div><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div></div></div></div>
-        <div class="logo">V<span class="logo_white">OXEL BUILDER</span></div><div class="progress">- LOADING -</div>
+        <div class="logo">V<span class="logo_white">OXEL BUILDER</span></div><div class="progress">- INITIALIZING -</div>
     </div>
-    <div id="confirm"><span>title here</span> <button>Cancel</button> <button>Ok</button></div>
+    <div id="confirm"><span>title</span> <button>0</button> <button>1</button></div>
     <div id="confirmblocker"></div>
     <div id="notifier"></div>
 
