@@ -151,7 +151,7 @@ const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
 const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
 const canvas = document.getElementById('canvas');
-const pointer = { x: 0, y: 0, isDown: false };
+export const pointer = { x: 0, y: 0, isDown: false };
 
 export let MODE = -1; // model|render|export
 let isRenderAxisView = true;
@@ -361,7 +361,7 @@ class Camera {
     init() {
         this.camera0 = ArcRotateCamera("camera", 10, VEC3_ZERO, scene);
 
-        this.camera0.setPosition(Vector3(100, 100, 100));
+        this.camera0.setPosition(Vector3(1000, 1000, 1000));
         this.camera0.setTarget(VEC3_ZERO.clone());
         this.camera0.lowerRadiusLimit = 2;
         this.camera0.upperRadiusLimit = 1500;
@@ -401,13 +401,13 @@ class Camera {
     frameColor(hex) {
         ghosts.createThin(builder.getVoxelsByColor(hex));
         this.setFramingBehavior(this.camera0, ghosts.thin);
-        ghosts.initAddThin();
+        ghosts.disposeThin();
     }
 
     frameVoxels(voxels) {
         ghosts.createThin(voxels);
         this.setFramingBehavior(this.camera0, ghosts.thin);
-        ghosts.initAddThin();
+        ghosts.disposeThin();
     }
 
     setFramingBehavior(cam, mesh) {
@@ -1025,17 +1025,14 @@ class Builder {
         const startTime = performance.now();
 
         if (this.voxels.length == 0)
-            modules.generator.newBox(1, COL_ICE);
+            modules.generator.newBox(1, preferences.getRenderShadeColor());
         
-        this.createThinInstances().then(() => {
+        this.createThinInstances(isRecord).then(() => {
             this.latency = (performance.now() - startTime).toFixed(0);
 
             this.fillMeshBuffersWorker().then(() => {
                 if (preferences.isBVHPick())
                     modules.rcm.createFromData(this.positions, this.indices);
-
-                if (isRecord)
-                    memory.record();
 
                 if (ui.domCameraAutoFrame.checked && !xformer.isActive)
                     camera.frame();
@@ -1049,7 +1046,7 @@ class Builder {
         });
     }
 
-    createThinInstances() {
+    createThinInstances(isRecord) {
         this.isWorking = true;
 
         return new Promise(resolve => {
@@ -1057,6 +1054,9 @@ class Builder {
             this.fillVoxelBuffers();
             
             if (duplicateFlag == 0) {
+                if (isRecord)
+                    memory.record();
+                
                 this.isWorking = false;
                 resolve();
 
@@ -1121,6 +1121,7 @@ class Builder {
         }
     }
 
+    // This function is moved to the worker module and is not used
     fillMeshBuffers() {
         this.positions = new Float32Array(vMesh.positions.length * this.voxels.length);
         this.normals = new Float32Array(vMesh.positions.length * this.voxels.length);
@@ -1393,25 +1394,6 @@ class Builder {
         this.create();
     }
 
-    async getReduceVoxels(voxels) {
-        const msg = await modules.workerPool.postMessage({
-            id: 'findInnerVoxels',
-            data: [ voxels, this.positionsMap ]
-        });
-        if (msg) {
-            const data = [];
-            for (let i = 0; i < msg.data.length; i++) {
-                data.push({
-                    position: Vector3(msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
-                    color: msg.data[i].color,
-                    visible: msg.data[i].visible
-                });
-            }
-            return data;
-        }
-        return undefined;
-    }
-
     async deleteHiddenAndUpdate() {
         const hiddens = this.getVoxelsByVisibility(false);
 
@@ -1429,6 +1411,25 @@ class Builder {
             this.voxels[i].color = hex;
         }
         this.create();
+    }
+
+    async getReduceVoxels(voxels) {
+        const msg = await modules.workerPool.postMessage({
+            id: 'findInnerVoxels',
+            data: [ voxels, this.positionsMap ]
+        });
+        if (msg) {
+            const data = [];
+            for (let i = 0; i < msg.data.length; i++) {
+                data.push({
+                    position: Vector3(msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
+                    color: msg.data[i].color,
+                    visible: msg.data[i].visible
+                });
+            }
+            return data;
+        }
+        return undefined;
     }
 
     async reduceVoxels() {
@@ -1479,6 +1480,8 @@ class Builder {
         this.voxels = this.createArrayFromStringData(data);
         this.create();
     }
+
+    // Voxel Array Generators
 
     createVoxelsFromArray(arr) {
         this.voxels = arr;
@@ -1946,6 +1949,7 @@ class MeshPool {
 class Ghosts {
     constructor() {
         this.thin = undefined;
+        this.thinOne = undefined;
         this.sps = undefined;
         this.cloud = undefined;
         this.tMatrix = MatrixIdentity();
@@ -1955,14 +1959,12 @@ class Ghosts {
     }
 
     init() {
-        this.initAddThin();
+        this.thin = vMesh.mesh.clone();
+        this.initThinOne();
     }
 
-    createThin(voxels, highlightAlpha = 0.4, highlightColor = COL_ORANGE_RGB) {
+    createThin(voxels, color = undefined) {
         if (voxels.length == 0) return;
-
-        if (this.thin)
-            this.thin.dispose();
 
         this.bufferMatrix = new Float32Array(16 * voxels.length);
         this.bufferColors = new Float32Array(4 * voxels.length);
@@ -1974,24 +1976,19 @@ class Ghosts {
             this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxels[i].visible) ? 1 : 0;
             this.bufferMatrix.set(this.tMatrix.m, i * 16);
 
-            this.rgbBuffer = hexToRgbFloat(voxels[i].color, 1);
+            this.rgbBuffer = hexToRgbFloat((color) ? color : voxels[i].color, 2.2);
             this.bufferColors[i * 4] = this.rgbBuffer.r;
             this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
             this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
             this.bufferColors[i * 4 + 3] = 1;
         }
     
-        this.thin = vMesh.mesh.clone();
         this.thin.makeGeometryUnique();
         this.thin.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
         this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
         this.thin.isVisible = true;
         this.thin.thinInstanceEnablePicking = false;
         this.thin.material = material.getMaterial();
-
-        // TODO: visual artifacts with thin-instances
-        if (highlightAlpha > 0)
-            helper.highlightOverlayMesh(this.thin, highlightColor, highlightAlpha);
 
         light.addMesh(this.thin);
         light.updateShadowMap();
@@ -2000,37 +1997,51 @@ class Ghosts {
     }
 
     setThinColor(hex) {
-        this.thin.renderOverlay = false;
+        if (this.bufferColors.length > 0) {
+            this.thin.renderOverlay = false;
 
-        const rgb = hexToRgbFloat(hex, 2.2);
-        for (let i = 0; i < this.bufferColors.length / 4; i++) {
-            this.bufferColors[i * 4] = rgb.r;
-            this.bufferColors[i * 4 + 1] = rgb.g;
-            this.bufferColors[i * 4 + 2] = rgb.b;
-            this.bufferColors[i * 4 + 3] = 1;
+            const rgb = hexToRgbFloat(hex, 2.2);
+            for (let i = 0; i < this.bufferColors.length / 4; i++) {
+                this.bufferColors[i * 4] = rgb.r;
+                this.bufferColors[i * 4 + 1] = rgb.g;
+                this.bufferColors[i * 4 + 2] = rgb.b;
+                this.bufferColors[i * 4 + 3] = 1;
+            }
+
+            this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
         }
-
-        this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
     }
 
-    initAddThin() {
+    setThinHighlight(alpha, color = COL_ORANGE_RGB) {
+        // TODO: visual artifacts with thin-instances
+        helper.highlightOverlayMesh(this.thin, color, alpha);
+    }
+
+    disposeThin() {
         if (xformer.isActive) return;
 
         if (this.thin)
             this.thin.dispose();
 
         this.thin = vMesh.mesh.clone();
-        this.thin.isVisible = false;
-        this.thin.name = "ghost_thin";
-        this.thin.material = material.getMaterial();
-        this.thin.thinInstanceRegisterAttribute("color", 4);
     }
 
-    addThin(pos, hex) {
-        this.thin.isVisible = true;
-        const idx = this.thin.thinInstanceAdd(MatrixTranslation(pos.x, pos.y, pos.z));
+    initThinOne() {
+        if (this.thinOne)
+            this.thinOne.dispose();
+
+        this.thinOne = vMesh.mesh.clone();
+        this.thinOne.isVisible = false;
+        this.thinOne.name = "ghost_thin_one";
+        this.thinOne.material = material.getMaterial();
+        this.thinOne.thinInstanceRegisterAttribute("color", 4);
+    }
+
+    addThinOne(pos, hex) {
+        this.thinOne.isVisible = true;
+        const idx = this.thinOne.thinInstanceAdd(MatrixTranslation(pos.x, pos.y, pos.z));
         const rgb = hexToRgbFloat(hex, 2.2);
-        this.thin.thinInstanceSetAttributeAt("color", idx, [rgb.r, rgb.g, rgb.b, 1]);
+        this.thinOne.thinInstanceSetAttributeAt("color", idx, [rgb.r, rgb.g, rgb.b, 1]);
     }
 
     createSPS(voxels = builder.voxels) {
@@ -2654,12 +2665,12 @@ class Tool {
     add(pos) {
         if (this.selected.indexOf(pos) == -1) {
             this.selected.push(pos);
-            ghosts.addThin(pos, currentColor);
+            ghosts.addThinOne(pos, currentColor);
 
             if (this.isSymmetry) {
                 pos = symmetry.invertPos(pos);
                 this.selected.push(pos);
-                ghosts.addThin(pos, currentColor);
+                ghosts.addThinOne(pos, currentColor);
             }
         }
     }
@@ -2674,12 +2685,12 @@ class Tool {
     remove(pos) {
         if (this.selected.indexOf(pos) == -1) {
             this.selected.push(pos);
-            ghosts.addThin(pos, COL_RED);
+            ghosts.addThinOne(pos, COL_RED);
 
             if (this.isSymmetry) {
                 pos = symmetry.invertPos(pos);
                 this.selected.push(pos);
-                ghosts.addThin(pos, COL_RED);
+                ghosts.addThinOne(pos, COL_RED);
             }
         }
     }
@@ -2693,13 +2704,13 @@ class Tool {
 
     paint(index, pos) {
         builder.voxels[index].color = currentColor;
-        ghosts.addThin(pos, currentColor);
+        ghosts.addThinOne(pos, currentColor);
 
         if (this.isSymmetry) {
             const index = symmetry.findIndexInvert(pos);
             if (index !== undefined) {
                 builder.voxels[index].color = currentColor;
-                ghosts.addThin(builder.voxels[index].position, currentColor);
+                ghosts.addThinOne(builder.voxels[index].position, currentColor);
             }
         }
     }
@@ -2818,15 +2829,22 @@ class Tool {
     rectSelect(start) {
         this.selected = this.getVoxelsFromRectangleSelection(start);
         ghosts.createThin(this.selected);
+        ghosts.setThinHighlight(0.4);
     }
 
     rectSelectPaint(start) {
         this.selected = this.getVoxelsFromRectangleSelection(start);
-        ghosts.createThin(this.selected, 0.8, color3FromHex(currentColor));
+        ghosts.createThin(this.selected);
+        ghosts.setThinColor(currentColor);
     }
 
-    rectSelectAdd(start, norm) {
+    rectSelectAdd(start, direction) {
         this.tmp = this.getVoxelsFromRectangleSelection(start);
+
+        const norm = direction.negate().normalize();
+        norm.x = norm.x == 0 ? 0 : Math.sign(norm.x);
+        norm.y = norm.y == 0 ? 0 : Math.sign(norm.y); // + 0.5
+        norm.z = norm.z == 0 ? 0 : Math.sign(norm.z);
 
         this.selected = [];
         for (let i = 0; i < this.tmp.length; i++) {
@@ -2838,7 +2856,7 @@ class Tool {
             });
         }
 
-        ghosts.createThin(this.selected, 0);
+        ghosts.createThin(this.selected);
     }
 
     addBridge(pos, norm) {
@@ -3024,7 +3042,7 @@ class Tool {
                 break;
             case 'rect_add':
                 if (this.startRect)
-                    this.rectSelectAdd(this.startRect, norm);
+                    this.rectSelectAdd(this.startRect, pick.ray.direction.clone());
                 break;
             case 'rect_remove':
                 if (this.startRect)
@@ -3214,7 +3232,8 @@ class Tool {
             this.tmp = [];
 
             faceNormalProbe.dispose();
-            ghosts.initAddThin();
+            ghosts.disposeThin();
+            ghosts.initThinOne();
             ghosts.disposeSPS();
             helper.clearBoxShape();
             setTimeout(() => {
@@ -3449,6 +3468,7 @@ class XFormer {
         this.xforms = voxels.slice(0);
 
         ghosts.createThin(voxels);
+        ghosts.setThinHighlight(0.4);
 
         this.root.position.copyFrom(ghosts.getCenter());
         ghosts.thin.setParent(this.root);
@@ -3467,6 +3487,7 @@ class XFormer {
         this.xforms = voxels.slice(0);
 
         ghosts.createThin(voxels);
+        ghosts.setThinHighlight(0.4);
         
         this.root.position.copyFrom(ghosts.getCenter());
         ghosts.thin.setParent(this.root);
@@ -3485,6 +3506,7 @@ class XFormer {
 
         tool.toolSelector('camera');
         ghosts.createThin(voxels);
+        ghosts.setThinHighlight(0.4);
         
         this.root.position.copyFrom(ghosts.getCenter());
         ghosts.thin.setParent(this.root);
@@ -3539,7 +3561,7 @@ class XFormer {
         uix.unbindVoxelGizmo();
         
         ghosts.thin.setParent(null);
-        ghosts.initAddThin();
+        ghosts.disposeThin();
         
         this.xforms = [];
     }
@@ -3574,7 +3596,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.5.9 R4",
+            version: "Voxel Builder 4.6.0",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3607,7 +3629,8 @@ class Project {
                         roughness: parseFloat(ui.domRenderMaterialRoughness.value),
                         metalness: parseFloat(ui.domRenderMaterialMetalness.value),
                         transmission: parseFloat(ui.domRenderMaterialTransmission.value),
-                        emissive: ui.domRenderMaterialEmissive.value.toUpperCase()
+                        emissive: ui.domRenderMaterialEmissive.value.toUpperCase(),
+                        emissive_intensity: parseFloat(ui.domRenderMaterialEmissiveIntensity.value)
                     }
                 }
             },
@@ -3617,7 +3640,7 @@ class Project {
         };
     }
     
-    clearSceneAndReset(isFrameCamera = true) {
+    resetSceneSetup(isFrameCamera = true) {
         ui.setMode(0);
 
         memory.clear();
@@ -3626,37 +3649,35 @@ class Project {
         ghosts.disposePointCloud();
         pool.clearPool();
         uix.hideLightLocator();
-
-        if (isFrameCamera)
-            setTimeout(() => {
+        
+        setTimeout(() => {
+            if (isFrameCamera && preferences.isInitialized)
                 camera.frame();
-            }, 10);
+        }, 10);
     }
 
-    newProjectStartup(size = 20) {
-        let color = COL_ICE;
-        if (size > 5)
-            color = '#3B76BF';
-
+    newProjectStartup(color, size = 20) {
+        color = color.toUpperCase();
+        
         builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    builder.add(Vector3(x, y, z), y == 0 ? color : COL_ICE, true);
+                    builder.add(Vector3(x, y, z), y == 0 ? '#3B76BF' : color, true);
                 }
             }
         }
         
         builder.create();
-        project.clearSceneAndReset(false);
+        this.resetSceneSetup(false);
         ui.domProjectName.value = 'untitled';
     }
 
     async newProject() {
         if (!await ui.showConfirm('create new project?')) return;
-        modules.generator.newBox(2, COL_ICE);
+        modules.generator.newBox(2, preferences.getRenderShadeColor());
         builder.create();
-        this.clearSceneAndReset();
+        this.resetSceneSetup();
         ui.domProjectName.value = 'untitled';
     }
 
@@ -3706,11 +3727,14 @@ class Project {
             ui.domRenderMaterialMetalness.value = parseFloat(data.render.materials.default.metalness);
             ui.domRenderMaterialTransmission.value = parseFloat(data.render.materials.default.transmission);
             ui.domRenderMaterialEmissive.value = data.render.materials.default.emissive.toUpperCase();
+            (data.render.materials.default.emissive_intensity) ? // backward compatibility
+                ui.domRenderMaterialEmissiveIntensity.value = parseFloat(data.render.materials.default.emissive_intensity) :
+                ui.domRenderMaterialEmissiveIntensity.value = 2;
         }
 
         // data.voxels
         builder.setStringData(data.data.voxels);
-        this.clearSceneAndReset();
+        this.resetSceneSetup();
     }
 
     importVoxels(data) {        
@@ -3800,7 +3824,7 @@ class Project {
             }
             builder.createVoxelsFromArray(voxels);
             builder.normalizeVoxelPositions();
-            this.clearSceneAndReset();
+            this.resetSceneSetup();
             ui.domProjectName.value = 'untitled';
             ui.showProgress(0);
         } else {
@@ -4039,7 +4063,7 @@ class Snapshot {
 
         if (this.newScene.checked) {
             builder.setStringData(data);
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
         } else {
             const voxels = builder.createArrayFromStringData(data);
             xformer.beginNewObject(voxels);
@@ -4054,7 +4078,7 @@ class Snapshot {
         }
 
         builder.setStringData(data);
-        project.clearSceneAndReset();
+        project.resetSceneSetup();
     }
 
     delStorage(name) {
@@ -4078,7 +4102,7 @@ class Snapshot {
 
         if (num > 10) {
             parent.style.overflowY = "scroll";
-            parent.style.paddingRight = "5px";
+            parent.style.paddingRight = "8px";
         } else {
             parent.style.overflowY = "unset";
             parent.style.paddingRight = "0";
@@ -4147,7 +4171,9 @@ class Snapshot {
         }
     }
 
-    loadSnapshots(archive) {
+    async loadSnapshots(archive) {
+        if (!await ui.showConfirm("replace all snapshots?")) return;
+        
         for (let i = 0; i < MAX_SNAPSHOTS; i++) {
             localStorage.removeItem(vbstoreSnapshots + 'shot' + i);
             localStorage.removeItem(vbstoreSnapshotsImages + 'shot' + i);
@@ -4161,6 +4187,7 @@ class Snapshot {
             arr.forEach(fname => {
 
                 const id = parseInt(fname.split('.')[0]);
+                ui.showProgress(id + 1, arr.length);
 
                 if (fname.endsWith('.json')) {
                     zip.file(fname).async('string').then(data => {
@@ -4173,6 +4200,7 @@ class Snapshot {
                                 this.createElements(preferences.getSnapshotNum());
                                 this.createSnapshots();
                                 ui.notification(`${arr.length} snapshots loaded`);
+                                ui.showProgress(0);
                             }, 100);
                         }
                     });
@@ -4194,10 +4222,10 @@ class Voxelizer {
         const scale = parseInt(ui.domVoxelizerScale.value);
 
         pool.normalizeMesh(mesh, scale);
-        const data = modules.rcv.mesh_voxel(mesh, COL_ICE);
+        const data = modules.rcv.mesh_voxel(mesh, preferences.getRenderShadeColor());
         
         builder.createVoxelsFromArray(data);
-        project.clearSceneAndReset();
+        project.resetSceneSetup();
     }
 
     voxelizeBake(meshes) {
@@ -4217,14 +4245,14 @@ class Voxelizer {
         } else {
             builder.createVoxelsFromArray(data);
             builder.normalizeVoxelPositions();
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
         }
     }
 
     voxelize2D(imgData) {
         ui.showProgress(1);
         const ratio = parseFloat(ui.domVoxelizerRatio.value);
-        const yUp = ui.domVoxelizerYup.checked;
+        const vertical = ui.domVoxelizerVertical.checked;
 
         const img = new Image();
         img.src = imgData;
@@ -4232,20 +4260,19 @@ class Voxelizer {
         img.onload = () => {
             const c = document.createElement('canvas');
             const cx = c.getContext('2d');
-
             const dim = aspectRatioFit(img.width, img.height, 10*ratio, 10*ratio);
             c.width = dim.width;
             c.height = dim.height;
-
             cx.msImageSmoothingEnabled = false;
             cx.mozImageSmoothingEnabled = false;
             cx.webkitImageSmoothingEnabled = false;
             cx.imageSmoothingEnabled = false;
+            
             cx.drawImage(img, 0, 0, c.width, c.height);
 
             const data = [];
             const imageData = cx.getImageData(0, 0, c.width, c.height).data;
-            let x,y,r,g,b;
+            let x, y, r, g, b;
             for (let i = 0; i < imageData.length; i += 4) {
                 if (imageData[i + 3] > 0) {
                     r = imageData[i];
@@ -4253,7 +4280,7 @@ class Voxelizer {
                     b = imageData[i + 2];
                     x = (i / 4) % c.width;
                     y = ~~(i / 4 / c.width);
-                    if (yUp) {
+                    if (vertical) {
                         data.push({
                             position: Vector3(x, dim.height-y-1, 0).floor(),
                             color: rgbIntToHex(r, g, b),
@@ -4271,9 +4298,83 @@ class Voxelizer {
 
             builder.createVoxelsFromArray(data);
             builder.normalizeVoxelPositions();
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
             ui.showProgress(0);
         }
+    }
+
+    voxelize2DText() {
+        const font = ui.domVoxelizerTextFont.value;
+        const text = ui.domVoxelizerText.value;
+        const extrude = parseInt(ui.domVoxelizerTextExtrude.value);
+        const vertical = ui.domVoxelizerTextVertical.checked;
+        const emoji = ui.domVoxelizerTextEmoji.checked;
+        if (text == '' || font == '' || font.endsWith(' ') || font.split(' ').length !== 2 || !font.split(' ')[0].endsWith('px')) {
+            ui.notification("incorrect font or undefined text");
+            return;
+        }
+        ui.showProgress(1);
+
+        const c = document.createElement("canvas");
+        const cx = c.getContext("2d");
+        c.width = 4096;
+        c.height = 2028;
+        cx.msImageSmoothingEnabled = false;
+        cx.mozImageSmoothingEnabled = false;
+        cx.webkitImageSmoothingEnabled = false;
+        cx.imageSmoothingEnabled = false;
+
+        cx.font = font;
+        cx.textAlign = "center";
+        cx.textBaseline = "middle";
+        cx.fillStyle = "white";
+        cx.fillText(text, c.width / 2, c.height / 2);
+
+        const data = [];
+        const imageData = cx.getImageData(0, 0, c.width, c.height).data;
+        let x, y, r, g, b;
+        for (let i = 0; i < imageData.length; i += 4) {
+            if (imageData[i + 3] > 0) {
+                r = imageData[i];
+                g = imageData[i + 1];
+                b = imageData[i + 2];
+                x = (i / 4) % c.width;
+                y = ~~(i / 4 / c.width);
+                if (vertical) {
+                    data.push({
+                        position: Vector3(x, c.height-y-1, 0).floor(),
+                        color: emoji ? rgbIntToHex(r, g, b) : currentColor,
+                        visible: true
+                    });
+                } else {
+                    data.push({
+                        position: Vector3(x, 0, y).floor(),
+                        color: emoji ? rgbIntToHex(r, g, b) : currentColor,
+                        visible: true
+                    });
+                }
+            }
+        }
+
+        const arr = [];
+        for (let i = 0; i < data.length; i++) {
+            for (let x = 1; x < extrude; x++) {
+                arr.push({
+                    position: Vector3(
+                        data[i].position.x,
+                        vertical ? data[i].position.y : data[i].position.y + x,
+                        vertical ? data[i].position.z + x : data[i].position.z
+                    ),
+                    color: data[i].color,
+                    visible: true
+                });
+            }
+       }
+
+        builder.createVoxelsFromArray(data.concat(arr));
+        builder.normalizeVoxelPositions();
+        project.resetSceneSetup();
+        ui.showProgress(0);
     }
 
     importBakedVoxels(url) {
@@ -4375,20 +4476,6 @@ class Voxelizer {
         }).catch(err => {
             ui.notification("unable to read url");
         });
-    }
-
-    pasteBase64Image() {
-        navigator.clipboard.readText()
-            .then(url => {
-                if (url.startsWith('data:image/')) {
-                    this.voxelize2D(url);
-                } else {
-                    ui.notification('invalid base64 image');
-                }
-            })
-            .catch(err => {
-                ui.notification('failed to read clipboard data');
-            });
     }
 }
 
@@ -4635,7 +4722,7 @@ class UserInterface {
         this.domSymmCenter = document.getElementById('input-symm-center');
         this.domSymmPreview = document.getElementById('input-symm-preview');
         this.domColorPicker = document.getElementById('input-color');
-        this.domColorWheel = document.getElementById('input-color-wheel');
+        this.domColorWheel = document.getElementById('color-wheel');
         this.domPalette = document.getElementById('palette');
         this.domPaletteColors = document.getElementById('palette-colors');
         this.domMeshList = document.getElementById('meshlist');
@@ -4658,7 +4745,12 @@ class UserInterface {
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
-        this.domVoxelizerYup = document.getElementById('input-voxelizer-yup');
+        this.domVoxelizerVertical = document.getElementById('input-voxelizer-vertical');
+        this.domVoxelizerTextFont = document.getElementById('input-voxelizer-font');
+        this.domVoxelizerText = document.getElementById('input-voxelizer-text');
+        this.domVoxelizerTextExtrude = document.getElementById('input-voxelizer-text-extrude');
+        this.domVoxelizerTextVertical = document.getElementById('input-voxelizer-text-vertical');
+        this.domVoxelizerTextEmoji = document.getElementById('input-voxelizer-text-emoji');
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
         this.domPbrEmissive = document.getElementById('input-pbr-emissive');
@@ -4667,7 +4759,6 @@ class UserInterface {
         this.domPbrAlpha = document.getElementById('input-pbr-alpha');
         this.domPbrVertexColor = document.getElementById('input-pbr-vertexcolor');
         this.domPbrWireframe = document.getElementById('input-pbr-wireframe');
-        this.domLightShadows = document.getElementById('pref_light_shadows');
         this.domMaterialSwitch = document.getElementById('material-switch');
         this.domProjectName = document.getElementById('project_name');
         this.domExportFormat = document.getElementById('export_format');
@@ -4686,9 +4777,11 @@ class UserInterface {
         this.domRenderMaterialMetalness = document.getElementById('input-pt-metalness');
         this.domRenderMaterialTransmission = document.getElementById('input-pt-transmission');
         this.domRenderMaterialEmissive = document.getElementById('input-pt-emissive');
+        this.domRenderMaterialEmissiveIntensity = document.getElementById('input-pt-emissive-intensity');
         this.domRenderAutoStart = document.getElementById('input-pt-autostart');
         this.domRenderShade = document.getElementById('input-pt-shade');
         this.domRenderTexture = document.getElementById('input-pt-texture');
+        this.domRenderPlane = document.getElementById('input-pt-plane');
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
         this.domNotifier = document.getElementById('notifier');
@@ -4846,10 +4939,12 @@ class UserInterface {
         }, timeout);
     }
 
-    async showConfirm(title) {
+    async showConfirm(title, btn_0 = "cancel", btn_1 = "ok") {
         this.domConfirmBlocker.style.display = 'unset';
         this.domConfirm.style.display = 'unset';
         this.domConfirm.children[0].innerHTML = title;
+        this.domConfirm.children[1].innerHTML = btn_0;
+        this.domConfirm.children[2].innerHTML = btn_1;
         return new Promise((resolve) => {
             this.domConfirm.children[1].onclick = () => {
                 this.domConfirmBlocker.style.display = 'none';
@@ -4864,7 +4959,7 @@ class UserInterface {
             this.domConfirmBlocker.onclick = () => {
                 this.domConfirmBlocker.style.display = 'none';
                 this.domConfirm.style.display = 'none';
-                resolve(false);
+                resolve(undefined);
             };
         });
     }
@@ -5054,7 +5149,7 @@ class UserInterfaceAdvanced {
         this.lightGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
         this.lightGizmoUp.dragBehavior.onDragObservable.add(() => {
             light.updateHeight(light.location.y / this.lightNode.scaling.x);
-            modules.sandbox.updateLight();
+            modules.sandbox.updateLights();
             helper.clearOverlays();
         });
         this.lightGizmoUp.dragBehavior.onDragStartObservable.add(() => {
@@ -5070,7 +5165,7 @@ class UserInterfaceAdvanced {
         this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
         this.lightGizmoNews.dragBehavior.onDragObservable.add(() => {
             light.updateAngle(this.lightNode.rotation.y * 180 / Math.PI);
-            modules.sandbox.updateLight();
+            modules.sandbox.updateLights();
             helper.clearOverlays();
         });
         this.lightGizmoNews.dragBehavior.onDragStartObservable.add(() => {
@@ -5113,6 +5208,7 @@ const KEY_PALETTE_SIZE = "pref_palette_size";
 const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
 const KEY_BACKGROUND_CHECK = "pref_background_check";
 const KEY_BACKGROUND_COLOR = "pref_background_color";
+const KEY_RENDER_SHADE = "pref_render_shade";
 const KEY_WEBSOCKET = "pref_websocket";
 const KEY_WEBSOCKET_URL = "pref_websocket_url";
 const KEY_HELP_LABELS = "pref_help_labels";
@@ -5134,6 +5230,7 @@ class Preferences {
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#363B45";
+        document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
         document.getElementById(KEY_WEBSOCKET).checked = false;
         document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
         document.getElementById(KEY_HELP_LABELS).checked = true;
@@ -5174,6 +5271,8 @@ class Preferences {
                 scene.clearColor = color4FromHex(val);
         });
 
+        this.setPref(KEY_RENDER_SHADE);
+
         this.setPrefCheck(KEY_WEBSOCKET, (chk) => {
             (chk && !modules.sandbox.isActive()) ?
                 modules.ws_client.connect() : modules.ws_client.disconnect();
@@ -5200,7 +5299,7 @@ class Preferences {
                     this.postFinish();
                 });
             } else {
-                project.newProjectStartup(document.getElementById(KEY_STARTBOX_SIZE).value);
+                project.newProjectStartup(document.getElementById(KEY_RENDER_SHADE).value, document.getElementById(KEY_STARTBOX_SIZE).value);
                 ui.showInterface();
                 document.getElementById('introscreen').style.display = 'none';
                 console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
@@ -5213,9 +5312,6 @@ class Preferences {
         axisView.init();
         ui.createColorWheel();
         palette.expand(this.getPaletteSize());
-
-        snapshot.createElements(this.getSnapshotNum());
-        snapshot.createSnapshots();
 
         camera.frame();
 
@@ -5242,6 +5338,9 @@ class Preferences {
         document.body.appendChild(scriptUserModules);
 
         // extras
+        snapshot.createElements(this.getSnapshotNum());
+        snapshot.createSnapshots();
+        modules.colorPicker.init();
         modules.panels.showHelpLabels(document.getElementById(KEY_HELP_LABELS).checked);
     }
 
@@ -5275,6 +5374,10 @@ class Preferences {
 
     getBackgroundColor() {
         return document.getElementById(KEY_BACKGROUND_COLOR).value;
+    }
+
+    getRenderShadeColor() {
+        return document.getElementById(KEY_RENDER_SHADE).value.toUpperCase();
     }
 
     isWebsocket() {
@@ -5768,20 +5871,20 @@ ui.domInScreenOrtho.onclick = () => {
 ui.domRenderMaxSamples.onchange = (ev) => {
     if (ev.target.value < 8) ev.target.value = 8;
     if (modules.sandbox.isActive())
-        modules.sandbox.pathTracer.updateMaxSamples(ev.target.value);
+        modules.sandbox.pt.updateMaxSamples(ev.target.value);
 };
 
 ui.domRenderBounces.onchange = (ev) => {
     if (modules.sandbox.isActive())
-        modules.sandbox.pathTracer.updateBounces(ev.target.value);
+        modules.sandbox.pt.updateBounces(ev.target.value);
 };
 
 ui.domRenderDPR.onchange = (ev) => {
-    modules.sandbox.pathTracer.updateRenderScale(ev.target.value);
+    modules.sandbox.pt.updateRenderScale(ev.target.value);
 };
 
 ui.domRenderTiles.onchange = (ev) => {
-    modules.sandbox.pathTracer.updateTiles(parseInt(ev.target.value));
+    modules.sandbox.pt.updateTiles(parseInt(ev.target.value));
 };
 
 ui.domRenderTonemap.onchange = (ev) => {
@@ -5805,41 +5908,37 @@ ui.domRenderEnvPower.onchange = (ev) => {
 
 ui.domRenderLightColor.oninput = () => {
     if (modules.sandbox.isActive())
-        modules.sandbox.updateLight();
+        modules.sandbox.updateLights();
 };
 
 ui.domRenderLightIntensity.onchange = (ev) => {
-    modules.sandbox.light.intensity = ev.target.value;
     if (modules.sandbox.isActive())
-        modules.sandbox.pathTracer.updateLights();
+        modules.sandbox.updateLights();
 };
 
 ui.domRenderMaterialRoughness.onchange = () => {
-    if (modules.sandbox.isActive()) {
-        modules.sandbox.updateMeshes();
-        modules.sandbox.pathTracer.updateMaterials();
-    }
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
 };
 
 ui.domRenderMaterialMetalness.onchange = () => {
-    if (modules.sandbox.isActive()) {
-        modules.sandbox.updateMeshes();
-        modules.sandbox.pathTracer.updateMaterials();
-    }
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
 };
 
 ui.domRenderMaterialTransmission.onchange = () => {
-    if (modules.sandbox.isActive()) {
-        modules.sandbox.updateMeshes();
-        modules.sandbox.pathTracer.updateMaterials();
-    }
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
 };
 
 ui.domRenderMaterialEmissive.onchange = () => {
-    if (modules.sandbox.isActive()) {
-        modules.sandbox.updateMeshes();
-        modules.sandbox.pathTracer.updateMaterials();
-    }
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
+};
+
+ui.domRenderMaterialEmissiveIntensity.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
 };
 
 ui.domRenderAutoStart.onchange = (ev) => {
@@ -5853,10 +5952,13 @@ ui.domRenderShade.onchange = () => {
 };
 
 ui.domRenderTexture.onchange = () => {
-    if (modules.sandbox.isActive()) {
+    if (modules.sandbox.isActive())
         modules.sandbox.updateMeshes();
-        modules.sandbox.pathTracer.updateMaterials();
-    }
+};
+
+ui.domRenderPlane.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updatePlane();
 };
 
 ui.domCameraAutoFrame.onchange = (ev) => {
@@ -5883,17 +5985,13 @@ ui.domCameraFov.onchange = (ev) => {
 };
 
 ui.domCameraFStop.onchange = (ev) => {
-    if (modules.sandbox.isActive() && ev.target.value > 0) {
-        modules.sandbox.camera.fStop = ev.target.value;
-        modules.sandbox.pathTracer.updateCamera();
-    }
+    if (modules.sandbox.isActive() && ev.target.value > 0)
+        modules.sandbox.updateCamera(false);
 };
 
 ui.domCameraFocalLength.onchange = (ev) => {
-    if (modules.sandbox.isActive() && ev.target.value > 0) {
-        modules.sandbox.camera.focusDistance = ev.target.value;
-        modules.sandbox.pathTracer.updateCamera();
-    }
+    if (modules.sandbox.isActive() && ev.target.value > 0)
+        modules.sandbox.updateCamera(false);
 };
 
 ui.domCameraAutoRotation.onchange = () => {
@@ -5922,13 +6020,6 @@ ui.domSymmAxisZ.onclick = () => {
 
 ui.domSymmCenter.onclick = () => {
     helper.setSymmPivot();
-};
-
-ui.domLightShadows.onchange = (ev) => {
-    light.enableShadows(ev.target.checked);
-    modules.sandbox.light.castShadow = ev.target.checked;
-    if (modules.sandbox.isActive())
-        modules.sandbox.pathTracer.updateLights();
 };
 
 ui.domPbrTexture.onclick = () => {
@@ -6030,8 +6121,8 @@ document.getElementById('create_isometric').onclick = () =>         { if (ui.che
 document.getElementById('create_sphere').onclick = () =>            { if (ui.checkMode(0)) modules.generator.createSphere() };
 document.getElementById('create_terrain').onclick = () =>           { if (ui.checkMode(0)) modules.generator.createTerrain() };
 document.getElementById('import_mesh_url').onclick = (ev) =>        { if (ui.checkMode(0)) voxelizer.loadFromUrl(ev.target.previousElementSibling.value) };
-document.getElementById('import_image_paste').onclick = () =>       { if (ui.checkMode(0)) voxelizer.pasteBase64Image() };
 document.getElementById('import_image_url').onclick = (ev) =>       { if (ui.checkMode(0)) voxelizer.loadFromUrlImage(ev.target.previousElementSibling.value) };
+document.getElementById('voxelize_text').onclick = () =>            { if (ui.checkMode(0)) voxelizer.voxelize2DText() };
 document.getElementById('symm_p2n').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(1) };
 document.getElementById('symm_n2p').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(-1) };
 document.getElementById('symm_mirror').onclick = () =>              { if (ui.checkMode(0)) symmetry.mirrorVoxels() };

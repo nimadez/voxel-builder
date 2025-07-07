@@ -7,10 +7,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { ui, builder, xformer, project } from '../core.js';
-
-
-const COL_ICE = '#8398AF';
+import { ui, builder, xformer, project, preferences } from '../core.js';
 
 
 class Generator {
@@ -35,6 +32,7 @@ class Generator {
         const X = parseInt(document.getElementById('create_grid_x').value);
         const Y = (isPlane) ? 1 : parseInt(document.getElementById('create_grid_y').value);
         const Z = parseInt(document.getElementById('create_grid_z').value);
+        const color = preferences.getRenderShadeColor();
         
         const data = [];
         if (isFill) {
@@ -43,7 +41,7 @@ class Generator {
                     for (let z = 0; z < Z; z++) {
                         data.push({
                             position: Vector3(x, y, z),
-                            color: COL_ICE,
+                            color: color,
                             visible: true
                         });
                     }
@@ -57,7 +55,7 @@ class Generator {
                             x == X-1 || y == Y-1 || z == Z-1) {
                             data.push({
                                 position: Vector3(x, y, z),
-                                color: COL_ICE,
+                                color: color,
                                 visible: true
                             });
                         }
@@ -68,7 +66,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
         } else {
             xformer.beginNewObject(data);
         }
@@ -80,6 +78,7 @@ class Generator {
         const X = parseInt(document.getElementById('create_grid_x').value);
         const Y = parseInt(document.getElementById('create_grid_y').value);
         const Z = parseInt(document.getElementById('create_grid_z').value);
+        const color = preferences.getRenderShadeColor();
 
         const data = [];
         for (let x = 0; x < X; x++) {
@@ -88,7 +87,7 @@ class Generator {
                     if (x == 0 || y == 0 || z == 0)
                         data.push({
                             position: Vector3(x, y, z),
-                            color: COL_ICE,
+                            color: color,
                             visible: true
                         });
                 }
@@ -97,7 +96,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
         } else {
             xformer.beginNewObject(data);
         }
@@ -120,6 +119,8 @@ class Generator {
         const center = outer - 1;
         const data = [];
 
+        const color = preferences.getRenderShadeColor();
+
         function isSurface(x, y, z) {
             const dx = 2*x - center;
             const dy = 2*y - center;
@@ -134,7 +135,7 @@ class Generator {
                     if (isSurface(x, y, z)) {
                         data.push({
                             position: Vector3(x, y, z),
-                            color: COL_ICE,
+                            color: color,
                             visible: true
                         });
                     }
@@ -144,7 +145,7 @@ class Generator {
         
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
         } else {
             xformer.beginNewObject(data);
         }
@@ -158,6 +159,8 @@ class Generator {
         const Y = parseInt(document.getElementById('create_terrain_y').value);
         const Z = parseInt(document.getElementById('create_terrain_z').value);
 
+        const color = preferences.getRenderShadeColor();
+        
         const simplex = new SimplexNoise();
         const colArrayHigh = gradientHexArray('#87BC24', '#31A531', Y);
         const colArrayLow  = gradientHexArray('#217EC4', '#31A531', Y);
@@ -175,13 +178,13 @@ class Generator {
                 if (h >= 0) {
                     data.push({
                         position: Vector3(x, h, z),
-                        color: (isHeightGrad) ? colArrayHigh[h] : COL_ICE,
+                        color: (isHeightGrad) ? colArrayHigh[h] : color,
                         visible: true
                     });
                 } else {
                     data.push({
                         position: Vector3(x, h, z),
-                        color: (isHeightGrad) ? colArrayLow[ Math.abs(h) ] : COL_ICE,
+                        color: (isHeightGrad) ? colArrayLow[ Math.abs(h) ] : color,
                         visible: true
                     });
                 }
@@ -190,7 +193,7 @@ class Generator {
 
         if (isNewScene) {
             builder.createVoxelsFromArray(data);
-            project.clearSceneAndReset();
+            project.resetSceneSetup();
         } else {
             xformer.beginNewObject(data);
         }

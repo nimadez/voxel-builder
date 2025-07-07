@@ -25,6 +25,7 @@ class Engine {
             this.engine.premultipliedAlpha = false;
             this.engine.enableOfflineSupport = false;
             this.engine.doNotHandleContextLost = true;
+            this.engine.maxFPS = 60;
 
             resolve(this.engine);
         });
@@ -38,6 +39,7 @@ class Engine {
             this.engine.premultipliedAlpha = true;
             this.engine.enableOfflineSupport = false;
             this.engine.doNotHandleContextLost = true;
+            this.engine.maxFPS = 60;
 
             await this.engine.initAsync();
 
@@ -336,7 +338,7 @@ export function ExportSTL(meshes, filename) {
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-export function Animator(target, property, from, to, callback = undefined, fps = 60, totalFrame = 30) {
+export function Animator(target, property, from, to, callback = undefined, fps = 60, totalFrame = 25) {
     BABYLON.Animation.CreateAndStartAnimation('animator',
         target, property, fps, totalFrame, from, to, 
         BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,

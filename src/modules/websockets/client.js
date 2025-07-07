@@ -15,6 +15,7 @@ import { MODE, preferences, builder, project } from '../core.js';
 class WebsocketClient {
     constructor() {
         this.domConnect = document.getElementById('ws_connect');
+        this.domConnect.style.color = 'indianred';
         this.ws = undefined;
         this.retryDelay = 2000;
         this.maxRetry = 10;
@@ -58,7 +59,7 @@ class WebsocketClient {
 
                 if (this.parsed.is_clear) {
                     builder.createVoxelsFromArray(this.data);
-                    project.clearSceneAndReset();
+                    project.resetSceneSetup();
                 } else {
                     builder.add(
                         this.data[0].position,

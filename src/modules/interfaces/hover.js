@@ -9,10 +9,10 @@ import { tool } from '../core.js';
 
 
 class Hover {
-    constructor(parent) {
-        this.elem = parent;
-        this.elemDrag = parent.children[0];
-        this.elemItems = parent.children[1].children;
+    constructor() {
+        this.elem = document.getElementById('hover');
+        this.elemDrag = this.elem.children[0];
+        this.elemItems = this.elem.children[1].children;
 
         this.isActive = false;
         this.isShowMenu = true;
@@ -109,4 +109,4 @@ class Hover {
     }
 }
 
-export const hover = new Hover(document.getElementById('hover'));
+export const hover = new Hover();

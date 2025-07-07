@@ -71,9 +71,9 @@
         input[type=checkbox] + label { cursor: pointer; }
         input[type=checkbox]:checked { accent-color: steelblue; filter: none; }
         input[type=checkbox]:disabled { opacity: 0.5; }
-        input[type=color] { width: 100%; height: 20px; border-radius: 2px; background: none; outline: none; border: none; }
-        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border: solid 1px transparent; }
-        input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; border: solid 1px transparent; }
+        input[type=color] { width: 100%; height: 20px; border-radius: 2px; background: none; border: none; outline: none; }
+        input[type=color]::-webkit-color-swatch-wrapper { padding: 0; border: none; }
+        input[type=color]::-webkit-color-swatch { border-radius: 2px; border: none; }
         input[type=color]:hover { cursor: pointer; }
         button { font-family: var(--font); font-size: var(--font-size); background: var(--btn-bg); color: var(--btn-color); letter-spacing: 0.04em; border-radius: 2px; border: 1px solid var(--borders); }
         button:hover { background: orange; color: var(--btn-color-hover); box-shadow: inset 10px 10px 10px var(--btn-shadow); cursor: pointer; }
@@ -87,11 +87,6 @@
         ul { list-style-type: none; }
         ul li { font-family: var(--font); font-size: var(--font-size); color: var(--btn-color); border-radius: 2px; text-align: center; }
         ul li:hover, .tool_selector, .tool_mesh_selector { background: orange; color: var(--btn-color-hover); box-shadow: inset 10px 10px 10px var(--btn-shadow); }
-        #introscreen { z-index: 5000; background: #181b22DD; position: absolute; width: 100%; height: 100%; }
-        #introscreen .anim { transform-style: preserve-3d; width: 30px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -20px; }
-        #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
-        #introscreen .logo :first-child { font-weight: normal; color: var(--white); }
-        #introscreen .progress { color: slategray; font-size: 11px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
         #canvas { z-index: 0; pointer-events: none; background: #3c4253; position: absolute; width: 100%; height: 100%; }
         #canvas_three { z-index: 300; display: none; width: 100%; height: 100%; position: absolute;
             background-color: #363d46;
@@ -144,7 +139,6 @@
         #meshlist .item_name { margin-bottom: 2px; background: #3e4558; width: 55px; word-break: break-all; font-size: 11px; padding: 8px 3px 8px 3px; border: 1px solid var(--borders); border-radius: 2px; text-align: center; }
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
-        #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #menu-about .about { font-size: 13px; line-height: 1.4em; letter-spacing: 0.05em; background: #21262e; color: #98a1ac; padding: 6px; }
         #menu-storage-dynamic { height: auto; max-height: 630px; }
         #menu-storage-dynamic li { display: flex; flex-direction: row; gap: 2px; }
@@ -160,6 +154,7 @@
         #menu-inscreen-store button { width: 68px; height: 32px; font-size: 11px; }
         #menu-inscreen-right { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; bottom: 135px; }
         #menu-inscreen-right button { width: 45px; height: 32px; }
+        #menu-inscreen-right :first-child:hover { background: none; }
         #menu-inscreen-bottom { z-index: 9; display: none; gap: 1px; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
         #menu-inscreen-bottom div { z-index: 9; width: 100%; min-width: 32px; opacity: 0.75; color: aqua; font-size: 18px; font-weight: bold; text-shadow: var(--text-shadow); text-align: center; cursor: pointer; background: none; border: none; }
         #menu-inscreen-bottom div i { font-size: 19px; margin-top: -4px; }
@@ -168,20 +163,35 @@
         #menu-inscreen-render button i { font-size: 24px; }
         #menu-inscreen-export { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; top: 5px; }
         #menu-inscreen-export button { width: 68px; height: 32px; font-size: 11px; }
-        #colorpicker { z-index: 500; width: 45px; height: 32px; }
-        #colorpicker :first-child { height: 32px; }
+        #input-color { z-index: 500; width: 45px; height: 32px; }
+        #color-wheel { z-index: 301; display: none; right: 10px; bottom: 8px; position: fixed; }
+        #color-picker { z-index: 2500; display: none; padding: 8px 5px 3px 5px; background: var(--confirm); width: 130px; height: 228px; border: solid 1px #171b22; border-radius: 5px; position: fixed; }
+        #color-picker li:hover { background: none; box-shadow: none; }
+        #color-picker label { width: 40px; }
+        #color-picker-wheel { margin-bottom: 5px; }
+        #color-picker-selected { display: flex; flex-direction: row; margin-bottom: 5px; }
+        #color-picker-selected div { width: 100%; height: 15px; background: black; }
+        #color-picker-selected :first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; cursor: pointer; }
+        #color-picker-selected :last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+        #color-picker-buttons { display: flex; flex-direction: row; margin-top: 3px; }
+        #color-picker-buttons button { width: 100%; padding: 5px; }
+        #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #info { z-index: 2; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; margin-bottom: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #info_tool { z-index: 501; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
         #info_render { z-index: 301; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, white); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
-        #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-align: center; }
+        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 80px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
+        #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, #ffe6b8); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
+        #confirm { z-index: 2500; display: none; background: var(--confirm); width: 250px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 5px; border-radius: 2px; text-transform: uppercase; box-shadow: 0 0 3px #000000AA; text-transform: uppercase; text-align: center; }
         #confirm span { width: 100%; margin: 5px 0 10px 0; font-size: var(--font-size); letter-spacing: 0.05em; color: var(--white); display: block; }
         #confirm button { width: 48%; padding: 4px; font-size: var(--font-size); text-transform: uppercase; }
         #confirm :nth-child(3) { background: steelblue; color: #222; }
         #confirm :nth-child(3):hover { background: orange; color: var(--btn-color-hover); }
         #confirmblocker { z-index: 2400; display: none; background: #252a3020; position: absolute; width: 100%; height: 100%; }
-        #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 80px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
-        #ws_connect { color: indianred; }
+        #introscreen { z-index: 5000; background: #181b22DD; position: absolute; width: 100%; height: 100%; }
+        #introscreen .anim { position: absolute; left: 50%; top: 50%; margin-left: -15px; margin-top: -5px; }
+        #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
+        #introscreen .logo :first-child { font-weight: normal; color: var(--white); }
+        #introscreen .progress { color: slategray; font-size: 11px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
         #shortcuts { z-index: 3000; display: none; opacity: 0.98; background: var(--confirm); padding: 5px; border-radius: 5px; left: 50%; top: 50%; width: fit-content; height: 60%; transform: translate(-50%,-50%); position: fixed; }
         #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
         #shortcuts tr { font-size: 14px; border: solid 1px var(--cat-border); background: var(--cat-bg); }
@@ -197,17 +207,17 @@
         .row_panel:hover { box-shadow: none; cursor: pointer; }
         .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 16px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
         ::placeholder { color: #45515c; }
-        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-track { background: none; }
         ::-webkit-scrollbar-thumb { background: steelblue; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: orange; }
 
         @-moz-document url-prefix() {
+            div, li, ul { scrollbar-width: thin; }
             input[type=range] { margin-top: 8px; }
             input[type=range]::-moz-range-track { background: #ADAEAF; }
             input[type=range]::-moz-range-thumb { transform: scale(0.8); background: steelblue; border: none; }
             input[type=range]::-moz-range-thumb:hover { cursor: pointer; }
-            input[type=color] { height: 18px; }
             input[type=color]::-moz-color-swatch { border: none; }
             select { text-indent: 2px; }
             #palette { bottom: 285px; scrollbar-color: steelblue transparent; }
@@ -215,24 +225,24 @@
             #meshlist .item_name { width: 60px; }
             #menu-inscreen-bottom { bottom: 25px; }
             #menu-storage-dynamic li div button { padding: 9px 0 9px 0; }
+            #color-picker { padding: 8px 5px 8px 5px; }
         }
 
         .cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
-        .cube-faces { transform-style: preserve-3d; height: 30px; width: 30px; position: relative; transform-origin: 0 0; transform: translateX(0) translateY(0) translateZ(-30px); }
-        .cube-face { position: absolute; inset: 0; background: #38a5ff60; border: solid 1px #ffa500; outline: 1px solid transparent; }
-        .cube-face.shadow { transform: translateZ(-40px); background: #11111130; border-color: #11111160; }
+        .cube-faces { transform-style: preserve-3d; height: 30px; width: 30px; position: relative; }
+        .cube-face { position: absolute; inset: 0; border: solid 1px orange; box-shadow: inset 0 0 20px #4581b3AA; outline: 1px solid transparent; }
+        .cube-face.shadow { transform: translateZ(-30px) scale(1.2); background: #11111140; border-color: #11111160; box-shadow: none; }
         .cube-face.top { transform: translateZ(30px); }
         .cube-face.front { transform-origin: 0 50%; transform: rotateY(-90deg); }
         .cube-face.back { transform-origin: 0 50%; transform: rotateY(-90deg) translateZ(-30px); }
         .cube-face.right { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px); }
         .cube-face.left { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px) translateZ(30px); }
         @keyframes rotation {
-            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
-            50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.76, 0.05, 0.86, 0.06); }
-            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
+            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.1, 0.8, 0.4, 1); }
+            50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.7, 0.1, 0.8, 0); }
+            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.1, 0.8, 0.4, 1); }
         }
 
-        #input-color-wheel { z-index: 2; display: none; right: 10px; bottom: 8px; position: fixed; }
         .reinvented-color-wheel,
         .reinvented-color-wheel--hue-wheel,
         .reinvented-color-wheel--hue-handle,
@@ -251,7 +261,6 @@
     <canvas id="canvas_three"></canvas>
 
     <div id="menus">
-
         <ul id="toolbar_L">
             <li>
                 <button id="toolbar_btn_about"><i class="material-icons" style="color:steelblue">contact_support</i></button>
@@ -317,7 +326,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.5.9 R4 Beta
+                <br>&#8627; 4.6.0 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -342,7 +351,7 @@
                 <input type="checkbox" id="pref_background_check"> <label for="pref_background_check">Background</label>
                 <input type="color" id="pref_background_color" value="#363B45">
             </li>
-            <li title="Not Persistent"><input type="checkbox" id="pref_light_shadows" checked> <label for="pref_light_shadows">Shadows</label></li>
+            <li class="row_input" title="General shade color (Startup, Generators, Voxelizers, Shade Render and Ground)"><label>Shade</label><input type="color" id="pref_render_shade" value="#8398AF"></li>
             <li class="category">SYSTEM</li>
             <li><button id="fullscreen">Fullscreen</button></li>
             <li><button id="reset_hover">Reset Hover</button></li>
@@ -372,7 +381,7 @@
             <li class="category">IMPORT</li>
             <li><button onclick="document.getElementById('openfile_vox').click()">MagicaVoxel</button></li>
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">From JSON</button></li>
-            <li title="Upload exported GLB files ONLY"><button onclick="document.getElementById('openfile_baked_glb').click()">From Baked GLB</button></li>
+            <li title="Unbake: Upload exported GLB files only"><button onclick="document.getElementById('openfile_baked_glb').click()">From Baked GLB</button></li>
             <li class="category">EXPORT</li>
             <li><button id="export_voxels">Raw Voxels</button></li>
             <li class="category">CAPTURE</li>
@@ -387,32 +396,30 @@
 
         <ul class="menu_L panel" id="menu-camera">
             <li class="category">VIEW</li>
-            <li><input id="input-camera-autoframe" type="checkbox"></input> <label for="input-camera-autoframe">Auto Frame</label></li>
-            <li class="spacer"></li>
-            <li><button id="camera_frame">Frame</button></li>
+            <li><button id="camera_frame">Frame *</button></li>
             <li><button id="btn_tool_frame_color" class="tool_frame_color">Frame Color</button></li>
             <li><button id="btn_tool_frame_voxels" class="tool_frame_voxels">Frame Voxels</button></li>
             <li><button id="camera_topview">Top View</button></li>
-            <li class="spacer"></li>
-            <li class="row_input" title="Offset varies in different dimensions"><label>Offset</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.8" min="0" step="0.01"></li>
-            <li class="spacer"></li>
-            <li><button id="btn-ortho">Perspective</button></li>
             <li class="category">SETTINGS</li>
+            <li><button id="btn-ortho">Perspective</button></li>
+            <li class="spacer"></li>
+            <li class="row_input" title="Offset varies in different dimensions"><label>Offset *</label> <input id="input-camera-offset" type="number" class="ignorekeys" value="1.8" min="0" step="0.01"></li>
             <li class="row_input"><label>FOV *</label> <input id="input-camera-fov" type="number" class="ignorekeys" value="0.8" min="0.1" step="0.01"></li>
             <li class="row_input"><label>F-Stop *</label> <input type="number" id="input-camera-fstop" class="ignorekeys" value="1.4" min="0" step="0.01"></li>
             <li class="row_input"><label>Focal D. *</label> <input type="number" id="input-camera-focal" class="ignorekeys" value="25" min="0" step="0.01"></li>
-            <li><label class="help">* Supported Rendering</label></li>
             <li class="category">ANIMATION</li>
+            <li><input id="input-camera-autoframe" type="checkbox"></input> <label for="input-camera-autoframe">Auto Frame</label></li>
             <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
             <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
+            <li><label class="help">* Supported Rendering</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-render">
             <li class="category">SETTINGS</li>
-            <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.95" min="0.1" max="1" step="0.05"></li>
+            <li class="row_input"><label>DPR</label> <input type="number" id="input-pt-dpr" class="ignorekeys" value="0.8" min="0.1" max="1" step="0.05"></li>
             <li class="row_input"><label>Samples</label> <input type="number" id="input-pt-maxsamples" class="ignorekeys" value="512" min="8" step="8"></li>
             <li class="row_input"><label>Bounces</label> <input type="number" id="input-pt-bounces" class="ignorekeys" value="1" min="1" step="1"></li>
-            <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="1" min="1" step="1"></li>
+            <li class="row_input"><label>Tiles</label> <input type="number" id="input-pt-tiles" class="ignorekeys" value="4" min="1" step="1"></li>
             <li class="spacer"></li>
             <li class="row_input">
                 <label>Tonemap</label> <select id="input-pt-tonemap">
@@ -452,8 +459,9 @@
             <li class="category">MATERIALS</li>
             <li class="row_input"><label for="input-pt-roughness">Roughness</label> <input id="input-pt-roughness" class="ignorekeys" type="number" value="0.8" min="0" step="0.01"></input></li>
             <li class="row_input"><label for="input-pt-metalness" style="margin-right: 4px">Metalness</label> <input id="input-pt-metalness" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
-            <li class="row_input"><label for="input-pt-transmission" style="font-size: 10px; margin-right: -1px">Transmission</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
-            <li class="row_input" title="Black voxels are emissive"><label style="margin-right: 5px">Emissive</label> <input type="color" id="input-pt-emissive" value="#5EC3C5"></li>
+            <li class="row_input"><label for="input-pt-transmission" style="margin-right: 9px">Xmission</label> <input id="input-pt-transmission" class="ignorekeys" type="number" value="0" min="0" step="0.01"></input></li>
+            <li class="row_input" title="Black voxels are emissive"><label style="margin-right: 7px">Emissive</label> <input type="color" id="input-pt-emissive" value="#5EC3C5"></li>
+            <li class="row_input" title="Emissive Intensity"><label for="input-pt-emissive-intensity" style="margin-right: 8px">Intensity</label> <input id="input-pt-emissive-intensity" class="ignorekeys" type="number" value="2" min="0" step="0.01"></input></li>
             <li class="category">MORE</li>
             <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
             <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
@@ -464,6 +472,7 @@
                     <option value="2">Checker</option>
                 </select>
             </li>
+            <li class="row_input"><label for="input-pt-plane">Plane</label> <input id="input-pt-plane" class="ignorekeys" type="number" value="0" min="0" step="1"></input></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-voxelize">
@@ -471,20 +480,29 @@
             <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1"></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
-            <li class="row" style="margin: 2px 0 0 2px">
-                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" title="GLB OBJ" spellcheck="false">
-                <button id="import_mesh_url" style="max-width: 28%"> > </button>
+            <li class="row" style="margin: 2px 0 0 2px" title="Direct URL to GLB, OBJ">
+                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" spellcheck="false">
+                <button id="import_mesh_url" style="max-width: 28%">></button>
             </li>
-            <li class="category">2D IMAGES</li>
+            <li class="category">IMAGES</li>
             <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" step="0.1"></li>
-            <li><input type="checkbox" id="input-voxelizer-yup" checked> <label for="input-voxelizer-yup">Y-Up</label></li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="input-voxelizer-vertical" checked> <label for="input-voxelizer-vertical">Vertical</label></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer_img').click()">Upload Image</button></li>
-            <li><button id="import_image_paste">Paste Base64</button></li>
-            <li class="row" style="margin: 2px 0 0 2px">
-                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" title="PNG JPG SVG" spellcheck="false">
-                <button id="import_image_url" style="max-width: 28%"> > </button>
+            <li class="row" style="margin: 2px 0 0 2px" title="Direct URL to PNG, JPG, SVG" >
+                <input type="url" class="ignorekeys" style="max-width: 70%" value="" placeholder="https://" spellcheck="false">
+                <button id="import_image_url" style="max-width: 28%">></button>
             </li>
+            <li class="category">TEXTS</li>
+            <li><input type="text" id="input-voxelizer-font" class="ignorekeys" value="48px Roboto" placeholder="Size Font" spellcheck="false"></li>
+            <li><input type="text" id="input-voxelizer-text" class="ignorekeys" placeholder="Type here" spellcheck="false"></li>
+            <li class="row"><label style="margin-right: 10px">Extrude</label> <input type="number" class="ignorekeys" id="input-voxelizer-text-extrude" value="5" min="1" step="1"></li>
+            <li class="spacer"></li>
+            <li><input type="checkbox" id="input-voxelizer-text-vertical" checked> <label for="input-voxelizer-text-vertical">Vertical</label></li>
+            <li><input type="checkbox" id="input-voxelizer-text-emoji"> <label for="input-voxelizer-text-emoji">Colored Emoji</label></li>
+            <li class="spacer"></li>
+            <li><button id="voxelize_text">Generate Text</button></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-create">
@@ -627,8 +645,8 @@
                 </select>
             </li>
             <li class="category">COLORS</li>
-            <li class="row"><label style="margin-right: 22px">Albedo</label> <input type="color" id="input-pbr-albedo" value="#FFFFFF"></li>
-            <li class="row"><label style="margin-right: 10px">Emissive</label> <input type="color" id="input-pbr-emissive" value="#000000"></li>
+            <li class="row"><label style="margin-right: 23px">Albedo</label> <input type="color" id="input-pbr-albedo" value="#FFFFFF"></li>
+            <li class="row"><label style="margin-right: 12px">Emissive</label> <input type="color" id="input-pbr-emissive" value="#000000"></li>
             <li class="category">PROPERTIES</li>
             <li class="row"><label style="margin-right: 5px">Roughness</label> <input id="input-pbr-roughness" type="number" class="ignorekeys" value="1" min="0" step="0.01"></li>
             <li class="row"><label style="margin-right: 22px">Metallic</label> <input id="input-pbr-metallic" type="number" class="ignorekeys" value="0" min="0" step="0.01"></li>
@@ -656,24 +674,16 @@
             <li><label class="help">? Keeping the exported GLB file means you have the voxel data. see File menu, "From Baked GLB"</label></li>
         </ul>
     </div>
+    <!-- end menus -->
 
-    <div id="hover">
-        <button class="tool_camera"><i class="material-icons">control_camera</i></button>
-        <ul>
-            <li class="tool_box_add hover_item_hide"><i class="material-icons">add</i></li>
-            <li class="tool_box_remove hover_item_hide"><i class="material-icons">remove</i></li>
-            <li class="tool_box_paint hover_item_hide"><i class="material-icons">imagesearch_roller</i></li>
-            <li class="tool_transform_box hover_item_hide"><i class="material-icons">select_all</i></li>
-        </ul>
-    </div>
-
+    <!-- inscreen menus -->
     <ul id="menu-inscreen-store">
         <li><button>LOAD</button></li>
         <li><button>SAVE</button></li>
     </ul>
 
     <ul id="menu-inscreen-right">
-        <li id="colorpicker"><input type="color" id="input-color" value="#4674A4"></li>
+        <li><input type="color" id="input-color" value="#4674A4"></li>
         <li><button id="btn_tool_bucket_inscreen" class="tool_bucket" title="Bucket Tool"><i class="material-icons">format_color_fill</i></button></li>
         <li><button id="btn_tool_eyedrop_inscreen" class="tool_eyedropper" title="Eyedropper Tool"><i class="material-icons">colorize</i></button></li>
         <li><button id="material-switch" title="Material Switch">CEL</button></li>
@@ -698,8 +708,28 @@
         <button>EXPORT</button>
     </div>
 
+    <!-- hover -->
+    <div id="hover">
+        <button class="tool_camera"><i class="material-icons">control_camera</i></button>
+        <ul>
+            <li class="tool_box_add hover_item_hide"><i class="material-icons">add</i></li>
+            <li class="tool_box_remove hover_item_hide"><i class="material-icons">remove</i></li>
+            <li class="tool_box_paint hover_item_hide"><i class="material-icons">imagesearch_roller</i></li>
+            <li class="tool_transform_box hover_item_hide"><i class="material-icons">select_all</i></li>
+        </ul>
+    </div>
+
+    <!-- color pickers -->
+    <div id="color-wheel"></div>
+    <ul id="color-picker">
+        <li id="color-picker-wheel"></li>
+        <li id="color-picker-selected"><div title="Previous"></div><div title="Current"></div></li>
+        <li class="row_input"><label>HEX</label> <input type="text" id="color-picker-hex" class="ignorekeys" value="#FFFFFF" spellcheck="false"></li>
+        <li class="row_input"><label>RGB</label> <input type="text" id="color-picker-rgb" class="ignorekeys" value="255, 255, 255" spellcheck="false"></li>
+        <li id="color-picker-buttons"><button>Cancel</button><button>Apply</button></li>
+    </ul>
+
     <!-- dynamic -->
-    <div id="input-color-wheel"></div>
     <div id="marquee"></div>
     <div id="palette"><canvas id="canvas_palette"></canvas></div>
     <div id="meshlist"></div>
@@ -707,13 +737,13 @@
     <div id="info_render"><span>0</span> &nbsp; SL <span>0</span> / <span>0</span> &nbsp; <span>0</span> &nbsp; BOUNCE <span>0</span></div>
     <div id="info_tool" title="Active Tool"></div>
     <div id="progressbar"></div>
-    <div id="introscreen">
-        <div class="anim"><div class="cube"><div class="cube-faces"><div class="cube-face shadow"></div><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div></div></div></div>
-        <div class="logo">V<span class="logo_white">OXEL BUILDER</span></div><div class="progress">- LOADING -</div>
-    </div>
-    <div id="confirm"><span>title here</span> <button>Cancel</button> <button>Ok</button></div>
+    <div id="confirm"><span>title</span> <button>0</button> <button>1</button></div>
     <div id="confirmblocker"></div>
     <div id="notifier"></div>
+    <div id="introscreen">
+        <div class="anim"><div class="cube"><div class="cube-faces"><div class="cube-face shadow"></div><div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div></div></div></div>
+        <div class="logo">V<span class="logo_white">OXEL BUILDER</span></div><div class="progress">- INITIALIZING -</div>
+    </div>
 
     <!-- hidden -->
     <input style="display: none" type="file" id="openfile_json" accept=".json,.vbx" onclick="this.value = null">
@@ -725,7 +755,7 @@
     <input style="display: none" type="file" id="openfile_baked_glb" accept=".glb" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_snapshot_zip" accept=".zip" onclick="this.value = null">
 
-    <!-- help -->
+    <!-- shortcuts -->
     <div id="shortcuts" ondblclick="this.style.display = 'none'">
         <table title="Double tap to close">
             <tr><th>Shortcut</th> <th>Description</th></tr>
