@@ -20,7 +20,6 @@ class ColorPicker {
         this.selected = document.getElementById('color-picker-selected');
         this.inputHex = document.getElementById('color-picker-hex');
         this.inputRGB = document.getElementById('color-picker-rgb');
-        this.buttons = document.getElementById('color-picker-buttons');
 
         this.colorWheel = undefined;
 
@@ -36,7 +35,7 @@ class ColorPicker {
             hex: this.hex,
             wheelDiameter: 112,
             wheelThickness: 16,
-            handleDiameter: 12,
+            handleDiameter: 10,
             wheelReflectsSaturation: false,
 
             onChange: (col) => {
@@ -93,23 +92,13 @@ class ColorPicker {
         this.offScreenCheck();
 
         return new Promise((resolve) => {
-            this.buttons.children[0].onclick = () => {
-                this.parent.style.display = 'none';
-                ui.domConfirmBlocker.style.display = 'none';
-                resolve(undefined);
-            };
-            this.buttons.children[1].onclick = () => {
+            ui.domConfirmBlocker.onclick = () => {
                 this.parent.style.display = 'none';
                 ui.domConfirmBlocker.style.display = 'none';
                 resolve(this.colorWheel.hex.toUpperCase());
 
                 this.selected.children[0].style.background = this.colorWheel.hex;
                 this.previous = this.colorWheel.hex;
-            };
-            ui.domConfirmBlocker.onclick = () => {
-                this.parent.style.display = 'none';
-                ui.domConfirmBlocker.style.display = 'none';
-                resolve(undefined);
             };
         });
     }

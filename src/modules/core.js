@@ -58,7 +58,7 @@ import {
     ORTHOGRAPHIC_CAMERA, PERSPECTIVE_CAMERA,
     REFRESHRATE_RENDER_ONCE, ShadowGenerator_QUALITY_LOW, ShadowGenerator_QUALITY_MEDIUM,
     Texture_CUBIC_MODE, Texture_SKYBOX_MODE, Texture_NEAREST_SAMPLINGMODE, Texture_LINEAR_LINEAR_MIPLINEAR,
-    PBRMATERIAL_ALPHABLEND, EffectShadersStore, CounterClockWiseSideOrientation,
+    EffectShadersStore, CounterClockWiseSideOrientation,
     
     Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
     Color3, Color4,
@@ -440,24 +440,22 @@ class Camera {
 
     getFramedBoundingBox(min, max) {
         const offset = parseFloat(ui.domCameraOffset.value);
+        const boxCenter = min.add(max).scale(0.5);
+        const boxHalfSize = max.subtract(min).scale(0.5);
+        const radius = boxHalfSize.length() * offset;
 
         const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
         const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
-        
-        const radiusWithoutFraming = distanceVectors(min, max) * 0.5;
-        const radius = radiusWithoutFraming * offset;
-        const distanceForHorizontalFrustum = radius / frustumSlopeX;
-        const distanceForVerticalFrustum = radius / frustumSlopeY;
-        const distance = offset + Math.max(distanceForHorizontalFrustum, distanceForVerticalFrustum);
+        const distanceX = radius / frustumSlopeX;
+        const distanceY = radius / frustumSlopeY;
+        const distance = Math.max(distanceX, distanceY);
 
-        const radiusWorld = max.subtract(min).scale(0.5);
-        const centerWorld = min.add(radiusWorld);
-        const zoomTargetY = min.y + (max.y - min.y) * 0.4;
-        const zoomTarget = Vector3(centerWorld.x, zoomTargetY, centerWorld.z);
+        const targetY = min.y + (max.y - min.y) * 0.4;
+        const target = Vector3(boxCenter.x, targetY, boxCenter.z);
 
         return {
             radius: distance,
-            target: zoomTarget
+            target: target
         };
     }
 
@@ -758,25 +756,15 @@ class Material {
     createPBRMaterial() {
         if (this.mat_pbr_msh) {
             this.mat_pbr_msh.albedoTexture.dispose();
-            if (this.mat_pbr_msh.reflectionTexture)
-                this.mat_pbr_msh.reflectionTexture.dispose();
             this.mat_pbr_msh.dispose();
         }
         const mat = PBRMaterial("PBR", scene);
         mat.albedoColor = Color3(1, 1, 1);
         mat.albedoTexture = this.tex_pbr.clone();
-        if (hdri.hdrMap) {
-            mat.reflectionTexture = hdri.hdrMap.clone();
-            mat.reflectionTexture.coordinatesMode = Texture_CUBIC_MODE;
-        }
-        mat.roughness = 0.8;
-        mat.metallic = 0.1;
+        mat.roughness = 1;
+        mat.metallic = 0;
         mat.metallicF0Factor = 0;
         mat.alpha = 1;
-        mat.alphaCutOff = 0.5;
-        mat.alphaMode = PBRMATERIAL_ALPHABLEND;
-        mat.transparencyMode = 1;
-        mat.useAlphaFromAlbedoTexture = true;
         mat.backFaceCulling = true;
         mat.wireframe = false;
         mat.specularIntensity = 1;
@@ -1248,15 +1236,6 @@ class Builder {
         );
     }
 
-    getNearbyVoxels(position, distance) {
-        const arr = [];
-        for (const voxel of this.voxels) {
-            if (distanceVectors(voxel.position, position) <= distance)
-                arr.push(voxel);
-        }
-        return arr;
-    }
-
     async getIndexAtPointer() {
         return this.rttColorsMap[ await renderTarget.readPixel() ];
     }
@@ -1303,6 +1282,81 @@ class Builder {
 
     getVoxelsByVisibility(isVisible) { // dup
         return this.voxels.filter(i => i.visible === isVisible);
+    }
+
+    getVoxelsByDistance(position, distance) {
+        const arr = [];
+        for (let i = 0; i < this.voxels.length; i++) {
+            if (distanceVectors(this.voxels[i].position, position) <= distance)
+                arr.push(this.voxels[i]);
+        }
+        return arr;
+    }
+
+    getVoxelsByIslands(pos = undefined, threshold = 1.0) {
+        const positions = this.voxels.map(i => i.position);
+        const adjIndexes = Array(positions.length).fill().map(() => []);
+
+        for (let i = 0; i < positions.length; i++) {
+            for (const dir of VEC6_ONE) {
+                const j = this.positionsMap[`${positions[i].x + dir.x}_${positions[i].y + dir.y}_${positions[i].z + dir.z}`];
+                if (j === undefined || j <= i) continue;
+                if (this.voxels[j].visible && distanceVectors(positions[i], positions[j]) <= threshold) {
+                    adjIndexes[i].push(j);
+                    adjIndexes[j].push(i);
+                }
+            }
+        }
+
+        const visited = new Uint8Array(adjIndexes.length);
+
+        function bfs(id) {
+            const island = [];
+            const queue = new Array(adjIndexes.length);
+            let head = 0;
+            let tail = 0;
+
+            queue[tail++] = id;
+            visited[id] = 1;
+
+            while (head < tail) {
+                const node = queue[head++];
+                island.push(positions[node]);
+
+                for (const neighbor of adjIndexes[node]) {
+                    if (!visited[neighbor]) {
+                        visited[neighbor] = 1;
+                        queue[tail++] = neighbor;
+                    }
+                }
+            }
+
+            return island;
+        }
+
+        const islands = [];
+
+        if (pos === undefined) {
+            for (let i = 0; i < positions.length; i++) {
+                if (visited[i] == 0) {
+                    const island = bfs(i);
+                    if (island.length > 0)
+                        islands.push(island);
+                }
+            }
+        } else {
+            for (let i = 0; i < positions.length; i++) {
+                if (visited[i] == 0 && positions[i].equals(pos)) {
+                    const island = bfs(i);
+                    if (island.length > 0) {
+                        islands.push(island);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return islands;
     }
 
     findIndexByPosition(pos) { // no dup (pre-thin)
@@ -1604,6 +1658,56 @@ class Bakery {
         vertexData.applyToMesh(mesh);
         return mesh;
     }
+
+    bakeToMesh(voxels = builder.voxels) {
+        ui.showProgress(1);
+        setTimeout(() => {
+            const baked = this.bake(voxels);
+
+            baked.sideOrientation = CounterClockWiseSideOrientation;
+            baked.name = `mesh${ pool.meshes.length + 1 }`;
+            pool.resetPivot(baked);
+
+            baked.material = material.mat_pbr_msh.clone('mat_' + baked.name);
+            baked.material.albedoTexture.name = 'tex_' + baked.name;
+            baked.material.wireframe = ui.domPbrWireframe.checked;
+            baked.checkCollisions = false;
+            baked.receiveShadows = true;
+
+            light.addMesh(baked);
+            light.updateShadowMap();
+
+            pool.meshes.push(baked);
+            pool.createMeshList();
+
+            ui.showProgress(0);
+        });
+    }
+
+    bakeVoxels() {
+        pool.dispose();
+
+        for (let i = 0; i < palette.uniqueColors.length; i++)
+            this.bakeToMesh(builder.getVoxelsByColor(palette.uniqueColors[i]));
+
+        setTimeout(() => {
+            if (MODE !== 2) {
+                pool.setPoolVisibility(false);
+                ui.notification('baked');
+            }
+        }, 100);
+    }
+
+    bakeColor(hex) {
+        this.bakeToMesh(builder.getVoxelsByColor(hex));
+
+        setTimeout(() => {
+            if (MODE !== 2) {
+                pool.setPoolVisibility(false);
+                ui.notification('baked');
+            }
+        }, 100);
+    }
 }
 
 
@@ -1631,54 +1735,14 @@ class MeshPool {
             return false;
         }
     }
-    
-    bakeToMesh(voxels = builder.voxels) {
-        ui.showProgress(1);
-        setTimeout(() => {
-            const baked = bakery.bake(voxels);
 
-            baked.sideOrientation = CounterClockWiseSideOrientation;
-            baked.name = '_mesh';
-            this.resetPivot(baked);
-
-            baked.material = material.mat_pbr_msh.clone('_mesh');
-            baked.material.wireframe = ui.domPbrWireframe.checked;
-            baked.checkCollisions = true;
-            baked.receiveShadows = true;
-
-            light.addMesh(baked);
-            light.updateShadowMap();
-
-            this.meshes.push(baked);
-            this.createMeshList();
-
-            ui.showProgress(0);
-        });
-    }
-
-    bake() {
-        this.clearPool();
-
-        for (let i = 0; i < palette.uniqueColors.length; i++)
-            this.bakeToMesh(builder.getVoxelsByColor(palette.uniqueColors[i]));
-
-        setTimeout(() => {
-            if (MODE !== 2) {
-                this.setPoolVisibility(false);
-                ui.notification('baked');
-            }
-        }, 100);
-    }
-
-    bakeColor(hex) {
-        this.bakeToMesh(builder.getVoxelsByColor(hex));
-
-        setTimeout(() => {
-            if (MODE !== 2) {
-                this.setPoolVisibility(false);
-                ui.notification('baked');
-            }
-        }, 100);
+    async unbakeMeshes() {
+        if (this.meshes.length == 0) {
+            ui.notification('no baked meshes');
+            return;
+        }
+        if (!await ui.showConfirm('this will clear both the Model<br>and Export tabs, continue?')) return;
+        voxelizer.voxelizeBake(this.meshes);
     }
 
     async deleteSelected() {
@@ -1688,8 +1752,6 @@ class MeshPool {
             this.meshes.splice(this.meshes.indexOf(this.selected), 1);
             if (this.selected.material.albedoTexture)
                 this.selected.material.albedoTexture.dispose();
-            if (this.selected.material.reflectionTexture)
-                this.selected.material.reflectionTexture.dispose();
             this.selected.material.dispose();
             this.selected.dispose();
             this.selected = undefined;
@@ -1706,17 +1768,10 @@ class MeshPool {
         this.meshListSelect(mesh);
         this.getMaterial();
         helper.showBoundingBox(this.selected);
-        if (!engine.engine.isWebGPU)
-            helper.highlightOutlineMesh(this.selected, COL_ORANGE_RGB);
     }
 
     deselectMesh() {
         this.selected = undefined;
-        for (let i = 0; i < this.meshes.length; i++) {
-            this.meshes[i].renderOverlay = false;
-            this.meshes[i].renderOutline = false;
-            this.meshes[i].showBoundingBox = false;
-        }
         this.meshListDeselect();
         helper.hideBoundingBox();
     }
@@ -1731,16 +1786,6 @@ class MeshPool {
         for (let i = 0; i < this.meshes.length; i++)
             this.meshes[i].isVisible = isVisible;
         helper.hideBoundingBox();
-    }
-
-    async clearPool(isAlert = false) {
-        if (this.meshes.length > 0) {
-            if (isAlert && !await ui.showConfirm('clear all baked meshes?')) return;
-            this.clearMeshArray();
-            this.selected = undefined;
-            this.createMeshList();
-            light.updateShadowMap();
-        }
     }
     
     getMaterial() {
@@ -1776,7 +1821,7 @@ class MeshPool {
                     break;
                 case 'alpha':
                     this.selected.material.alpha = parseFloat(ui.domPbrAlpha.value);
-                    this.selected.visibility = parseFloat(ui.domPbrAlpha.value); // alpha seth!
+                    this.selected.visibility = this.selected.material.alpha;
                     break;
             }
         }
@@ -1798,94 +1843,17 @@ class MeshPool {
             if (this.meshes[i].material.albedoTexture)
                 this.meshes[i].material.albedoTexture.dispose();
             this.meshes[i].material.albedoTexture = material.textures[parseInt(ui.domPbrTexture.value)].clone();
+            this.meshes[i].material.albedoTexture.name = 'tex_' + this.meshes[i].name;
         }
     }
 
     updateVertexColors(hex) {
-        (this.selected) ?
-            this.setVertexColors(this.selected, hex, 2.2) :
+        if (this.selected) {
+            this.setVertexColors(this.selected, hex, 2.2);
+            this.createMeshList(false);
+        } else {
             ui.notification('select a mesh');
-        this.createMeshList();
-    }
-
-    createMeshList() {
-        ui.domMeshList.innerHTML = "";
-
-        if (this.meshes.length == 0) {
-            const item = document.createElement('div');
-            const name = document.createElement('div');
-            name.classList.add('item_name');
-            name.innerHTML = "EMPTY";
-            item.appendChild(name);
-            ui.domMeshList.appendChild(item);
         }
-
-        for (let i = 0; i < this.meshes.length; i++) {
-            const color = this.meshes[i].getVerticesData(ColorKind);
-
-            const item = document.createElement('div');
-            const name = document.createElement('div');
-            name.classList.add('item_name');
-            name.style.borderLeftColor = rgbFloatToHex(color[0], color[1], color[2]);
-            name.innerHTML = this.meshes[i].name;
-            name.spellcheck = false;
-            item.onclick = () => {
-                this.deselectMesh();
-                this.selectMesh(this.meshes[i]);
-            };
-            item.onkeyup = () => {
-                this.meshes[i].name = name.innerHTML;
-            };
-            item.onpaste = (ev) => {
-                ev.preventDefault();
-                name.innerHTML = ev.clipboardData.getData('Text');
-                this.meshes[i].name = name.innerHTML;
-            };
-            item.ondblclick = () => {
-                name.contentEditable = true;
-                name.classList.add('ignorekeys');
-            };
-            item.onblur = () => {
-                name.contentEditable = false;
-                name.classList.remove('ignorekeys');
-            };
-            item.appendChild(name);
-            ui.domMeshList.appendChild(item);
-        }
-
-        helper.hideBoundingBox();
-    }
-
-    meshListSelect(mesh) {
-        let idx = -1;
-        for (let i = 0; i < this.meshes.length; i++)
-            if (this.meshes[i] === mesh)
-                idx = i;
-        
-        if (ui.domMeshList.children[idx]) {
-            for (const i of ui.domMeshList.children)
-                i.firstChild.classList.remove("mesh_select");
-            ui.domMeshList.children[idx].firstChild.classList.add('mesh_select');
-        }
-    }
-
-    meshListDeselect() {
-        for (const i of ui.domMeshList.children)
-            i.firstChild.classList.remove("mesh_select");
-    }
-
-    clearMeshArray() {
-        scene.blockfreeActiveMeshesAndRenderingGroups = true; // save unnecessary
-        for (let i = 0; i < this.meshes.length; i++) { // dispose() computation
-            if (this.meshes[i].material.albedoTexture)
-                this.meshes[i].material.albedoTexture.dispose();
-            if (this.meshes[i].material.reflectionTexture)
-                this.meshes[i].material.reflectionTexture.dispose();
-            this.meshes[i].material.dispose();
-            this.meshes[i].dispose();
-        }
-        scene.blockfreeActiveMeshesAndRenderingGroups = false;
-        this.meshes = [];
     }
 
     setVertexColors(mesh, hex, gamma) {
@@ -1938,6 +1906,83 @@ class MeshPool {
         });
 
         return boxSum;
+    }
+
+    createMeshList(hideBbox = true) {
+        ui.domMeshList.innerHTML = "";
+
+        if (this.meshes.length == 0) {
+            const item = document.createElement('div');
+            const name = document.createElement('div');
+            name.classList.add('item_name');
+            name.innerHTML = "EMPTY";
+            item.appendChild(name);
+            ui.domMeshList.appendChild(item);
+        }
+
+        for (let i = 0; i < this.meshes.length; i++) {
+            const color = this.meshes[i].getVerticesData(ColorKind);
+
+            const item = document.createElement('div');
+            const name = document.createElement('div');
+            name.classList.add('item_name');
+            name.style.borderLeftColor = rgbFloatToHex(color[0], color[1], color[2]);
+            name.innerHTML = this.meshes[i].name;
+            
+            item.onclick = () => {
+                this.deselectMesh();
+                this.selectMesh(this.meshes[i]);
+            };
+
+            if (this.selected && this.selected === this.meshes[i])
+                name.classList.add('mesh_select');
+
+            item.appendChild(name);
+            ui.domMeshList.appendChild(item);
+        }
+
+        if (hideBbox)
+            helper.hideBoundingBox();
+    }
+
+    meshListSelect(mesh) {
+        let idx = -1;
+        for (let i = 0; i < this.meshes.length; i++)
+            if (this.meshes[i] === mesh)
+                idx = i;
+        
+        if (ui.domMeshList.children[idx]) {
+            for (const i of ui.domMeshList.children)
+                i.firstChild.classList.remove("mesh_select");
+            ui.domMeshList.children[idx].firstChild.classList.add('mesh_select');
+        }
+    }
+
+    meshListDeselect() {
+        for (const i of ui.domMeshList.children)
+            i.firstChild.classList.remove("mesh_select");
+    }
+
+    disposeMeshArray() {
+        scene.blockfreeActiveMeshesAndRenderingGroups = true; // save unnecessary
+        for (let i = 0; i < this.meshes.length; i++) {        // dispose() computation
+            if (this.meshes[i].material.albedoTexture)
+                this.meshes[i].material.albedoTexture.dispose();
+            this.meshes[i].material.dispose();
+            this.meshes[i].dispose();
+        }
+        scene.blockfreeActiveMeshesAndRenderingGroups = false;
+        this.meshes = [];
+    }
+
+    async dispose(isAlert = false) {
+        if (this.meshes.length > 0) {
+            if (isAlert && !await ui.showConfirm('delete all baked meshes?')) return;
+            this.disposeMeshArray();
+            this.selected = undefined;
+            this.createMeshList();
+            light.updateShadowMap();
+        }
     }
 }
 
@@ -2254,6 +2299,7 @@ class Helper {
         this.symmPivot.isVisible = false;
         this.symmPivot.isPickable = false;
         this.symmPivot.doNotSerialize = true;
+        this.symmPivot.scaling.set(10, 10, 10);
     }
 
     enableGridPlane(isEnabled) {
@@ -2314,8 +2360,6 @@ class Helper {
             } else { // local
                 this.symmPivot.position.copyFrom(builder.getCenter());
             }
-
-            this.symmPivot.scaling = builder.getSize().scale(0.25);
         }
     }
 
@@ -2973,6 +3017,11 @@ class Tool {
             case 'transform_group':
                 xformer.begin(builder.getVoxelsByColor(builder.voxels[index].color));
                 break;
+            case 'transform_island':
+                const islands = builder.getVoxelsByIslands(this.pos);
+                if (islands.length > 0)
+                    xformer.begin(builder.createArrayFromPositions(islands[0], false));
+                break;
             case 'transform_visible':
                 xformer.begin(builder.getVoxelsByVisibility(true));
                 break;
@@ -2981,7 +3030,7 @@ class Tool {
                 this.startBox = this.pos;
                 break;
             case 'bake_color':
-                pool.bakeColor(builder.voxels[index].color);
+                bakery.bakeColor(builder.voxels[index].color);
                 break;
             case 'frame_color':
                 camera.frameColor(builder.voxels[index].color);
@@ -3449,6 +3498,7 @@ class XFormer {
         this.root = undefined;
         this.isActive = false;
         this.isNewObject = false;
+        this.isColorChanged = false;
         this.xforms = [];
         this.startPos = undefined;
     }
@@ -3539,8 +3589,13 @@ class XFormer {
         if (this.isNewObject) {
             const p = this.root.position.subtract(this.startPos);
             
-            for (let i = 0; i < this.xforms.length; i++)
-                builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
+            if (this.isColorChanged) {
+                for (let i = 0; i < this.xforms.length; i++)
+                    builder.add(this.xforms[i].position.add(p), currentColor, true);
+            } else {
+                for (let i = 0; i < this.xforms.length; i++)
+                    builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
+            }
         }
     }
 
@@ -3557,6 +3612,7 @@ class XFormer {
     dispose() {
         this.isActive = false;
         this.isNewObject = false;
+        this.isColorChanged = false;
 
         uix.unbindVoxelGizmo();
         
@@ -3577,11 +3633,13 @@ class XFormer {
 
     colorSelected() {
         if (this.isActive) {
-            if (!ui.domTransformClone.checked) {
-                ghosts.setThinColor(currentColor);
+            ghosts.setThinColor(currentColor);
+
+            if (!ui.domTransformClone.checked)
                 for (let i = 0; i < this.xforms.length; i++)
                     this.xforms[i].color = currentColor;
-            }
+
+            this.isColorChanged = true;
         }
     }
 }
@@ -3596,7 +3654,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.0",
+            version: "Voxel Builder 4.6.1",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3647,7 +3705,7 @@ class Project {
         symmetry.resetAxis();
         tool.toolSelector('camera');
         ghosts.disposePointCloud();
-        pool.clearPool();
+        pool.dispose();
         uix.hideLightLocator();
         
         setTimeout(() => {
@@ -3782,7 +3840,20 @@ class Project {
                 ExportGLB(scene, ui.domProjectName.value, exports, true, () => { });
                 break;
             case 'gltf':
-                ExportGLTF(scene, ui.domProjectName.value, exports, () => { });
+                ExportGLTF(scene, ui.domProjectName.value, exports, false, (data) => {
+                    const fnames = Object.keys(Object.values(data)[0]);
+                    if (fnames.length > 0) {
+                        const contents = Object.values(Object.values(data)[0]);
+
+                        const zip = new JSZip();
+                        for (let i = 0; i < fnames.length; i++)
+                            zip.file(fnames[i], contents[i]);
+
+                        zip.generateAsync({ type: "blob" }).then(data => {
+                            downloadData(data, `${ ui.domProjectName.value }_gltf.zip`);
+                        });
+                    }
+                });
                 break;
             case 'obj':
                 downloadBlob(new Blob([ ExportOBJ(exports) ], { type: "octet/stream" }), `${ui.domProjectName.value}.obj`);
@@ -3897,6 +3968,7 @@ class Palette {
                 
         this.canvas.addEventListener("contextmenu", (ev) => {
             ev.preventDefault();
+            if (xformer.isActive) return;
             const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
             if (hex && this.uniqueColors.includes(hex)) {
                 const index = this.invisibleColors.indexOf(hex);
@@ -3908,6 +3980,7 @@ class Palette {
         }, false);
 
         this.canvas.addEventListener("dblclick", (ev) => {
+            if (xformer.isActive) return;
             const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
             if (hex && this.uniqueColors.includes(hex)) {
                 const index = this.invisibleColors.indexOf(hex);
@@ -4114,27 +4187,34 @@ class Snapshot {
 
         for (let i = 0; i < shots.length; i++) {
             const img = shots[i].children[0];
-            const save = shots[i].children[1].lastChild;
-            const del = shots[i].children[1].firstChild;
+            const btn_del = shots[i].children[1].firstChild;
+            const btn_save = shots[i].children[1].lastChild;
 
-            // restore images on startup
-            const imgSrc = localStorage.getItem(vbstoreSnapshotsImages + img.id);
-            if (imgSrc) img.src = imgSrc;
+            // restore data
+            const id = 'shot' + i;
+            const data = localStorage.getItem(vbstoreSnapshots + id);
+            if (data) {
+                img.src = localStorage.getItem(vbstoreSnapshotsImages + id);
+            } else {
+                btn_del.disabled = true;
+            }
 
-            del.addEventListener("click", async () => {
+            btn_del.addEventListener("click", async () => {
                 if (img.src !== SNAPSHOT && !await ui.showConfirm('delete snapshot?')) return;
                 img.src = SNAPSHOT;
-                this.delStorage(vbstoreSnapshots + img.id);
-                this.delStorage(vbstoreSnapshotsImages + img.id);
+                this.delStorage(vbstoreSnapshots + id);
+                this.delStorage(vbstoreSnapshotsImages + id);
+                btn_del.disabled = true;
             }, false);
 
-            save.addEventListener("click", async () => {
+            btn_save.addEventListener("click", async () => {
                 if (!ui.checkMode(0) || img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
-                project.createScreenshotBasic(img.clientWidth, img.clientHeight, (data) => {
-                    this.setStorageVoxels(vbstoreSnapshots + img.id);
-                    if (localStorage.getItem(vbstoreSnapshots + img.id)) {
-                        localStorage.setItem(vbstoreSnapshotsImages + img.id, data);
-                        img.src = data;
+                project.createScreenshotBasic(img.clientWidth, img.clientHeight, (screenshot) => {
+                    this.setStorageVoxels(vbstoreSnapshots + id);
+                    if (localStorage.getItem(vbstoreSnapshots + id)) {
+                        localStorage.setItem(vbstoreSnapshotsImages + id, screenshot);
+                        img.src = screenshot;
+                        btn_del.disabled = false;
                     }
                 });
             }, false);
@@ -4142,7 +4222,7 @@ class Snapshot {
             img.addEventListener("click", async () => {
                 if (img.src !== SNAPSHOT && (this.newScene.checked && !await ui.showConfirm('load snapshot?'))) return;
                 ui.setMode(0);
-                this.getStorageVoxels(vbstoreSnapshots + img.id);
+                this.getStorageVoxels(vbstoreSnapshots + id);
             }, false);
 
             img.addEventListener("dragstart", (ev) => {
@@ -4159,8 +4239,10 @@ class Snapshot {
             const data = localStorage.getItem(vbstoreSnapshots + 'shot' + i);
             if (data) {
                 const img = localStorage.getItem(vbstoreSnapshotsImages + 'shot' + i);
-                zip.file(`${i}.json`, project.saveSnapshot(data, img));
-                count++;
+                if (img) {
+                    zip.file(`${i}.json`, project.saveSnapshot(data, img));
+                    count++;
+                }
             }
         }
 
@@ -4407,7 +4489,7 @@ class Voxelizer {
             mesh.dispose();
             ui.showProgress(0);
         }, (err) => {
-            ui.notification("unable to import/merge meshes");
+            ui.errorMessage("unable to import/merge meshes");
             ui.showProgress(0);
             console.error(err);
         });
@@ -4427,11 +4509,11 @@ class Voxelizer {
                 this.voxelizeMesh(mesh);
                 mesh.dispose();
             } else {
-                ui.notification('unable to find meshes');
+                ui.errorMessage('unable to find meshes');
             }
             ui.showProgress(0);
         }, (err) => {
-            ui.notification("unable to import/merge meshes");
+            ui.errorMessage("unable to import/merge meshes");
             ui.showProgress(0);
             console.error(err);
         });
@@ -4446,13 +4528,14 @@ class Voxelizer {
                 } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
                     this.importMeshGLB(url);
                 } else {
-                    ui.notification("unsupported file format");
+                    ui.errorMessage("unsupported file format");
                 }
             } else {
-                ui.notification("unable to read url");
+                ui.errorMessage("unable to read url");
             }
         }).catch(err => {
-            ui.notification("unable to read url");
+            ui.errorMessage("unable to read url");
+            console.error(err);
         });
     }
 
@@ -4467,14 +4550,15 @@ class Voxelizer {
                          data.type == 'image/svg+xml')) {
                             this.voxelize2D(url);
                     } else {
-                        ui.notification("unsupported file format");
+                        ui.errorMessage("unsupported file format");
                     }
                 });
             } else {
-                ui.notification("unable to read url");
+                ui.errorMessage("unable to read url");
             }
         }).catch(err => {
-            ui.notification("unable to read url");
+            ui.errorMessage("unable to read url");
+            console.error(err);
         });
     }
 }
@@ -4591,12 +4675,8 @@ class RenderTarget {
     }
 
     resize() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        
-        this.pickTexture.resize({ width: w, height: h });
-
-        const bufferSize = 4 * w * h;
+        const bufferSize = 4 * window.innerWidth * window.innerHeight;
+        this.pickTexture.resize({ width: window.innerWidth, height: window.innerHeight });
         this.pixels = new Uint8Array(engine.engine.isWebGPU ? bufferSize * 2 : bufferSize);
     }
 }
@@ -4796,25 +4876,58 @@ class UserInterface {
         this.notificationTimer = undefined;
     }
 
-    createColorWheel() {
-        this.colorWheel = new modules.ReinventedColorWheel({
-            appendTo: ui.domColorWheel,
-            hex: currentColor,
-            wheelDiameter: 112,
-            wheelThickness: 12,
-            handleDiameter: 12,
-            wheelReflectsSaturation: false,
+    init() {
+        this.createColorWheel();
 
-            onChange: (col) => {
-                currentColor = col.hex.toUpperCase();
-                ui.domColorPicker.value = currentColor;
-                helper.clearOverlays();
+        if (!preferences.isMinimal()) {
+            this.domMenus.style.display = 'unset';
+            this.domHover.style.display = 'unset';
+            this.domPalette.style.display = 'unset';
+            this.domMenuInScreenRight.style.display = 'flex';
+            this.domMenuInScreenBottom.style.display = 'flex';
+            this.domInfoTool.style.display = 'unset';
+            this.domInfoParent.style.display = 'unset';
+            this.domColorWheel.style.display = 'unset';
+            console.log('uix: full');
+        } else {
+            this.domMenus.style.display = 'unset';
+            this.domHover.style.display = 'unset';
+            this.domPalette.style.display = 'unset';
+            this.domToolbarTopCen.style.display = 'none';
+            this.domInfoParent.style.display = 'unset';
+            this.domInfoTool.style.display = 'unset';
+            this.domColorWheel.style.display = 'unset';
 
-                xformer.colorSelected();
-            },
-        });
+            this.domToolbarTop.style.top = '10px';
+            this.domInfoTool.style.top = '16px';
 
-        this.colorWheel.redraw();
+            for (const item of this.domToolbarL.children)
+                item.style.display = 'none';
+            this.domToolbarL.children[0].style.display = 'unset';
+            this.domToolbarL.children[1].style.display = 'unset';
+            this.domToolbarL.children[2].style.display = 'unset';
+            this.domToolbarL.children[3].style.display = 'unset';
+
+            this.domMenuInScreenStore.style.display = 'flex';
+            this.domMenuInScreenRight.style.display = 'flex';
+            this.domMenuInScreenRight.children[3].style.opacity = '0.5';
+            this.domMenuInScreenRight.children[3].style.pointerEvents = 'none';
+            this.domMenuInScreenBottom.style.display = 'flex';
+            this.domMenuInScreenBottom.style.gap = '5px';
+            this.domMenuInScreenBottom.children[2].style.display = 'none';
+            this.domMenuInScreenBottom.children[4].style.display = 'none';
+
+            this.domInfo[3].style.display = 'none';
+            this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
+
+            if (isMobile) {
+                this.domCameraOffset.value = 1.3;
+                this.domTransformReactive.checked = false;
+                console.log('uix: minimal (mobile)');
+            } else {
+                console.log('uix: minimal');
+            }
+        }
     }
 
     setMode(mode) {
@@ -4827,7 +4940,9 @@ class UserInterface {
             pool.setPoolVisibility(false);
             light.updateShadowMap();
         } else if (mode == 1) {
-            modules.sandbox.activate();
+            setTimeout(() => {
+                modules.sandbox.activate();
+            }, 100);
         } else if (mode == 2) {
             modules.sandbox.deactivate();
             builder.setMeshVisibility(false);
@@ -4853,10 +4968,8 @@ class UserInterface {
         this.domMeshList.style.display = 'none';
         this.domHover.style.display = 'unset';
 
-        for (const i of this.domToolbarL.children) {
+        for (const i of this.domToolbarL.children)
             i.style.display = 'unset';
-            i.firstChild.disabled = false;
-        }
             
         if (mode == 0) {
             this.domToolbarTopMem.style.display = 'unset';
@@ -4866,29 +4979,31 @@ class UserInterface {
             this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
             ui.domColorWheel.style.display = 'unset';
         } else if (mode == 1) {
-            this.domToolbarL.children[5].style.display = 'none';     // CREATE
-            this.domToolbarL.children[6].style.display = 'none';     // VOXELIZE
-            this.domToolbarL.children[7].style.display = 'none';     // SYMM
-            this.domToolbarL.children[8].style.display = 'none';     // DRAW
-            this.domToolbarL.children[9].style.display = 'none';     // PAINT
-            this.domToolbarL.children[10].style.display = 'none';    // XFORM
-            this.domToolbarL.children[11].style.display = 'none';    // GROUPS
-            this.domToolbarL.children[12].style.display = 'none';    // BAKERY
-            this.domToolbarL.children[13].style.display = 'none';    // PBR
-            this.domToolbarL.children[14].style.display = 'none';    // EXPORT
+            this.domToolbarL.children[2].style.display = 'none';    // STORAGE
+            this.domToolbarL.children[5].style.display = 'none';    // CREATE
+            this.domToolbarL.children[6].style.display = 'none';    // VOXELIZE
+            this.domToolbarL.children[7].style.display = 'none';    // SYMM
+            this.domToolbarL.children[8].style.display = 'none';    // DRAW
+            this.domToolbarL.children[9].style.display = 'none';    // PAINT
+            this.domToolbarL.children[10].style.display = 'none';   // XFORM
+            this.domToolbarL.children[11].style.display = 'none';   // GROUPS
+            this.domToolbarL.children[12].style.display = 'none';   // BAKERY
+            this.domToolbarL.children[13].style.display = 'none';   // PBR
+            this.domToolbarL.children[14].style.display = 'none';   // EXPORT
             this.domMenuInScreenRender.style.display = 'flex';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
             ui.domColorWheel.style.display = 'none';
         } else if (mode == 2) {
-            this.domToolbarL.children[4].firstChild.disabled = true;  // RENDER
-            this.domToolbarL.children[5].firstChild.disabled = true;  // CREATE
-            this.domToolbarL.children[6].firstChild.disabled = true;  // VOXELIZE
-            this.domToolbarL.children[7].firstChild.disabled = true;  // SYMM
-            this.domToolbarL.children[8].firstChild.disabled = true;  // DRAW
-            this.domToolbarL.children[9].firstChild.disabled = true;  // PAINT
-            this.domToolbarL.children[10].firstChild.disabled = true; // XFORM
-            this.domToolbarL.children[11].firstChild.disabled = true; // GROUPS
+            this.domToolbarL.children[2].style.display = 'none';    // STORAGE
+            this.domToolbarL.children[4].style.display = 'none';    // RENDER
+            this.domToolbarL.children[5].style.display = 'none';    // CREATE
+            this.domToolbarL.children[6].style.display = 'none';    // VOXELIZE
+            this.domToolbarL.children[7].style.display = 'none';    // SYMM
+            this.domToolbarL.children[8].style.display = 'none';    // DRAW
+            this.domToolbarL.children[9].style.display = 'none';    // PAINT
+            this.domToolbarL.children[10].style.display = 'none';   // XFORM
+            this.domToolbarL.children[11].style.display = 'none';   // GROUPS
             this.domMenuInScreenExport.style.display = 'flex';
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
@@ -4899,6 +5014,27 @@ class UserInterface {
         for (const i of this.domModes)
             i.classList.remove("mode_select");
         this.domModes[mode].classList.add("mode_select");
+    }
+
+    createColorWheel() {
+        this.colorWheel = new modules.ReinventedColorWheel({
+            appendTo: ui.domColorWheel,
+            hex: currentColor,
+            wheelDiameter: 112,
+            wheelThickness: 14,
+            handleDiameter: 10,
+            wheelReflectsSaturation: false,
+
+            onChange: (col) => {
+                currentColor = col.hex.toUpperCase();
+                ui.domColorPicker.value = currentColor;
+                helper.clearOverlays();
+
+                xformer.colorSelected();
+            },
+        });
+
+        this.colorWheel.redraw();
     }
 
     showProgress(val, max = undefined) {
@@ -4962,54 +5098,6 @@ class UserInterface {
                 resolve(undefined);
             };
         });
-    }
-
-    showInterface() { // for startup
-        if (!preferences.isMinimal()) {
-            this.domMenus.style.display = 'unset';
-            this.domHover.style.display = 'unset';
-            this.domPalette.style.display = 'unset';
-            this.domMenuInScreenRight.style.display = 'flex';
-            this.domMenuInScreenBottom.style.display = 'flex';
-            this.domInfoTool.style.display = 'unset';
-            this.domInfoParent.style.display = 'unset';
-            this.domColorWheel.style.display = 'unset';
-        } else {
-            this.domMenus.style.display = 'unset';
-            this.domHover.style.display = 'unset';
-            this.domPalette.style.display = 'unset';
-            this.domToolbarTopCen.style.display = 'none';
-            this.domInfoParent.style.display = 'unset';
-            this.domInfoTool.style.display = 'unset';
-            this.domColorWheel.style.display = 'unset';
-
-            this.domToolbarTop.style.top = '10px';
-            this.domInfoTool.style.top = '16px';
-
-            for (const item of this.domToolbarL.children)
-                item.style.display = 'none';
-            this.domToolbarL.children[0].style.display = 'unset';
-            this.domToolbarL.children[1].style.display = 'unset';
-            this.domToolbarL.children[2].style.display = 'unset';
-            this.domToolbarL.children[3].style.display = 'unset';
-
-            this.domMenuInScreenStore.style.display = 'flex';
-            this.domMenuInScreenRight.style.display = 'flex';
-            this.domMenuInScreenRight.children[3].style.opacity = '0.5';
-            this.domMenuInScreenRight.children[3].style.pointerEvents = 'none';
-            this.domMenuInScreenBottom.style.display = 'flex';
-            this.domMenuInScreenBottom.style.gap = '5px';
-            this.domMenuInScreenBottom.children[2].style.display = 'none';
-            this.domMenuInScreenBottom.children[4].style.display = 'none';
-
-            this.domInfo[3].style.display = 'none';
-            this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
-
-            if (isMobile) {
-                this.domCameraOffset.value = 1.3;
-                this.domTransformReactive.checked = false;
-            }
-        }
     }
 
     offscreenCheckPanel() {
@@ -5220,6 +5308,7 @@ class Preferences {
 
     init(webgpu_adapter) {
         resetAllInputElements();
+
         document.getElementById(KEY_BVHPICK).checked = true;
         document.getElementById(KEY_WEBGPU).disabled = !webgpu_adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
@@ -5271,7 +5360,10 @@ class Preferences {
                 scene.clearColor = color4FromHex(val);
         });
 
-        this.setPref(KEY_RENDER_SHADE);
+        this.setPref(KEY_RENDER_SHADE, () => {
+            if (modules.sandbox.isActive())
+                modules.sandbox.updateMaterials();
+        });
 
         this.setPrefCheck(KEY_WEBSOCKET, (chk) => {
             (chk && !modules.sandbox.isActive()) ?
@@ -5286,6 +5378,8 @@ class Preferences {
     }
 
     finish(startTime) {
+        ui.init();
+
         scene.clearColor = (this.isBackgroundColor()) ?
             color4FromHex(this.getBackgroundColor()) :
             color4FromHex(COL_BG);
@@ -5293,55 +5387,37 @@ class Preferences {
         hdri.preload(() => {
             if (this.isUserStartup()) {
                 project.loadFromUrl('user/startup.json', () => {
-                    ui.showInterface();
-                    document.getElementById('introscreen').style.display = 'none';
-                    console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
-                    this.postFinish();
+                    this.postFinish(startTime);
                 });
             } else {
                 project.newProjectStartup(document.getElementById(KEY_RENDER_SHADE).value, document.getElementById(KEY_STARTBOX_SIZE).value);
-                ui.showInterface();
-                document.getElementById('introscreen').style.display = 'none';
-                console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
-                this.postFinish();
+                this.postFinish(startTime);
             }
         });
     }
 
-    postFinish() {
+    postFinish(startTime) {
         axisView.init();
-        ui.createColorWheel();
         palette.expand(this.getPaletteSize());
-
-        camera.frame();
-
-        // inject extra babylon libs
-        const scriptLoaders = document.createElement('script');
-        scriptLoaders.src = 'libs/babylonjs.loaders.min.js';
-        document.body.appendChild(scriptLoaders);
-        const scriptSerializers = document.createElement('script');
-        scriptSerializers.src = 'libs/babylonjs.serializers.min.js';
-        document.body.appendChild(scriptSerializers);
-        const scriptInspector = document.createElement('script');
-        scriptInspector.src = 'libs/babylon.inspector.bundle.js';
-        document.body.appendChild(scriptInspector);
-
-        canvas.style.pointerEvents = 'unset';
+        snapshot.createElements(this.getSnapshotNum());
+        snapshot.createSnapshots();
+        modules.colorPicker.init();
+        modules.panels.showHelpLabels(document.getElementById(KEY_HELP_LABELS).checked);
+    
         console.log(`mobile: ${isMobile}`);
         console.log(`webgpu: ${engine.engine.isWebGPU}`);
+        console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
         this.isInitialized = true;
+
+        document.getElementById('introscreen').style.display = 'none';
+        canvas.style.pointerEvents = 'unset';
+        camera.frame();
 
         // inject the user module entry point
         const scriptUserModules = document.createElement('script');
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
-
-        // extras
-        snapshot.createElements(this.getSnapshotNum());
-        snapshot.createSnapshots();
-        modules.colorPicker.init();
-        modules.panels.showHelpLabels(document.getElementById(KEY_HELP_LABELS).checked);
     }
 
     isBVHPick() {
@@ -5783,9 +5859,9 @@ ui.domMenuInScreenStore.children[1].onclick = () => {
 ui.domMenuInScreenExport.children[0].onclick = async () => {
     if (pool.meshes.length > 0) {
         if (await ui.showConfirm("Replace all baked meshes?"))
-            pool.bake();
+            bakery.bakeVoxels();
     } else {
-        pool.bake();
+        bakery.bakeVoxels();
     }
 };
 
@@ -5911,7 +5987,7 @@ ui.domRenderLightColor.oninput = () => {
         modules.sandbox.updateLights();
 };
 
-ui.domRenderLightIntensity.onchange = (ev) => {
+ui.domRenderLightIntensity.onchange = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.updateLights();
 };
@@ -5957,8 +6033,7 @@ ui.domRenderTexture.onchange = () => {
 };
 
 ui.domRenderPlane.onchange = () => {
-    if (modules.sandbox.isActive())
-        modules.sandbox.updatePlane();
+    modules.sandbox.updatePlane();
 };
 
 ui.domCameraAutoFrame.onchange = (ev) => {
@@ -6114,6 +6189,7 @@ document.getElementById('save_project').onclick = () =>             { project.sa
 document.getElementById('save_snapshots').onclick = () =>           { snapshot.saveSnapshots() };
 document.getElementById('export_voxels').onclick = () =>            { project.exportVoxels() };
 document.getElementById('export_meshes').onclick = () =>            { project.exportMeshes() };
+document.getElementById('unbake_meshes').onclick = () =>            { pool.unbakeMeshes() };
 document.getElementById('screenshot').onclick = () =>               { project.createScreenshot() };
 document.getElementById('create_box').onclick = () =>               { if (ui.checkMode(0)) modules.generator.createBox() };
 document.getElementById('create_plane').onclick = () =>             { if (ui.checkMode(0)) modules.generator.createBox(true) };
@@ -6144,14 +6220,15 @@ document.getElementById('btn_tool_eyedropper').onclick = () =>      { if (ui.che
 document.getElementById('btn_tool_transform_box').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('transform_box') };
 document.getElementById('btn_tool_transform_rect').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('transform_rect') };
 document.getElementById('btn_tool_transform_group').onclick = () => { if (ui.checkMode(0)) tool.toolSelector('transform_group') };
+document.getElementById('btn_tool_transform_island').onclick = () =>{ if (ui.checkMode(0)) tool.toolSelector('transform_island') };
 document.getElementById('btn_tool_transform_visible').onclick = ()=>{ if (ui.checkMode(0)) tool.toolSelector('transform_visible') };
 document.getElementById('btn_tool_measure_volume').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
 document.getElementById('btn_reduce_voxels').onclick = () =>        { if (ui.checkMode(0)) builder.reduceVoxels() };
-document.getElementById('bakery_bake').onclick = () =>              { pool.bake() };
+document.getElementById('bakery_bake').onclick = () =>              { bakery.bakeVoxels() };
 document.getElementById('btn_tool_bakecolor').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('bake_color') };
 document.getElementById('create_pointcloud').onclick = () =>        { if (ui.checkMode(2)) ghosts.createPointCloud() };
 document.getElementById('delete_pointcloud').onclick = () =>        { ghosts.disposePointCloud() };
-document.getElementById('delete_bake_all').onclick = () =>          { pool.clearPool(true) };
+document.getElementById('delete_bake_all').onclick = () =>          { pool.dispose(true) };
 document.getElementById('delete_bake').onclick = () =>              { if (ui.checkMode(2)) pool.deleteSelected() };
 document.getElementById('btn_tool_isolate_color').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('isolate_color') };
 document.getElementById('btn_tool_hide_color').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('hide_color') };

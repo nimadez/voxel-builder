@@ -1,6 +1,6 @@
 {
     "name": "voxel-builder",
-    "version": "4.6.0",
+    "version": "4.6.1",
     "description": "Voxel-based 3D modeling application",
     "main": "electron.js",
     "scripts": {

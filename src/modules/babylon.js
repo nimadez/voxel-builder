@@ -79,7 +79,6 @@ export const Texture_CUBIC_MODE = BABYLON.Texture.CUBIC_MODE;
 export const Texture_SKYBOX_MODE = BABYLON.Texture.SKYBOX_MODE;
 export const Texture_LINEAR_LINEAR_MIPLINEAR = BABYLON.Texture.LINEAR_LINEAR_MIPLINEAR;
 export const Texture_NEAREST_SAMPLINGMODE = BABYLON.Texture.NEAREST_SAMPLINGMODE;
-export const PBRMATERIAL_ALPHABLEND = BABYLON.PBRMaterial.PBRMATERIAL_ALPHABLEND;
 export const EffectShadersStore = BABYLON.Effect.ShadersStore;
 export const CounterClockWiseSideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
 
@@ -319,9 +318,10 @@ export function ExportGLB(scene, filename, exportOptions, isDownload, onLoaded) 
     });
 }
 
-export function ExportGLTF(scene, filename, exportOptions, onLoaded) {
+export function ExportGLTF(scene, filename, exportOptions, isDownload, onLoaded) {
     BABYLON.GLTF2Export.GLTFAsync(scene, filename, exportOptions).then(data => {
-        data.downloadFiles();
+        if (isDownload)
+            data.downloadFiles();
         onLoaded(data);
     });
 }

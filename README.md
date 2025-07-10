@@ -2,9 +2,9 @@
 
 ![screenshot](media/screenshot.png?raw=true "Screenshot")
 
-**Voxel-based 3D Modeling Application**
-
-**Model . Render . Export**
+### **Voxel-based 3D Modeling Application**
+**Model . Render . Export**<br>
+This application is suitable for rapid prototyping, speed modeling, creating small assets in large numbers, importing MagicaVoxel models, or simply playing around and learning 3D modeling.
 
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
@@ -15,8 +15,7 @@
 [FAQ](https://github.com/nimadez/voxel-builder#faq)<br>
 [Bug Report](https://github.com/nimadez/voxel-builder/issues)
 
-**Open source, but not open contributions**<br>
-*It's great if you have suggestions or bugs to report in the Issues section, but Pull Requests will not be approved.*
+###### **Open source, but not open contributions**<br>*It's great if you have suggestions or bugs to report in the Issues section, but Pull Requests will not be approved.*
 
 ## Features
 
@@ -94,7 +93,6 @@ python3 update.py
 - Electron *(recommended)*
 - Google Chrome
 - Mozilla Firefox
-> - PWA A2HS-ready *(add to home screen)*
 > - For the best experience, a tablet with pen or Wacom is recommended
 
 #### Enable Unsafe WebGPU
@@ -163,6 +161,7 @@ git reset --hard $HASH
 
 ## History
 ```
+↑ X-Form the islanders
 ↑ Unsafe WebGPU support
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
@@ -178,6 +177,8 @@ git reset --hard $HASH
 ↑ Changed default handiness to right-handed coordinate
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
+
+"If AI can do this, I won't call it AI anymore."
 ```
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>

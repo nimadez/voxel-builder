@@ -22,6 +22,7 @@ const FPS = 1000 / 60;
 const TILE = 4;
 const DPR_FAST = 0.5;
 const CAM_FAR = 1000;
+const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
 const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
 const toneMappingOptions = {
     0: THREE.NoToneMapping,
@@ -49,6 +50,7 @@ class Sandbox {
         this.shadowGround = undefined;
 
         this.controls = undefined;
+        this.framed = undefined;
         this.tween1 = undefined;
         this.tween2 = undefined;
         this.tweens = new Group();
@@ -66,7 +68,7 @@ class Sandbox {
 
         this.mat_pbr = undefined;
         this.mat_shade = undefined;
-        this.mat_illum = undefined;
+        this.mat_emissive = undefined;
         this.textures = [];
 
         this.isShadeMode = false;
@@ -152,10 +154,10 @@ class Sandbox {
         this.mat_pbr.color.convertSRGBToLinear();
         this.mat_pbr.needsUpdate = true;
         this.mat_shade = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x000000), side: THREE.BackSide, precision: "mediump" });
-        this.mat_illum = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x000000), side: THREE.BackSide });
-        this.mat_illum.emissiveIntensity = 1;
+        this.mat_emissive = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x000000), side: THREE.BackSide });
+        this.mat_emissive.emissiveIntensity = 1;
 
-        this.textures.push(null);
+        this.textures.push(new THREE.TextureLoader().load(TEX_NULL));
         this.textures.push(createVoxelTexture());
         this.textures.push(new THREE.TextureLoader().load(TEX_CHECKER));
 
@@ -215,7 +217,7 @@ class Sandbox {
             this.geom.computeVertexNormals();
 
             (palette.uniqueColors[c] === "#000000") ?
-                this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_illum) :
+                this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_emissive) :
                 this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_pbr);
 
             this.meshes[c].name = palette.uniqueColors[c];
@@ -343,8 +345,8 @@ class Sandbox {
         this.mat_pbr.metalness = ui.domRenderMaterialMetalness.value;
         this.mat_pbr.transmission = ui.domRenderMaterialTransmission.value;
         this.mat_shade.color = new THREE.Color(parseInt(preferences.getRenderShadeColor().replace('#', '0x')));
-        this.mat_illum.emissive = new THREE.Color(ui.domRenderMaterialEmissive.value);
-        this.mat_illum.emissiveIntensity = ui.domRenderMaterialEmissiveIntensity.value;
+        this.mat_emissive.emissive = new THREE.Color(ui.domRenderMaterialEmissive.value);
+        this.mat_emissive.emissiveIntensity = ui.domRenderMaterialEmissiveIntensity.value;
         this.pt.updateMaterials();
     }
 
@@ -391,19 +393,15 @@ class Sandbox {
                 }
             }
 
-            if (sandbox.elapsed > FPS) {
-                sandbox.then = sandbox.now - (sandbox.elapsed % FPS);
+            sandbox.tweens.update(sandbox.now);
+            sandbox.controls.update();
 
-                sandbox.tweens.update(sandbox.now);
-                sandbox.controls.update();
-
-                if (sandbox.flagUpdateScene == 1) {
-                    sandbox.flagUpdateScene = 0;
-                    setTimeout(() => {
-                        sandbox.isProgressing = true;
-                        sandbox.pt.create(sandbox.scene, sandbox.camera);
-                    });
-                }
+            if (sandbox.flagUpdateScene == 1) {
+                sandbox.flagUpdateScene = 0;
+                setTimeout(() => {
+                    sandbox.isProgressing = true;
+                    sandbox.pt.create(sandbox.scene, sandbox.camera);
+                });
             }
         }
     }
@@ -437,10 +435,10 @@ class Sandbox {
             this.tweens.remove(this.tween2);
         }
 
-        this.tween1 = new Tween(this.camera.position).to(position, 600)
+        this.tween1 = new Tween(this.camera.position).to(position, 500)
             .easing(Easing.Cubic.InOut).start();
 
-        this.tween2 = new Tween(this.controls.target).to(center, 610)
+        this.tween2 = new Tween(this.controls.target).to(center, 510)
             .easing(Easing.Cubic.InOut)
             .onComplete(() => {
                 this.camera.updateProjectionMatrix();
@@ -463,9 +461,19 @@ class Sandbox {
     }
 
     frameCamera() {
-        const framed = camera.getFramed(builder.mesh);
-        const center = new THREE.Vector3(framed.target.x, framed.target.y, framed.target.z);
-        const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(framed.radius);
+        if (this.intersects && this.intersects.length > 0) {
+            this.intersects[0].object.geometry.computeBoundingBox();
+            const boundingBox = this.intersects[0].object.geometry.boundingBox;
+
+            this.framed = camera.getFramedBoundingBox(
+                Vector3(boundingBox.min.x, boundingBox.min.y, boundingBox.min.z),
+                Vector3(boundingBox.max.x, boundingBox.max.y, boundingBox.max.z));
+        } else {
+            this.framed = camera.getFramed(builder.mesh);
+        }
+
+        const center = new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z);
+        const direction = this.controls.target.clone().sub(this.camera.position).normalize().multiplyScalar(this.framed.radius);
         const position = this.camera.position.clone().copy(center).sub(direction);
 
         this.cameraAnimator(position, center);
@@ -542,14 +550,6 @@ class Sandbox {
 
     // Activation
 
-    isActive() {
-        return this.isLoaded && !engine.isRendering;
-    }
-
-    isActiveRender() {
-        return this.isLoaded && !engine.isRendering && this.isRendering;
-    }
-
     startPathTracer(isEnabled) {
         this.isRendering = isEnabled;
         this.controls.enableDamping = !isEnabled;
@@ -619,6 +619,10 @@ class Sandbox {
         ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
         ui.domInfoRender.style.display = 'none';
         ui.showProgress(0);
+    }
+
+    isActive() {
+        return this.isLoaded && !engine.isRendering;
     }
 }
 
