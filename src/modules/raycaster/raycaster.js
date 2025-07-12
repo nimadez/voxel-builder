@@ -70,8 +70,8 @@ class RaycastMesh {
     // but in problematic cases more is needed
     raycastOmni(x, y, z) {
         this.ray.origin.set(x, y, z);
-        for (const direction of directions) {
-            this.ray.direction.copy(direction);
+        for (const dir of directions) {
+            this.ray.direction.copy(dir);
             const res = this.mesh.geometry.boundsTree.raycastFirst(this.ray, THREE.DoubleSide);
             if (res && res.face.normal.dot(this.ray.direction) > 0)
                 return res;

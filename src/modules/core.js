@@ -133,6 +133,28 @@ const VEC6_HALF = [
     Vector3(0, 0, 0.5),
     Vector3(0, 0, -0.5)
 ];
+const VEC20_CORNERS = [
+    Vector3(1, 1, 1),
+    Vector3(1, 1, -1),
+    Vector3(1, -1, 1),
+    Vector3(1, -1, -1),
+    Vector3(-1, 1, 1),
+    Vector3(-1, 1, -1),
+    Vector3(-1, -1, 1),
+    Vector3(-1, -1, -1),
+    Vector3(1, 1, 0),    // edge 0,1
+    Vector3(1, 0, 1),    // edge 0,2
+    Vector3(0, 1, 1),    // edge 0,4
+    Vector3(1, 0, -1),   // edge 1,3
+    Vector3(0, 1, -1),   // edge 1,5
+    Vector3(1, -1, 0),   // edge 2,3
+    Vector3(0, -1, 1),   // edge 2,6
+    Vector3(0, -1, -1),  // edge 3,7
+    Vector3(-1, 1, 0),   // edge 4,5
+    Vector3(-1, 0, 1),   // edge 4,6
+    Vector3(-1, 0, -1),  // edge 5,7
+    Vector3(-1, -1, 0)   // edge 6,7
+];
 
 // right-handed plane
 const PLANE_POSITIONS = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
@@ -142,7 +164,7 @@ const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
 const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
-const MAX_VOXELS_DRAW = isMobile ? 32000 : 256000;
+const MAX_VOXELS_DRAW = isMobile ? 64000 : 256000;
 const MAX_SNAPSHOTS = 100;
 const MAX_Z = isMobile ? 1500 : 2500;
 const GRIDPLANE_SIZE = MAX_Z + 100;
@@ -157,7 +179,6 @@ export let MODE = -1; // model|render|export
 let isRenderAxisView = true;
 let currentColor = document.getElementById('input-color').value.toUpperCase();
 let currentColorBake = document.getElementById('input-pbr-albedo').value.toUpperCase();
-let duplicateFlag = 0;
 
 const workplaneWhiteList = [
     'add',
@@ -356,6 +377,7 @@ class Camera {
         this.camera0 = undefined;
         this.lastPos = undefined;
         this.isFramingActive = false;
+        this.flagFrame = 0;
     }
 
     init() {
@@ -982,6 +1004,7 @@ class VoxelMesh {
 class Builder {
     constructor() {
         this.isWorking = false;
+        this.flagDuplicate = 0;
         this.latency = 0;
 
         this.voxels = [];
@@ -1019,18 +1042,21 @@ class Builder {
             this.latency = (performance.now() - startTime).toFixed(0);
 
             this.fillMeshBuffersWorker().then(() => {
-                if (preferences.isBVHPick())
-                    modules.rcm.createFromData(this.positions, this.indices);
-
-                if (ui.domCameraAutoFrame.checked && !xformer.isActive)
-                    camera.frame();
-
-                palette.create();
-                helper.setSymmPivot();
-                
-                if (preferences.isWebsocket())
-                    modules.ws_client.sendMessage(this.voxels, 'get');
+                //
             });
+
+            if (camera.flagFrame == 1 || (ui.domCameraAutoFrame.checked && !xformer.isActive)) {
+                camera.flagFrame = 0;
+                setTimeout(() => {
+                    camera.frame();
+                }, 10);
+            }
+
+            if (preferences.isPointCloud())
+                ghosts.createPointCloud();
+
+            palette.create();
+            helper.setSymmPivot();
         });
     }
 
@@ -1041,7 +1067,7 @@ class Builder {
 
             this.fillVoxelBuffers();
             
-            if (duplicateFlag == 0) {
+            if (this.flagDuplicate == 0) {
                 if (isRecord)
                     memory.record();
                 
@@ -1053,7 +1079,7 @@ class Builder {
                 this.mesh.makeGeometryUnique();
                 this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
                 this.mesh.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
-                this.mesh.thinInstanceEnablePicking = false;
+                this.mesh.thinInstanceEnablePicking = true;
                 this.mesh.doNotSyncBoundingInfo = false;
                 this.mesh.material = material.getMaterial();
                 this.mesh.isVisible = true;
@@ -1083,7 +1109,7 @@ class Builder {
             if (this.getIndexAtPosition(voxel.position) !== undefined) {
                 this.voxels[i].position = RECYCLEBIN;
                 this.voxels[i].visible = false;
-                duplicateFlag = 1;
+                this.flagDuplicate = 1;
             } else {
                 this.tMatrix.m[12] = voxel.position.x;
                 this.tMatrix.m[13] = voxel.position.y;
@@ -1097,15 +1123,15 @@ class Builder {
                 this.rttColors[i * 4 + 2] = this.rgbIndex.b / 255;
                 this.rttColors[i * 4 + 3] = 1;
                 this.rttColorsMap[`${this.rgbIndex.r}_${this.rgbIndex.g}_${this.rgbIndex.b}`] = i;
+            
+                this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
+                this.bufferColors[i * 4] = this.rgbBuffer.r;
+                this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+                this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
+                this.bufferColors[i * 4 + 3] = 1;
+
+                this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
             }
-
-            this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
-            this.bufferColors[i * 4] = this.rgbBuffer.r;
-            this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
-            this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
-            this.bufferColors[i * 4 + 3] = 1;
-
-            this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
         }
     }
 
@@ -1236,6 +1262,24 @@ class Builder {
         );
     }
 
+    normalizeVoxelPositions() {
+        const bounds = this.mesh.getBoundingInfo();
+        const size = Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z));
+        const centerX = (-bounds.boundingBox.center.x + size.x / 2) - 0.5;
+        const centerY = (size.y / 2 - bounds.boundingBox.center.y) - 0.5;
+        const centerZ = (-bounds.boundingBox.center.z + size.z / 2) - 0.5;
+        const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
+
+        for (let i = 0; i < this.voxels.length; i++)
+            this.voxels[i].position = Vector3TransformCoordinates(
+                this.voxels[i].position, tMatrix);
+
+        this.create();
+    }
+
     async getIndexAtPointer() {
         return this.rttColorsMap[ await renderTarget.readPixel() ];
     }
@@ -1248,7 +1292,7 @@ class Builder {
         return this.rttColorsMap[ await renderTarget.readOmni(num, pad) ];
     }
 
-    async getIndexAtPointerTarget(x, y, w, h) {
+    async getIndexesAtPointerTarget(x, y, w, h) {
         const indexes = [];
         const pixels = await renderTarget.readTarget(x, y, w, h);
         for (let i = 0; i < pixels.length; i += 4) {
@@ -1293,18 +1337,17 @@ class Builder {
         return arr;
     }
 
-    getVoxelsByIslands(pos = undefined, threshold = 1.0) {
+    getVoxelsByIslands(pos = undefined, isAddConnected = false) {
         const positions = this.voxels.map(i => i.position);
         const adjIndexes = Array(positions.length).fill().map(() => []);
+        const directions = (isAddConnected) ? VEC6_ONE.concat(VEC20_CORNERS) : VEC6_ONE;
 
         for (let i = 0; i < positions.length; i++) {
-            for (const dir of VEC6_ONE) {
+            for (const dir of directions) {
                 const j = this.positionsMap[`${positions[i].x + dir.x}_${positions[i].y + dir.y}_${positions[i].z + dir.z}`];
-                if (j === undefined || j <= i) continue;
-                if (this.voxels[j].visible && distanceVectors(positions[i], positions[j]) <= threshold) {
-                    adjIndexes[i].push(j);
-                    adjIndexes[j].push(i);
-                }
+                if (j === undefined || !this.voxels[j].visible || j <= i) continue;
+                adjIndexes[i].push(j);
+                adjIndexes[j].push(i);
             }
         }
 
@@ -1397,11 +1440,15 @@ class Builder {
         this.removeArray(this.getVoxelsByPosition(pos));
     }
 
-    removeDuplicates() {
-        //const last = this.voxels.length;
+    removeByColor(hex) {
+        const group = this.getVoxelsByColor(hex);
+        if (group.length == 0) return;
+        this.removeArray(group);
+    }
+
+    removeDuplicatesAndUpdate() {
         this.removeByPosition(RECYCLEBIN);
         this.create();
-        //console.log(`remove ${ last - this.voxels.length } duplicates`);
     }
 
     paintByArray(arr, hex) {
@@ -1422,30 +1469,14 @@ class Builder {
         const voxels = this.getVoxelsByColor(hex);
         for (let i = 0; i < voxels.length; i++)
             this.voxels[voxels[i].idx].visible = isVisible;
-        this.create();
     }
 
-    setAllVisibilityAndUpdate(isVisible) {
-        for (let i = 0; i < this.voxels.length; i++)
-            this.voxels[i].visible = isVisible;
-        this.create();
-    }
-
-    invertVisibilityAndUpdate() {
+    invertVisibility() {
         const hiddens = this.getVoxelsByVisibility(false);
         if (hiddens.length == 0) return;
 
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].visible = !this.voxels[i].visible;
-        this.create();
-    }
-
-    deleteColorAndUpdate(hex) {
-        const group = this.getVoxelsByColor(hex);
-        if (group.length == 0) return;
-        
-        this.removeArray(group);
-        this.create();
     }
 
     async deleteHiddenAndUpdate() {
@@ -1458,7 +1489,7 @@ class Builder {
         this.create();
     }
 
-    async setAllColorsAndUpdate(hex = currentColor) {
+    async setColorsAndUpdate(hex = currentColor) {
         if (!await ui.showConfirm('replace all colors?')) return;
         for (let i = 0; i < this.voxels.length; i++) {
             this.voxels[i].visible = true;
@@ -1486,7 +1517,7 @@ class Builder {
         return undefined;
     }
 
-    async reduceVoxels() {
+    async reduceVoxelsAndUpdate() {
         if (!await ui.showConfirm('reducing voxels, continue?')) return;
         ui.showProgress(1);
         const last = this.voxels.length;
@@ -1501,22 +1532,32 @@ class Builder {
         ui.showProgress(0);
     }
 
-    normalizeVoxelPositions() {
-        const bounds = this.mesh.getBoundingInfo();
-        const size = Vector3(
-            Math.abs(bounds.minimum.x - bounds.maximum.x),
-            Math.abs(bounds.minimum.y - bounds.maximum.y),
-            Math.abs(bounds.minimum.z - bounds.maximum.z));
-        const centerX = (-bounds.boundingBox.center.x + size.x / 2) - 0.5;
-        const centerY = (size.y / 2 - bounds.boundingBox.center.y) - 0.5;
-        const centerZ = (-bounds.boundingBox.center.z + size.z / 2) - 0.5;
-        const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
+    async createRandomIslandColors() {
+        if (!await ui.showConfirm('replace all colors?')) return;
 
         for (let i = 0; i < this.voxels.length; i++)
-            this.voxels[i].position = Vector3TransformCoordinates(
-                this.voxels[i].position, tMatrix);
+            this.voxels[i].visible = true;
 
+        const islands = this.getVoxelsByIslands(undefined, ui.domRandomIslandsConnected.checked);
+        const colors = [];
+        let hex = undefined;
+
+        for (let i = 0; i < islands.length; i++) {
+            hex = undefined;
+            do {
+                hex = generateRandomHexColor();
+            } while (hex === "#000000" || hex === "#FFFFFF" || colors.includes(hex));
+
+            for (let j = 0; j < islands[i].length; j++) {
+                const idx = this.getIndexAtPosition(islands[i][j]);
+                if (idx !== undefined) {
+                    this.voxels[idx].color = hex;
+                    colors.push(hex);
+                }
+            }
+        }
         this.create();
+        ui.notification(`${islands.length} Islands`);
     }
 
     // Voxel Data IO
@@ -1665,7 +1706,7 @@ class Bakery {
             const baked = this.bake(voxels);
 
             baked.sideOrientation = CounterClockWiseSideOrientation;
-            baked.name = `mesh${ pool.meshes.length + 1 }`;
+            baked.name = `m${ pool.meshes.length + 1 }`;
             pool.resetPivot(baked);
 
             baked.material = material.mat_pbr_msh.clone('mat_' + baked.name);
@@ -1915,7 +1956,7 @@ class MeshPool {
             const item = document.createElement('div');
             const name = document.createElement('div');
             name.classList.add('item_name');
-            name.innerHTML = "EMPTY";
+            name.innerHTML = "-";
             item.appendChild(name);
             ui.domMeshList.appendChild(item);
         }
@@ -2004,7 +2045,7 @@ class Ghosts {
     }
 
     init() {
-        this.thin = vMesh.mesh.clone();
+        this.thin = vMesh.mesh.clone('ghost_thin');
         this.initThinOne();
     }
 
@@ -2092,8 +2133,7 @@ class Ghosts {
     createSPS(voxels = builder.voxels) {
         if (voxels.length == 0) return;
 
-        if (this.sps)
-            this.sps.dispose();
+        this.disposeSPS();
         
         this.sps = SolidParticleSystem('ghost_sps', scene, false, false, true);
 
@@ -2112,31 +2152,30 @@ class Ghosts {
     }
 
     disposeSPS() {
-        if (this.sps)
+        if (this.sps) {
+            this.sps.mesh.material.dispose();
+            this.sps.mesh.dispose();
             this.sps.dispose();
+        }
         this.sps = undefined;
     }
 
     createPointCloud(voxels = builder.voxels) {
         if (voxels.length == 0) return;
 
-        if (this.cloud)
-            this.cloud.dispose();
+        this.disposePointCloud();
         
         this.cloud = PointsCloudSystem('ghost_cloud', 2, scene, false);
         this.cloud.computeBoundingBox = false;
+        this.cloud.computeParticleColor = false;
 
-        const setParticles = function(particle, i, s) {
+        this.cloud.addPoints(voxels.length, (particle, i, s) => {
             particle.position.copyFrom(voxels[s].position);
-            particle.position.x += 0.2 * Math.random() - 0.1;
-            particle.position.y += 0.2 * Math.random() - 0.1;
-            particle.position.z += 0.2 * Math.random() - 0.1;
             particle.color = color4FromHex(voxels[s].color);
-        };
+        });
 
-        this.cloud.addPoints(voxels.length, setParticles);
         this.cloud.buildMeshAsync().then((mesh) => {
-            mesh.visibility = 0.35;
+            mesh.visibility = 0.3;
             mesh.isPickable = false;
             mesh.doNotSerialize = true;
             mesh.doNotSyncBoundingInfo = true;
@@ -2146,8 +2185,13 @@ class Ghosts {
     }
 
     disposePointCloud() {
-        if (this.cloud)
+        if (this.cloud) {
+            if (this.cloud.mesh) {
+                this.cloud.mesh.material.dispose();
+                this.cloud.mesh.dispose();
+            }
             this.cloud.dispose();
+        }
         this.cloud = undefined;
     }
 
@@ -2887,7 +2931,7 @@ class Tool {
 
         const norm = direction.negate().normalize();
         norm.x = norm.x == 0 ? 0 : Math.sign(norm.x);
-        norm.y = norm.y == 0 ? 0 : Math.sign(norm.y); // + 0.5
+        norm.y = norm.y == 0 ? 0 : Math.sign(norm.y); // sign(round(
         norm.z = norm.z == 0 ? 0 : Math.sign(norm.z);
 
         this.selected = [];
@@ -2967,13 +3011,16 @@ class Tool {
                 break;
             case 'hide_color':
                 builder.setVoxelsVisibilityByColor(builder.voxels[index].color, false);
+                builder.create();
                 break;
             case 'isolate_color':
                 builder.setVoxelsVisibility(false);
                 builder.setVoxelsVisibilityByColor(builder.voxels[index].color, true);
+                builder.create();
                 break;
             case 'delete_color':
-                builder.deleteColorAndUpdate(builder.voxels[index].color);
+                builder.removeByColor(builder.voxels[index].color);
+                builder.create();
                 break;
             case 'box_add':
                 this.addNoHelper(this.posNorm); // allow 1 voxel
@@ -3018,7 +3065,7 @@ class Tool {
                 xformer.begin(builder.getVoxelsByColor(builder.voxels[index].color));
                 break;
             case 'transform_island':
-                const islands = builder.getVoxelsByIslands(this.pos);
+                const islands = builder.getVoxelsByIslands(this.pos, ui.domTransformIslandConnected.checked);
                 if (islands.length > 0)
                     xformer.begin(builder.createArrayFromPositions(islands[0], false));
                 break;
@@ -3060,7 +3107,9 @@ class Tool {
         
         this.posNorm = this.pos.add(norm);
 
-        helper.setOverlayPlane(this.pos, norm, 0.5);
+        (this.pick.BADNORMAL) ?
+            helper.clearOverlays() :
+            helper.setOverlayPlane(this.pos, norm, 0.5);
 
         if (!pointer.isDown) return;
 
@@ -3224,9 +3273,9 @@ class Tool {
 
     handleToolDown() {
         if (this.name !== 'camera') {
-            this.setPickInfo().then(async pick => {
+            this.setPickInfo('down').then(async pick => {
                 if (xformer.isActive) {
-                    if (ui.domTransformReactive.checked) {
+                    if (ui.domTransformReactive.checked && !this.pick.WORKPLANE) {
                         xformer.apply();
                         pointer.isDown = false;
                         scene.stopAnimation(camera.camera0);
@@ -3239,7 +3288,7 @@ class Tool {
                 scene.activeCamera.detachControl(canvas);
 
                 if (pixelReadWhiteList.includes(this.name))
-                    this.indexes = await builder.getIndexAtPointerTarget(0, 0, window.innerWidth, window.innerHeight);
+                    this.indexes = await builder.getIndexesAtPointerTarget(0, 0, window.innerWidth, window.innerHeight);
 
                 this.onToolDown(pick);
             });
@@ -3253,7 +3302,7 @@ class Tool {
             if (this.elapsed > FPS_TOOL) {
                 this.then = this.now - (this.elapsed % FPS_TOOL);
 
-                this.setPickInfo().then(pick => {
+                this.setPickInfo('move').then(pick => {
                     if (!camera.isCameraChange())
                         this.onToolMove(pick);
                 });
@@ -3297,6 +3346,10 @@ class Tool {
         return undefined;
     }
 
+    predicateMesh(mesh) {
+        return mesh === builder.mesh;
+    }
+
     predicateWorkplane(mesh) {
         if (helper.isGridPlaneActive && helper.gridPlane.isVisible)
             return mesh === helper.gridPlane;
@@ -3317,22 +3370,24 @@ class Tool {
         return pos;
     }
 
-    setPickInfo() {
+    setPickInfo(state) {
         return new Promise(async resolve => {
-            // granted a mesh pick
+
             const index = await builder.getIndexAtPointer();
             if (index !== undefined) {
+
+                // face hits (50%)
 
                 this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
                 this.pickIndx = index;
                 this.pickNorm = await faceNormalProbe.getNormal(this.pick, index);
-    
-                // dodging gaps
+
+                // dodging gaps (50%)
+
                 if (!this.pickNorm) {
                     for (let i = 0; i < 4; i++) {
                         const _index = await builder.getIndexAtPointerOmni(i, 1);
                         if (_index !== undefined) {
-    
                             this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
                             this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
                             if (this.pickNorm) {
@@ -3343,42 +3398,41 @@ class Tool {
                     }
                 }
 
-                // dodging gaps at unreachable distances
                 if (!this.pickNorm) {
-
-                    if (preferences.isBVHPick()) {
-                        // BVH method
-                        const res = modules.rcm.raycastFace(
-                            this.pick.ray.origin.x,
-                            this.pick.ray.origin.y,
-                            this.pick.ray.origin.z,
-                            this.pick.ray.direction.x,
-                            this.pick.ray.direction.y,
-                            this.pick.ray.direction.z
-                        );
-                        if (res && res.face.normal) {
-                            this.pickIndx = index;
-                            this.pickNorm = Vector3(
-                                res.face.normal.x,
-                                res.face.normal.y,
-                                res.face.normal.z).negate();
-                        }
-                    } else {
-                        // brute-force method (doesn't work in all cases)
-                        for (let i = 0; i < 4; i++) {
-                            const _index = await builder.getIndexAtPointerOmni(i, 2);
-                            if (_index !== undefined) {
-        
-                                this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
-                                this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
-                                if (this.pickNorm) {
-                                    this.pickIndx = _index;
-                                    break;
-                                }
+                    for (let i = 0; i < 4; i++) {
+                        const _index = await builder.getIndexAtPointerOmni(i, 2);
+                        if (_index !== undefined) {
+                            this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                            this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
+                            if (this.pickNorm) {
+                                this.pickIndx = _index;
+                                break;
                             }
                         }
                     }
                 }
+
+                // surrender (99%)
+
+                if (!this.pickNorm && state === 'down') {
+                    this.pick = scene.pick(pointer.x, pointer.y, this.predicateMesh);
+                    this.pickIndx = this.pick.thinInstanceIndex;
+                    this.pickNorm = this.pick.getNormal(true);
+                }
+
+                // unreachable distances/angles where accuracy is not important
+                if (!this.pickNorm && state === 'move') {
+                    const dir = camera.camera0.getForwardRay().direction.negate().normalize();
+                    this.pickNorm = dir.clone();
+                    this.pickNorm.x = this.pickNorm.x == 0 ? 0 : Math.sign(this.pickNorm.x);
+                    this.pickNorm.y = this.pickNorm.y == 0 ? 0 : Math.sign(this.pickNorm.y);
+                    this.pickNorm.z = this.pickNorm.z == 0 ? 0 : Math.sign(this.pickNorm.z);
+                    (!faceNormalProbe.isNormalValid(builder.voxels[index].position, this.pickNorm)) ?
+                        this.pickNorm = undefined :
+                        this.pick.BADNORMAL = true;
+                }
+
+                // results
     
                 if (this.pickNorm && builder.voxels[this.pickIndx]) {
                     this.pick.INDEX = this.pickIndx;
@@ -3654,7 +3708,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.1",
+            version: "Voxel Builder 4.6.2",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3701,27 +3755,25 @@ class Project {
     resetSceneSetup(isFrameCamera = true) {
         ui.setMode(0);
 
+        tool.toolSelector('camera');
+        pool.dispose();
         memory.clear();
         symmetry.resetAxis();
-        tool.toolSelector('camera');
-        ghosts.disposePointCloud();
-        pool.dispose();
         uix.hideLightLocator();
-        
-        setTimeout(() => {
-            if (isFrameCamera && preferences.isInitialized)
-                camera.frame();
-        }, 10);
+
+        if (isFrameCamera)
+            camera.flagFrame = 1;
     }
 
     newProjectStartup(color, size = 20) {
         color = color.toUpperCase();
+        const blueLine = (size < 5) ? color : '#3B76BF';
         
         builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    builder.add(Vector3(x, y, z), y == 0 ? '#3B76BF' : color, true);
+                    builder.add(Vector3(x, y, z), y == 0 ? blueLine : color, true);
                 }
             }
         }
@@ -3733,7 +3785,7 @@ class Project {
 
     async newProject() {
         if (!await ui.showConfirm('create new project?')) return;
-        modules.generator.newBox(2, preferences.getRenderShadeColor());
+        modules.generator.newBox(1, preferences.getRenderShadeColor());
         builder.create();
         this.resetSceneSetup();
         ui.domProjectName.value = 'untitled';
@@ -3799,7 +3851,6 @@ class Project {
         ui.setMode(0);
         const voxels = builder.createArrayFromStringData(JSON.parse(data).data.voxels);
         xformer.beginNewObject(voxels);
-        camera.frame();
     }
 
     importBakes(url) {
@@ -3944,9 +3995,10 @@ class Palette {
         this.canvas = document.getElementById('canvas_palette');
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
         
-        this.size = 27;
+        this.width = 35;
+        this.height = 25;
         this.pad = 2;
-        this.wPad = this.size + this.pad;
+        this.wPad = this.width + this.pad;
 
         this.uniqueColors = [];
         this.invisibleColors = [];
@@ -3976,6 +4028,7 @@ class Palette {
                     this.invisibleColors.splice(index, 1) :
                     this.invisibleColors.push(hex);
                 builder.setVoxelsVisibilityByColor(hex, index > -1);
+                builder.create();
             }
         }, false);
 
@@ -3988,6 +4041,7 @@ class Palette {
                     this.invisibleColors.splice(index, 1) :
                     this.invisibleColors.push(hex);
                 builder.setVoxelsVisibilityByColor(hex, index > -1);
+                builder.create();
             }
         }, false);
 
@@ -4022,7 +4076,7 @@ class Palette {
                 col += this.wPad;
                 if (col >= wPadSize) {
                     col = 0;
-                    row += this.size + this.pad;
+                    row += this.height + this.pad;
                 }
             }
         }
@@ -4030,8 +4084,8 @@ class Palette {
         this.uniqueColors = Array.from(uniqueColorSet);
     }
 
-    expand(num, pad = 2) {
-        ui.domPalette.style.width = 8 + ((this.size + pad) * num) + "px";
+    expand(num) {
+        ui.domPalette.style.width = 8 + ((this.width + this.pad) * num) + "px";
         this.canvas.width = ui.domPalette.clientWidth;
     }
     
@@ -4040,10 +4094,10 @@ class Palette {
         if (this.invisibleColors.indexOf(hex) > -1) {
             this.ctx.lineWidth = 2;
             this.ctx.strokeStyle = 'orange';
-            this.ctx.strokeRect(x, y, this.size, this.size);
+            this.ctx.strokeRect(x, y, this.width, this.height);
         }
         this.ctx.fillStyle = hex;
-        this.ctx.fillRect(x, y, this.size, this.size);
+        this.ctx.fillRect(x, y, this.width, this.height);
     }
 
     getCanvasColor(context, x, y) {
@@ -4709,16 +4763,13 @@ class FaceNormalProbe {
     getNormal(pick, index) {
         return new Promise(resolve => {
             this.normal = undefined;
-
-            const position = builder.voxels[index].position;
-            const ray = pick.ray;
-
-            this.probe.position = position;
-            this.probe.layerMask = (ui.domDebugPick.checked) ? 0x0FFFFFFF : 0x00000000;
             
-            const res = scene.pickWithRay(ray, this.predicate);
-            if (res.hit)
-                this.normal = this.getFaceNormal(position, res.pickedPoint);
+            this.probe.position = builder.voxels[index].position.clone();
+            this.probe.layerMask = (ui.domDebugPick.checked) ? 0x0FFFFFFF : 0x00000000;
+ 
+            const res = scene.pickWithRay(pick.ray, this.predicate);
+            if (res && res.hit)
+                this.normal = this.getFaceNormal(this.probe.position, res.pickedPoint);
     
             resolve(this.normal);
         });
@@ -4767,7 +4818,7 @@ class FaceNormalProbe {
     }
 
     dispose() {
-        this.probe.position = RECYCLEBIN;
+        this.probe.position.copyFrom(RECYCLEBIN);
         this.probe.layerMask = 0x00000000;
     }
 }
@@ -4820,9 +4871,10 @@ class UserInterface {
         this.domToolBoxHeight = document.getElementById('input-tool-boxheight');
         this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
         this.domToolRectAddBypass = document.getElementById('input-tool-rectadd-bypass');
-        this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
+        this.domRandomIslandsConnected = document.getElementById('input-randomislands-connected');
         this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domTransformClone = document.getElementById('input-transform-clone');
+        this.domTransformIslandConnected = document.getElementById('input-transform-island-connected');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerVertical = document.getElementById('input-voxelizer-vertical');
@@ -4831,6 +4883,7 @@ class UserInterface {
         this.domVoxelizerTextExtrude = document.getElementById('input-voxelizer-text-extrude');
         this.domVoxelizerTextVertical = document.getElementById('input-voxelizer-text-vertical');
         this.domVoxelizerTextEmoji = document.getElementById('input-voxelizer-text-emoji');
+        this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
         this.domPbrEmissive = document.getElementById('input-pbr-emissive');
@@ -4878,6 +4931,7 @@ class UserInterface {
 
     init() {
         this.createColorWheel();
+        this.setToolbarMode(preferences.isToolbarIcons());
 
         if (!preferences.isMinimal()) {
             this.domMenus.style.display = 'unset';
@@ -4901,32 +4955,76 @@ class UserInterface {
             this.domToolbarTop.style.top = '10px';
             this.domInfoTool.style.top = '16px';
 
-            for (const item of this.domToolbarL.children)
-                item.style.display = 'none';
-            this.domToolbarL.children[0].style.display = 'unset';
-            this.domToolbarL.children[1].style.display = 'unset';
-            this.domToolbarL.children[2].style.display = 'unset';
-            this.domToolbarL.children[3].style.display = 'unset';
+            this.domToolbarL.children[4].style.display = 'none';
+            this.domToolbarL.children[12].style.display = 'none';
+            this.domToolbarL.children[13].style.display = 'none';
+            this.domToolbarL.children[14].style.display = 'none';
 
             this.domMenuInScreenStore.style.display = 'flex';
             this.domMenuInScreenRight.style.display = 'flex';
             this.domMenuInScreenRight.children[3].style.opacity = '0.5';
             this.domMenuInScreenRight.children[3].style.pointerEvents = 'none';
             this.domMenuInScreenBottom.style.display = 'flex';
-            this.domMenuInScreenBottom.style.gap = '5px';
             this.domMenuInScreenBottom.children[2].style.display = 'none';
             this.domMenuInScreenBottom.children[4].style.display = 'none';
 
             this.domInfo[3].style.display = 'none';
             this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
 
-            if (isMobile) {
-                this.domCameraOffset.value = 1.3;
-                this.domTransformReactive.checked = false;
-                console.log('uix: minimal (mobile)');
-            } else {
-                console.log('uix: minimal');
-            }
+            console.log('uix: minimal');
+        }
+
+        if (isMobile) {
+            ui.domCameraOffset.value = 1.5;
+            ui.domTransformReactive.checked = false;
+        }
+    }
+
+    setToolbarMode(isIcons) {
+        if (isIcons) {
+            modules.panels.setPositionLeft(43);
+
+            this.domToolbarL.children[0].children[0].style.display = 'none';
+            this.domToolbarL.style.width = '38px';
+            for (let i = 1; i < this.domToolbarL.children.length; i++)
+                this.domToolbarL.children[i].style.width = '38px';
+
+            document.getElementById('toolbar_btn_file').innerHTML = '<i class="material-icons">insert_drive_file</i>';
+            document.getElementById('toolbar_btn_storage').innerHTML = '<i class="material-icons">grade</i>';
+            document.getElementById('toolbar_btn_camera').innerHTML = '<i class="material-icons">camera_alt</i>';
+            document.getElementById('toolbar_btn_render').innerHTML = '<i class="material-icons">camera</i>';
+            document.getElementById('toolbar_btn_create').innerHTML = '<i class="material-icons">add</i>';
+            document.getElementById('toolbar_btn_voxelize').innerHTML = '<i class="material-icons">grain</i>';
+            document.getElementById('toolbar_btn_symm').innerHTML = '<i class="material-icons">code</i>';
+            document.getElementById('toolbar_btn_draw').innerHTML = '<i class="material-icons">draw</i>';
+            document.getElementById('toolbar_btn_paint').innerHTML = '<i class="material-icons">brush</i>';
+            document.getElementById('toolbar_btn_xform').innerHTML = '<i class="material-icons">crop</i>';
+            document.getElementById('toolbar_btn_groups').innerHTML = '<i class="material-icons">category</i>';
+            document.getElementById('toolbar_btn_bakery').innerHTML = '<i class="material-icons">auto_awesome</i>';
+            document.getElementById('toolbar_btn_pbr').innerHTML = '<i class="material-icons">texture</i>';
+            document.getElementById('toolbar_btn_export').innerHTML = '<i class="material-icons">get_app</i>';
+        } else {
+            modules.panels.setPositionLeft(80);
+
+            this.domToolbarL.children[0].children[0].style.display = 'unset';
+            this.domToolbarL.style.width = '75px';
+            for (let i = 1; i < this.domToolbarL.children.length; i++)
+                this.domToolbarL.children[i].style.width = '75px';
+
+            document.getElementById('toolbar_btn_file').innerHTML = 'FILE';
+            document.getElementById('toolbar_btn_storage').innerHTML = 'STORAGE';
+            document.getElementById('toolbar_btn_camera').innerHTML = 'CAMERA';
+            document.getElementById('toolbar_btn_render').innerHTML = 'RENDER';
+            document.getElementById('toolbar_btn_create').innerHTML = 'CREATE';
+            document.getElementById('toolbar_btn_voxelize').innerHTML = 'VOXELIZE';
+            document.getElementById('toolbar_btn_symm').innerHTML = 'SYMM.';
+            document.getElementById('toolbar_btn_draw').innerHTML = 'DRAW';
+            document.getElementById('toolbar_btn_paint').innerHTML = 'PAINT';
+            document.getElementById('toolbar_btn_xform').innerHTML = 'XFORM';
+            document.getElementById('toolbar_btn_groups').innerHTML = 'GROUPS';
+            document.getElementById('toolbar_btn_bakery').innerHTML = 'BAKERY';
+            document.getElementById('toolbar_btn_pbr').innerHTML = 'PBR';
+            document.getElementById('toolbar_btn_export').innerHTML = 'EXPORT';
         }
     }
 
@@ -4950,9 +5048,6 @@ class UserInterface {
             pool.createMeshList();
             light.updateShadowMap();
         }
-
-        if (ghosts.cloud)
-            ghosts.cloud.mesh.isVisible = mode == 2;
 
         if (!preferences.isMinimal())
             this.setInterfaceMode(mode);
@@ -5053,7 +5148,7 @@ class UserInterface {
         this.domInfo[3].innerHTML = pool.meshes.length + ' MSH';
     }
 
-    notification(str, timeout = 3000) {
+    notification(str, timeout = 3500) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
@@ -5064,7 +5159,7 @@ class UserInterface {
         }, timeout);
     }
 
-    errorMessage(str, timeout = 3000) {
+    errorMessage(str, timeout = 3500) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
@@ -5191,7 +5286,7 @@ class UserInterfaceAdvanced {
         this.unbindVoxelGizmo();
         this.gizmoVoxel = PositionGizmo(this.utilLayer);
 
-        this.gizmoVoxel.scaleRatio = 1.2;
+        this.gizmoVoxel.scaleRatio = 1;
         this.gizmoVoxel.snapDistance = 1;
         this.gizmoVoxel.planarGizmoEnabled = false;
         this.gizmoVoxel.updateGizmoPositionToMatchAttachedMesh = true;
@@ -5287,9 +5382,9 @@ class UserInterfaceAdvanced {
 // Preferences
 
 
-const KEY_BVHPICK = "pref_bvhpick";
 const KEY_WEBGPU = "pref_webgpu";
 const KEY_MINIMAL = "pref_minimal";
+const KEY_TOOLBAR_ICONS = "pref_toolbar_icons";
 const KEY_USER_STARTUP = "pref_user_startup";
 const KEY_STARTBOX_SIZE = "pref_startbox_size";
 const KEY_PALETTE_SIZE = "pref_palette_size";
@@ -5297,8 +5392,7 @@ const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
 const KEY_BACKGROUND_CHECK = "pref_background_check";
 const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_RENDER_SHADE = "pref_render_shade";
-const KEY_WEBSOCKET = "pref_websocket";
-const KEY_WEBSOCKET_URL = "pref_websocket_url";
+const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
 const KEY_HELP_LABELS = "pref_help_labels";
 
 class Preferences {
@@ -5309,33 +5403,34 @@ class Preferences {
     init(webgpu_adapter) {
         resetAllInputElements();
 
-        document.getElementById(KEY_BVHPICK).checked = true;
         document.getElementById(KEY_WEBGPU).disabled = !webgpu_adapter;
         document.getElementById(KEY_WEBGPU).checked = false;
         document.getElementById(KEY_MINIMAL).checked = isMobile;
+        document.getElementById(KEY_TOOLBAR_ICONS).checked = isMobile;
         document.getElementById(KEY_USER_STARTUP).checked = false;
-        document.getElementById(KEY_STARTBOX_SIZE).value = isMobile ? 2 : 20;
+        document.getElementById(KEY_STARTBOX_SIZE).value = 20;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
         document.getElementById(KEY_BACKGROUND_COLOR).value = "#363B45";
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
-        document.getElementById(KEY_WEBSOCKET).checked = false;
-        document.getElementById(KEY_WEBSOCKET_URL).value = "localhost:8014";
+        document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
         document.getElementById(KEY_HELP_LABELS).checked = true;
-
-        this.setPrefCheck(KEY_BVHPICK);
 
         this.setPrefCheck(KEY_WEBGPU, () => {
             window.location.reload();
         });
 
         this.setPrefCheck(KEY_MINIMAL, () => {
-            window.location.reload();
+            ui.notification("reload required");
+        });
+
+        this.setPrefCheck(KEY_TOOLBAR_ICONS, (chk) => {
+            ui.setToolbarMode(chk);
         });
 
         this.setPrefCheck(KEY_USER_STARTUP, () => {
-            window.location.reload();
+            ui.notification("reload required");
         });
         
         this.setPref(KEY_STARTBOX_SIZE);
@@ -5365,12 +5460,9 @@ class Preferences {
                 modules.sandbox.updateMaterials();
         });
 
-        this.setPrefCheck(KEY_WEBSOCKET, (chk) => {
-            (chk && !modules.sandbox.isActive()) ?
-                modules.ws_client.connect() : modules.ws_client.disconnect();
+        this.setPrefCheck(KEY_SCENE_POINTCLOUD, (chk) => {
+            (chk) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
         });
-
-        this.setPref(KEY_WEBSOCKET_URL);
 
         this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
             modules.panels.showHelpLabels(chk);
@@ -5411,7 +5503,7 @@ class Preferences {
 
         document.getElementById('introscreen').style.display = 'none';
         canvas.style.pointerEvents = 'unset';
-        camera.frame();
+        camera.flagFrame = 1;
 
         // inject the user module entry point
         const scriptUserModules = document.createElement('script');
@@ -5420,16 +5512,16 @@ class Preferences {
         document.body.appendChild(scriptUserModules);
     }
 
-    isBVHPick() {
-        return document.getElementById(KEY_BVHPICK).checked;
-    }
-
     isWebGPU() {
         return document.getElementById(KEY_WEBGPU).checked;
     }
 
     isMinimal() {
         return document.getElementById(KEY_MINIMAL).checked;
+    }
+
+    isToolbarIcons() {
+        return document.getElementById(KEY_TOOLBAR_ICONS).checked;
     }
 
     isUserStartup() {
@@ -5456,12 +5548,8 @@ class Preferences {
         return document.getElementById(KEY_RENDER_SHADE).value.toUpperCase();
     }
 
-    isWebsocket() {
-        return document.getElementById(KEY_WEBSOCKET).checked;
-    }
-
-    getWebsocketUrl() {
-        return document.getElementById(KEY_WEBSOCKET_URL).value;
+    isPointCloud() {
+        return document.getElementById(KEY_SCENE_POINTCLOUD).checked;
     }
 
     setPref(key, callback = undefined) {
@@ -5540,9 +5628,9 @@ export function registerRenderLoops() {
             if (!pointer.isDown) {
                 camera.lastPos = [ camera.camera0.alpha, camera.camera0.beta ];
 
-                if (duplicateFlag == 1) {
-                    duplicateFlag = 0;
-                    builder.removeDuplicates();
+                if (builder.flagDuplicate == 1) {
+                    builder.flagDuplicate = 0;
+                    builder.removeDuplicatesAndUpdate();
                 }
 
                 if (!builder.isWorking)
@@ -5613,6 +5701,7 @@ document.addEventListener("keydown", (ev) => {
     if (ev.target.matches(".ignorekeys")) return;
     if (ev.ctrlKey && ev.key == '/') ui.toggleDebugLayer();
     if (scene.debugLayer.isVisible()) return;
+    if (modules.colorPicker.isActive) return;
 
     if (MODE == 0 && !tool.last && !pointer.isDown) {
         if (ev.altKey || ev.key == ' ') {
@@ -5821,9 +5910,6 @@ document.getElementById('tab-render').onclick = () => {
 
 document.getElementById('tab-export').onclick = () => {
     ui.setMode(2);
-    
-    if (pool.meshes.length == 0 || (ghosts.cloud && ghosts.cloud.mesh.isVisible))
-        ghosts.createPointCloud();
 };
 
 ui.domToolbarTopMem.children[0].onclick = () => {
@@ -5866,6 +5952,7 @@ ui.domMenuInScreenExport.children[0].onclick = async () => {
 };
 
 ui.domMenuInScreenExport.children[1].onclick = () => {
+    ui.domExportFormat.selectedIndex = 0;
     project.exportMeshes();
 };
 
@@ -6155,7 +6242,7 @@ document.getElementById('normalize_voxels').onclick = async () => {
     if (ui.checkMode(0)) {
         if (await ui.showConfirm('normalize voxel positions?')) {
             builder.normalizeVoxelPositions();
-            camera.frame();
+            camera.flagFrame = 1;
         }
     }
 };
@@ -6177,7 +6264,6 @@ document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleE
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
-document.getElementById('ws_connect').onclick = () =>               { if (ui.checkMode(0)) modules.ws_client.connect() };
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
 document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
 document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
@@ -6215,7 +6301,7 @@ document.getElementById('btn_tool_paint').onclick = () =>           { if (ui.che
 document.getElementById('btn_tool_box_paint').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('box_paint') };
 document.getElementById('btn_tool_rect_paint').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('rect_paint') };
 document.getElementById('btn_tool_bucket').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bucket') };
-document.getElementById('paint_all').onclick = () =>                { if (ui.checkMode(0)) builder.setAllColorsAndUpdate() };
+document.getElementById('paint_all').onclick = () =>                { if (ui.checkMode(0)) builder.setColorsAndUpdate() };
 document.getElementById('btn_tool_eyedropper').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('eyedropper') };
 document.getElementById('btn_tool_transform_box').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('transform_box') };
 document.getElementById('btn_tool_transform_rect').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('transform_rect') };
@@ -6223,17 +6309,16 @@ document.getElementById('btn_tool_transform_group').onclick = () => { if (ui.che
 document.getElementById('btn_tool_transform_island').onclick = () =>{ if (ui.checkMode(0)) tool.toolSelector('transform_island') };
 document.getElementById('btn_tool_transform_visible').onclick = ()=>{ if (ui.checkMode(0)) tool.toolSelector('transform_visible') };
 document.getElementById('btn_tool_measure_volume').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
-document.getElementById('btn_reduce_voxels').onclick = () =>        { if (ui.checkMode(0)) builder.reduceVoxels() };
+document.getElementById('btn_reduce_voxels').onclick = () =>        { if (ui.checkMode(0)) builder.reduceVoxelsAndUpdate() };
 document.getElementById('bakery_bake').onclick = () =>              { bakery.bakeVoxels() };
 document.getElementById('btn_tool_bakecolor').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('bake_color') };
-document.getElementById('create_pointcloud').onclick = () =>        { if (ui.checkMode(2)) ghosts.createPointCloud() };
-document.getElementById('delete_pointcloud').onclick = () =>        { ghosts.disposePointCloud() };
 document.getElementById('delete_bake_all').onclick = () =>          { pool.dispose(true) };
 document.getElementById('delete_bake').onclick = () =>              { if (ui.checkMode(2)) pool.deleteSelected() };
+document.getElementById('create_random_islands').onclick = () =>    { if (ui.checkMode(0)) builder.createRandomIslandColors() };
 document.getElementById('btn_tool_isolate_color').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('isolate_color') };
 document.getElementById('btn_tool_hide_color').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('hide_color') };
-document.getElementById('invert_visibility').onclick = () =>        { if (ui.checkMode(0)) builder.invertVisibilityAndUpdate() };
-document.getElementById('unhide_all').onclick = () =>               { if (ui.checkMode(0)) builder.setAllVisibilityAndUpdate(true) };
+document.getElementById('invert_visibility').onclick = () =>        { if (ui.checkMode(0)) builder.invertVisibility(); builder.create(); };
+document.getElementById('unhide_all').onclick = () =>               { if (ui.checkMode(0)) builder.setVoxelsVisibility(true); builder.create(); };
 document.getElementById('btn_tool_delete_color').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('delete_color') };
 document.getElementById('delete_hidden').onclick = () =>            { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
 
@@ -6278,6 +6363,10 @@ function rgbFloatToHex(r, g, b, gamma = 0.4545) {
 
 function rgbIntToHex(r, g, b) {
     return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
+}
+
+function generateRandomHexColor() {
+    return "#" + ("000000" + Math.floor(Math.random() * 16777215).toString(16)).slice(-6).toUpperCase();
 }
 
 function aspectRatioFit(srcW, srcH, maxW, maxH) {

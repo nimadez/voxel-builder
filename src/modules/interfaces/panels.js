@@ -91,12 +91,13 @@ class Panels {
         const div_reset = document.createElement('div');
         div_move.innerHTML = '<i class="material-icons">open_with</i>';
         div_hide.innerHTML = '<i class="material-icons">remove_red_eye</i>';
-        div_reset.innerHTML = '<i class="material-icons">exit_to_app</i>';
+        div_reset.innerHTML = '<i class="material-icons">close</i>';
         div_move.title = 'Move';
         div_hide.title = 'Hide';
-        div_reset.title = 'Reset';
+        div_reset.title = 'Reset/Close';
 
         div_move.onpointerdown = () => {
+            elem.firstChild.children[2].firstChild.innerHTML = 'exit_to_app';
             elem.style.borderRadius = '6px';
             elem.style.borderTop = 'solid 1px steelblue';
             this.panels[idx].detach = true;
@@ -137,7 +138,7 @@ class Panels {
             const panelId = panel.elem.id.split('-')[1];
             for (let b = 0; b < buttons.length; b++) {
                 if (buttons[b].id.split('_')[2] === panelId) {
-                    buttons[b].onclick = () => { this.switchPanel(panel, buttons[b]) };
+                    buttons[b].onclick = () => { this.switchPanel(panel) };
                     panel.button = buttons[b];
                 }
             }
@@ -157,11 +158,13 @@ class Panels {
     switchPanel(panel) {
         if (panel.elem.style.display === 'unset') {
             panel.elem.style.display = 'none';
+            panel.elem.firstChild.children[2].firstChild.innerHTML = 'exit_to_app';
             panel.button.classList.remove('panel_select');
         } else {
             panel.elem.style.display = 'unset';
             panel.button.classList.add('panel_select');
             if (!panel.detach) {
+                panel.elem.firstChild.children[2].firstChild.innerHTML = 'close';
                 this.clearAllPanels(panel.elem);
                 this.panelToFront(panel);
             }
@@ -186,6 +189,13 @@ class Panels {
         this.panels[idx].elem.style.borderTopLeftRadius = '0';
         this.panels[idx].elem.style.borderTopRightRadius = '0';
         this.panels[idx].elem.style.zIndex = 1000;
+        this.panels[idx].elem.firstChild.children[2].firstChild.innerHTML = 'close';
+    }
+
+    setPositionLeft(val) {
+        this.panels.forEach(panel => {
+            panel.elem.style.left = `${val}px`;
+        });
     }
 
     setTranslate(idx, x, y) {

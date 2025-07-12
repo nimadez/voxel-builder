@@ -23,7 +23,6 @@ export { colorPicker } from './interfaces/colorpicker.js';
 export { sandbox } from './sandbox/sandbox.js';
 export { generator } from './generator/generator.js';
 export { rcm, rcv } from './raycaster/raycaster.js';
-export { ws_client } from './websockets/client.js';
 
 export { ReinventedColorWheel } from "../libs/utils/reinvented-color-wheel.bundle.js";
 

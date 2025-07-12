@@ -27,6 +27,8 @@ class ColorPicker {
         this.rgb = [ 255, 255, 255 ];
         this.current = "#FFFFFF";
         this.previous = "#000000";
+
+        this.isActive = false;
     }
 
     init() {
@@ -84,6 +86,7 @@ class ColorPicker {
     }
 
     async showDialog(hex) {
+        this.isActive = true;
         this.colorWheel.hex = hex;
         this.parent.style.display = 'unset';
         this.parent.style.transform = `translate(${ pointer.x }px, ${ pointer.y }px)`;
@@ -99,6 +102,8 @@ class ColorPicker {
 
                 this.selected.children[0].style.background = this.colorWheel.hex;
                 this.previous = this.colorWheel.hex;
+
+                this.isActive = false;
             };
         });
     }

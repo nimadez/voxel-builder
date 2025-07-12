@@ -53,7 +53,6 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 
 **Extensibility**
 - ES modules
-- WebSockets client
 - User startup project
 - Blender importer script
 
@@ -161,7 +160,6 @@ git reset --hard $HASH
 
 ## History
 ```
-↑ X-Form the islanders
 ↑ Unsafe WebGPU support
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer

@@ -120,24 +120,24 @@
         #toolbar_L { z-index: 1000; width: 75px; position: absolute; left: 0; top: 0; }
         #toolbar_L { display: flex; flex-direction: column; }
         #toolbar_L li { background: var(--btn-bg); border-radius: 0; border: none; padding: 0; }
-        #toolbar_L li:nth-child(1) button { padding: 6px 0 6px 10px; }
-        #toolbar_L li:nth-child(1) :first-child { width: 50%; float: left; }
-        #toolbar_L li:nth-child(1) :last-child { width: 50%; border-left: none; }
+        #toolbar_L li:nth-child(1) { display: flex; flex-direction: row; align-self: center; }
+        #toolbar_L li:nth-child(1) :first-child { width: 37px; float: left; }
+        #toolbar_L li:nth-child(1) :last-child { width: 38px; border-left: none; }
         #toolbar_L button { width: 100%; height: 32px; background: none; border-top: none; border-radius: 0; }
         #toolbar_L button:hover { background: orange; }
         #toolbar_L button.panel_select { color: steelblue; text-decoration: underline; }
         #toolbar_L button:hover.panel_select { color: var(--btn-color-hover); text-decoration: underline; }
         #toolbar_L .sep { margin-top: 5px; border-top: 1px solid var(--borders); }
-        #hover { z-index: 2200; display: none; bottom: 130px; left: 50%; margin-left: -17px; position: absolute; }
+        #hover { z-index: 900; display: none; bottom: 130px; left: 50%; margin-left: -17px; position: absolute; }
         #hover .tool_camera { z-index: 2220; position: relative; padding: 5px; top: 32px; left: 0; border: 1px solid #717b8d40; border-radius: 3px; cursor: move; }
         #hover li { z-index: 2210; padding: 5px; background: var(--btn-bg); transition: all 0.2s ease-in-out; border: 1px solid #717b8d35; border-radius: 3px; position: absolute; cursor: pointer; }
         #hover li:hover { background: orange; }
         #hover li.tool_selector { background: orange; }
         #hover li.hover_item_hide { opacity: 0; pointer-events: none; }
         #hover .material-icons { font-size: 20px; }
-        #palette { z-index: 400; display: none; position: absolute; right: 5px; top: 82px; bottom: 285px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
-        #meshlist { z-index: 400; display: none; background: #31394b80; position: absolute; right: 5px; top: 80px; bottom: 5px; overflow-y: scroll; overflow-x: hidden; }
-        #meshlist .item_name { margin-bottom: 2px; background: #3e4558; width: 56px; word-break: break-all; font-size: 11px; padding: 8px 3px 8px 3px; border: 1px solid var(--borders); border-left-width: 2px; border-radius: 2px; text-align: center; }
+        #palette { z-index: 400; display: none; position: absolute; right: 5px; top: 80px; bottom: 285px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
+        #meshlist { z-index: 400; display: none; background: #31394b80; width: 45px; position: absolute; right: 5px; top: 80px; bottom: 5px; overflow-y: scroll; overflow-x: hidden; }
+        #meshlist .item_name { margin-bottom: 2px; background: #3e4558; width: 39px; height: 24px; padding-top: 8px; font-size: 11px; border: 1px solid var(--borders); border-left-width: 2px; border-radius: 2px; text-align: center; }
         #meshlist .item_name:hover { background: var(--btn-bg); color: orange; }
         #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
         #menu-about .about { font-size: 13px; line-height: 1.4em; letter-spacing: 0.05em; background: #21262e; color: #98a1ac; padding: 6px; }
@@ -152,18 +152,19 @@
         #btn-symm-axis-y:hover { background: var(--input-bg); }
         #btn-symm-axis-z:hover { background: var(--input-bg); }
         #menu-inscreen-store { z-index: 500; display: none; flex-direction: column; gap: 4px; top: 5px; right: 5px; position: fixed; }
-        #menu-inscreen-store button { width: 68px; height: 32px; font-size: 11px; }
+        #menu-inscreen-store button { width: 45px; height: 32px; font-size: 11px; }
         #menu-inscreen-right { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; bottom: 135px; }
         #menu-inscreen-right button { width: 45px; height: 32px; }
         #menu-inscreen-right :first-child:hover { background: none; }
-        #menu-inscreen-bottom { z-index: 9; display: none; gap: 1px; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
-        #menu-inscreen-bottom div { z-index: 9; width: 100%; min-width: 32px; opacity: 0.75; color: aqua; font-size: 18px; font-weight: bold; text-shadow: var(--text-shadow); text-align: center; cursor: pointer; background: none; border: none; }
-        #menu-inscreen-bottom div i { font-size: 19px; margin-top: -4px; }
+        #menu-inscreen-bottom { z-index: 9; display: none; gap: 5px; left: 50%; bottom: 25px; transform: translateX(-50%); position: absolute; text-align: center; border-radius: 4px; }
+        #menu-inscreen-bottom button { z-index: 9; width: 100%; min-width: 30px; opacity: 0.75; color: aqua; background: none; font-size: 18px; font-weight: bold; text-shadow: var(--text-shadow); border-radius: 0; text-align: center; }
+        #menu-inscreen-bottom li:hover { background: none; }
+        #menu-inscreen-bottom .material-icons { font-size: 19px; margin-top: -4px; }
         #menu-inscreen-render { z-index: 301; display: none; flex-direction: column; gap: 4px; right: 5px; top: 5px; position: fixed; }
-        #menu-inscreen-render button { width: 65px; height: 32px; font-size: 11px; }
+        #menu-inscreen-render button { width: 45px; height: 32px; font-size: 11px; }
         #menu-inscreen-render button i { font-size: 24px; }
         #menu-inscreen-export { z-index: 500; display: none; flex-direction: column; gap: 4px; position: fixed; right: 5px; top: 5px; }
-        #menu-inscreen-export button { width: 68px; height: 32px; font-size: 11px; }
+        #menu-inscreen-export button { width: 45px; height: 32px; font-size: 11px; }
         #input-color { z-index: 500; width: 45px; height: 32px; }
         #color-wheel { z-index: 301; display: none; right: 10px; bottom: 8px; position: fixed; }
         #color-picker { z-index: 2500; display: none; padding: 5px; background: var(--confirm); width: 130px; height: fit-content; border: solid 1px #171b22; border-radius: 5px; position: fixed; }
@@ -177,7 +178,7 @@
         #color-picker-hex, #color-picker-rgb { background: var(--input-bg-dark); }
         #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #info { z-index: 2; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; margin-bottom: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #info_tool { z-index: 501; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
+        #info_tool { z-index: 501; display: none; opacity: 0.8; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 48px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
         #info_render { z-index: 301; display: none; color: var(--info-color); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #notifier { z-index: 2000; display: none; font-size: 11px; background: #2a2f3aEE; color: var(--btn-color); border: solid 1px #22222280; box-shadow: 0 0 2px #21262e50; position: absolute; width: fit-content; left: 50%; top: 80px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 1px; text-align: center; border-radius: 3px; pointer-events: none; }
         #progressbar { z-index: 2000; background: linear-gradient(90deg, orange, orange, orange, #ffe6b8); width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
@@ -207,7 +208,7 @@
         .row_panel { display: flex; width: 100%; height: 25px; align-items: center; gap: 0; }
         .row_panel div { width: 100%; padding: 5px; text-align: center; }
         .row_panel:hover { box-shadow: none; cursor: pointer; }
-        .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 16px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+        .material-icons { font-family: 'Material Icons'; font-weight: normal; font-style: normal; font-size: 18px; vertical-align: middle; text-align: center; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; pointer-events: none; font-feature-settings: 'liga'; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
         ::placeholder { color: #45515c; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-track { background: none; }
@@ -224,7 +225,7 @@
             select { text-indent: 2px; }
             #palette { bottom: 285px; scrollbar-color: steelblue transparent; }
             #meshlist { scrollbar-color: steelblue transparent; }
-            #meshlist .item_name { width: 59px; }
+            #meshlist .item_name { width: 42px; }
             #menu-inscreen-bottom { bottom: 25px; }
             #menu-storage-dynamic li div button { padding: 9px 0 9px 0; }
         }
@@ -327,7 +328,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 VOXEL BUILDER
-                <br>&#8627; 4.6.1 Beta
+                <br>&#8627; 4.6.2 Beta
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases">Changelog</a>
                 <br>Developer
@@ -342,6 +343,7 @@
         <ul class="menu_L panel" id="menu-prefs">
             <li class="category">GENERAL</li>
             <li title="Less battery drain (&#60;100 ms startup)"><input type="checkbox" id="pref_minimal"> <label for="pref_minimal">Minimal UIX</label></li>
+            <li><input type="checkbox" id="pref_toolbar_icons"> <label for="pref_toolbar_icons">Icon Toolbar</label></li>
             <li><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
@@ -353,20 +355,14 @@
                 <input class="row_color" type="color" id="pref_background_color" value="#363B45">
             </li>
             <li class="row_color" title="General shade color is widely distributed throughout the app."><label>Shade</label><input type="color" id="pref_render_shade" value="#8398AF"></li>
+            <li><input type="checkbox" id="pref_scene_pointcloud" checked> <label for="pref_scene_pointcloud">Point Cloud</label></li>
             <li class="category">SYSTEM</li>
-            <li><button id="fullscreen">Fullscreen</button></li>
-            <li><button id="reset_hover">Reset Hover</button></li>
-            <li class="spacer"></li>
             <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
-            <li title="Maximum accuracy at long-range, but slows everything down."><input type="checkbox" id="pref_bvhpick" checked> <label for="pref_bvhpick">BVH Normal Pick</label></li>
             <li title="Debug Picking"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
             <li title="Unsafe WebGPU support is under development."><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
-            <li class="category">WEBSOCKETS</li>
-            <li><input type="checkbox" id="pref_websocket"> <label for="pref_websocket">Enable Client</label></li>
             <li class="spacer"></li>
-            <li><input id="pref_websocket_url" type="url" class="ignorekeys" value="" placeholder="host:port"></li>            
-            <li class="spacer"></li>
-            <li><button id="ws_connect">Connect</button></li>
+            <li><button id="fullscreen">Fullscreen</button></li>
+            <li><button id="reset_hover">Reset Hover</button></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-file">
@@ -412,7 +408,7 @@
             <li><input id="input-camera-autoframe" type="checkbox"></input> <label for="input-camera-autoframe">Auto Frame</label></li>
             <li><input type="checkbox" id="input-autorotate"> <label for="input-autorotate">Auto Rotate</label></li>
             <li><input type="checkbox" id="input-autorotate-ccw"> <label for="input-autorotate-ccw">CCW</label></li>
-            <li><label class="help">* Supported Rendering<br>? Selective framing is supported in Render and Export tabs and XForms</label></li>
+            <li><label class="help">* Supported Rendering<br>? Selective framing is supported in XForms, Render and Export tabs</label></li>
         </ul>
 
         <ul class="menu_L panel" id="menu-render">
@@ -570,7 +566,7 @@
             <li><button id="btn_tool_box_add" class="tool_box_add">Box Add</button></li>
             <li><button id="btn_tool_box_remove" class="tool_box_remove">Box Remove</button></li>
             <li class="spacer"></li>
-            <li class="row_input"><label>Height</label> <input id="input-tool-boxheight" type="number" class="ignorekeys" value="1" min="1"></li>
+            <li class="row_input"><label>Height</label> <input id="input-tool-boxheight" type="number" class="ignorekeys" value="1" min="1" step="1"></li>
             <li class="category">RECTANGLE</li>
             <li><button id="btn_tool_rect_add" class="tool_rect_add">Rect Add</button></li>
             <li><button id="btn_tool_rect_remove" class="tool_rect_remove">Rect Remove</button></li>
@@ -605,7 +601,8 @@
             <li class="spacer"></li>
             <li title="Check this to apply transforms on mesh picks"><input type="checkbox" id="input-transform-reactive" checked> <label for="input-transform-reactive">Auto Reactive</label></li>
             <li><input type="checkbox" id="input-transform-clone"> <label for="input-transform-clone">Clone Voxels</label></li>
-            <li><label class="help">? Delete (Del key)<br>? Framing (F key)<br>? Paintable<br>? No Symmetry</label></li>
+            <li title="Island Voxels: Treats the corners as a connected island"><input type="checkbox" id="input-transform-island-connected" checked> <label for="input-transform-island-connected">Add Connected</label></li>
+            <li><label class="help">? Apply (Enter)<br>? Delete (Del)<br>? Framing (F)<br>? Paintable<br>? No Symmetry<br>? Visibility Respected</label></li>
             <li class="category">MANIPULATE</li>
             <li><button id="normalize_voxels">Normalize Voxels</button></li>
             <li><button id="btn_reduce_voxels">Reduce Voxels</button></li>
@@ -613,11 +610,15 @@
 
         <ul class="menu_L panel" id="menu-groups">
             <li class="category">COLOR GROUPS</li>
+            <li><button id="create_random_islands">Random Islands</button></li>
+            <li class="spacer"></li>
+            <li title="Treats the corners as a connected island"><input type="checkbox" id="input-randomislands-connected" checked> <label for="input-randomislands-connected">Add Connected</label></li>
+            <li class="category">VISIBILITY</li>
             <li><button id="btn_tool_isolate_color" class="tool_isolate_color">Isolate Color</button></li>
             <li><button id="btn_tool_hide_color" class="tool_hide_color">Hide Color</button></li>
             <li><button id="invert_visibility">Invert Visibility</button></li>
-            <li class="category">CLEAR</li>
             <li><button id="unhide_all">Unhide All</button></li>
+            <li class="category">DELETE</li>
             <li><button id="btn_tool_delete_color" class="tool_delete_color">Delete Color</button></li>
             <li><button id="delete_hidden">Delete Hidden</button></li>
         </ul>
@@ -626,12 +627,9 @@
             <li class="category">BAKERY</li>
             <li><button id="bakery_bake">Bake</button></li>
             <li><button id="btn_tool_bakecolor" class="tool_bake_color">Bake Color Group</button></li>
-            <li class="category">POINT CLOUD</li>
-            <li class="row">
-                <button id="delete_pointcloud">Delete</button>
-                <button id="create_pointcloud">Create</button>
-            </li>
-            <li class="category">CLEAR<li>
+            <li class="category">UNBAKE</li>
+            <li><button id="unbake_meshes">Unbake Meshes</button></li>
+            <li class="category">DELETE<li>
             <li><button id="delete_bake">Delete Selected</button></li>
             <li><button id="delete_bake_all">Delete All Bakes</button></li>
             <li><label class="help">? The baked mesh is without mesh volume and shared faces, ready for Blender or 3D printing</label></li>
@@ -673,8 +671,6 @@
             <li class="spacer"></li>
             <li><button id="export_meshes">Export Meshes</button></li>
             <li><label class="help">? Keeping the exported GLB file means you have the voxel data. see File menu, "From Baked GLB"</label></li>
-            <li class="category">UNBAKE</li>
-            <li><button id="unbake_meshes">Unbake Meshes</button></li>
         </ul>
     </div>
     <!-- end menus -->
@@ -692,13 +688,13 @@
         <li><button id="material-switch" title="Material Switch">CEL</button></li>
     </ul>
 
-    <div id="menu-inscreen-bottom">
-        <div id="btn-inscreen-gridplane" title="Grid Plane"><i class="material-icons">grid_4x4</i></div>
-        <div id="btn-inscreen-workplane" title="Workplane 3D"><i class="material-icons">grid_on</i></div>
-        <div id="btn-inscreen-lightlocator" title="Light Locator"><i class="material-icons">tungsten</i></div>
-        <div id="btn-inscreen-symmetry" title="Symmetry">S</div>
-        <div id="btn-inscreen-ortho" title="Orthographic View">P</div>
-    </div>
+    <ul id="menu-inscreen-bottom">
+        <li><button id="btn-inscreen-gridplane" title="Grid Plane"><i class="material-icons">grid_4x4</i></button></li>
+        <li><button id="btn-inscreen-workplane" title="Workplane 3D"><i class="material-icons">grid_on</i></button></li>
+        <li><button id="btn-inscreen-lightlocator" title="Light Locator"><i class="material-icons">tungsten</i></button></li>
+        <li><button id="btn-inscreen-symmetry" title="Symmetry">S</button></li>
+        <li><button id="btn-inscreen-ortho" title="Orthographic View">P</button></li>
+    </ul>
 
     <div id="menu-inscreen-render">
         <button><i class="material-icons">play_arrow</i></button>
@@ -708,7 +704,7 @@
 
     <div id="menu-inscreen-export">
         <button>BAKE</button>
-        <button>EXPORT</button>
+        <button>GLB</button>
     </div>
 
     <!-- hover -->
