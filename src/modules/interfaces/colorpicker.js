@@ -29,6 +29,7 @@ class ColorPicker {
         this.previous = "#000000";
 
         this.isActive = false;
+        this.target = undefined;
     }
 
     init() {
@@ -44,7 +45,13 @@ class ColorPicker {
                 this.inputHex.value = col.hex.toUpperCase();
                 this.inputRGB.value = col.rgb;
                 this.current = this.inputHex.value;
-                this.selected.children[1].style.background = this.inputHex.value;
+                this.selected.children[1].style.background = this.current;
+
+                if (this.isActive && this.target) {
+                    this.target.value = this.current;
+                    this.target.dispatchEvent(onChange);
+                    this.target.dispatchEvent(onInput);
+                }
             },
         });
 
@@ -65,12 +72,14 @@ class ColorPicker {
         for (const elem of document.querySelectorAll('input[type="color"]')) {
             elem.onclick = async (ev) => {
                 ev.preventDefault();
+                this.target = ev.target;
                 const result = await this.showDialog(ev.target.value);
                 if (result) {
                     ev.target.value = result;
                     ev.target.dispatchEvent(onChange);
                     ev.target.dispatchEvent(onInput);
                 }
+                this.target = undefined;
             };
         }
     }
@@ -90,14 +99,14 @@ class ColorPicker {
         this.colorWheel.hex = hex;
         this.parent.style.display = 'unset';
         this.parent.style.transform = `translate(${ pointer.x }px, ${ pointer.y }px)`;
-        ui.domConfirmBlocker.style.display = 'unset';
+        ui.domOpaqueBlocker.style.display = 'unset';
 
         this.offScreenCheck();
 
         return new Promise((resolve) => {
-            ui.domConfirmBlocker.onclick = () => {
+            ui.domOpaqueBlocker.onclick = () => {
                 this.parent.style.display = 'none';
-                ui.domConfirmBlocker.style.display = 'none';
+                ui.domOpaqueBlocker.style.display = 'none';
                 resolve(this.colorWheel.hex.toUpperCase());
 
                 this.selected.children[0].style.background = this.colorWheel.hex;

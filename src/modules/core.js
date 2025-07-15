@@ -26,11 +26,8 @@
     - XFormer
 
     - Project
-    - Palette
     - Memory
     - Snapshot
-
-    - Voxelizer
 
     - Render Target
     - Face Normal Probe
@@ -72,7 +69,7 @@ import {
     CreateMesh, CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
     PointsCloudSystem, SolidParticleSystem,
     VertexData, MergeMeshes,
-    LoadAssetContainerAsync, ExportGLB, ExportGLTF, ExportOBJ, ExportSTL,
+    ExportGLB, ExportGLTF, ExportOBJ, ExportSTL,
     Animator, CreateScreenshot, CreateScreenshotWithResizeAsync
 } from './babylon.js';
 
@@ -285,7 +282,7 @@ class AxisViewScene {
         const axisHelper = AxesViewer(this.scene, 0.65, 6);
         axisHelper.xAxis.getScene().materials[1].emissiveColor = COL_AXIS_X_RGB;
         axisHelper.yAxis.getScene().materials[2].emissiveColor = COL_AXIS_Y_RGB;
-        axisHelper.yAxis.getScene().materials[3].emissiveColor = COL_AXIS_Z_RGB;
+        axisHelper.zAxis.getScene().materials[3].emissiveColor = COL_AXIS_Z_RGB;
         axisHelper.xAxis.parent = this.viewCube;
         axisHelper.yAxis.parent = this.viewCube;
         axisHelper.zAxis.parent = this.viewCube;
@@ -481,21 +478,22 @@ class Camera {
         };
     }
 
-    toggleCameraAutoRotation() {
+    toggleCameraAutoRotation(isEnabled, elem = undefined) {
         scene.activeCamera.useAutoRotationBehavior = !scene.activeCamera.useAutoRotationBehavior;
         if (scene.activeCamera.useAutoRotationBehavior) {
-            (ui.domCameraAutoRotationCCW.checked) ?
+            (isEnabled) ?
                 scene.activeCamera.autoRotationBehavior.idleRotationSpeed = -0.1 : // CCW
                 scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1;   // CW
             scene.activeCamera.autoRotationBehavior.idleRotationWaitTime = 1;
             scene.activeCamera.autoRotationBehavior.idleRotationSpinupTime = 1;
         }
-        ui.domCameraAutoRotation.checked = scene.activeCamera.useAutoRotationBehavior;
+        if (elem)
+            elem.checked = scene.activeCamera.useAutoRotationBehavior;
     }
 
-    updateCameraAutoRotation() {
+    updateCameraAutoRotation(isEnabled) {
         if (scene.activeCamera.useAutoRotationBehavior) {
-            (ui.domCameraAutoRotationCCW.checked) ?
+            (isEnabled) ?
                 scene.activeCamera.autoRotationBehavior.idleRotationSpeed = -0.1 :
                 scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1;
         }
@@ -994,10 +992,10 @@ class VoxelMesh {
 // Builder
 //
 // voxel = {
-//    position: Vector3
-//    color: #HEXHEX (UPPERCASE/no alpha)
-//    visible: bool
-//    idx: int (read-only)
+//    position: VEC3 INTEGER { x, y, z } (no floats)
+//    color: HEX STRING UPPERCASE (#FFFFFF - no opacity)
+//    visible: BOOLEAN true/false
+//    idx: INTEGER (read-only)
 // }
 
 
@@ -1026,6 +1024,9 @@ class Builder {
 
         this.rgbIndex = [];
         this.rgbBuffer = undefined;
+
+        this.uniqueColors = [];
+        this.invisibleColors = [];
     }
 
     init() {
@@ -1055,8 +1056,8 @@ class Builder {
             if (preferences.isPointCloud())
                 ghosts.createPointCloud();
 
-            palette.create();
             helper.setSymmPivot();
+            modules.palette.create();
         });
     }
 
@@ -1079,7 +1080,7 @@ class Builder {
                 this.mesh.makeGeometryUnique();
                 this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
                 this.mesh.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
-                this.mesh.thinInstanceEnablePicking = true;
+                this.mesh.thinInstanceEnablePicking = false;
                 this.mesh.doNotSyncBoundingInfo = false;
                 this.mesh.material = material.getMaterial();
                 this.mesh.isVisible = true;
@@ -1100,6 +1101,8 @@ class Builder {
         this.rttColors = new Float32Array(4 * this.voxels.length);
         this.rttColorsMap = new Array(this.voxels.length);
         this.positionsMap = new Array(this.voxels.length);
+        this.uniqueColors = [];
+        this.invisibleColors = [];
 
         for (let i = 0; i < this.voxels.length; i++) {
             const voxel = this.voxels[i];
@@ -1131,12 +1134,18 @@ class Builder {
                 this.bufferColors[i * 4 + 3] = 1;
 
                 this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
+            
+                if (this.uniqueColors.indexOf(voxel.color) == -1) {
+                    this.uniqueColors.push(voxel.color);
+                    if (!voxel.visible)
+                        this.invisibleColors.push(voxel.color);
+                }
             }
         }
     }
 
     // This function is moved to the worker module and is not used
-    fillMeshBuffers() {
+    /* fillMeshBuffers() {
         this.positions = new Float32Array(vMesh.positions.length * this.voxels.length);
         this.normals = new Float32Array(vMesh.positions.length * this.voxels.length);
         this.uvs = new Float32Array(vMesh.uvs.length * this.voxels.length);
@@ -1186,7 +1195,7 @@ class Builder {
                 this.indices[i * vMesh.indices.length + v] = vMesh.indices[v] + i * vMesh.positions.length / 3;
             }
         }
-    }
+    } */
 
     fillMeshBuffersWorker() {
         return new Promise(async resolve => {
@@ -1217,6 +1226,11 @@ class Builder {
         vertexData.indices = this.indices;
         vertexData.applyToMesh(mesh);
         return mesh;
+    }
+
+    createVoxelsFromArray(arr) {
+        this.voxels = arr;
+        this.create();
     }
 
     getCenter() {
@@ -1262,8 +1276,7 @@ class Builder {
         );
     }
 
-    normalizeVoxelPositions() {
-        const bounds = this.mesh.getBoundingInfo();
+    normalizePositions(voxels, bounds) {
         const size = Vector3(
             Math.abs(bounds.minimum.x - bounds.maximum.x),
             Math.abs(bounds.minimum.y - bounds.maximum.y),
@@ -1273,11 +1286,23 @@ class Builder {
         const centerZ = (-bounds.boundingBox.center.z + size.z / 2) - 0.5;
         const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
 
-        for (let i = 0; i < this.voxels.length; i++)
-            this.voxels[i].position = Vector3TransformCoordinates(
-                this.voxels[i].position, tMatrix);
+        for (let i = 0; i < voxels.length; i++)
+            voxels[i].position = Vector3TransformCoordinates(
+                voxels[i].position, tMatrix);
 
-        this.create();
+        return voxels;
+    }
+
+    normalizeVoxelPositions() {
+        const bounds = this.mesh.getBoundingInfo();
+        this.createVoxelsFromArray(this.normalizePositions(this.voxels, bounds));
+    }
+
+    normalizeVoxelPositionsArray(voxels) {
+        ghosts.createThin(voxels);
+        const bounds = ghosts.thin.getBoundingInfo();
+        ghosts.disposeThin();
+        return this.normalizePositions(voxels, bounds);
     }
 
     async getIndexAtPointer() {
@@ -1292,7 +1317,7 @@ class Builder {
         return this.rttColorsMap[ await renderTarget.readOmni(num, pad) ];
     }
 
-    async getIndexesAtPointerTarget(x, y, w, h) {
+    async getIndexesAtTarget(x, y, w, h) {
         const indexes = [];
         const pixels = await renderTarget.readTarget(x, y, w, h);
         for (let i = 0; i < pixels.length; i += 4) {
@@ -1472,9 +1497,6 @@ class Builder {
     }
 
     invertVisibility() {
-        const hiddens = this.getVoxelsByVisibility(false);
-        if (hiddens.length == 0) return;
-
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].visible = !this.voxels[i].visible;
     }
@@ -1560,28 +1582,7 @@ class Builder {
         ui.notification(`${islands.length} Islands`);
     }
 
-    // Voxel Data IO
-
-    getStringData() {
-        let data = '';
-        for (let i = 0; i < this.voxels.length; i++) {
-            const v = this.voxels[i];
-            data += `${ Math.trunc(v.position.x) },${ Math.trunc(v.position.y) },${ Math.trunc(v.position.z) },${ v.color.slice(1) },${ v.visible ? 1 : 0 };`;
-        }
-        return data;
-    }
-
-    setStringData(data) {
-        this.voxels = this.createArrayFromStringData(data);
-        this.create();
-    }
-
     // Voxel Array Generators
-
-    createVoxelsFromArray(arr) {
-        this.voxels = arr;
-        this.create();
-    }
 
     createArrayFromStringData(str) {
         const arr = [];
@@ -1635,6 +1636,22 @@ class Builder {
             }
         }
         return arr;
+    }
+
+    // Voxel Data IO
+
+    getStringData() {
+        let data = '';
+        for (let i = 0; i < this.voxels.length; i++) {
+            const v = this.voxels[i];
+            data += `${ Math.trunc(v.position.x) },${ Math.trunc(v.position.y) },${ Math.trunc(v.position.z) },${ v.color.slice(1) },${ v.visible ? 1 : 0 };`;
+        }
+        return data;
+    }
+
+    setStringData(data) {
+        this.voxels = this.createArrayFromStringData(data);
+        this.create();
     }
 }
 
@@ -1728,8 +1745,8 @@ class Bakery {
     bakeVoxels() {
         pool.dispose();
 
-        for (let i = 0; i < palette.uniqueColors.length; i++)
-            this.bakeToMesh(builder.getVoxelsByColor(palette.uniqueColors[i]));
+        for (let i = 0; i < builder.uniqueColors.length; i++)
+            this.bakeToMesh(builder.getVoxelsByColor(builder.uniqueColors[i]));
 
         setTimeout(() => {
             if (MODE !== 2) {
@@ -1779,11 +1796,11 @@ class MeshPool {
 
     async unbakeMeshes() {
         if (this.meshes.length == 0) {
-            ui.notification('no baked meshes');
+            ui.notification('no baked meshes', 1000);
             return;
         }
         if (!await ui.showConfirm('this will clear both the Model<br>and Export tabs, continue?')) return;
-        voxelizer.voxelizeBake(this.meshes);
+        modules.voxelizer.voxelizeBake(this.meshes);
     }
 
     async deleteSelected() {
@@ -1800,7 +1817,7 @@ class MeshPool {
             this.createMeshList();
             light.updateShadowMap();
         } else {
-            ui.notification('select a mesh');
+            ui.notification('select a mesh', 1000);
         }
     }
 
@@ -1841,7 +1858,7 @@ class MeshPool {
             const color = this.selected.getVerticesData(ColorKind);
             ui.domPbrVertexColor.value = rgbFloatToHex(color[0], color[1], color[2]);
         } else {
-            ui.notification('select a mesh');
+            ui.notification('select a mesh', 1000);
         }
     }
 
@@ -1893,7 +1910,7 @@ class MeshPool {
             this.setVertexColors(this.selected, hex, 2.2);
             this.createMeshList(false);
         } else {
-            ui.notification('select a mesh');
+            ui.notification('select a mesh', 1000);
         }
     }
 
@@ -2109,7 +2126,7 @@ class Ghosts {
         if (this.thin)
             this.thin.dispose();
 
-        this.thin = vMesh.mesh.clone();
+        this.thin = vMesh.mesh.clone('ghost_thin');
     }
 
     initThinOne() {
@@ -2396,12 +2413,12 @@ class Helper {
     setSymmPivot() {
         this.symmPivot.isVisible = (symmetry.axis !== -1);
         if (this.symmPivot.isVisible) {
-            if (ui.domSymmCenter.checked) { // world
+            if (ui.domSymmWorldCenter.checked) {
                 this.symmPivot.position.copyFrom(VEC3_ZERO);
                 this.symmPivot.position.x -= 0.5;
                 this.symmPivot.position.y -= 0.5;
                 this.symmPivot.position.z -= 0.5;
-            } else { // local
+            } else {
                 this.symmPivot.position.copyFrom(builder.getCenter());
             }
         }
@@ -2683,11 +2700,11 @@ class Symmetry {
     }
 
     center(p) { // calculate position from center
-        if (ui.domSymmCenter.checked) { // world center
+        if (ui.domSymmWorldCenter.checked) {
             if (this.axis == AXIS_X) return -0.5 - p;
             if (this.axis == AXIS_Y) return -0.5 - p;
             if (this.axis == AXIS_Z) return -0.5 - p;
-        } else { // local center
+        } else {
             const center = builder.getCenter();
             if (this.axis == AXIS_X) return center.x - p;
             if (this.axis == AXIS_Y) return center.y - p;
@@ -2696,11 +2713,11 @@ class Symmetry {
     }
 
     center2(p) { // calculate position from center*2
-        if (ui.domSymmCenter.checked) { // world center
+        if (ui.domSymmWorldCenter.checked) {
             if (this.axis == AXIS_X) return -1 - p;
             if (this.axis == AXIS_Y) return -1 - p;
             if (this.axis == AXIS_Z) return -1 - p;
-        } else { // local center
+        } else {
             const center = builder.getCenter();
             if (this.axis == AXIS_X) return (center.x * 2) - p;
             if (this.axis == AXIS_Y) return (center.y * 2) - p;
@@ -3273,7 +3290,7 @@ class Tool {
 
     handleToolDown() {
         if (this.name !== 'camera') {
-            this.setPickInfo('down').then(async pick => {
+            this.setPickInfo().then(async pick => {
                 if (xformer.isActive) {
                     if (ui.domTransformReactive.checked && !this.pick.WORKPLANE) {
                         xformer.apply();
@@ -3288,7 +3305,7 @@ class Tool {
                 scene.activeCamera.detachControl(canvas);
 
                 if (pixelReadWhiteList.includes(this.name))
-                    this.indexes = await builder.getIndexesAtPointerTarget(0, 0, window.innerWidth, window.innerHeight);
+                    this.indexes = await builder.getIndexesAtTarget(0, 0, window.innerWidth, window.innerHeight);
 
                 this.onToolDown(pick);
             });
@@ -3302,7 +3319,7 @@ class Tool {
             if (this.elapsed > FPS_TOOL) {
                 this.then = this.now - (this.elapsed % FPS_TOOL);
 
-                this.setPickInfo('move').then(pick => {
+                this.setPickInfo().then(pick => {
                     if (!camera.isCameraChange())
                         this.onToolMove(pick);
                 });
@@ -3346,10 +3363,6 @@ class Tool {
         return undefined;
     }
 
-    predicateMesh(mesh) {
-        return mesh === builder.mesh;
-    }
-
     predicateWorkplane(mesh) {
         if (helper.isGridPlaneActive && helper.gridPlane.isVisible)
             return mesh === helper.gridPlane;
@@ -3370,19 +3383,19 @@ class Tool {
         return pos;
     }
 
-    setPickInfo(state) {
+    setPickInfo() {
         return new Promise(async resolve => {
 
             const index = await builder.getIndexAtPointer();
             if (index !== undefined) {
 
-                // face hits (50%)
+                // direct face hits
 
                 this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
                 this.pickIndx = index;
                 this.pickNorm = await faceNormalProbe.getNormal(this.pick, index);
 
-                // dodging gaps (50%)
+                // dodging gaps
 
                 if (!this.pickNorm) {
                     for (let i = 0; i < 4; i++) {
@@ -3412,16 +3425,8 @@ class Tool {
                     }
                 }
 
-                // surrender (99%)
-
-                if (!this.pickNorm && state === 'down') {
-                    this.pick = scene.pick(pointer.x, pointer.y, this.predicateMesh);
-                    this.pickIndx = this.pick.thinInstanceIndex;
-                    this.pickNorm = this.pick.getNormal(true);
-                }
-
                 // unreachable distances/angles where accuracy is not important
-                if (!this.pickNorm && state === 'move') {
+                if (!this.pickNorm) {
                     const dir = camera.camera0.getForwardRay().direction.negate().normalize();
                     this.pickNorm = dir.clone();
                     this.pickNorm.x = this.pickNorm.x == 0 ? 0 : Math.sign(this.pickNorm.x);
@@ -3708,7 +3713,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.2",
+            version: "Voxel Builder 4.6.3",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3785,7 +3790,7 @@ class Project {
 
     async newProject() {
         if (!await ui.showConfirm('create new project?')) return;
-        modules.generator.newBox(1, preferences.getRenderShadeColor());
+        modules.generator.newBox(2, preferences.getRenderShadeColor());
         builder.create();
         this.resetSceneSetup();
         ui.domProjectName.value = 'untitled';
@@ -3855,22 +3860,22 @@ class Project {
 
     importBakes(url) {
         ui.setMode(0);
-        voxelizer.importBakedVoxels(url);
+        modules.voxelizer.importBakedVoxels(url, scene);
     }
 
-    exportVoxels() {
+    exportVoxels(name) {
         const mesh = builder.createMesh();
-        downloadBlob(new Blob([ ExportOBJ([ mesh ]) ], { type: "octet/stream" }), `${ui.domProjectName.value}.obj`);
+        downloadBlob(new Blob([ ExportOBJ([ mesh ]) ], { type: "octet/stream" }), `${name}.obj`);
         mesh.dispose();
     }
 
-    exportMeshes() {
+    exportMeshes(name, format) {
         if (pool.meshes.length == 0) {
-            ui.notification('no baked meshes');
+            ui.notification('no baked meshes', 1000);
             return;
         }
         if (ui.domExportSelectedBake.checked && !pool.selected) {
-            ui.notification('select a mesh');
+            ui.notification('select a mesh', 1000);
             return;
         }
 
@@ -3878,7 +3883,7 @@ class Project {
         if (ui.domExportSelectedBake.checked && pool.selected)
             exports = pool.exportOptionsSelected;
 
-        if (ui.domExportFormat.value == 'obj' || ui.domExportFormat.value == 'stl') {
+        if (format == 'obj' || format == 'stl') {
             if (ui.domExportSelectedBake.checked && pool.selected) {
                 exports = [ pool.selected ];
             } else {
@@ -3886,12 +3891,12 @@ class Project {
             }
         }
 
-        switch (ui.domExportFormat.value) {
+        switch (format) {
             case 'glb':
-                ExportGLB(scene, ui.domProjectName.value, exports, true, () => { });
+                ExportGLB(scene, name, exports, true, () => { });
                 break;
             case 'gltf':
-                ExportGLTF(scene, ui.domProjectName.value, exports, false, (data) => {
+                ExportGLTF(scene, name, exports, false, (data) => {
                     const fnames = Object.keys(Object.values(data)[0]);
                     if (fnames.length > 0) {
                         const contents = Object.values(Object.values(data)[0]);
@@ -3901,16 +3906,16 @@ class Project {
                             zip.file(fnames[i], contents[i]);
 
                         zip.generateAsync({ type: "blob" }).then(data => {
-                            downloadData(data, `${ ui.domProjectName.value }_gltf.zip`);
+                            downloadData(data, `${ name }_gltf.zip`);
                         });
                     }
                 });
                 break;
             case 'obj':
-                downloadBlob(new Blob([ ExportOBJ(exports) ], { type: "octet/stream" }), `${ui.domProjectName.value}.obj`);
+                downloadBlob(new Blob([ ExportOBJ(exports) ], { type: "octet/stream" }), `${name}.obj`);
                 break;
             case 'stl':
-                ExportSTL(exports, ui.domProjectName.value);
+                ExportSTL(exports, name);
                 break;
         }
     }
@@ -3987,127 +3992,6 @@ class Project {
 
 
 // -------------------------------------------------------
-// Palette
-
-
-class Palette {
-    constructor() {
-        this.canvas = document.getElementById('canvas_palette');
-        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-        
-        this.width = 35;
-        this.height = 25;
-        this.pad = 2;
-        this.wPad = this.width + this.pad;
-
-        this.uniqueColors = [];
-        this.invisibleColors = [];
-        
-        this.init();
-    }
-    
-    init() {
-        this.canvas.width = this.canvas.clientWidth;
-        this.canvas.height = this.canvas.clientHeight;
-
-        this.canvas.addEventListener("pointerdown", (ev) => {
-            const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
-            if (hex && this.uniqueColors.includes(hex)) {
-                currentColor = hex;
-                ui.colorWheel.hex = hex;
-            }
-        }, false);
-                
-        this.canvas.addEventListener("contextmenu", (ev) => {
-            ev.preventDefault();
-            if (xformer.isActive) return;
-            const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
-            if (hex && this.uniqueColors.includes(hex)) {
-                const index = this.invisibleColors.indexOf(hex);
-                (index > -1) ?
-                    this.invisibleColors.splice(index, 1) :
-                    this.invisibleColors.push(hex);
-                builder.setVoxelsVisibilityByColor(hex, index > -1);
-                builder.create();
-            }
-        }, false);
-
-        this.canvas.addEventListener("dblclick", (ev) => {
-            if (xformer.isActive) return;
-            const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
-            if (hex && this.uniqueColors.includes(hex)) {
-                const index = this.invisibleColors.indexOf(hex);
-                (index > -1) ?
-                    this.invisibleColors.splice(index, 1) :
-                    this.invisibleColors.push(hex);
-                builder.setVoxelsVisibilityByColor(hex, index > -1);
-                builder.create();
-            }
-        }, false);
-
-        new ResizeObserver(() => {
-            this.create();
-        }).observe(this.canvas);
-    }
-
-    create() {
-        const wPadSize = this.wPad * parseInt(preferences.getPaletteSize());
-
-        ui.domPalette.style.width = 8 + wPadSize + "px";
-        this.canvas.width = this.canvas.clientWidth;
-        this.canvas.height = this.canvas.clientHeight;
-
-        this.uniqueColors = [];
-        this.invisibleColors = [];
-
-        let col = 0;
-        let row = this.pad;
-        const uniqueColorSet = new Set(this.uniqueColors);
-
-        for (const voxel of builder.voxels) {
-            if (!uniqueColorSet.has(voxel.color)) {
-                
-                if (!voxel.visible)
-                    this.invisibleColors.push(voxel.color);
-
-                this.addColor(col + this.pad, row, voxel.color);
-                uniqueColorSet.add(voxel.color);
-
-                col += this.wPad;
-                if (col >= wPadSize) {
-                    col = 0;
-                    row += this.height + this.pad;
-                }
-            }
-        }
-
-        this.uniqueColors = Array.from(uniqueColorSet);
-    }
-
-    expand(num) {
-        ui.domPalette.style.width = 8 + ((this.width + this.pad) * num) + "px";
-        this.canvas.width = ui.domPalette.clientWidth;
-    }
-    
-    addColor(x, y, hex) {
-        this.ctx.strokeStyle = 'transparent';
-        if (this.invisibleColors.indexOf(hex) > -1) {
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeStyle = 'orange';
-            this.ctx.strokeRect(x, y, this.width, this.height);
-        }
-        this.ctx.fillStyle = hex;
-        this.ctx.fillRect(x, y, this.width, this.height);
-    }
-
-    getCanvasColor(context, x, y) {
-        const data = context.getImageData(x, y, 1, 1).data;
-        return (data[3] > 0) ? rgbIntToHex(data[0], data[1], data[2]) : undefined;
-    }
-}
-
-
-// -------------------------------------------------------
 // Memory
 
 
@@ -4161,30 +4045,49 @@ class Memory {
 
 
 const vbstoreVoxels = 'vbstore_voxels';
-const vbstoreSnapshots = 'vbstore_voxels_snap';
-const vbstoreSnapshotsImages = 'vbstore_voxels_snap_img';
+const vbstoreSnapshots = 'vbstore_voxels_snap' + 'shot';
+const vbstoreSnapshotsImages = 'vbstore_voxels_snap_img' + 'shot';
 
 class Snapshot {
     constructor() {
         this.newScene = document.getElementById('storage_new_scene');
-
-        // free resources, no quicksave for baked meshes after 4.4.4
-        localStorage.removeItem('vbstore_bakes');
     }
 
-    setStorageVoxels(name = vbstoreVoxels) {
+    setStorageVoxelsQuick() {
         try {
-            localStorage.setItem(name, builder.getStringData());
+            localStorage.setItem(vbstoreVoxels, builder.getStringData());
             ui.notification('saved', 1000);
         } catch (err) {
             ui.errorMessage('error: quota exceeded')
         }
     }
 
-    getStorageVoxels(name = vbstoreVoxels) {
+    getStorageVoxelsQuick() {
+        const data = localStorage.getItem(vbstoreVoxels);
+        if (!data) {
+            ui.notification('empty storage', 1000);
+            return;
+        }
+
+        builder.setStringData(data);
+        memory.clear();
+    }
+
+    setStorageVoxels(name) {
+        try {
+            localStorage.setItem(name, builder.getStringData());
+            ui.notification('saved', 1000);
+            return true;
+        } catch (err) {
+            ui.errorMessage('error: quota exceeded')
+        }
+        return false;
+    }
+
+    getStorageVoxels(name) {
         const data = localStorage.getItem(name);
         if (!data) {
-            ui.notification("empty storage");
+            ui.notification('empty storage', 1000);
             return;
         }
 
@@ -4195,17 +4098,6 @@ class Snapshot {
             const voxels = builder.createArrayFromStringData(data);
             xformer.beginNewObject(voxels);
         }
-    }
-
-    getStorageVoxelsNewScene() {
-        const data = localStorage.getItem(vbstoreVoxels);
-        if (!data) {
-            ui.notification("empty storage");
-            return;
-        }
-
-        builder.setStringData(data);
-        project.resetSceneSetup();
     }
 
     delStorage(name) {
@@ -4245,10 +4137,9 @@ class Snapshot {
             const btn_save = shots[i].children[1].lastChild;
 
             // restore data
-            const id = 'shot' + i;
-            const data = localStorage.getItem(vbstoreSnapshots + id);
+            const data = localStorage.getItem(vbstoreSnapshots + i);
             if (data) {
-                img.src = localStorage.getItem(vbstoreSnapshotsImages + id);
+                img.src = localStorage.getItem(vbstoreSnapshotsImages + i);
             } else {
                 btn_del.disabled = true;
             }
@@ -4256,17 +4147,17 @@ class Snapshot {
             btn_del.addEventListener("click", async () => {
                 if (img.src !== SNAPSHOT && !await ui.showConfirm('delete snapshot?')) return;
                 img.src = SNAPSHOT;
-                this.delStorage(vbstoreSnapshots + id);
-                this.delStorage(vbstoreSnapshotsImages + id);
+                this.delStorage(vbstoreSnapshots + i);
+                this.delStorage(vbstoreSnapshotsImages + i);
                 btn_del.disabled = true;
             }, false);
 
             btn_save.addEventListener("click", async () => {
                 if (!ui.checkMode(0) || img.src !== SNAPSHOT && !await ui.showConfirm('save new snapshot?')) return;
                 project.createScreenshotBasic(img.clientWidth, img.clientHeight, (screenshot) => {
-                    this.setStorageVoxels(vbstoreSnapshots + id);
-                    if (localStorage.getItem(vbstoreSnapshots + id)) {
-                        localStorage.setItem(vbstoreSnapshotsImages + id, screenshot);
+                    const isQuotaAvailable = this.setStorageVoxels(vbstoreSnapshots + i);
+                    if (isQuotaAvailable && localStorage.getItem(vbstoreSnapshots + i)) {
+                        localStorage.setItem(vbstoreSnapshotsImages + i, screenshot);
                         img.src = screenshot;
                         btn_del.disabled = false;
                     }
@@ -4276,7 +4167,7 @@ class Snapshot {
             img.addEventListener("click", async () => {
                 if (img.src !== SNAPSHOT && (this.newScene.checked && !await ui.showConfirm('load snapshot?'))) return;
                 ui.setMode(0);
-                this.getStorageVoxels(vbstoreSnapshots + id);
+                this.getStorageVoxels(vbstoreSnapshots + i);
             }, false);
 
             img.addEventListener("dragstart", (ev) => {
@@ -4290,9 +4181,9 @@ class Snapshot {
 
         let count = 0;
         for (let i = 0; i < MAX_SNAPSHOTS; i++) {
-            const data = localStorage.getItem(vbstoreSnapshots + 'shot' + i);
+            const data = localStorage.getItem(vbstoreSnapshots + i);
             if (data) {
-                const img = localStorage.getItem(vbstoreSnapshotsImages + 'shot' + i);
+                const img = localStorage.getItem(vbstoreSnapshotsImages + i);
                 if (img) {
                     zip.file(`${i}.json`, project.saveSnapshot(data, img));
                     count++;
@@ -4310,309 +4201,77 @@ class Snapshot {
     async loadSnapshots(archive) {
         if (!await ui.showConfirm("replace all snapshots?")) return;
         
-        for (let i = 0; i < MAX_SNAPSHOTS; i++) {
-            localStorage.removeItem(vbstoreSnapshots + 'shot' + i);
-            localStorage.removeItem(vbstoreSnapshotsImages + 'shot' + i);
+        let backup = [];
+        function createBackup() {
+            for (let i = 0; i < MAX_SNAPSHOTS; i++) {
+                const data = localStorage.getItem(vbstoreSnapshots + i);
+                if (data) {
+                    const img = localStorage.getItem(vbstoreSnapshotsImages + i);
+                    if (img) {
+                        backup.push({ id: i, data: data, shot: img });
+                    }
+                }
+                localStorage.removeItem(vbstoreSnapshots + i);
+                localStorage.removeItem(vbstoreSnapshotsImages + i);
+            }
         }
+
+        function restoreBackup() {
+            for (let i = 0; i < backup.length; i++) {
+                localStorage.setItem(vbstoreSnapshots + backup[i].id, backup[i].data);
+                localStorage.setItem(vbstoreSnapshotsImages + backup[i].id, backup[i].shot);
+            }
+
+            setTimeout(() => {
+                snapshot.createElements(preferences.getSnapshotNum());
+                snapshot.createSnapshots();
+            }, 100);
+        }
+
+        // need to wipe current items before Async
+        // + to avoid a quota error caused by waste, need to free up localstorage
+        // so testing the archive is not enough, the only way is to backup and restore.
+        createBackup();
 
         const zip = new JSZip();
         zip.loadAsync(archive).then(zipData => {
-
             const arr = Object.keys(zipData.files);
-
             arr.forEach(fname => {
-
-                const id = parseInt(fname.split('.')[0]);
-                ui.showProgress(id + 1, arr.length);
 
                 if (fname.endsWith('.json')) {
                     zip.file(fname).async('string').then(data => {
-                        const json = JSON.parse(data);
-                        localStorage.setItem(vbstoreSnapshots + 'shot' + id, json.data.voxels);
-                        localStorage.setItem(vbstoreSnapshotsImages + 'shot' + id, json.data.shot);
 
-                        if (fname === arr[arr.length - 1]) {
-                            setTimeout(() => {
-                                this.createElements(preferences.getSnapshotNum());
-                                this.createSnapshots();
-                                ui.notification(`${arr.length} snapshots loaded`);
-                                ui.showProgress(0);
-                            }, 100);
+                        try {
+                            const id = parseInt(fname.split('.')[0]);
+                            ui.showProgress(id + 1, arr.length);
+
+                            const json = JSON.parse(data);
+                            localStorage.setItem(vbstoreSnapshots + id, json.data.voxels);
+                            localStorage.setItem(vbstoreSnapshotsImages + id, json.data.shot);
+                            
+                            if (fname === arr[arr.length - 1]) { // last file
+                                setTimeout(() => {
+                                    snapshot.createElements(preferences.getSnapshotNum());
+                                    snapshot.createSnapshots();
+                                    ui.notification(`${arr.length} snapshots loaded`);
+                                    ui.showProgress(0);
+                                }, 100);
+                                backup = null;
+                            }
+                        } catch (err) {
+                            ui.errorMessage('error: quota exceeded');
+                            ui.showProgress(0);
+                            restoreBackup();
+                            backup = null;
                         }
                     });
+                } else {
+                    ui.errorMessage('error: invalid zip file');
+                    ui.showProgress(0);
+                    restoreBackup();
+                    backup = null;
                 }
             });
-        });
-    }
-}
-
-
-// -------------------------------------------------------
-// Voxelizer
-
-
-class Voxelizer {
-    constructor() {}
-
-    voxelizeMesh(mesh) {
-        const scale = parseInt(ui.domVoxelizerScale.value);
-
-        pool.normalizeMesh(mesh, scale);
-        const data = modules.rcv.mesh_voxel(mesh, preferences.getRenderShadeColor());
-        
-        builder.createVoxelsFromArray(data);
-        project.resetSceneSetup();
-    }
-
-    voxelizeBake(meshes) {
-        const mesh = MergeMeshes(meshes, true, true);
-        pool.resetPivot(mesh);
-
-        const data = modules.rcv.bake_voxel(mesh);
-        mesh.dispose();
-
-        let isValidGLB = 0;
-        for (const v in data)
-            if (data[v].color == '#000NAN')
-                isValidGLB++;
-
-        if (data.length == 0 || isValidGLB == data.length) {
-            ui.errorMessage('Invalid GLB (not baked)');
-        } else {
-            builder.createVoxelsFromArray(data);
-            builder.normalizeVoxelPositions();
-            project.resetSceneSetup();
-        }
-    }
-
-    voxelize2D(imgData) {
-        ui.showProgress(1);
-        const ratio = parseFloat(ui.domVoxelizerRatio.value);
-        const vertical = ui.domVoxelizerVertical.checked;
-
-        const img = new Image();
-        img.src = imgData;
-        img.crossOrigin = "Anonymous";
-        img.onload = () => {
-            const c = document.createElement('canvas');
-            const cx = c.getContext('2d');
-            const dim = aspectRatioFit(img.width, img.height, 10*ratio, 10*ratio);
-            c.width = dim.width;
-            c.height = dim.height;
-            cx.msImageSmoothingEnabled = false;
-            cx.mozImageSmoothingEnabled = false;
-            cx.webkitImageSmoothingEnabled = false;
-            cx.imageSmoothingEnabled = false;
-            
-            cx.drawImage(img, 0, 0, c.width, c.height);
-
-            const data = [];
-            const imageData = cx.getImageData(0, 0, c.width, c.height).data;
-            let x, y, r, g, b;
-            for (let i = 0; i < imageData.length; i += 4) {
-                if (imageData[i + 3] > 0) {
-                    r = imageData[i];
-                    g = imageData[i + 1];
-                    b = imageData[i + 2];
-                    x = (i / 4) % c.width;
-                    y = ~~(i / 4 / c.width);
-                    if (vertical) {
-                        data.push({
-                            position: Vector3(x, dim.height-y-1, 0).floor(),
-                            color: rgbIntToHex(r, g, b),
-                            visible: true
-                        });
-                    } else {
-                        data.push({
-                            position: Vector3(x, 0, y).floor(),
-                            color: rgbIntToHex(r, g, b),
-                            visible: true
-                        });
-                    }
-                }
-            }
-
-            builder.createVoxelsFromArray(data);
-            builder.normalizeVoxelPositions();
-            project.resetSceneSetup();
-            ui.showProgress(0);
-        }
-    }
-
-    voxelize2DText() {
-        const font = ui.domVoxelizerTextFont.value;
-        const text = ui.domVoxelizerText.value;
-        const extrude = parseInt(ui.domVoxelizerTextExtrude.value);
-        const vertical = ui.domVoxelizerTextVertical.checked;
-        const emoji = ui.domVoxelizerTextEmoji.checked;
-        if (text == '' || font == '' || font.endsWith(' ') || font.split(' ').length !== 2 || !font.split(' ')[0].endsWith('px')) {
-            ui.notification("incorrect font or undefined text");
-            return;
-        }
-        ui.showProgress(1);
-
-        const c = document.createElement("canvas");
-        const cx = c.getContext("2d");
-        c.width = 4096;
-        c.height = 2028;
-        cx.msImageSmoothingEnabled = false;
-        cx.mozImageSmoothingEnabled = false;
-        cx.webkitImageSmoothingEnabled = false;
-        cx.imageSmoothingEnabled = false;
-
-        cx.font = font;
-        cx.textAlign = "center";
-        cx.textBaseline = "middle";
-        cx.fillStyle = "white";
-        cx.fillText(text, c.width / 2, c.height / 2);
-
-        const data = [];
-        const imageData = cx.getImageData(0, 0, c.width, c.height).data;
-        let x, y, r, g, b;
-        for (let i = 0; i < imageData.length; i += 4) {
-            if (imageData[i + 3] > 0) {
-                r = imageData[i];
-                g = imageData[i + 1];
-                b = imageData[i + 2];
-                x = (i / 4) % c.width;
-                y = ~~(i / 4 / c.width);
-                if (vertical) {
-                    data.push({
-                        position: Vector3(x, c.height-y-1, 0).floor(),
-                        color: emoji ? rgbIntToHex(r, g, b) : currentColor,
-                        visible: true
-                    });
-                } else {
-                    data.push({
-                        position: Vector3(x, 0, y).floor(),
-                        color: emoji ? rgbIntToHex(r, g, b) : currentColor,
-                        visible: true
-                    });
-                }
-            }
-        }
-
-        const arr = [];
-        for (let i = 0; i < data.length; i++) {
-            for (let x = 1; x < extrude; x++) {
-                arr.push({
-                    position: Vector3(
-                        data[i].position.x,
-                        vertical ? data[i].position.y : data[i].position.y + x,
-                        vertical ? data[i].position.z + x : data[i].position.z
-                    ),
-                    color: data[i].color,
-                    visible: true
-                });
-            }
-       }
-
-        builder.createVoxelsFromArray(data.concat(arr));
-        builder.normalizeVoxelPositions();
-        project.resetSceneSetup();
-        ui.showProgress(0);
-    }
-
-    importBakedVoxels(url) {
-        ui.showProgress(1);
-        LoadAssetContainerAsync(url, '.glb', scene, (container) => {
-            const meshes = [];
-            for (let i = 0; i < container.meshes.length; i++) {
-                if (container.meshes[i].name !== '__root__')
-                    meshes.push(container.meshes[i].clone(container.meshes[i].name));
-            }
-            container.removeAllFromScene();
-            if (meshes.length > 0) {
-                this.voxelizeBake(meshes);
-            } else {
-                ui.errorMessage('unable to load baked meshes');
-            }
-            ui.showProgress(0);
-        }, () => {
-            ui.errorMessage('unable to load baked meshes');
-            ui.showProgress(0);
-        });
-    }
-
-    importMeshOBJ(url) {
-        ui.showProgress(1);
-        LoadAssetContainerAsync(url, ".obj", scene, (container) => {
-            const mesh = MergeMeshes(container.meshes, true, true);
-            container.removeAllFromScene();
-            this.voxelizeMesh(mesh);
-            mesh.dispose();
-            ui.showProgress(0);
-        }, (err) => {
-            ui.errorMessage("unable to import/merge meshes");
-            ui.showProgress(0);
-            console.error(err);
-        });
-    }
-
-    importMeshGLB(url) {
-        ui.showProgress(1);
-        LoadAssetContainerAsync(url, ".glb", scene, (container) => {
-            const meshes = [];
-            for (let i = 0; i < container.meshes.length; i++) {
-                if (container.meshes[i].name !== '__root__')
-                    meshes.push(container.meshes[i]);
-            }
-            container.removeAllFromScene();
-            if (meshes.length > 0) {
-                const mesh = MergeMeshes(meshes, true, true);
-                this.voxelizeMesh(mesh);
-                mesh.dispose();
-            } else {
-                ui.errorMessage('unable to find meshes');
-            }
-            ui.showProgress(0);
-        }, (err) => {
-            ui.errorMessage("unable to import/merge meshes");
-            ui.showProgress(0);
-            console.error(err);
-        });
-    }
-
-    loadFromUrl(url) {
-        if (url === '') return;
-        fetch(url).then(res => {
-            if (res.status === 200) {
-                if (url.toLowerCase().includes('.obj') || url.endsWith('.obj')) {
-                    this.importMeshOBJ(url);
-                } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
-                    this.importMeshGLB(url);
-                } else {
-                    ui.errorMessage("unsupported file format");
-                }
-            } else {
-                ui.errorMessage("unable to read url");
-            }
-        }).catch(err => {
-            ui.errorMessage("unable to read url");
-            console.error(err);
-        });
-    }
-
-    loadFromUrlImage(url) {
-        if (url === '') return;
-        fetch(url).then(res => {
-            if (res.status === 200) {
-                res.blob().then(data => {
-                    if (data.type &&
-                        (data.type == 'image/png'  ||
-                         data.type == 'image/jpeg' ||
-                         data.type == 'image/svg+xml')) {
-                            this.voxelize2D(url);
-                    } else {
-                        ui.errorMessage("unsupported file format");
-                    }
-                });
-            } else {
-                ui.errorMessage("unable to read url");
-            }
-        }).catch(err => {
-            ui.errorMessage("unable to read url");
-            console.error(err);
         });
     }
 }
@@ -4850,7 +4509,7 @@ class UserInterface {
         this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
         this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
         this.domSymmAxisZ = document.getElementById('btn-symm-axis-z');
-        this.domSymmCenter = document.getElementById('input-symm-center');
+        this.domSymmWorldCenter = document.getElementById('input-symm-worldcenter');
         this.domSymmPreview = document.getElementById('input-symm-preview');
         this.domColorPicker = document.getElementById('input-color');
         this.domColorWheel = document.getElementById('color-wheel');
@@ -4883,6 +4542,7 @@ class UserInterface {
         this.domVoxelizerTextExtrude = document.getElementById('input-voxelizer-text-extrude');
         this.domVoxelizerTextVertical = document.getElementById('input-voxelizer-text-vertical');
         this.domVoxelizerTextEmoji = document.getElementById('input-voxelizer-text-emoji');
+        this.domVoxelizerTextNewScene = document.getElementById('input-voxelizer-text-newscene');
         this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
@@ -4917,6 +4577,7 @@ class UserInterface {
         this.domRenderPlane = document.getElementById('input-pt-plane');
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
+        this.domOpaqueBlocker = document.getElementById('opaqueblocker');
         this.domNotifier = document.getElementById('notifier');
         this.domInfo = document.getElementById('info').children;
         this.domInfoParent = document.getElementById('info');
@@ -4927,11 +4588,13 @@ class UserInterface {
 
         this.colorWheel = undefined;
         this.notificationTimer = undefined;
+        this.confirmActive = false;
     }
 
     init() {
         this.createColorWheel();
         this.setToolbarMode(preferences.isToolbarIcons());
+        this.setFrostedGlassUI(preferences.isFrostedGlassUI());
 
         if (!preferences.isMinimal()) {
             this.domMenus.style.display = 'unset';
@@ -4975,19 +4638,20 @@ class UserInterface {
         }
 
         if (isMobile) {
-            ui.domCameraOffset.value = 1.5;
+            ui.domCameraOffset.value = 1.4;
             ui.domTransformReactive.checked = false;
         }
     }
 
     setToolbarMode(isIcons) {
         if (isIcons) {
-            modules.panels.setPositionLeft(43);
+            modules.panels.setPositionLeft(50);
 
             this.domToolbarL.children[0].children[0].style.display = 'none';
-            this.domToolbarL.style.width = '38px';
+            this.domToolbarL.children[0].children[1].style.width = '45px';
+            this.domToolbarL.style.width = '45px';
             for (let i = 1; i < this.domToolbarL.children.length; i++)
-                this.domToolbarL.children[i].style.width = '38px';
+                this.domToolbarL.children[i].style.width = '45px';
 
             document.getElementById('toolbar_btn_file').innerHTML = '<i class="material-icons">insert_drive_file</i>';
             document.getElementById('toolbar_btn_storage').innerHTML = '<i class="material-icons">grade</i>';
@@ -5007,6 +4671,7 @@ class UserInterface {
             modules.panels.setPositionLeft(80);
 
             this.domToolbarL.children[0].children[0].style.display = 'unset';
+            this.domToolbarL.children[0].children[1].style.width = '38px';
             this.domToolbarL.style.width = '75px';
             for (let i = 1; i < this.domToolbarL.children.length; i++)
                 this.domToolbarL.children[i].style.width = '75px';
@@ -5025,6 +4690,59 @@ class UserInterface {
             document.getElementById('toolbar_btn_bakery').innerHTML = 'BAKERY';
             document.getElementById('toolbar_btn_pbr').innerHTML = 'PBR';
             document.getElementById('toolbar_btn_export').innerHTML = 'EXPORT';
+        }
+    }
+
+    setFrostedGlassUI(isEnabled) {
+        const blur = 'blur(15px)';
+        const style_menu_bg = getStyleRoot('--menu-bg').slice(0, -2);
+        const style_confirm = getStyleRoot('--confirm').slice(0, -2);
+
+        if (isEnabled) {
+            setStyleRoot('--menu-bg', style_menu_bg + 'CA');
+            setStyleRoot('--confirm', style_confirm + 'CA');
+
+            this.domToolbarTopCen.style.backdropFilter = blur;
+            this.domConfirm.style.backdropFilter = blur;
+            modules.colorPicker.parent.style.backdropFilter = blur;
+
+            for (const child of this.domHoverItems)
+                child.style.backdropFilter = blur;
+            for (const child of this.domToolbarL.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domMenuInScreenStore.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domMenuInScreenRight.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domMenuInScreenRender.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domMenuInScreenExport.children)
+                child.style.backdropFilter = blur;
+            for (const panel of modules.panels.panels)
+                panel.elem.style.backdropFilter = blur;
+
+        } else {
+            setStyleRoot('--menu-bg', style_menu_bg + 'EA');
+            setStyleRoot('--confirm', style_confirm + 'EA');
+
+            this.domToolbarTopCen.style.backdropFilter = 'none';
+            this.domConfirm.style.backdropFilter = 'none';
+            modules.colorPicker.parent.style.backdropFilter = 'none';
+
+            for (const child of this.domHoverItems)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domToolbarL.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domMenuInScreenStore.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domMenuInScreenRight.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domMenuInScreenRender.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domMenuInScreenExport.children)
+                child.style.backdropFilter = 'none';
+            for (const panel of modules.panels.panels)
+                panel.elem.style.backdropFilter = 'none';
         }
     }
 
@@ -5144,11 +4862,11 @@ class UserInterface {
             this.domInfo[0].innerHTML = `${ engine.getFps() } FPS (${ builder.latency } ms)` :
             this.domInfo[0].innerHTML = `${ engine.getFps() } FPS`;
         this.domInfo[1].innerHTML = builder.voxels.length + ' VOX';
-        this.domInfo[2].innerHTML = `${ palette.invisibleColors.length }/${ palette.uniqueColors.length } COL`;
+        this.domInfo[2].innerHTML = `${ builder.invisibleColors.length }/${ builder.uniqueColors.length } COL`;
         this.domInfo[3].innerHTML = pool.meshes.length + ' MSH';
     }
 
-    notification(str, timeout = 3500) {
+    notification(str, timeout = 3000) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
@@ -5159,7 +4877,7 @@ class UserInterface {
         }, timeout);
     }
 
-    errorMessage(str, timeout = 3500) {
+    errorMessage(str, timeout = 3000) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
         this.domNotifier.innerHTML = str.toUpperCase();
@@ -5171,26 +4889,31 @@ class UserInterface {
     }
 
     async showConfirm(title, btn_0 = "cancel", btn_1 = "ok") {
+        this.confirmActive = true;
         this.domConfirmBlocker.style.display = 'unset';
         this.domConfirm.style.display = 'unset';
         this.domConfirm.children[0].innerHTML = title;
         this.domConfirm.children[1].innerHTML = btn_0;
         this.domConfirm.children[2].innerHTML = btn_1;
+        this.domConfirm.children[2].focus(); // support enter key
         return new Promise((resolve) => {
             this.domConfirm.children[1].onclick = () => {
                 this.domConfirmBlocker.style.display = 'none';
                 this.domConfirm.style.display = 'none';
                 resolve(false);
+                this.confirmActive = false;
             };
             this.domConfirm.children[2].onclick = () => {
                 this.domConfirmBlocker.style.display = 'none';
                 this.domConfirm.style.display = 'none';
                 resolve(true);
+                this.confirmActive = false;
             };
             this.domConfirmBlocker.onclick = () => {
                 this.domConfirmBlocker.style.display = 'none';
                 this.domConfirm.style.display = 'none';
                 resolve(undefined);
+                this.confirmActive = false;
             };
         });
     }
@@ -5284,9 +5007,9 @@ class UserInterfaceAdvanced {
 
     bindVoxelGizmo(mesh) {
         this.unbindVoxelGizmo();
-        this.gizmoVoxel = PositionGizmo(this.utilLayer);
+        this.gizmoVoxel = PositionGizmo(this.utilLayer, 3.5);
 
-        this.gizmoVoxel.scaleRatio = 1;
+        this.gizmoVoxel.scaleRatio = 0.8;
         this.gizmoVoxel.snapDistance = 1;
         this.gizmoVoxel.planarGizmoEnabled = false;
         this.gizmoVoxel.updateGizmoPositionToMatchAttachedMesh = true;
@@ -5394,6 +5117,7 @@ const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_RENDER_SHADE = "pref_render_shade";
 const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
 const KEY_HELP_LABELS = "pref_help_labels";
+const KEY_GLASS_UI = "pref_glass_ui";
 
 class Preferences {
     constructor() {
@@ -5416,6 +5140,7 @@ class Preferences {
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
         document.getElementById(KEY_HELP_LABELS).checked = true;
+        document.getElementById(KEY_GLASS_UI).checked = false;
 
         this.setPrefCheck(KEY_WEBGPU, () => {
             window.location.reload();
@@ -5436,7 +5161,7 @@ class Preferences {
         this.setPref(KEY_STARTBOX_SIZE);
 
         this.setPref(KEY_PALETTE_SIZE, (val) => {
-            palette.expand(val);
+            modules.palette.expand(val);
         });
 
         this.setPref(KEY_SNAPSHOT_NUM, (val) => {
@@ -5467,6 +5192,10 @@ class Preferences {
         this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
             modules.panels.showHelpLabels(chk);
         });
+
+        this.setPrefCheck(KEY_GLASS_UI, (chk) => {
+            ui.setFrostedGlassUI(chk);
+        });
     }
 
     finish(startTime) {
@@ -5490,12 +5219,13 @@ class Preferences {
 
     postFinish(startTime) {
         axisView.init();
-        palette.expand(this.getPaletteSize());
         snapshot.createElements(this.getSnapshotNum());
         snapshot.createSnapshots();
         modules.colorPicker.init();
-        modules.panels.showHelpLabels(document.getElementById(KEY_HELP_LABELS).checked);
-    
+        modules.panels.showHelpLabels(this.isShowHelpLabels());
+        modules.palette.expand(this.getPaletteSize());
+        ui.setFrostedGlassUI(this.isFrostedGlassUI());
+
         console.log(`mobile: ${isMobile}`);
         console.log(`webgpu: ${engine.engine.isWebGPU}`);
         console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
@@ -5552,6 +5282,14 @@ class Preferences {
         return document.getElementById(KEY_SCENE_POINTCLOUD).checked;
     }
 
+    isShowHelpLabels() {
+        return document.getElementById(KEY_HELP_LABELS).checked;
+    }
+
+    isFrostedGlassUI() {
+        return document.getElementById(KEY_GLASS_UI).checked;
+    }
+
     setPref(key, callback = undefined) {
         if (localStorage.getItem(key))
             document.getElementById(key).value = localStorage.getItem(key);
@@ -5590,7 +5328,6 @@ export const light = new Light();
 export const mainScene = new MainScene();
 export const memory = new Memory();
 export const material = new Material();
-export const palette = new Palette();
 export const pool = new MeshPool();
 export const preferences = new Preferences();
 export const project = new Project();
@@ -5602,7 +5339,6 @@ export const toolMesh = new ToolMesh();
 export const ui = new UserInterface();
 export const uix = new UserInterfaceAdvanced();
 export const vMesh = new VoxelMesh();
-export const voxelizer = new Voxelizer();
 export const xformer = new XFormer();
 
 
@@ -5653,7 +5389,7 @@ window.addEventListener("resize", () => {
     axisView.updateViewport();
     material.updateCelMaterial();
 
-    if (MODE == 0) palette.create();
+    if (MODE == 0) modules.palette.create();
     if (MODE == 2) pool.createMeshList();
     
     ui.offscreenCheckPanel();
@@ -5804,14 +5540,14 @@ function fileHandler(file) {
     const reader = new FileReader();
     reader.onload = () => {
         if (ext == 'json') project.load(reader.result);
-        if (ext == 'obj') if (MODE == 0) voxelizer.importMeshOBJ(url);
-        if (ext == 'glb') if (MODE == 0) voxelizer.importMeshGLB(url);
+        if (ext == 'obj') if (MODE == 0) modules.voxelizer.importMeshOBJ(url, scene);
+        if (ext == 'glb') if (MODE == 0) modules.voxelizer.importMeshGLB(url, scene);
         if (ext == 'vox') project.loadMagicaVoxel(reader.result);
         if (ext == 'hdr') hdri.loadHDR(url);
         if (ext == 'zip') snapshot.loadSnapshots(reader.result);
         if (MODE == 0) {
             if (['jpg','png','svg'].includes(ext))
-                voxelizer.voxelize2D(reader.result);
+                modules.voxelizer.voxelize2D(reader.result);
         }
         URL.revokeObjectURL(url);
     }
@@ -5935,11 +5671,11 @@ ui.domMenuInScreenStore.onpointerdown = () => {
 };
 
 ui.domMenuInScreenStore.children[0].onclick = () => {
-    snapshot.getStorageVoxelsNewScene();
+    snapshot.getStorageVoxelsQuick();
 };
 
 ui.domMenuInScreenStore.children[1].onclick = () => {
-    snapshot.setStorageVoxels();
+    snapshot.setStorageVoxelsQuick();
 };
 
 ui.domMenuInScreenExport.children[0].onclick = async () => {
@@ -5952,8 +5688,7 @@ ui.domMenuInScreenExport.children[0].onclick = async () => {
 };
 
 ui.domMenuInScreenExport.children[1].onclick = () => {
-    ui.domExportFormat.selectedIndex = 0;
-    project.exportMeshes();
+    project.exportMeshes(ui.domProjectName.value, 'glb');
 };
 
 ui.domMenuInScreenRight.children[0].oninput = (ev) => {
@@ -6156,12 +5891,12 @@ ui.domCameraFocalLength.onchange = (ev) => {
         modules.sandbox.updateCamera(false);
 };
 
-ui.domCameraAutoRotation.onchange = () => {
-    camera.toggleCameraAutoRotation();
+ui.domCameraAutoRotation.onchange = (ev) => {
+    camera.toggleCameraAutoRotation(ui.domCameraAutoRotationCCW.checked, ev.target);
 };
 
-ui.domCameraAutoRotationCCW.onchange = () => {
-    camera.updateCameraAutoRotation();
+ui.domCameraAutoRotationCCW.onchange = (ev) => {
+    camera.updateCameraAutoRotation(ev.target.checked);
 };
 
 ui.domSymmAxisS.onclick = () => {
@@ -6180,7 +5915,7 @@ ui.domSymmAxisZ.onclick = () => {
     symmetry.switchAxisByNum(2);
 };
 
-ui.domSymmCenter.onclick = () => {
+ui.domSymmWorldCenter.onclick = () => {
     helper.setSymmPivot();
 };
 
@@ -6194,20 +5929,20 @@ ui.domPbrAlbedo.oninput = (ev) => {
         currentColorBake = ev.target.value.toUpperCase();
         pool.setMaterial('albedo'); // update material
     } else {
-        ui.notification('select a mesh');
+        ui.notification('select a mesh', 1000);
     }
 };
 
 ui.domPbrEmissive.oninput = () => {
     (pool.selected) ?
         pool.setMaterial('emissive') :
-        ui.notification('select a mesh');
+        ui.notification('select a mesh', 1000);
 };
 
 ui.domPbrVertexColor.oninput = (ev) => {
     (pool.selected) ?
         pool.updateVertexColors(ev.target.value) :
-        ui.notification('select a mesh');
+        ui.notification('select a mesh', 1000);
 };
 
 ui.domPbrWireframe.onchange = (ev) => {
@@ -6217,19 +5952,19 @@ ui.domPbrWireframe.onchange = (ev) => {
 ui.domPbrRoughness.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('roughness') :
-        ui.notification('select a mesh');
+        ui.notification('select a mesh', 1000);
 };
 
 ui.domPbrMetallic.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('metallic') :
-        ui.notification('select a mesh');
+        ui.notification('select a mesh', 1000);
 };
 
 ui.domPbrAlpha.onchange = () => {
     (pool.selected) ?
         pool.setMaterial('alpha') :
-        ui.notification('select a mesh');
+        ui.notification('select a mesh', 1000);
 };
 
 ui.domDebugPick.onchange = (ev) => {
@@ -6259,10 +5994,11 @@ document.getElementById('input-newbox-coord').onkeydown = (ev) => {
     }
 };
 
-document.getElementById('fullscreen').onclick = () =>               { toggleFullscreen() };
 document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
 document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('fullscreen').onclick = () =>               { toggleFullscreen() };
+document.getElementById('reload_app').onclick = async () =>         { if (await ui.showConfirm('reload the application?')) window.location.reload() };
 document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
 document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
@@ -6273,8 +6009,8 @@ document.getElementById('unload_hdr').onclick = () =>               { hdri.unloa
 document.getElementById('new_project').onclick = () =>              { project.newProject() };
 document.getElementById('save_project').onclick = () =>             { project.save() };
 document.getElementById('save_snapshots').onclick = () =>           { snapshot.saveSnapshots() };
-document.getElementById('export_voxels').onclick = () =>            { project.exportVoxels() };
-document.getElementById('export_meshes').onclick = () =>            { project.exportMeshes() };
+document.getElementById('export_voxels').onclick = () =>            { project.exportVoxels(ui.domProjectName.value) };
+document.getElementById('export_meshes').onclick = () =>            { project.exportMeshes(ui.domProjectName.value, ui.domExportFormat.value) };
 document.getElementById('unbake_meshes').onclick = () =>            { pool.unbakeMeshes() };
 document.getElementById('screenshot').onclick = () =>               { project.createScreenshot() };
 document.getElementById('create_box').onclick = () =>               { if (ui.checkMode(0)) modules.generator.createBox() };
@@ -6282,9 +6018,9 @@ document.getElementById('create_plane').onclick = () =>             { if (ui.che
 document.getElementById('create_isometric').onclick = () =>         { if (ui.checkMode(0)) modules.generator.createIsometric() };
 document.getElementById('create_sphere').onclick = () =>            { if (ui.checkMode(0)) modules.generator.createSphere() };
 document.getElementById('create_terrain').onclick = () =>           { if (ui.checkMode(0)) modules.generator.createTerrain() };
-document.getElementById('import_mesh_url').onclick = (ev) =>        { if (ui.checkMode(0)) voxelizer.loadFromUrl(ev.target.previousElementSibling.value) };
-document.getElementById('import_image_url').onclick = (ev) =>       { if (ui.checkMode(0)) voxelizer.loadFromUrlImage(ev.target.previousElementSibling.value) };
-document.getElementById('voxelize_text').onclick = () =>            { if (ui.checkMode(0)) voxelizer.voxelize2DText() };
+document.getElementById('import_mesh_url').onclick = (ev) =>        { if (ui.checkMode(0)) modules.voxelizer.loadFromUrl(ev.target.previousElementSibling.value) };
+document.getElementById('import_image_url').onclick = (ev) =>       { if (ui.checkMode(0)) modules.voxelizer.loadFromUrlImage(ev.target.previousElementSibling.value) };
+document.getElementById('voxelize_text').onclick = () =>            { if (ui.checkMode(0)) modules.voxelizer.voxelize2DText() };
 document.getElementById('symm_p2n').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(1) };
 document.getElementById('symm_n2p').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(-1) };
 document.getElementById('symm_mirror').onclick = () =>              { if (ui.checkMode(0)) symmetry.mirrorVoxels() };
@@ -6333,6 +6069,10 @@ function toggleFullscreen() {
 
 function getStyleRoot(key) {
     return getComputedStyle(document.querySelector(':root')).getPropertyValue(key);
+}
+
+function setStyleRoot(key, val) {
+    document.documentElement.style.setProperty(key, val);
 }
 
 function color3FromHex(hex) {

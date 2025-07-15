@@ -3,9 +3,9 @@
 //
 /*
 Voxel:
-    position: VEC3 FLOAT { x, y, z }
+    position: VEC3 INTEGER { x, y, z } (no floats)
     color: HEX STRING UPPERCASE (#FFFFFF - no opacity)
-    visible: 0 / 1
+    visible: BOOLEAN true/false
     idx: INTEGER (read-only)
 */
 
@@ -22,9 +22,9 @@ import { Vector3 } from "../../modules/babylon.js";
 
 // Method 2 (as array)
 const data = [
-    { position: Vector3(0, 0, 0), color: '#FF0000', visible: 1 },
-    { position: Vector3(0, 1, 0), color: '#00FF00', visible: 1 },
-    { position: Vector3(0, 2, 0), color: '#0000FF', visible: 1 }
+    { position: Vector3(0, 0, 0), color: '#FF0000', visible: true },
+    { position: Vector3(0, 1, 0), color: '#00FF00', visible: true },
+    { position: Vector3(0, 2, 0), color: '#0000FF', visible: true }
 ];
 builder.voxels = [];
 builder.addArray(data);
@@ -38,8 +38,7 @@ setTimeout(() => {
 
 // Export Meshes
 setTimeout(() => {
-    ui.domExportFormat.selectedIndex = 0; // [ GLB, glTF, OBJ, STL ]
-    project.exportMeshes();
+    project.exportMeshes('untitled', 'glb'); // glb, gltf, obj, stl
 }, 4000);
 
 // Logging

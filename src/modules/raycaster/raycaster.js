@@ -188,5 +188,4 @@ class RaycastVoxelize {
     }    
 }
 
-export const rcm = new RaycastMesh();
 export const rcv = new RaycastVoxelize();

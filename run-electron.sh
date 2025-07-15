@@ -1,3 +1,3 @@
 #!/bin/bash
 
-electron --gtk-version=3 --enable-features=Vulkan .
+electron --enable-features=Vulkan .

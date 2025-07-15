@@ -237,8 +237,8 @@ export function TransformNode(name) {
     return new BABYLON.TransformNode(name);
 }
 
-export function PositionGizmo(utilLayer) {
-    return new BABYLON.PositionGizmo(utilLayer);
+export function PositionGizmo(utilLayer, thickness) {
+    return new BABYLON.PositionGizmo(utilLayer, thickness);
 }
 
 export function AxisScaleGizmo(axis, color, utilLayer, scale) {
