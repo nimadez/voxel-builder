@@ -92,6 +92,8 @@ python3 update.py
 - Electron *(recommended)*
 - Google Chrome
 - Mozilla Firefox
+
+> - PWA A2HS-ready *(add to home screen)*
 > - For the best experience, a tablet with pen or Wacom is recommended
 
 #### Enable Unsafe WebGPU

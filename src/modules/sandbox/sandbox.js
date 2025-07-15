@@ -14,7 +14,7 @@ import { OrbitControls } from '../../libs/addons/OrbitControls.js';
 import { Tween, Group, Easing } from '../../libs/utils/tween.esm.js';
 
 import { engine, Vector3 } from '../babylon.js';
-import { ui, camera, hdri, light, vMesh, builder, palette, preferences } from '../core.js';
+import { ui, camera, hdri, light, vMesh, builder, preferences } from '../core.js';
 
 
 const isMobile = isMobileDevice();
@@ -178,11 +178,11 @@ class Sandbox {
     // Create meshes
 
     createMeshesFromBuffers() {
-        this.meshes = new Array(palette.uniqueColors.length);
+        this.meshes = new Array(builder.uniqueColors.length);
 
-        for (let c = 0; c < palette.uniqueColors.length; c++) {
+        for (let c = 0; c < builder.uniqueColors.length; c++) {
             
-            const voxels = builder.getVoxelsByColor(palette.uniqueColors[c]);
+            const voxels = builder.getVoxelsByColor(builder.uniqueColors[c]);
             const positions = new Float32Array(vMesh.positions.length * voxels.length);
             const uvs = new Float32Array(vMesh.uvs.length * voxels.length);
             const colors = new Float32Array(vMesh.uvs.length * 2 * voxels.length);
@@ -216,11 +216,11 @@ class Sandbox {
             this.geom.setIndex(new THREE.BufferAttribute(indices, 1));
             this.geom.computeVertexNormals();
 
-            (palette.uniqueColors[c] === "#000000") ?
+            (builder.uniqueColors[c] === "#000000") ?
                 this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_emissive) :
                 this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_pbr);
 
-            this.meshes[c].name = palette.uniqueColors[c];
+            this.meshes[c].name = builder.uniqueColors[c];
             this.meshes[c].frustumCulled = true;
             this.meshes[c].castShadow = true;
             this.meshes[c].receiveShadow = true;

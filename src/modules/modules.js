@@ -19,10 +19,11 @@ workerPool.setWorkerCreator(() => {
 
 export { hover } from './interfaces/hover.js';
 export { panels } from './interfaces/panels.js';
+export { palette } from './interfaces/palette.js';
 export { colorPicker } from './interfaces/colorpicker.js';
 export { sandbox } from './sandbox/sandbox.js';
 export { generator } from './generator/generator.js';
-export { rcm, rcv } from './raycaster/raycaster.js';
+export { voxelizer } from './raycaster/voxelizer.js';
 
 export { ReinventedColorWheel } from "../libs/utils/reinvented-color-wheel.bundle.js";
 

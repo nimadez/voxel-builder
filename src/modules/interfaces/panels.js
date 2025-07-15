@@ -24,7 +24,7 @@ class Panels {
 
     init() {
         this.registerPanels();
-        this.attachToolbarButtons();
+        this.attachPanelsToButtons();
 
         document.body.addEventListener("mousedown", this.dragStart, false);
         document.body.addEventListener("mouseup", this.dragEnd, false);
@@ -70,19 +70,40 @@ class Panels {
 
     registerPanels() {
         const panels = document.querySelectorAll('.panel');
-        for (let i = 0; i < panels.length; i++) {
-            this.addToolbarToPanel(i, panels[i]);
-            this.panels.push({
-                idx: i,
-                button: undefined,
-                elem: panels[i],
-                x: 0, y: 0,
-                detach: false
-            });
-        }
+        for (let i = 0; i < panels.length; i++)
+            this.addPanel(i, undefined, panels[i], false);
+    }
+
+    // find and match a toolbar button for a panel by id
+    attachPanelsToButtons() {
+        const buttons = document.querySelectorAll("button[id^='toolbar_btn_']");
+        this.panels.forEach((panel) => {
+            const panelId = panel.elem.id.split('-')[1];
+            for (let b = 0; b < buttons.length; b++) {
+                if (buttons[b].id.split('_')[2] === panelId) {
+                    buttons[b].onclick = () => { this.switchPanel(panel) };
+                    panel.button = buttons[b];
+                }
+            }
+        });
+    }
+
+    addPanel(idx, button, elem, isDetach) {
+        this.addToolbar(idx, elem);
+        
+        this.panels.push({
+            idx: idx,
+            button: button,
+            elem: elem,
+            x: 0, y: 0,
+            detach: isDetach
+        });
+
+        if (isDetach)
+            this.detachPanel(idx, elem);
     }
     
-    addToolbarToPanel(idx, elem) {
+    addToolbar(idx, elem) {
         const li = document.createElement('li');
         li.classList.add('row_panel');
 
@@ -97,11 +118,7 @@ class Panels {
         div_reset.title = 'Reset/Close';
 
         div_move.onpointerdown = () => {
-            elem.firstChild.children[2].firstChild.innerHTML = 'exit_to_app';
-            elem.style.borderRadius = '6px';
-            elem.style.borderTop = 'solid 1px steelblue';
-            this.panels[idx].detach = true;
-            this.index = idx;
+            this.detachPanel(idx, elem);
         };
 
         div_hide.onclick = () => {
@@ -131,21 +148,7 @@ class Panels {
         };
     }
 
-    // find and match a toolbar button for a panel by id
-    attachToolbarButtons() {
-        const buttons = document.querySelectorAll("button[id^='toolbar_btn_']");
-        this.panels.forEach((panel) => {
-            const panelId = panel.elem.id.split('-')[1];
-            for (let b = 0; b < buttons.length; b++) {
-                if (buttons[b].id.split('_')[2] === panelId) {
-                    buttons[b].onclick = () => { this.switchPanel(panel) };
-                    panel.button = buttons[b];
-                }
-            }
-        });
-    }
-
-    clearAllPanels(exclude) {
+    resetAllPanels(exclude) {
         this.panels.forEach(panel => {
             if (!panel.detach && panel.elem !== exclude) {
                 panel.elem.style.display = 'none';
@@ -165,10 +168,19 @@ class Panels {
             panel.button.classList.add('panel_select');
             if (!panel.detach) {
                 panel.elem.firstChild.children[2].firstChild.innerHTML = 'close';
-                this.clearAllPanels(panel.elem);
+                this.resetAllPanels(panel.elem);
                 this.panelToFront(panel);
             }
         }
+    }
+
+    detachPanel(idx, elem) {
+        elem.firstChild.children[2].firstChild.innerHTML = 'exit_to_app';
+        elem.style.borderRadius = '6px';
+        elem.style.borderTop = 'solid 1px steelblue';
+        elem.style.display = 'unset';
+        this.panels[idx].detach = true;
+        this.index = idx;
     }
 
     panelToFront(panel) {
