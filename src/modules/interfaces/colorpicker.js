@@ -99,14 +99,14 @@ class ColorPicker {
         this.colorWheel.hex = hex;
         this.parent.style.display = 'unset';
         this.parent.style.transform = `translate(${ pointer.x }px, ${ pointer.y }px)`;
-        ui.domOpaqueBlocker.style.display = 'unset';
+        ui.domConfirmBlocker.style.display = 'unset';
 
         this.offScreenCheck();
 
         return new Promise((resolve) => {
-            ui.domOpaqueBlocker.onclick = () => {
+            ui.domConfirmBlocker.onclick = () => {
                 this.parent.style.display = 'none';
-                ui.domOpaqueBlocker.style.display = 'none';
+                ui.domConfirmBlocker.style.display = 'none';
                 resolve(this.colorWheel.hex.toUpperCase());
 
                 this.selected.children[0].style.background = this.colorWheel.hex;

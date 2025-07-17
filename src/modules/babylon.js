@@ -338,11 +338,49 @@ export function ExportSTL(meshes, filename) {
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-export function Animator(target, property, from, to, callback = undefined, fps = 60, totalFrame = 25) {
-    BABYLON.Animation.CreateAndStartAnimation('animator',
-        target, property, fps, totalFrame, from, to, 
-        BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
-        easingFunction, callback);
+
+export function Animator(target, property, from, to, fps, totalFrames) {
+    return new Promise(resolve => {
+        BABYLON.Animation.CreateAndStartAnimation('animator',
+            target, property, fps, totalFrames, from, to, 
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+            easingFunction, resolve);
+    });
+}
+
+export function AnimatorCamera(scene, camera, newRadius, newTarget, speedRatio = 1) {
+    const totalFrames = 20;
+    return new Promise(async resolve => {
+        const anim_radius = new BABYLON.Animation(
+            "anim_camera_radius", "radius", 60,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+
+        const anim_target = new BABYLON.Animation(
+            "anim_camera_target", "target", 60,
+            BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+
+        const anim_keys_radius = [
+            { frame: 0, value: camera.radius },
+            { frame: totalFrames, value: newRadius }];
+
+        const anim_keys_target = [
+            { frame: 0, value: camera.target.clone() },
+            { frame: totalFrames, value: newTarget }];
+
+        anim_radius.setKeys(anim_keys_radius);
+        anim_target.setKeys(anim_keys_target);
+        anim_radius.setEasingFunction(easingFunction);
+        anim_target.setEasingFunction(easingFunction);
+
+        const anim = scene.beginDirectAnimation(camera,
+            [ anim_radius, anim_target ],
+            0, totalFrames, false, speedRatio);
+
+        await anim.waitAsync();
+        resolve();
+    });
 }
 
 export function CreateScreenshot(engine, camera, width, height, callback) {

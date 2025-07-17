@@ -119,7 +119,7 @@ class Sandbox {
         this.hemisphere = new THREE.HemisphereLight(0x888888, 0x444444, 1);
         this.scene.add(this.ambient, this.hemisphere);
 
-        this.light = new THREE.DirectionalLight(0xCCCCCC, 1); // overrided
+        this.light = new THREE.DirectionalLight(0xCCCCCC, 1); // overridden
         this.light.position.set(17, 100, 46);
         this.light.target.position.set(0, 0, 0);
         this.light.castShadow = true;
@@ -435,10 +435,10 @@ class Sandbox {
             this.tweens.remove(this.tween2);
         }
 
-        this.tween1 = new Tween(this.camera.position).to(position, 500)
+        this.tween1 = new Tween(this.camera.position).to(position, 300)
             .easing(Easing.Cubic.InOut).start();
 
-        this.tween2 = new Tween(this.controls.target).to(center, 510)
+        this.tween2 = new Tween(this.controls.target).to(center, 300)
             .easing(Easing.Cubic.InOut)
             .onComplete(() => {
                 this.camera.updateProjectionMatrix();
@@ -469,7 +469,7 @@ class Sandbox {
                 Vector3(boundingBox.min.x, boundingBox.min.y, boundingBox.min.z),
                 Vector3(boundingBox.max.x, boundingBox.max.y, boundingBox.max.z));
         } else {
-            this.framed = camera.getFramed(builder.mesh);
+            this.framed = camera.getFramedMesh(builder.mesh);
         }
 
         const center = new THREE.Vector3(this.framed.target.x, this.framed.target.y, this.framed.target.z);
@@ -514,10 +514,10 @@ class Sandbox {
         if (this.isRendering) {
             this.isProgressing = !this.isProgressing;
             if (this.isProgressing) {
-                ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
+                ui.domToolbarScreenRender.children[1].children[0].firstChild.innerHTML = 'pause';
                 renderer.domElement.style.pointerEvents = 'unset';
             } else {
-                ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'play_arrow';
+                ui.domToolbarScreenRender.children[1].children[0].firstChild.innerHTML = 'play_arrow';
                 renderer.domElement.style.pointerEvents = 'none';
             }
         }
@@ -566,7 +566,7 @@ class Sandbox {
             this.updateScene();
 
             ui.domInfoRender.style.display = 'unset';
-            ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'stop';
+            ui.domToolbarScreenRender.children[0].children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.toneMappingExposure = 0.8;
 
@@ -574,8 +574,8 @@ class Sandbox {
             this.isProgressing = false;
 
             ui.domInfoRender.style.display = 'none';
-            ui.domMenuInScreenRender.children[0].firstChild.innerHTML = 'play_arrow';
-            ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
+            ui.domToolbarScreenRender.children[0].children[0].firstChild.innerHTML = 'play_arrow';
+            ui.domToolbarScreenRender.children[1].children[0].firstChild.innerHTML = 'pause';
             ui.showProgress(0);
         }
     }
@@ -616,7 +616,7 @@ class Sandbox {
         renderer.domElement.style.display = 'none';
         document.getElementById('canvas').style.pointerEvents = 'unset';
         
-        ui.domMenuInScreenRender.children[1].children[0].innerHTML = 'pause';
+        ui.domToolbarScreenRender.children[1].children[0].firstChild.innerHTML = 'pause';
         ui.domInfoRender.style.display = 'none';
         ui.showProgress(0);
     }

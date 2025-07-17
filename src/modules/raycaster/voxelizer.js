@@ -244,49 +244,6 @@ class Voxelizer {
             console.error(err);
         });
     }
-
-    loadFromUrl(url) {
-        if (url === '') return;
-        fetch(url).then(res => {
-            if (res.status === 200) {
-                if (url.toLowerCase().includes('.obj') || url.endsWith('.obj')) {
-                    this.importMeshOBJ(url);
-                } else if (url.toLowerCase().includes('.glb') || url.endsWith('.glb')) {
-                    this.importMeshGLB(url);
-                } else {
-                    ui.errorMessage("unsupported file format");
-                }
-            } else {
-                ui.errorMessage("unable to read url");
-            }
-        }).catch(err => {
-            ui.errorMessage("unable to read url");
-            console.error(err);
-        });
-    }
-
-    loadFromUrlImage(url) {
-        if (url === '') return;
-        fetch(url).then(res => {
-            if (res.status === 200) {
-                res.blob().then(data => {
-                    if (data.type &&
-                        (data.type == 'image/png'  ||
-                         data.type == 'image/jpeg' ||
-                         data.type == 'image/svg+xml')) {
-                            this.voxelize2D(url);
-                    } else {
-                        ui.errorMessage("unsupported file format");
-                    }
-                });
-            } else {
-                ui.errorMessage("unable to read url");
-            }
-        }).catch(err => {
-            ui.errorMessage("unable to read url");
-            console.error(err);
-        });
-    }
 }
 
 export const voxelizer = new Voxelizer();

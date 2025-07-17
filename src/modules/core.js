@@ -70,7 +70,7 @@ import {
     PointsCloudSystem, SolidParticleSystem,
     VertexData, MergeMeshes,
     ExportGLB, ExportGLTF, ExportOBJ, ExportSTL,
-    Animator, CreateScreenshot, CreateScreenshotWithResizeAsync
+    AnimatorCamera, CreateScreenshot, CreateScreenshotWithResizeAsync
 } from './babylon.js';
 
 import { scene } from '../main.js';
@@ -86,7 +86,7 @@ const SNAPSHOT = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKcAAACWCAYAAAC7
 const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
 const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
 
-const COL_BG = '#3C4253';
+const COL_SCENE_BG = getStyleRoot('--scene');
 const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
 const COL_WHITE_RGBA = Color4(1, 1, 1, 0);
 const COL_ORANGE = '#FFA500';
@@ -104,7 +104,7 @@ const COL_AXIS_Y_RGBA = color4FromHex(COL_AXIS_Y + 'FF');
 const COL_AXIS_Z = '#2F85E6';
 const COL_AXIS_Z_RGB = color3FromHex(COL_AXIS_Z);
 const COL_AXIS_Z_RGBA = color4FromHex(COL_AXIS_Z + 'FF');
-const COL_ICE = '#8398AF';
+const COL_ICE = '#90A0B3';
 const COL_RED = '#FF0000';
 const COL_RED_RGB = color3FromHex(COL_RED);
 
@@ -170,7 +170,10 @@ const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
 const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
 const canvas = document.getElementById('canvas');
-export const pointer = { x: 0, y: 0, isDown: false };
+export const pointer = {
+    x: 0, y: 0, isDown: false,
+    isWheel: false, wheelTimeout: undefined
+};
 
 export let MODE = -1; // model|render|export
 let isRenderAxisView = true;
@@ -267,7 +270,7 @@ class AxisViewScene {
         cam.viewport = this.getViewport(0, 0, 0, 0);
         cam.radius = 5.2;
         cam.fov = 0.5;
-        cam.alpha = 0; // overrided
+        cam.alpha = 0; // overridden
         cam.beta = 0;
 
         this.viewCube = CreateBox("viewcube", 0.52, FRONTSIDE, this.scene);
@@ -396,12 +399,12 @@ class Camera {
     }
 
     frame() {
-        if (this.isFramingActive) return;
+        if (this.isFramingActive || pointer.isWheel) return;
 
         if (MODE == 0) {
             (xformer.isActive) ?
-                this.setFramingBehavior(this.camera0, ghosts.thin) :
-                this.setFramingBehavior(this.camera0, builder.mesh);
+                this.setFramingBehaviorMesh(this.camera0, ghosts.thin) :
+                this.setFramingBehaviorMesh(this.camera0, builder.mesh);
 
         } else if (MODE == 1) {
             modules.sandbox.frameCamera();
@@ -409,46 +412,46 @@ class Camera {
         } else if (MODE == 2) {
             if (pool.meshes.length > 0) {
                 (pool.selected) ?
-                    this.setFramingBehavior(this.camera0, pool.selected) :
-                    this.setFramingBehaviorMeshes(this.camera0);
+                    this.setFramingBehaviorMesh(this.camera0, pool.selected) :
+                    this.setFramingBehaviorAllMeshes(this.camera0);
             } else {
-                this.setFramingBehavior(this.camera0, builder.mesh);
+                this.setFramingBehaviorMesh(this.camera0, builder.mesh);
             }
         }
     }
 
     frameColor(hex) {
         ghosts.createThin(builder.getVoxelsByColor(hex));
-        this.setFramingBehavior(this.camera0, ghosts.thin);
+        this.setFramingBehaviorMesh(this.camera0, ghosts.thin);
         ghosts.disposeThin();
     }
 
     frameVoxels(voxels) {
         ghosts.createThin(voxels);
-        this.setFramingBehavior(this.camera0, ghosts.thin);
+        this.setFramingBehaviorMesh(this.camera0, ghosts.thin);
         ghosts.disposeThin();
     }
 
-    setFramingBehavior(cam, mesh) {
-        const f = this.getFramed(mesh);
+    setFramingBehaviorMesh(cam, mesh) {
+        const f = this.getFramedMesh(mesh);
         if (f) {
             this.isFramingActive = true;
-            Animator(cam, 'radius', cam.radius, f.radius);
-            Animator(cam, 'target', cam.target.clone(), f.target, () => { this.isFramingActive = false; });
+            AnimatorCamera(scene, cam, f.radius, f.target).then(() => {
+                this.isFramingActive = false;
+            });
         }
     }
 
-    setFramingBehaviorMeshes(cam) {
+    setFramingBehaviorAllMeshes(cam) {
         const sum = pool.getBoundingBoxSum();
         const f = this.getFramedBoundingBox(sum.min, sum.max);
-        if (f) {
-            this.isFramingActive = true;
-            Animator(cam, 'radius', cam.radius, f.radius);
-            Animator(cam, 'target', cam.target.clone(), f.target, () => { this.isFramingActive = false; });
-        }
+        this.isFramingActive = true;
+        AnimatorCamera(scene, cam, f.radius, f.target).then(() => {
+            this.isFramingActive = false;
+        });
     }
 
-    getFramed(mesh) {
+    getFramedMesh(mesh) {
         if (!mesh) return undefined;
 
         mesh.computeWorldMatrix(true);
@@ -459,6 +462,7 @@ class Camera {
 
     getFramedBoundingBox(min, max) {
         const offset = parseFloat(ui.domCameraOffset.value);
+        
         const boxCenter = min.add(max).scale(0.5);
         const boxHalfSize = max.subtract(min).scale(0.5);
         const radius = boxHalfSize.length() * offset;
@@ -506,12 +510,12 @@ class Camera {
 
     setPersp() {
         this.setView('persp');
-        ui.domInScreenOrtho.innerHTML = 'P';
+        ui.domScreenOrtho.innerHTML = 'P';
     }
 
     setOrtho() {
         this.setView('ortho');
-        ui.domInScreenOrtho.innerHTML = 'O';
+        ui.domScreenOrtho.innerHTML = 'O';
     }
 
     setView(name) {
@@ -1520,7 +1524,7 @@ class Builder {
         this.create();
     }
 
-    async getReduceVoxels(voxels) {
+    async getOptimizedVoxels(voxels) {
         const msg = await modules.workerPool.postMessage({
             id: 'findInnerVoxels',
             data: [ voxels, this.positionsMap ]
@@ -1539,17 +1543,16 @@ class Builder {
         return undefined;
     }
 
-    async reduceVoxelsAndUpdate() {
-        if (!await ui.showConfirm('reducing voxels, continue?')) return;
+    async optimizeVoxelsAndUpdate() {
+        if (!await ui.showConfirm('delete inner voxels?')) return;
         ui.showProgress(1);
         const last = this.voxels.length;
-        const voxels = await this.getReduceVoxels(this.voxels);
+        const voxels = await this.getOptimizedVoxels(this.voxels);
         if (voxels) {
-            this.voxels = voxels;
-            this.create();
+            this.createVoxelsFromArray(voxels);
             ui.notification(`${ last - this.voxels.length } voxels removed`);
         } else {
-            ui.errorMessage('unable to reduce voxels');
+            ui.errorMessage('unable to optimize voxels');
         }
         ui.showProgress(0);
     }
@@ -1857,8 +1860,6 @@ class MeshPool {
 
             const color = this.selected.getVerticesData(ColorKind);
             ui.domPbrVertexColor.value = rgbFloatToHex(color[0], color[1], color[2]);
-        } else {
-            ui.notification('select a mesh', 1000);
         }
     }
 
@@ -1909,8 +1910,6 @@ class MeshPool {
         if (this.selected) {
             this.setVertexColors(this.selected, hex, 2.2);
             this.createMeshList(false);
-        } else {
-            ui.notification('select a mesh', 1000);
         }
     }
 
@@ -2257,7 +2256,7 @@ class Helper {
         this.gridPlane.rotation.x = -PIH;
         this.gridPlane.material = material.mat_gridplane;
         this.gridPlane.isVisible = false;
-        this.gridPlane.isPickable = false; // overrided
+        this.gridPlane.isPickable = false; // overridden
         this.gridPlane.visibility = 0.1;
         this.gridPlane.doNotSerialize = true;
         this.gridPlane.freezeNormals();
@@ -2301,7 +2300,7 @@ class Helper {
         this.axisPlane.isPickable = false;
         this.axisPlane.visibility = 0.01;
         this.axisPlane.doNotSerialize = true;
-        this.highlightOverlayMesh(this.axisPlane, COL_AQUA_RGB, 0.35); // overrided
+        this.highlightOverlayMesh(this.axisPlane, COL_AQUA_RGB, 0.35); // overridden
         this.axisPlane.edgesWidth = 8;
         this.axisPlane.edgesColor = COL_AQUA_RGBA;
         this.axisPlane.enableEdgesRendering();
@@ -2360,7 +2359,7 @@ class Helper {
         this.symmPivot.isVisible = false;
         this.symmPivot.isPickable = false;
         this.symmPivot.doNotSerialize = true;
-        this.symmPivot.scaling.set(10, 10, 10);
+        this.symmPivot.scaling.set(8, 8, 8);
     }
 
     enableGridPlane(isEnabled) {
@@ -2382,9 +2381,9 @@ class Helper {
         this.workplaneY.isVisible = isEnabled;
         this.workplaneZ.isVisible = isEnabled;
         if (isEnabled) {
-            ui.domInScreenWorkplane.firstChild.style.color = COL_ORANGE;
+            ui.domScreenWorkplane.firstChild.style.color = COL_ORANGE;
         } else {
-            ui.domInScreenWorkplane.firstChild.style.color = COL_AQUA;
+            ui.domScreenWorkplane.firstChild.style.color = COL_AQUA;
         }
     }
 
@@ -2392,9 +2391,9 @@ class Helper {
         this.gridPlane.isVisible = isEnabled;
         this.gridPlane.isPickable = isPickable;
         if (isEnabled) {
-            ui.domInScreenGridPlane.firstChild.style.color = COL_ORANGE;
+            ui.domScreenGridPlane.firstChild.style.color = COL_ORANGE;
         } else {
-            ui.domInScreenGridPlane.firstChild.style.color = COL_AQUA;
+            ui.domScreenGridPlane.firstChild.style.color = COL_AQUA;
         }
     }
 
@@ -2566,31 +2565,31 @@ class Symmetry {
             ui.domSymmAxisX.style.color = COL_AXIS_X;
             ui.domSymmAxisY.style.color = btnCol;
             ui.domSymmAxisZ.style.color = btnCol;
-            ui.domInScreenSymmAxis.innerHTML = 'X';
-            ui.domInScreenSymmAxis.style.color = COL_AXIS_X;
+            ui.domScreenSymmAxis.innerHTML = 'X';
+            ui.domScreenSymmAxis.style.color = COL_AXIS_X;
         } else if (axis == AXIS_Y) {
             helper.setAxisPlane(AXIS_Y);
             ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = btnCol;
             ui.domSymmAxisY.style.color = COL_AXIS_Y;
             ui.domSymmAxisZ.style.color = btnCol;
-            ui.domInScreenSymmAxis.innerHTML = 'Y';
-            ui.domInScreenSymmAxis.style.color = COL_AXIS_Y;
+            ui.domScreenSymmAxis.innerHTML = 'Y';
+            ui.domScreenSymmAxis.style.color = COL_AXIS_Y;
         } else if (axis == AXIS_Z) {
             helper.setAxisPlane(AXIS_Z);
             ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = btnCol;
             ui.domSymmAxisY.style.color = btnCol;
             ui.domSymmAxisZ.style.color = COL_AXIS_Z;
-            ui.domInScreenSymmAxis.innerHTML = 'Z';
-            ui.domInScreenSymmAxis.style.color = COL_AXIS_Z;
+            ui.domScreenSymmAxis.innerHTML = 'Z';
+            ui.domScreenSymmAxis.style.color = COL_AXIS_Z;
         } else {
             ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = btnCol;
             ui.domSymmAxisY.style.color = btnCol;
             ui.domSymmAxisZ.style.color = btnCol;
-            ui.domInScreenSymmAxis.innerHTML = 'S';
-            ui.domInScreenSymmAxis.style.color = COL_AQUA;
+            ui.domScreenSymmAxis.innerHTML = 'S';
+            ui.domScreenSymmAxis.style.color = COL_AQUA;
         }
     }
 
@@ -2624,7 +2623,7 @@ class Symmetry {
 
     symmetrizeVoxels(side) {
         if (this.axis == -1) {
-            ui.notification('select symmetry axis');
+            ui.notification('select symmetry axis', 1000);
             return;
         }
         builder.setVoxelsVisibility(true);
@@ -2635,7 +2634,7 @@ class Symmetry {
 
     mirrorVoxels() {
         if (this.axis == -1) {
-            ui.notification('select symmetry axis');
+            ui.notification('select symmetry axis', 1000);
             return;
         }
         builder.setVoxelsVisibility(true);
@@ -2645,7 +2644,7 @@ class Symmetry {
 
     deleteHalfVoxels(side) {
         if (this.axis == -1) {
-            ui.notification('select symmetry axis');
+            ui.notification('select symmetry axis', 1000);
             return;
         }
         builder.setVoxelsVisibility(true);
@@ -2943,14 +2942,9 @@ class Tool {
         ghosts.setThinColor(currentColor);
     }
 
-    rectSelectAdd(start, direction) {
+    rectSelectAdd(start, norm) {
         this.tmp = this.getVoxelsFromRectangleSelection(start);
-
-        const norm = direction.negate().normalize();
-        norm.x = norm.x == 0 ? 0 : Math.sign(norm.x);
-        norm.y = norm.y == 0 ? 0 : Math.sign(norm.y); // sign(round(
-        norm.z = norm.z == 0 ? 0 : Math.sign(norm.z);
-
+        
         this.selected = [];
         for (let i = 0; i < this.tmp.length; i++) {
             this.selected.push({
@@ -3157,7 +3151,7 @@ class Tool {
                 break;
             case 'rect_add':
                 if (this.startRect)
-                    this.rectSelectAdd(this.startRect, pick.ray.direction.clone());
+                    this.rectSelectAdd(this.startRect, norm);
                 break;
             case 'rect_remove':
                 if (this.startRect)
@@ -3530,19 +3524,7 @@ class ToolMesh {
 
     toolSelector(toolName) {
         this.name = toolName;
-
-        const elems = document.getElementsByClassName('tool_' + this.name);
-        for (let i of document.querySelectorAll('li'))
-            if (i.classList.contains("tool_mesh_selector"))
-                i.classList.remove("tool_mesh_selector");
-        for (let i of document.querySelectorAll('button'))
-            if (i.classList.contains("tool_mesh_selector"))
-                i.classList.remove("tool_mesh_selector");
-        for (let i = 0; i < elems.length; i++)
-            elems[i].classList.add("tool_mesh_selector");
-
         pool.deselectMesh();
-
         ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ') }`;
     }
 }
@@ -3713,7 +3695,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.3",
+            version: "Voxel Builder 4.6.4",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3984,7 +3966,7 @@ class Project {
                 isRenderAxisView = true;
                 scene.clearColor = (preferences.isBackgroundColor()) ?
                     color4FromHex(preferences.getBackgroundColor()) :
-                    color4FromHex(COL_BG);
+                    color4FromHex(COL_SCENE_BG);
                 callback(data);
         });
     }
@@ -4106,7 +4088,7 @@ class Snapshot {
     }
 
     createElements(num) {
-        const parent = document.getElementById("menu-storage-dynamic");
+        const parent = document.getElementById("snapshots");
         parent.innerHTML = "";
 
         for (let i = 0; i < num; i++) {
@@ -4489,36 +4471,27 @@ class FaceNormalProbe {
 
 class UserInterface {
     constructor() {
-        this.domToolbarL = document.getElementById('toolbar_L');
-        this.domToolbarTop = document.getElementById('toolbar_top');
-        this.domToolbarTopCen = document.getElementById('toolbar_top_cen');
-        this.domToolbarTopMem = document.getElementById('toolbar_top_mem');
-        this.domModes = document.querySelectorAll('#toolbar_top_cen li.mode');
+        this.domModes = document.querySelectorAll('#toolbar-screen-top-mode li.mode');
         this.domMenus = document.getElementById('menus');
-        this.domMenuInScreenStore = document.getElementById('menu-inscreen-store');
-        this.domMenuInScreenRight = document.getElementById('menu-inscreen-right');
-        this.domMenuInScreenBottom = document.getElementById('menu-inscreen-bottom');
-        this.domMenuInScreenExport = document.getElementById('menu-inscreen-export');
-        this.domInScreenSymmAxis = document.getElementById('btn-inscreen-symmetry');
-        this.domInScreenOrtho = document.getElementById('btn-inscreen-ortho');
-        this.domInScreenGridPlane = document.getElementById('btn-inscreen-gridplane');
-        this.domInScreenWorkplane = document.getElementById('btn-inscreen-workplane');
-        this.domInScreenLightLocator = document.getElementById('btn-inscreen-lightlocator');
-        this.domMenuInScreenRender = document.getElementById('menu-inscreen-render');
-        this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
-        this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
-        this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
-        this.domSymmAxisZ = document.getElementById('btn-symm-axis-z');
-        this.domSymmWorldCenter = document.getElementById('input-symm-worldcenter');
-        this.domSymmPreview = document.getElementById('input-symm-preview');
+        this.domToolbar = document.getElementById('toolbar');
+        this.domToolbarScreenTopMode = document.getElementById('toolbar-screen-top-mode');
+        this.domToolbarScreenTopMem = document.getElementById('toolbar-screen-top-mem');
+        this.domToolbarScreenStorage = document.getElementById('toolbar-screen-storage');
+        this.domToolbarScreenMaterial = document.getElementById('toolbar-screen-material');
+        this.domToolbarScreenToggles = document.getElementById('toolbar-screen-toggles');
+        this.domToolbarScreenRender = document.getElementById('toolbar-screen-render');
+        this.domToolbarScreenExport = document.getElementById('toolbar-screen-export');
+        this.domScreenSymmAxis = document.getElementById('btn-screen-symmetry');
+        this.domScreenOrtho = document.getElementById('btn-screen-ortho');
+        this.domScreenGridPlane = document.getElementById('btn-screen-gridplane');
+        this.domScreenWorkplane = document.getElementById('btn-screen-workplane');
+        this.domScreenLightLocator = document.getElementById('btn-screen-lightlocator');
+        this.domHover = document.getElementById('hover');
+        this.domHoverItems = document.querySelectorAll('#hover ul li');
         this.domColorPicker = document.getElementById('input-color');
         this.domColorWheel = document.getElementById('color-wheel');
         this.domPalette = document.getElementById('palette');
-        this.domPaletteColors = document.getElementById('palette-colors');
         this.domMeshList = document.getElementById('meshlist');
-        this.domHover = document.getElementById('hover');
-        this.domHoverItems = document.querySelectorAll('#hover ul li');
-        this.domMarquee = document.getElementById("marquee");
         this.domCameraAutoFrame = document.getElementById('input-camera-autoframe');
         this.domCameraOffset = document.getElementById('input-camera-offset');
         this.domCameraFov = document.getElementById('input-camera-fov');
@@ -4527,13 +4500,20 @@ class UserInterface {
         this.domCameraAutoRotation = document.getElementById('input-autorotate');
         this.domCameraAutoRotationCCW = document.getElementById('input-autorotate-ccw');
         this.domCameraOrtho = document.getElementById('btn-ortho');
+        this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
+        this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
+        this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
+        this.domSymmAxisZ = document.getElementById('btn-symm-axis-z');
+        this.domSymmWorldCenter = document.getElementById('input-symm-worldcenter');
+        this.domSymmPreview = document.getElementById('input-symm-preview');
         this.domToolBoxHeight = document.getElementById('input-tool-boxheight');
         this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
         this.domToolRectAddBypass = document.getElementById('input-tool-rectadd-bypass');
-        this.domRandomIslandsConnected = document.getElementById('input-randomislands-connected');
+        this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domTransformIslandConnected = document.getElementById('input-transform-island-connected');
+        this.domRandomIslandsConnected = document.getElementById('input-randomislands-connected');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerVertical = document.getElementById('input-voxelizer-vertical');
@@ -4543,7 +4523,6 @@ class UserInterface {
         this.domVoxelizerTextVertical = document.getElementById('input-voxelizer-text-vertical');
         this.domVoxelizerTextEmoji = document.getElementById('input-voxelizer-text-emoji');
         this.domVoxelizerTextNewScene = document.getElementById('input-voxelizer-text-newscene');
-        this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
         this.domPbrEmissive = document.getElementById('input-pbr-emissive');
@@ -4575,9 +4554,9 @@ class UserInterface {
         this.domRenderShade = document.getElementById('input-pt-shade');
         this.domRenderTexture = document.getElementById('input-pt-texture');
         this.domRenderPlane = document.getElementById('input-pt-plane');
+        this.domMarquee = document.getElementById("marquee");
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
-        this.domOpaqueBlocker = document.getElementById('opaqueblocker');
         this.domNotifier = document.getElementById('notifier');
         this.domInfo = document.getElementById('info').children;
         this.domInfoParent = document.getElementById('info');
@@ -4600,8 +4579,9 @@ class UserInterface {
             this.domMenus.style.display = 'unset';
             this.domHover.style.display = 'unset';
             this.domPalette.style.display = 'unset';
-            this.domMenuInScreenRight.style.display = 'flex';
-            this.domMenuInScreenBottom.style.display = 'flex';
+            this.domToolbarScreenTopMode.style.display = 'flex';
+            this.domToolbarScreenMaterial.style.display = 'flex';
+            this.domToolbarScreenToggles.style.display = 'flex';
             this.domInfoTool.style.display = 'unset';
             this.domInfoParent.style.display = 'unset';
             this.domColorWheel.style.display = 'unset';
@@ -4610,26 +4590,28 @@ class UserInterface {
             this.domMenus.style.display = 'unset';
             this.domHover.style.display = 'unset';
             this.domPalette.style.display = 'unset';
-            this.domToolbarTopCen.style.display = 'none';
             this.domInfoParent.style.display = 'unset';
             this.domInfoTool.style.display = 'unset';
             this.domColorWheel.style.display = 'unset';
 
-            this.domToolbarTop.style.top = '10px';
+            this.domToolbarScreenTopMode.style.display = 'none';
+            this.domToolbarScreenTopMem.style.top = '10px';
             this.domInfoTool.style.top = '16px';
 
-            this.domToolbarL.children[4].style.display = 'none';
-            this.domToolbarL.children[12].style.display = 'none';
-            this.domToolbarL.children[13].style.display = 'none';
-            this.domToolbarL.children[14].style.display = 'none';
+            this.domToolbar.children[3].style.borderBottomRightRadius = getStyleRoot('--border-radius');
+            this.domToolbar.children[3].firstChild.style.borderBottomRightRadius = getStyleRoot('--border-radius');
+            this.domToolbar.children[4].style.display = 'none';
+            this.domToolbar.children[12].style.display = 'none';
+            this.domToolbar.children[13].style.display = 'none';
+            this.domToolbar.children[14].style.display = 'none';
 
-            this.domMenuInScreenStore.style.display = 'flex';
-            this.domMenuInScreenRight.style.display = 'flex';
-            this.domMenuInScreenRight.children[3].style.opacity = '0.5';
-            this.domMenuInScreenRight.children[3].style.pointerEvents = 'none';
-            this.domMenuInScreenBottom.style.display = 'flex';
-            this.domMenuInScreenBottom.children[2].style.display = 'none';
-            this.domMenuInScreenBottom.children[4].style.display = 'none';
+            this.domToolbarScreenStorage.style.display = 'flex';
+            this.domToolbarScreenMaterial.style.display = 'flex';
+            this.domToolbarScreenMaterial.children[3].style.opacity = '0.5';
+            this.domToolbarScreenMaterial.children[3].style.pointerEvents = 'none';
+            this.domToolbarScreenToggles.style.display = 'flex';
+            this.domToolbarScreenToggles.children[2].style.display = 'none';
+            this.domToolbarScreenToggles.children[4].style.display = 'none';
 
             this.domInfo[3].style.display = 'none';
             this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
@@ -4647,11 +4629,11 @@ class UserInterface {
         if (isIcons) {
             modules.panels.setPositionLeft(50);
 
-            this.domToolbarL.children[0].children[0].style.display = 'none';
-            this.domToolbarL.children[0].children[1].style.width = '45px';
-            this.domToolbarL.style.width = '45px';
-            for (let i = 1; i < this.domToolbarL.children.length; i++)
-                this.domToolbarL.children[i].style.width = '45px';
+            this.domToolbar.children[0].children[0].style.display = 'none';
+            this.domToolbar.children[0].children[1].style.width = '45px';
+            this.domToolbar.style.width = '45px';
+            for (let i = 1; i < this.domToolbar.children.length; i++)
+                this.domToolbar.children[i].style.width = '45px';
 
             document.getElementById('toolbar_btn_file').innerHTML = '<i class="material-icons">insert_drive_file</i>';
             document.getElementById('toolbar_btn_storage').innerHTML = '<i class="material-icons">grade</i>';
@@ -4659,10 +4641,10 @@ class UserInterface {
             document.getElementById('toolbar_btn_render').innerHTML = '<i class="material-icons">camera</i>';
             document.getElementById('toolbar_btn_create').innerHTML = '<i class="material-icons">add</i>';
             document.getElementById('toolbar_btn_voxelize').innerHTML = '<i class="material-icons">grain</i>';
-            document.getElementById('toolbar_btn_symm').innerHTML = '<i class="material-icons">code</i>';
+            document.getElementById('toolbar_btn_symm').innerHTML = '<i class="material-icons">flip</i>';
             document.getElementById('toolbar_btn_draw').innerHTML = '<i class="material-icons">draw</i>';
             document.getElementById('toolbar_btn_paint').innerHTML = '<i class="material-icons">brush</i>';
-            document.getElementById('toolbar_btn_xform').innerHTML = '<i class="material-icons">crop</i>';
+            document.getElementById('toolbar_btn_xform').innerHTML = '<i class="material-icons">select_all</i>';
             document.getElementById('toolbar_btn_groups').innerHTML = '<i class="material-icons">category</i>';
             document.getElementById('toolbar_btn_bakery').innerHTML = '<i class="material-icons">auto_awesome</i>';
             document.getElementById('toolbar_btn_pbr').innerHTML = '<i class="material-icons">texture</i>';
@@ -4670,11 +4652,11 @@ class UserInterface {
         } else {
             modules.panels.setPositionLeft(80);
 
-            this.domToolbarL.children[0].children[0].style.display = 'unset';
-            this.domToolbarL.children[0].children[1].style.width = '38px';
-            this.domToolbarL.style.width = '75px';
-            for (let i = 1; i < this.domToolbarL.children.length; i++)
-                this.domToolbarL.children[i].style.width = '75px';
+            this.domToolbar.children[0].children[0].style.display = 'unset';
+            this.domToolbar.children[0].children[1].style.width = '38px';
+            this.domToolbar.style.width = '75px';
+            for (let i = 1; i < this.domToolbar.children.length; i++)
+                this.domToolbar.children[i].style.width = '75px';
 
             document.getElementById('toolbar_btn_file').innerHTML = 'FILE';
             document.getElementById('toolbar_btn_storage').innerHTML = 'STORAGE';
@@ -4696,50 +4678,47 @@ class UserInterface {
     setFrostedGlassUI(isEnabled) {
         const blur = 'blur(15px)';
         const style_menu_bg = getStyleRoot('--menu-bg').slice(0, -2);
-        const style_confirm = getStyleRoot('--confirm').slice(0, -2);
 
         if (isEnabled) {
             setStyleRoot('--menu-bg', style_menu_bg + 'CA');
-            setStyleRoot('--confirm', style_confirm + 'CA');
 
-            this.domToolbarTopCen.style.backdropFilter = blur;
+            this.domToolbarScreenTopMode.style.backdropFilter = blur;
             this.domConfirm.style.backdropFilter = blur;
             modules.colorPicker.parent.style.backdropFilter = blur;
 
             for (const child of this.domHoverItems)
                 child.style.backdropFilter = blur;
-            for (const child of this.domToolbarL.children)
+            for (const child of this.domToolbar.children)
                 child.style.backdropFilter = blur;
-            for (const child of this.domMenuInScreenStore.children)
+            for (const child of this.domToolbarScreenStorage.children)
                 child.style.backdropFilter = blur;
-            for (const child of this.domMenuInScreenRight.children)
+            for (const child of this.domToolbarScreenMaterial.children)
                 child.style.backdropFilter = blur;
-            for (const child of this.domMenuInScreenRender.children)
+            for (const child of this.domToolbarScreenRender.children)
                 child.style.backdropFilter = blur;
-            for (const child of this.domMenuInScreenExport.children)
+            for (const child of this.domToolbarScreenExport.children)
                 child.style.backdropFilter = blur;
             for (const panel of modules.panels.panels)
                 panel.elem.style.backdropFilter = blur;
 
         } else {
-            setStyleRoot('--menu-bg', style_menu_bg + 'EA');
-            setStyleRoot('--confirm', style_confirm + 'EA');
+            setStyleRoot('--menu-bg', style_menu_bg + 'E1');
 
-            this.domToolbarTopCen.style.backdropFilter = 'none';
+            this.domToolbarScreenTopMode.style.backdropFilter = 'none';
             this.domConfirm.style.backdropFilter = 'none';
             modules.colorPicker.parent.style.backdropFilter = 'none';
 
             for (const child of this.domHoverItems)
                 child.style.backdropFilter = 'none';
-            for (const child of this.domToolbarL.children)
+            for (const child of this.domToolbar.children)
                 child.style.backdropFilter = 'none';
-            for (const child of this.domMenuInScreenStore.children)
+            for (const child of this.domToolbarScreenStorage.children)
                 child.style.backdropFilter = 'none';
-            for (const child of this.domMenuInScreenRight.children)
+            for (const child of this.domToolbarScreenMaterial.children)
                 child.style.backdropFilter = 'none';
-            for (const child of this.domMenuInScreenRender.children)
+            for (const child of this.domToolbarScreenRender.children)
                 child.style.backdropFilter = 'none';
-            for (const child of this.domMenuInScreenExport.children)
+            for (const child of this.domToolbarScreenExport.children)
                 child.style.backdropFilter = 'none';
             for (const panel of modules.panels.panels)
                 panel.elem.style.backdropFilter = 'none';
@@ -4772,52 +4751,49 @@ class UserInterface {
     }
 
     setInterfaceMode(mode) {
-        this.domToolbarTopMem.style.display = 'none';
-        this.domMenuInScreenStore.style.display = 'none';
-        this.domMenuInScreenRight.style.display = 'none';
-        this.domMenuInScreenRender.style.display = 'none';
-        this.domMenuInScreenExport.style.display = 'none';
+        this.domToolbarScreenTopMem.style.display = 'none';
+        this.domToolbarScreenStorage.style.display = 'none';
+        this.domToolbarScreenMaterial.style.display = 'none';
+        this.domToolbarScreenRender.style.display = 'none';
+        this.domToolbarScreenExport.style.display = 'none';
         this.domPalette.style.display = 'none';
         this.domMeshList.style.display = 'none';
         this.domHover.style.display = 'unset';
 
-        for (const i of this.domToolbarL.children)
+        for (const i of this.domToolbar.children)
             i.style.display = 'unset';
             
         if (mode == 0) {
-            this.domToolbarTopMem.style.display = 'unset';
-            this.domMenuInScreenStore.style.display = 'flex';
-            this.domMenuInScreenRight.style.display = 'flex';
+            this.domToolbarScreenTopMem.style.display = 'unset';
+            this.domToolbarScreenStorage.style.display = 'flex';
+            this.domToolbarScreenMaterial.style.display = 'flex';
             this.domPalette.style.display = 'unset';
             this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
             ui.domColorWheel.style.display = 'unset';
         } else if (mode == 1) {
-            this.domToolbarL.children[2].style.display = 'none';    // STORAGE
-            this.domToolbarL.children[5].style.display = 'none';    // CREATE
-            this.domToolbarL.children[6].style.display = 'none';    // VOXELIZE
-            this.domToolbarL.children[7].style.display = 'none';    // SYMM
-            this.domToolbarL.children[8].style.display = 'none';    // DRAW
-            this.domToolbarL.children[9].style.display = 'none';    // PAINT
-            this.domToolbarL.children[10].style.display = 'none';   // XFORM
-            this.domToolbarL.children[11].style.display = 'none';   // GROUPS
-            this.domToolbarL.children[12].style.display = 'none';   // BAKERY
-            this.domToolbarL.children[13].style.display = 'none';   // PBR
-            this.domToolbarL.children[14].style.display = 'none';   // EXPORT
-            this.domMenuInScreenRender.style.display = 'flex';
+            this.domToolbar.children[5].style.display = 'none';    // CREATE
+            this.domToolbar.children[6].style.display = 'none';    // VOXELIZE
+            this.domToolbar.children[7].style.display = 'none';    // SYMM
+            this.domToolbar.children[8].style.display = 'none';    // DRAW
+            this.domToolbar.children[9].style.display = 'none';    // PAINT
+            this.domToolbar.children[10].style.display = 'none';   // XFORM
+            this.domToolbar.children[11].style.display = 'none';   // GROUPS
+            this.domToolbar.children[12].style.display = 'none';   // BAKERY
+            this.domToolbar.children[13].style.display = 'none';   // PBR
+            this.domToolbar.children[14].style.display = 'none';   // EXPORT
+            this.domToolbarScreenRender.style.display = 'flex';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
             ui.domColorWheel.style.display = 'none';
         } else if (mode == 2) {
-            this.domToolbarL.children[2].style.display = 'none';    // STORAGE
-            this.domToolbarL.children[4].style.display = 'none';    // RENDER
-            this.domToolbarL.children[5].style.display = 'none';    // CREATE
-            this.domToolbarL.children[6].style.display = 'none';    // VOXELIZE
-            this.domToolbarL.children[7].style.display = 'none';    // SYMM
-            this.domToolbarL.children[8].style.display = 'none';    // DRAW
-            this.domToolbarL.children[9].style.display = 'none';    // PAINT
-            this.domToolbarL.children[10].style.display = 'none';   // XFORM
-            this.domToolbarL.children[11].style.display = 'none';   // GROUPS
-            this.domMenuInScreenExport.style.display = 'flex';
+            this.domToolbar.children[5].style.display = 'none';    // CREATE
+            this.domToolbar.children[6].style.display = 'none';    // VOXELIZE
+            this.domToolbar.children[7].style.display = 'none';    // SYMM
+            this.domToolbar.children[8].style.display = 'none';    // DRAW
+            this.domToolbar.children[9].style.display = 'none';    // PAINT
+            this.domToolbar.children[10].style.display = 'none';   // XFORM
+            this.domToolbar.children[11].style.display = 'none';   // GROUPS
+            this.domToolbarScreenExport.style.display = 'flex';
             this.domMeshList.style.display = 'unset';
             this.domHover.style.display = 'none';
             this.domInfoTool.innerHTML = '';
@@ -4897,6 +4873,12 @@ class UserInterface {
         this.domConfirm.children[2].innerHTML = btn_1;
         this.domConfirm.children[2].focus(); // support enter key
         return new Promise((resolve) => {
+            if (preferences.isIgnoreDialogs()) {
+                this.domConfirmBlocker.style.display = 'none';
+                this.domConfirm.style.display = 'none';
+                resolve(true);
+                this.confirmActive = false;
+            }
             this.domConfirm.children[1].onclick = () => {
                 this.domConfirmBlocker.style.display = 'none';
                 this.domConfirm.style.display = 'none';
@@ -4945,11 +4927,11 @@ class UserInterface {
     checkMode(mode) {
         if (MODE !== mode) {
             if (mode == 0) {
-                ui.notification('select model tab');
+                ui.notification('select model tab', 1000);
             } else if (mode == 1) {
-                ui.notification('select render tab');
+                ui.notification('select render tab', 1000);
             } else if (mode == 2) {
-                ui.notification('select export tab');
+                ui.notification('select export tab', 1000);
             }
             return false;
         }
@@ -5007,9 +4989,9 @@ class UserInterfaceAdvanced {
 
     bindVoxelGizmo(mesh) {
         this.unbindVoxelGizmo();
-        this.gizmoVoxel = PositionGizmo(this.utilLayer, 3.5);
+        this.gizmoVoxel = PositionGizmo(this.utilLayer, 2.5);
 
-        this.gizmoVoxel.scaleRatio = 0.8;
+        this.gizmoVoxel.scaleRatio = 1;
         this.gizmoVoxel.snapDistance = 1;
         this.gizmoVoxel.planarGizmoEnabled = false;
         this.gizmoVoxel.updateGizmoPositionToMatchAttachedMesh = true;
@@ -5085,13 +5067,13 @@ class UserInterfaceAdvanced {
     showLightLocator() {        
         this.lightGizmoUp.attachedMesh = this.lightNode;
         this.lightGizmoNews.attachedMesh = this.lightNode;
-        ui.domInScreenLightLocator.firstChild.style.color = COL_ORANGE;
+        ui.domScreenLightLocator.firstChild.style.color = COL_ORANGE;
     }
 
     hideLightLocator() {
         this.lightGizmoUp.attachedMesh = null;
         this.lightGizmoNews.attachedMesh = null;
-        ui.domInScreenLightLocator.firstChild.style.color = COL_AQUA;
+        ui.domScreenLightLocator.firstChild.style.color = COL_AQUA;
     }
 
     toggleLightLocator() {
@@ -5117,6 +5099,7 @@ const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_RENDER_SHADE = "pref_render_shade";
 const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
 const KEY_HELP_LABELS = "pref_help_labels";
+const KEY_IGNORE_DIALOGS = "pref_ignore_dialogs";
 const KEY_GLASS_UI = "pref_glass_ui";
 
 class Preferences {
@@ -5136,10 +5119,11 @@ class Preferences {
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
-        document.getElementById(KEY_BACKGROUND_COLOR).value = "#363B45";
+        document.getElementById(KEY_BACKGROUND_COLOR).value = getStyleRoot('--scene');
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
         document.getElementById(KEY_HELP_LABELS).checked = true;
+        document.getElementById(KEY_IGNORE_DIALOGS).checked = false;
         document.getElementById(KEY_GLASS_UI).checked = false;
 
         this.setPrefCheck(KEY_WEBGPU, () => {
@@ -5147,7 +5131,7 @@ class Preferences {
         });
 
         this.setPrefCheck(KEY_MINIMAL, () => {
-            ui.notification("reload required");
+            ui.notification("reload required", 1000);
         });
 
         this.setPrefCheck(KEY_TOOLBAR_ICONS, (chk) => {
@@ -5155,7 +5139,7 @@ class Preferences {
         });
 
         this.setPrefCheck(KEY_USER_STARTUP, () => {
-            ui.notification("reload required");
+            ui.notification("reload required", 1000);
         });
         
         this.setPref(KEY_STARTBOX_SIZE);
@@ -5172,7 +5156,7 @@ class Preferences {
         this.setPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
             scene.clearColor = (chk) ?
                 color4FromHex(this.getBackgroundColor()) :
-                color4FromHex(COL_BG);
+                color4FromHex(COL_SCENE_BG);
         });
 
         this.setPref(KEY_BACKGROUND_COLOR, (val) => {
@@ -5193,6 +5177,8 @@ class Preferences {
             modules.panels.showHelpLabels(chk);
         });
 
+        this.setPrefCheck(KEY_IGNORE_DIALOGS);
+
         this.setPrefCheck(KEY_GLASS_UI, (chk) => {
             ui.setFrostedGlassUI(chk);
         });
@@ -5203,7 +5189,7 @@ class Preferences {
 
         scene.clearColor = (this.isBackgroundColor()) ?
             color4FromHex(this.getBackgroundColor()) :
-            color4FromHex(COL_BG);
+            color4FromHex(COL_SCENE_BG);
 
         hdri.preload(() => {
             if (this.isUserStartup()) {
@@ -5284,6 +5270,10 @@ class Preferences {
 
     isShowHelpLabels() {
         return document.getElementById(KEY_HELP_LABELS).checked;
+    }
+
+    isIgnoreDialogs() {
+        return document.getElementById(KEY_IGNORE_DIALOGS).checked;
     }
 
     isFrostedGlassUI() {
@@ -5404,13 +5394,17 @@ window.addEventListener('pointerdown', (ev) => {
     pointer.x = ev.clientX;
     pointer.y = ev.clientY;
     pointer.isDown = true;
+    pointer.isWheel = false;
+    clearTimeout(pointer.wheelTimeout);
     if (ev.target === canvas && !axisView.registerEvent() && !uix.isActive()) {
+        ev.preventDefault();
         if (MODE == 0) {
             renderTarget.point.x = Math.floor(pointer.x);
             renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
             tool.handleToolDown();
+        } else if (MODE == 2) {
+            toolMesh.handleToolDown();
         }
-        if (MODE == 2) toolMesh.handleToolDown();
     }
 }, false);
 
@@ -5419,6 +5413,7 @@ window.addEventListener('pointermove', (ev) => {
     pointer.x = ev.clientX;
     pointer.y = ev.clientY;
     if (ev.target === canvas && MODE == 0 && !uix.isActive()) {
+        ev.preventDefault();
         renderTarget.point.x = Math.floor(pointer.x);
         renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
         tool.handleToolMove();
@@ -5426,10 +5421,25 @@ window.addEventListener('pointermove', (ev) => {
 }, false);
 
 
-window.addEventListener('pointerup', () => {
+window.addEventListener('pointerup', (ev) => {
     pointer.isDown = false;
-    if (MODE == 0)
+    pointer.isWheel = false;
+    clearTimeout(pointer.wheelTimeout);
+    if (ev.target === canvas && MODE == 0) {
+        ev.preventDefault();
         tool.handleToolUp();
+    }
+}, false);
+
+
+window.addEventListener('wheel', (ev) => {
+    if (ev.target === canvas)
+        ev.preventDefault();
+    pointer.isWheel = true;
+    clearTimeout(pointer.wheelTimeout);
+    pointer.wheelTimeout = setTimeout(() => {
+        pointer.isWheel = false;
+    }, 300);
 }, false);
 
 
@@ -5506,9 +5516,6 @@ document.addEventListener("keydown", (ev) => {
             (modules.sandbox.isActive()) ? ui.setMode(0) : ui.setMode(1);
             break;
     }
-
-    if (ev.ctrlKey && ev.key.toLowerCase() === 'l')
-        document.getElementById('openfile_json').click();
     
     if (MODE == 0 && !xformer.isActive) {
         if (ev.ctrlKey && ev.key.toLowerCase() === 'z') {
@@ -5648,37 +5655,37 @@ document.getElementById('tab-export').onclick = () => {
     ui.setMode(2);
 };
 
-ui.domToolbarTopMem.children[0].onclick = () => {
+ui.domToolbarScreenTopMem.children[0].onclick = () => {
     if (!xformer.isActive)
         memory.undo();
 };
 
-ui.domToolbarTopMem.children[1].onclick = () => {
+ui.domToolbarScreenTopMem.children[1].onclick = () => {
     if (!xformer.isActive)
         memory.redo();
 };
 
 ui.domMenus.onpointerdown = (ev) => {
-    if (MODE == 0 && ev.target.parentElement !== ui.domToolbarTopMem) {
+    if (MODE == 0 && ev.target.parentElement !== ui.domToolbarScreenTopMem) {
         if (xformer.isActive)
             xformer.apply();
     }
 };
 
-ui.domMenuInScreenStore.onpointerdown = () => {
+ui.domToolbarScreenStorage.onpointerdown = () => {
     if (xformer.isActive)
         xformer.apply();
 };
 
-ui.domMenuInScreenStore.children[0].onclick = () => {
+ui.domToolbarScreenStorage.children[0].onclick = () => {
     snapshot.getStorageVoxelsQuick();
 };
 
-ui.domMenuInScreenStore.children[1].onclick = () => {
+ui.domToolbarScreenStorage.children[1].onclick = () => {
     snapshot.setStorageVoxelsQuick();
 };
 
-ui.domMenuInScreenExport.children[0].onclick = async () => {
+ui.domToolbarScreenExport.children[0].onclick = async () => {
     if (pool.meshes.length > 0) {
         if (await ui.showConfirm("Replace all baked meshes?"))
             bakery.bakeVoxels();
@@ -5687,40 +5694,40 @@ ui.domMenuInScreenExport.children[0].onclick = async () => {
     }
 };
 
-ui.domMenuInScreenExport.children[1].onclick = () => {
+ui.domToolbarScreenExport.children[1].onclick = () => {
     project.exportMeshes(ui.domProjectName.value, 'glb');
 };
 
-ui.domMenuInScreenRight.children[0].oninput = (ev) => {
+ui.domToolbarScreenMaterial.children[0].oninput = (ev) => {
     currentColor = ev.target.value.toUpperCase();
     ui.colorWheel.hex = currentColor;
 };
 
-ui.domMenuInScreenRight.children[1].onclick = () => {
+ui.domToolbarScreenMaterial.children[1].onclick = () => {
     if (ui.checkMode(0))
         tool.toolSelector('bucket', true);
 };
 
-ui.domMenuInScreenRight.children[2].onclick = () => {
+ui.domToolbarScreenMaterial.children[2].onclick = () => {
     if (ui.checkMode(0))
         tool.toolSelector('eyedropper', true);
 };
 
-ui.domMenuInScreenRight.children[3].onclick = () => {
+ui.domToolbarScreenMaterial.children[3].onclick = () => {
     material.switchMaterial();
 };
 
-ui.domMenuInScreenRender.children[0].onclick = () => {
+ui.domToolbarScreenRender.children[0].onclick = () => {
     if (!ui.domRenderAutoStart.checked)
         modules.sandbox.toggleRender();
 };
 
-ui.domMenuInScreenRender.children[1].onclick = () => {
+ui.domToolbarScreenRender.children[1].onclick = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.togglePause();
 };
 
-ui.domMenuInScreenRender.children[2].onclick = () => {
+ui.domToolbarScreenRender.children[2].onclick = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.shot();
 };
@@ -5739,30 +5746,30 @@ ui.domHoverItems[1].onclick = () => {
 };
 
 ui.domHoverItems[2].onclick = () => {
-    tool.toolSelector('box_paint');
-};
-
-ui.domHoverItems[3].onclick = () => {
     tool.toolSelector('transform_box');
 };
 
-ui.domInScreenSymmAxis.onclick = () => {
+ui.domHoverItems[3].onclick = () => {
+    tool.toolSelector('box_paint');
+};
+
+ui.domScreenSymmAxis.onclick = () => {
     symmetry.switchAxis();
 };
 
-ui.domInScreenGridPlane.onclick = () => {
+ui.domScreenGridPlane.onclick = () => {
     helper.toggleWorkplane(0);
 };
 
-ui.domInScreenWorkplane.onclick = () => {
+ui.domScreenWorkplane.onclick = () => {
     helper.toggleWorkplane(1);
 };
 
-ui.domInScreenLightLocator.onclick = () => {
+ui.domScreenLightLocator.onclick = () => {
     uix.toggleLightLocator();
 };
 
-ui.domInScreenOrtho.onclick = () => {
+ui.domScreenOrtho.onclick = () => {
     camera.switchOrtho();
 };
 
@@ -5899,6 +5906,13 @@ ui.domCameraAutoRotationCCW.onchange = (ev) => {
     camera.updateCameraAutoRotation(ev.target.checked);
 };
 
+ui.domVoxelizerText.onkeydown = (ev) => {
+    if (ev.key === 'Enter' && ui.domVoxelizerTextNewScene.checked)
+        ui.notification('uncheck new scene', 1000);
+    if (ui.checkMode(0) && ev.key === 'Enter' && !ui.domVoxelizerTextNewScene.checked)
+        modules.voxelizer.voxelize2DText();
+};
+
 ui.domSymmAxisS.onclick = () => {
     symmetry.switchAxisByNum(-1);
 };
@@ -5924,47 +5938,33 @@ ui.domPbrTexture.onclick = () => {
     pool.replaceTextures();
 };
 
+ui.domPbrVertexColor.oninput = (ev) => {
+    pool.updateVertexColors(ev.target.value);
+};
+
 ui.domPbrAlbedo.oninput = (ev) => {
-    if (pool.selected) {
-        currentColorBake = ev.target.value.toUpperCase();
-        pool.setMaterial('albedo'); // update material
-    } else {
-        ui.notification('select a mesh', 1000);
-    }
+    currentColorBake = ev.target.value.toUpperCase();
+    pool.setMaterial('albedo'); // update material
 };
 
 ui.domPbrEmissive.oninput = () => {
-    (pool.selected) ?
-        pool.setMaterial('emissive') :
-        ui.notification('select a mesh', 1000);
+    pool.setMaterial('emissive');
 };
 
-ui.domPbrVertexColor.oninput = (ev) => {
-    (pool.selected) ?
-        pool.updateVertexColors(ev.target.value) :
-        ui.notification('select a mesh', 1000);
+ui.domPbrRoughness.onchange = () => {
+    pool.setMaterial('roughness');
+};
+
+ui.domPbrMetallic.onchange = () => {
+    pool.setMaterial('metallic');
+};
+
+ui.domPbrAlpha.onchange = () => {
+    pool.setMaterial('alpha');
 };
 
 ui.domPbrWireframe.onchange = (ev) => {
     pool.setWireframe(ev.target.checked);
-};
-
-ui.domPbrRoughness.onchange = () => {
-    (pool.selected) ?
-        pool.setMaterial('roughness') :
-        ui.notification('select a mesh', 1000);
-};
-
-ui.domPbrMetallic.onchange = () => {
-    (pool.selected) ?
-        pool.setMaterial('metallic') :
-        ui.notification('select a mesh', 1000);
-};
-
-ui.domPbrAlpha.onchange = () => {
-    (pool.selected) ?
-        pool.setMaterial('alpha') :
-        ui.notification('select a mesh', 1000);
 };
 
 ui.domDebugPick.onchange = (ev) => {
@@ -5974,11 +5974,9 @@ ui.domDebugPick.onchange = (ev) => {
 };
 
 document.getElementById('normalize_voxels').onclick = async () => {
-    if (ui.checkMode(0)) {
-        if (await ui.showConfirm('normalize voxel positions?')) {
-            builder.normalizeVoxelPositions();
-            camera.flagFrame = 1;
-        }
+    if (ui.checkMode(0) && await ui.showConfirm('normalize voxel positions?')) {
+        builder.normalizeVoxelPositions();
+        camera.flagFrame = 1;
     }
 };
 
@@ -6003,7 +6001,10 @@ document.getElementById('reset_hover').onclick = () =>              { modules.ho
 document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
 document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
 document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
-document.getElementById('camera_topview').onclick = () =>           { camera.setOrtho(); camera.setView('y'); camera.frame() };
+document.getElementById('camera_preset_top').onclick = () =>        { camera.setOrtho(); camera.setView('y'); };
+document.getElementById('camera_preset_bottom').onclick = () =>     { camera.setOrtho(); camera.setView('-y'); };
+document.getElementById('camera_preset_right').onclick = () =>      { camera.setOrtho(); camera.setView('x'); };
+document.getElementById('camera_preset_left').onclick = () =>       { camera.setOrtho(); camera.setView('-x'); };
 document.getElementById('hdr_dropdown').onchange = (ev) =>          { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
 document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
 document.getElementById('new_project').onclick = () =>              { project.newProject() };
@@ -6018,8 +6019,6 @@ document.getElementById('create_plane').onclick = () =>             { if (ui.che
 document.getElementById('create_isometric').onclick = () =>         { if (ui.checkMode(0)) modules.generator.createIsometric() };
 document.getElementById('create_sphere').onclick = () =>            { if (ui.checkMode(0)) modules.generator.createSphere() };
 document.getElementById('create_terrain').onclick = () =>           { if (ui.checkMode(0)) modules.generator.createTerrain() };
-document.getElementById('import_mesh_url').onclick = (ev) =>        { if (ui.checkMode(0)) modules.voxelizer.loadFromUrl(ev.target.previousElementSibling.value) };
-document.getElementById('import_image_url').onclick = (ev) =>       { if (ui.checkMode(0)) modules.voxelizer.loadFromUrlImage(ev.target.previousElementSibling.value) };
 document.getElementById('voxelize_text').onclick = () =>            { if (ui.checkMode(0)) modules.voxelizer.voxelize2DText() };
 document.getElementById('symm_p2n').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(1) };
 document.getElementById('symm_n2p').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(-1) };
@@ -6045,7 +6044,7 @@ document.getElementById('btn_tool_transform_group').onclick = () => { if (ui.che
 document.getElementById('btn_tool_transform_island').onclick = () =>{ if (ui.checkMode(0)) tool.toolSelector('transform_island') };
 document.getElementById('btn_tool_transform_visible').onclick = ()=>{ if (ui.checkMode(0)) tool.toolSelector('transform_visible') };
 document.getElementById('btn_tool_measure_volume').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
-document.getElementById('btn_reduce_voxels').onclick = () =>        { if (ui.checkMode(0)) builder.reduceVoxelsAndUpdate() };
+document.getElementById('btn_optimize_voxels').onclick = () =>      { if (ui.checkMode(0)) builder.optimizeVoxelsAndUpdate() };
 document.getElementById('bakery_bake').onclick = () =>              { bakery.bakeVoxels() };
 document.getElementById('btn_tool_bakecolor').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('bake_color') };
 document.getElementById('delete_bake_all').onclick = () =>          { pool.dispose(true) };

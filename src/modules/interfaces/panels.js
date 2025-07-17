@@ -110,12 +110,12 @@ class Panels {
         const div_move = document.createElement('div');
         const div_hide = document.createElement('div');
         const div_reset = document.createElement('div');
-        div_move.innerHTML = '<i class="material-icons">open_with</i>';
-        div_hide.innerHTML = '<i class="material-icons">remove_red_eye</i>';
+        div_move.innerHTML = '<i class="material-icons">games</i>';
+        div_hide.innerHTML = '<i class="material-icons">remove</i>';
         div_reset.innerHTML = '<i class="material-icons">close</i>';
         div_move.title = 'Move';
-        div_hide.title = 'Hide';
-        div_reset.title = 'Reset/Close';
+        div_hide.title = 'Minimize';
+        div_reset.title = 'Reset/Exit';
 
         div_move.onpointerdown = () => {
             this.detachPanel(idx, elem);
@@ -161,7 +161,7 @@ class Panels {
     switchPanel(panel) {
         if (panel.elem.style.display === 'unset') {
             panel.elem.style.display = 'none';
-            panel.elem.firstChild.children[2].firstChild.innerHTML = 'exit_to_app';
+            panel.elem.firstChild.children[2].firstChild.innerHTML = 'open_in_new';
             panel.button.classList.remove('panel_select');
         } else {
             panel.elem.style.display = 'unset';
@@ -175,7 +175,7 @@ class Panels {
     }
 
     detachPanel(idx, elem) {
-        elem.firstChild.children[2].firstChild.innerHTML = 'exit_to_app';
+        elem.firstChild.children[2].firstChild.innerHTML = 'open_in_new';
         elem.style.borderRadius = '6px';
         elem.style.borderTop = 'solid 1px steelblue';
         elem.style.display = 'unset';
@@ -197,7 +197,6 @@ class Panels {
         this.panels[idx].detach = false;
         this.panels[idx].elem.style.transform = 'none';
         this.panels[idx].elem.style.borderTop = `solid 1px ${getComputedStyle(document.querySelector(':root')).getPropertyValue('--cat-bg')}`;
-        this.panels[idx].elem.style.borderRadius = '3px';
         this.panels[idx].elem.style.borderTopLeftRadius = '0';
         this.panels[idx].elem.style.borderTopRightRadius = '0';
         this.panels[idx].elem.style.zIndex = 1000;
