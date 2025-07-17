@@ -3695,7 +3695,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.4",
+            version: "Voxel Builder 4.6.5",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4938,7 +4938,7 @@ class UserInterface {
         return true;
     }
 
-    toggleDebugLayer() {
+    toggleInspector() {
         if (scene.debugLayer.isVisible()) {
             scene.debugLayer.hide();
         } else {
@@ -5445,7 +5445,7 @@ window.addEventListener('wheel', (ev) => {
 
 document.addEventListener("keydown", (ev) => {
     if (ev.target.matches(".ignorekeys")) return;
-    if (ev.ctrlKey && ev.key == '/') ui.toggleDebugLayer();
+    if (ev.ctrlKey && ev.key == '/') ui.toggleInspector();
     if (scene.debugLayer.isVisible()) return;
     if (modules.colorPicker.isActive) return;
 
