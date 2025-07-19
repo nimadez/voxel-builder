@@ -33,7 +33,7 @@ builder.create();
 
 // Bake Voxels
 setTimeout(() => {
-    bakery.bakeVoxels();
+    bakery.bakeColors();
 }, 2000);
 
 // Export Meshes

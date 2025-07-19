@@ -68,7 +68,7 @@ class Generator {
             builder.createVoxelsFromArray(data);
             project.resetSceneSetup();
         } else {
-            xformer.beginNewObject(data);
+            xformer.beginNew(data);
         }
     }
 
@@ -98,7 +98,7 @@ class Generator {
             builder.createVoxelsFromArray(data);
             project.resetSceneSetup();
         } else {
-            xformer.beginNewObject(data);
+            xformer.beginNew(data);
         }
     }
 
@@ -147,7 +147,7 @@ class Generator {
             builder.createVoxelsFromArray(data);
             project.resetSceneSetup();
         } else {
-            xformer.beginNewObject(data);
+            xformer.beginNew(data);
         }
     }
 
@@ -195,7 +195,7 @@ class Generator {
             builder.createVoxelsFromArray(data);
             project.resetSceneSetup();
         } else {
-            xformer.beginNewObject(data);
+            xformer.beginNew(data);
         }
     }
 }

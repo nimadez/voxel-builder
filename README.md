@@ -162,6 +162,7 @@ git reset --hard $HASH
 
 ## History
 ```
+↑ A major upgrade and overhaul
 ↑ Unsafe WebGPU support
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer

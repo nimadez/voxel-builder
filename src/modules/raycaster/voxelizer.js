@@ -181,7 +181,7 @@ class Voxelizer {
                 project.resetSceneSetup();
             }
         } else {
-            xformer.beginNewObject(voxels);
+            xformer.beginNew(voxels);
         }
     }
 

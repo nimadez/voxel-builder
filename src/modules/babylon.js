@@ -350,6 +350,8 @@ export function Animator(target, property, from, to, fps, totalFrames) {
 
 export function AnimatorCamera(scene, camera, newRadius, newTarget, speedRatio = 1) {
     const totalFrames = 20;
+    const storedAlpha = camera.alpha;
+    const storedBeta = camera.beta;
     return new Promise(async resolve => {
         const anim_radius = new BABYLON.Animation(
             "anim_camera_radius", "radius", 60,
@@ -361,6 +363,16 @@ export function AnimatorCamera(scene, camera, newRadius, newTarget, speedRatio =
             BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
             BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
 
+        const anim_alpha = new BABYLON.Animation(
+            "anim_camera_alpha", "alpha", 60,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+
+        const anim_beta = new BABYLON.Animation(
+            "anim_camera_beta", "beta", 60,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+
         const anim_keys_radius = [
             { frame: 0, value: camera.radius },
             { frame: totalFrames, value: newRadius }];
@@ -369,13 +381,25 @@ export function AnimatorCamera(scene, camera, newRadius, newTarget, speedRatio =
             { frame: 0, value: camera.target.clone() },
             { frame: totalFrames, value: newTarget }];
 
+        const anim_keys_alpha = [
+            { frame: 0, value: camera.alpha },
+            { frame: totalFrames, value: storedAlpha }];
+
+        const anim_keys_beta = [
+            { frame: 0, value: camera.beta },
+            { frame: totalFrames, value: storedBeta }];
+
         anim_radius.setKeys(anim_keys_radius);
         anim_target.setKeys(anim_keys_target);
+        anim_alpha.setKeys(anim_keys_alpha);
+        anim_beta.setKeys(anim_keys_beta);
         anim_radius.setEasingFunction(easingFunction);
         anim_target.setEasingFunction(easingFunction);
+        anim_alpha.setEasingFunction(easingFunction);
+        anim_beta.setEasingFunction(easingFunction);
 
         const anim = scene.beginDirectAnimation(camera,
-            [ anim_radius, anim_target ],
+            [ anim_radius, anim_target, anim_alpha, anim_beta ],
             0, totalFrames, false, speedRatio);
 
         await anim.waitAsync();

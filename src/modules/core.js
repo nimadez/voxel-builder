@@ -163,7 +163,7 @@ const isMobile = isMobileDevice();
 const MAX_VOXELS = 512000;
 const MAX_VOXELS_DRAW = isMobile ? 64000 : 256000;
 const MAX_SNAPSHOTS = 100;
-const MAX_Z = isMobile ? 1500 : 2500;
+const MAX_Z = isMobile ? 1500 : 3000;
 const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
@@ -467,8 +467,8 @@ class Camera {
         const boxHalfSize = max.subtract(min).scale(0.5);
         const radius = boxHalfSize.length() * offset;
 
-        const frustumSlopeY = Math.tan(scene.activeCamera.fov / 2);
-        const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(scene.activeCamera);
+        const frustumSlopeY = Math.tan(this.camera0.fov / 2);
+        const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(this.camera0);
         const distanceX = radius / frustumSlopeX;
         const distanceY = radius / frustumSlopeY;
         const distance = Math.max(distanceX, distanceY);
@@ -483,28 +483,28 @@ class Camera {
     }
 
     toggleCameraAutoRotation(isEnabled, elem = undefined) {
-        scene.activeCamera.useAutoRotationBehavior = !scene.activeCamera.useAutoRotationBehavior;
-        if (scene.activeCamera.useAutoRotationBehavior) {
+        this.camera0.useAutoRotationBehavior = !this.camera0.useAutoRotationBehavior;
+        if (this.camera0.useAutoRotationBehavior) {
             (isEnabled) ?
-                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = -0.1 : // CCW
-                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1;   // CW
-            scene.activeCamera.autoRotationBehavior.idleRotationWaitTime = 1;
-            scene.activeCamera.autoRotationBehavior.idleRotationSpinupTime = 1;
+                this.camera0.autoRotationBehavior.idleRotationSpeed = -0.1 : // CCW
+                this.camera0.autoRotationBehavior.idleRotationSpeed = 0.1;   // CW
+            this.camera0.autoRotationBehavior.idleRotationWaitTime = 1;
+            this.camera0.autoRotationBehavior.idleRotationSpinupTime = 1;
         }
         if (elem)
-            elem.checked = scene.activeCamera.useAutoRotationBehavior;
+            elem.checked = this.camera0.useAutoRotationBehavior;
     }
 
     updateCameraAutoRotation(isEnabled) {
-        if (scene.activeCamera.useAutoRotationBehavior) {
+        if (this.camera0.useAutoRotationBehavior) {
             (isEnabled) ?
-                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = -0.1 :
-                scene.activeCamera.autoRotationBehavior.idleRotationSpeed = 0.1;
+                this.camera0.autoRotationBehavior.idleRotationSpeed = -0.1 :
+                this.camera0.autoRotationBehavior.idleRotationSpeed = 0.1;
         }
     }
 
     switchOrtho() {
-        (scene.activeCamera.mode == ORTHOGRAPHIC_CAMERA) ?
+        (this.camera0.mode == ORTHOGRAPHIC_CAMERA) ?
             this.setPersp() : this.setOrtho();
     }
 
@@ -541,22 +541,22 @@ class Camera {
                 position = Vector3(0, 0, -1);
                 break;
             case 'ortho':
-                scene.activeCamera.mode = ORTHOGRAPHIC_CAMERA;
+                this.camera0.mode = ORTHOGRAPHIC_CAMERA;
                 ui.domCameraOrtho.innerHTML = 'Orthographic';
                 break;
             case 'persp':
-                scene.activeCamera.mode = PERSPECTIVE_CAMERA;
+                this.camera0.mode = PERSPECTIVE_CAMERA;
                 ui.domCameraOrtho.innerHTML = 'Perspective';
                 break;
         }
 
         if (position) {
             const center = builder.getCenter();
-            scene.activeCamera.setPosition(position.multiplyByFloats(
-                scene.activeCamera.radius,
-                scene.activeCamera.radius,
-                scene.activeCamera.radius).add(center.clone()));
-            scene.activeCamera.setTarget(center.clone());
+            this.camera0.setPosition(position.multiplyByFloats(
+                this.camera0.radius,
+                this.camera0.radius,
+                this.camera0.radius).add(center.clone()));
+            this.camera0.setTarget(center.clone());
         }
     }
 
@@ -570,7 +570,7 @@ class Camera {
     }
 
     setFov(value) {
-        scene.activeCamera.fov = parseFloat(value);
+        this.camera0.fov = parseFloat(value);
     }
 
     isCameraChange() {
@@ -1220,21 +1220,17 @@ class Builder {
         });
     }
 
-    createMesh() {
-        const mesh = CreateMesh('mesh', scene);
-        const vertexData = VertexData();
-        vertexData.positions = this.positions;
-        vertexData.normals = this.normals;
-        vertexData.uvs = this.uvs;
-        vertexData.colors = this.colors;
-        vertexData.indices = this.indices;
-        vertexData.applyToMesh(mesh);
-        return mesh;
+    setTransformMatrix(idx, position, visible) {
+        const tMatrix = MatrixIdentity();
+        tMatrix.m[12] = position.x;
+        tMatrix.m[13] = position.y;
+        tMatrix.m[14] = position.z;
+        tMatrix.m[0] = tMatrix.m[5] = tMatrix.m[10] = (visible) ? 1 : 0;
+        this.bufferMatrix.set(tMatrix.m, idx * 16);
     }
 
-    createVoxelsFromArray(arr) {
-        this.voxels = arr;
-        this.create();
+    applyBufferMatrix() {
+        this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
     }
 
     getCenter() {
@@ -1295,11 +1291,6 @@ class Builder {
                 voxels[i].position, tMatrix);
 
         return voxels;
-    }
-
-    normalizeVoxelPositions() {
-        const bounds = this.mesh.getBoundingInfo();
-        this.createVoxelsFromArray(this.normalizePositions(this.voxels, bounds));
     }
 
     normalizeVoxelPositionsArray(voxels) {
@@ -1524,6 +1515,11 @@ class Builder {
         this.create();
     }
 
+    normalizeVoxelPositions() {
+        const bounds = this.mesh.getBoundingInfo();
+        this.createVoxelsFromArray(this.normalizePositions(this.voxels, bounds));
+    }
+
     async getOptimizedVoxels(voxels) {
         const msg = await modules.workerPool.postMessage({
             id: 'findInnerVoxels',
@@ -1557,13 +1553,13 @@ class Builder {
         ui.showProgress(0);
     }
 
-    async createRandomIslandColors() {
+    async createGroupsByIslands() {
         if (!await ui.showConfirm('replace all colors?')) return;
 
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].visible = true;
 
-        const islands = this.getVoxelsByIslands(undefined, ui.domRandomIslandsConnected.checked);
+        const islands = this.getVoxelsByIslands(undefined, ui.domGroupIslandsConnected.checked);
         const colors = [];
         let hex = undefined;
 
@@ -1586,6 +1582,11 @@ class Builder {
     }
 
     // Voxel Array Generators
+
+    createVoxelsFromArray(arr) {
+        this.voxels = arr;
+        this.create();
+    }
 
     createArrayFromStringData(str) {
         const arr = [];
@@ -1656,6 +1657,18 @@ class Builder {
         this.voxels = this.createArrayFromStringData(data);
         this.create();
     }
+
+    createMesh() {
+        const mesh = CreateMesh('mesh', scene);
+        const vertexData = VertexData();
+        vertexData.positions = this.positions;
+        vertexData.normals = this.normals;
+        vertexData.uvs = this.uvs;
+        vertexData.colors = this.colors;
+        vertexData.indices = this.indices;
+        vertexData.applyToMesh(mesh);
+        return mesh;
+    }
 }
 
 
@@ -1692,6 +1705,7 @@ class Bakery {
             plane.rotation.y = rotY;
             this.planes.push(plane);
         } else {
+            // shared faces by color groups
             if (voxel.color !== builder.voxels[idx].color) {
                 const plane = this.constructPlane(voxel.color);
                 plane.position = voxel.position.add(position);
@@ -1745,7 +1759,7 @@ class Bakery {
         });
     }
 
-    bakeVoxels() {
+    bakeColors() {
         pool.dispose();
 
         for (let i = 0; i < builder.uniqueColors.length; i++)
@@ -1759,7 +1773,43 @@ class Bakery {
         }, 100);
     }
 
-    bakeColor(hex) {
+    bakeIslands() {
+        pool.dispose();
+
+        const islands = builder.getVoxelsByIslands(undefined, ui.domBakeryIslandsConnected.checked);
+
+        if (islands.length > 0) {
+            let arr = [];
+
+            for (let i = 0; i < islands.length; i++) {
+                arr = [];
+
+                for (let j = 0; j < islands[i].length; j++) {
+                    const idx = builder.getIndexAtPosition(islands[i][j]);
+                    if (idx !== undefined) {
+                        arr.push({
+                            position: islands[i][j],
+                            color: builder.voxels[idx].color,
+                            visible: true
+                        });
+                    }
+                }
+
+                this.bakeToMesh(arr);
+            }
+
+            setTimeout(() => {
+                if (MODE !== 2) {
+                    pool.setPoolVisibility(false);
+                    ui.notification('baked');
+                }
+            }, 100);
+
+            arr = undefined;
+        }
+    }
+
+    /* bakeColor(hex) {
         this.bakeToMesh(builder.getVoxelsByColor(hex));
 
         setTimeout(() => {
@@ -1768,7 +1818,7 @@ class Bakery {
                 ui.notification('baked');
             }
         }, 100);
-    }
+    } */
 }
 
 
@@ -2536,8 +2586,8 @@ class Helper {
     }
     
     fixEdgesWidth(mesh) { // TODO
-        mesh.edgesWidth = scene.activeCamera.radius / 8;
-        if (scene.activeCamera.mode == ORTHOGRAPHIC_CAMERA)
+        mesh.edgesWidth = camera.camera0.radius / 8;
+        if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
             mesh.edgesWidth /= 6;
     }
 }
@@ -2763,7 +2813,7 @@ class Tool {
     }
 
     init() {
-        this.toolSelector(this.name);
+        this.toolSelector(this.name, false);
     }
 
     add(pos) {
@@ -2819,10 +2869,21 @@ class Tool {
         }
     }
 
-    bucket(hex) {
+    bucketGroup(hex) {
         for (let i = 0; i < builder.voxels.length; i++) {
             if (builder.voxels[i].color === hex)
                 builder.voxels[i].color = currentColor;
+        }
+    }
+
+    bucketIsland(pos) {
+        const islands = builder.getVoxelsByIslands(pos, false);
+        if (islands.length > 0) {
+            for (let i = 0; i < islands[0].length; i++) {
+                const idx = builder.getIndexAtPosition(islands[0][i]);
+                if (idx !== undefined)
+                    builder.voxels[idx].color = currentColor;
+            }
         }
     }
 
@@ -3017,8 +3078,11 @@ class Tool {
             case 'eyedropper':
                 this.eyedropper(builder.voxels[index].color);
                 break;
-            case 'bucket':
-                this.bucket(builder.voxels[index].color);
+            case 'bucket_group':
+                this.bucketGroup(builder.voxels[index].color);
+                break;
+            case 'bucket_island':
+                this.bucketIsland(this.pos);
                 break;
             case 'hide_color':
                 builder.setVoxelsVisibilityByColor(builder.voxels[index].color, false);
@@ -3083,12 +3147,15 @@ class Tool {
             case 'transform_visible':
                 xformer.begin(builder.getVoxelsByVisibility(true));
                 break;
+            case 'bridge':
+                ghosts.addThinOne(this.pos, currentColor);
+                this.addBridge(this.pos, norm);
+                if (this.isSymmetry)
+                    ghosts.addThinOne(symmetry.invertPos(this.pos), currentColor);
+                break;
             case 'measure_volume':
                 this.addNoHelper(this.pos); // allow 1 voxel
                 this.startBox = this.pos;
-                break;
-            case 'bake_color':
-                bakery.bakeColor(builder.voxels[index].color);
                 break;
             case 'frame_color':
                 camera.frameColor(builder.voxels[index].color);
@@ -3097,8 +3164,8 @@ class Tool {
                 this.addNoHelper(this.pos); // allow 1 voxel
                 this.startBox = this.pos;
                 break;
-            case 'bridge':
-                this.addBridge(this.pos, norm);
+            case 'frame_island':
+                this.selected = builder.getVoxelsByIslands(this.pos, false);
                 break;
         }
     }
@@ -3169,6 +3236,12 @@ class Tool {
                 if (this.startRect)
                     this.rectSelect(this.startRect);
                 break;
+            case 'bridge':
+                ghosts.addThinOne(this.pos, currentColor);
+                this.addBridge(this.pos, norm);
+                if (this.isSymmetry)
+                    ghosts.addThinOne(symmetry.invertPos(this.pos), currentColor);
+                break;
             case 'measure_volume':
                 if (this.startBox)
                     this.boxSelect(this.startBox, this.pos, this.posNorm, COL_ORANGE_RGB);
@@ -3199,7 +3272,10 @@ class Tool {
             case 'paint':
                 builder.create();
                 break;
-            case 'bucket':
+            case 'bucket_group':
+                builder.create();
+                break;
+            case 'bucket_island':
                 builder.create();
                 break;
             case 'box_add':
@@ -3260,6 +3336,13 @@ class Tool {
                     xformer.begin(this.tmp);
                 }
                 break;
+            case 'bridge':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, currentColor, true);
+                    builder.addArray(this.tmp);
+                    builder.create();
+                }
+                break;
             case 'measure_volume':
                 if (this.selected.length > 0)
                     (this.selected.length == 1) ? 
@@ -3272,11 +3355,10 @@ class Tool {
                     camera.frameVoxels(this.tmp);
                 }
                 break;
-            case 'bridge':
+            case 'frame_island':
                 if (this.selected.length > 0) {
-                    this.tmp = builder.createArrayFromNewPositions(this.selected, currentColor, false);
-                    builder.addArray(this.tmp);
-                    builder.create();
+                    this.tmp = builder.createArrayFromPositions(this.selected[0], false);
+                    camera.frameVoxels(this.tmp);
                 }
                 break;
         }
@@ -3290,13 +3372,13 @@ class Tool {
                         xformer.apply();
                         pointer.isDown = false;
                         scene.stopAnimation(camera.camera0);
-                        scene.activeCamera.detachControl(canvas);
+                        camera.camera0.detachControl(canvas);
                     }
                     return;
                 }
                 
                 scene.stopAnimation(camera.camera0);
-                scene.activeCamera.detachControl(canvas);
+                camera.camera0.detachControl(canvas);
 
                 if (pixelReadWhiteList.includes(this.name))
                     this.indexes = await builder.getIndexesAtTarget(0, 0, window.innerWidth, window.innerHeight);
@@ -3441,7 +3523,7 @@ class Tool {
                 } else {
                     helper.clearOverlays();
                     if (!camera.isCameraChange())
-                        scene.activeCamera.detachControl(canvas);
+                        camera.camera0.detachControl(canvas);
                 }
     
             } else {
@@ -3465,14 +3547,14 @@ class Tool {
                     } else {
                         helper.clearOverlays();
                         if (!camera.isCameraChange())
-                            scene.activeCamera.detachControl(canvas);
+                            camera.camera0.detachControl(canvas);
                     }
                 }
             }
         });
     }
 
-    toolSelector(toolName, finishTransforms = false) {
+    toolSelector(toolName, applyTransforms = true) {
         this.name = toolName;
 
         const elems = document.getElementsByClassName('tool_' + this.name);
@@ -3485,7 +3567,7 @@ class Tool {
         for (let i = 0; i < elems.length; i++)
             elems[i].classList.add("tool_selector");
 
-        if (xformer.isActive && finishTransforms)
+        if (applyTransforms)
             xformer.apply();
 
         helper.clearOverlays();
@@ -3537,11 +3619,12 @@ class ToolMesh {
 class XFormer {
     constructor() {
         this.root = undefined;
+        this.startPos = undefined;
+        this.xforms = [];
         this.isActive = false;
         this.isNewObject = false;
         this.isColorChanged = false;
-        this.xforms = [];
-        this.startPos = undefined;
+        this.isShiftKeyMode = false;
     }
 
     init() {
@@ -3551,8 +3634,8 @@ class XFormer {
     begin(voxels) {
         if (voxels.length == 0) return;
 
-        if (ui.domTransformClone.checked) {
-            this.beginClone(voxels);
+        if (ui.domTransformClone.checked || this.isShiftKeyMode) {
+            this.beginNew(voxels, true);
             return;
         }
 
@@ -3568,34 +3651,21 @@ class XFormer {
         this.startPos = this.root.position.clone();
 
         for (let i = 0; i < this.xforms.length; i++)
-            builder.voxels[ this.xforms[i].idx ].visible = false;
-        builder.create(false);
+            builder.setTransformMatrix(this.xforms[i].idx, this.xforms[i].position, false);
+
+        builder.applyBufferMatrix(); // creates the illusion of transform
 
         this.isActive = true;
     }
 
-    beginClone(voxels) {
-        this.xforms = voxels.slice(0);
-
-        ghosts.createThin(voxels);
-        ghosts.setThinHighlight(0.4);
-        
-        this.root.position.copyFrom(ghosts.getCenter());
-        ghosts.thin.setParent(this.root);
-
-        uix.bindVoxelGizmo(this.root);
-        this.startPos = this.root.position.clone();
-
-        this.isActive = true;
-        this.isNewObject = true;
-    }
-
-    beginNewObject(voxels) {
+    beginNew(voxels, isClone = false) {
         if (voxels.length == 0) return;
 
         this.xforms = voxels.slice(0);
 
-        tool.toolSelector('camera');
+        if (!isClone)
+            tool.toolSelector('camera', false);
+
         ghosts.createThin(voxels);
         ghosts.setThinHighlight(0.4);
         
@@ -3610,26 +3680,15 @@ class XFormer {
     }
 
     finish() {
-        if (!this.isNewObject) {
-            const p = this.root.position.subtract(this.startPos);
+        const p = this.root.position.subtract(this.startPos);
 
+        if (!this.isNewObject) {
             if (!p.equals(VEC3_ZERO)) { // change on move
 
-                for (let i = 0; i < this.xforms.length; i++) {
-                    builder.voxels[ this.xforms[i].idx ].position.addInPlace(p);
-                    builder.voxels[ this.xforms[i].idx ].visible = true;
-                }
-            } else {
                 for (let i = 0; i < this.xforms.length; i++)
-                    builder.voxels[ this.xforms[i].idx ].visible = true;
+                    builder.voxels[ this.xforms[i].idx ].position.addInPlace(p);
             }
-        }
-    }
-
-    finishNewObject() {
-        if (this.isNewObject) {
-            const p = this.root.position.subtract(this.startPos);
-            
+        } else {
             if (this.isColorChanged) {
                 for (let i = 0; i < this.xforms.length; i++)
                     builder.add(this.xforms[i].position.add(p), currentColor, true);
@@ -3641,34 +3700,39 @@ class XFormer {
     }
 
     apply() {
-        if (this.isActive || this.isNewObject) {
+        if (this.isActive) {
             this.finish();
-            this.finishNewObject();
             this.dispose();
-
             builder.create();
         }
     }
 
-    dispose() {
+    cancel() {
+        if (this.isActive) {
+            this.dispose();
+            builder.create();
+        }
+    }
+
+    dispose() { // private
+        this.xforms = [];
         this.isActive = false;
         this.isNewObject = false;
         this.isColorChanged = false;
+        this.isShiftKeyMode = false;
 
         uix.unbindVoxelGizmo();
         
         ghosts.thin.setParent(null);
         ghosts.disposeThin();
-        
-        this.xforms = [];
     }
 
     deleteSelected() {
         if (this.isActive) {
-            if (!ui.domTransformClone.checked)
+            if (!ui.domTransformClone.checked && !this.isShiftKeyMode)
                 builder.removeArray(this.xforms);
-            builder.create();
-            this.dispose();
+            
+            this.cancel();
         }
     }
 
@@ -3676,7 +3740,7 @@ class XFormer {
         if (this.isActive) {
             ghosts.setThinColor(currentColor);
 
-            if (!ui.domTransformClone.checked)
+            if (!ui.domTransformClone.checked && !this.isShiftKeyMode)
                 for (let i = 0; i < this.xforms.length; i++)
                     this.xforms[i].color = currentColor;
 
@@ -3695,7 +3759,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.4",
+            version: "Voxel Builder 4.6.5",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3837,7 +3901,7 @@ class Project {
     importVoxels(data) {        
         ui.setMode(0);
         const voxels = builder.createArrayFromStringData(JSON.parse(data).data.voxels);
-        xformer.beginNewObject(voxels);
+        xformer.beginNew(voxels);
     }
 
     importBakes(url) {
@@ -3951,7 +4015,7 @@ class Project {
             const canvasHeight = canvas.height;
             engine.engine.setSize(canvasWidth * scale, canvasHeight * scale);
             isRenderAxisView = false;
-            CreateScreenshotWithResizeAsync(engine.engine, scene.activeCamera, canvasWidth * scale, canvasHeight * scale, () => {
+            CreateScreenshotWithResizeAsync(engine.engine, camera.camera0, canvasWidth * scale, canvasHeight * scale, () => {
                     isRenderAxisView = true;
                     engine.engine.setSize(canvasWidth, canvasHeight);
                     scene.autoClear = true;
@@ -3962,7 +4026,7 @@ class Project {
     createScreenshotBasic(width, height, callback) {
         scene.clearColor = COL_CLEAR_RGBA;
         isRenderAxisView = false;
-        CreateScreenshot(engine.engine, scene.activeCamera, width, height, (data) => {
+        CreateScreenshot(engine.engine, camera.camera0, width, height, (data) => {
                 isRenderAxisView = true;
                 scene.clearColor = (preferences.isBackgroundColor()) ?
                     color4FromHex(preferences.getBackgroundColor()) :
@@ -3994,6 +4058,7 @@ class Memory {
     undo() {
         --this.block;
         if (this.stack[this.block]) {
+            xformer.cancel();
             builder.setStringData(this.stack[this.block]);
         } else {
             ++this.block;
@@ -4078,7 +4143,7 @@ class Snapshot {
             project.resetSceneSetup();
         } else {
             const voxels = builder.createArrayFromStringData(data);
-            xformer.beginNewObject(voxels);
+            xformer.beginNew(voxels);
         }
     }
 
@@ -4509,11 +4574,11 @@ class UserInterface {
         this.domToolBoxHeight = document.getElementById('input-tool-boxheight');
         this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
         this.domToolRectAddBypass = document.getElementById('input-tool-rectadd-bypass');
-        this.domToolBakeColor = document.getElementsByClassName('tool_bake_color')[0];
         this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domTransformIslandConnected = document.getElementById('input-transform-island-connected');
-        this.domRandomIslandsConnected = document.getElementById('input-randomislands-connected');
+        this.domGroupIslandsConnected = document.getElementById('input-groupislands-connected');
+        this.domBakeryIslandsConnected = document.getElementById('input-bake-islands-connected');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
         this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
         this.domVoxelizerVertical = document.getElementById('input-voxelizer-vertical');
@@ -4729,6 +4794,8 @@ class UserInterface {
         if (MODE == mode) return;
         MODE = mode;
 
+        xformer.apply();
+
         if (mode == 0) {
             modules.sandbox.deactivate();
             builder.setMeshVisibility(true);
@@ -4938,7 +5005,7 @@ class UserInterface {
         return true;
     }
 
-    toggleDebugLayer() {
+    toggleInspector() {
         if (scene.debugLayer.isVisible()) {
             scene.debugLayer.hide();
         } else {
@@ -5445,14 +5512,17 @@ window.addEventListener('wheel', (ev) => {
 
 document.addEventListener("keydown", (ev) => {
     if (ev.target.matches(".ignorekeys")) return;
-    if (ev.ctrlKey && ev.key == '/') ui.toggleDebugLayer();
+    if (ev.ctrlKey && ev.key == '/') ui.toggleInspector();
     if (scene.debugLayer.isVisible()) return;
     if (modules.colorPicker.isActive) return;
+
+    if (ev.shiftKey) // true or no-action
+        xformer.isShiftKeyMode = true;
 
     if (MODE == 0 && !tool.last && !pointer.isDown) {
         if (ev.altKey || ev.key == ' ') {
             tool.last = tool.name;
-            tool.toolSelector('camera');
+            tool.toolSelector('camera', false);
             return;
         }
     }
@@ -5460,44 +5530,43 @@ document.addEventListener("keydown", (ev) => {
     switch (ev.key.toLowerCase()) {
         case 'enter':
             if (ev.target instanceof HTMLButtonElement) return;
-            if (xformer.isActive)
-                xformer.apply();
+            xformer.apply();
             break;
         case '`':
-            tool.toolSelector('camera', true);
+            tool.toolSelector('camera');
             break;
         case '1':
-            tool.toolSelector('add', true);
+            tool.toolSelector('add');
             break;
         case '2':
-            tool.toolSelector('remove', true);
+            tool.toolSelector('remove');
             break;
         case '3':
-            tool.toolSelector('box_add', true);
+            tool.toolSelector('box_add');
             break;
         case '4':
-            tool.toolSelector('box_remove', true);
+            tool.toolSelector('box_remove');
             break;
         case '5':
-            tool.toolSelector('paint', true);
+            tool.toolSelector('paint');
             break;
         case '6':
-            tool.toolSelector('box_paint', true);
+            tool.toolSelector('box_paint');
             break;
         case '7':
-            tool.toolSelector('bucket', true);
+            tool.toolSelector('bucket_group');
             break;
         case '8':
-            tool.toolSelector('eyedropper', true);
+            tool.toolSelector('eyedropper');
             break;
         case 't':
-            tool.toolSelector('transform_box', true);
+            tool.toolSelector('transform_box');
             break;
         case 's':
             symmetry.switchAxis();
             break;
         case 'c':
-            tool.toolSelector('camera', true);
+            tool.toolSelector('camera');
             break;
         case 'delete':
             if (MODE == 0) {
@@ -5517,7 +5586,7 @@ document.addEventListener("keydown", (ev) => {
             break;
     }
     
-    if (MODE == 0 && !xformer.isActive) {
+    if (MODE == 0) {
         if (ev.ctrlKey && ev.key.toLowerCase() === 'z') {
             ev.preventDefault();
             memory.undo();
@@ -5531,7 +5600,7 @@ document.addEventListener("keydown", (ev) => {
 
 document.addEventListener("keyup", () => {
     if (tool.last) {
-        tool.toolSelector(tool.last);
+        tool.toolSelector(tool.last, false);
         tool.last = undefined;
     }
 }, false);
@@ -5542,6 +5611,7 @@ document.addEventListener("keyup", () => {
 
 
 function fileHandler(file) {
+    xformer.cancel();
     const ext = file.name.split('.').pop().toLowerCase(); //ext|exts
     const url = URL.createObjectURL(file);
     const reader = new FileReader();
@@ -5656,41 +5726,34 @@ document.getElementById('tab-export').onclick = () => {
 };
 
 ui.domToolbarScreenTopMem.children[0].onclick = () => {
-    if (!xformer.isActive)
-        memory.undo();
+    memory.undo();
 };
 
 ui.domToolbarScreenTopMem.children[1].onclick = () => {
-    if (!xformer.isActive)
-        memory.redo();
+    memory.redo();
 };
 
-ui.domMenus.onpointerdown = (ev) => {
-    if (MODE == 0 && ev.target.parentElement !== ui.domToolbarScreenTopMem) {
-        if (xformer.isActive)
-            xformer.apply();
-    }
-};
-
-ui.domToolbarScreenStorage.onpointerdown = () => {
-    if (xformer.isActive)
+ui.domMenus.onpointerdown = () => {
+    if (MODE == 0)
         xformer.apply();
 };
 
 ui.domToolbarScreenStorage.children[0].onclick = () => {
+    xformer.apply();
     snapshot.getStorageVoxelsQuick();
 };
 
 ui.domToolbarScreenStorage.children[1].onclick = () => {
+    xformer.apply();
     snapshot.setStorageVoxelsQuick();
 };
 
 ui.domToolbarScreenExport.children[0].onclick = async () => {
     if (pool.meshes.length > 0) {
         if (await ui.showConfirm("Replace all baked meshes?"))
-            bakery.bakeVoxels();
+            bakery.bakeColors();
     } else {
-        bakery.bakeVoxels();
+        bakery.bakeColors();
     }
 };
 
@@ -5705,12 +5768,12 @@ ui.domToolbarScreenMaterial.children[0].oninput = (ev) => {
 
 ui.domToolbarScreenMaterial.children[1].onclick = () => {
     if (ui.checkMode(0))
-        tool.toolSelector('bucket', true);
+        tool.toolSelector('bucket_group');
 };
 
 ui.domToolbarScreenMaterial.children[2].onclick = () => {
     if (ui.checkMode(0))
-        tool.toolSelector('eyedropper', true);
+        tool.toolSelector('eyedropper');
 };
 
 ui.domToolbarScreenMaterial.children[3].onclick = () => {
@@ -5730,11 +5793,6 @@ ui.domToolbarScreenRender.children[1].onclick = () => {
 ui.domToolbarScreenRender.children[2].onclick = () => {
     if (modules.sandbox.isActive())
         modules.sandbox.shot();
-};
-
-ui.domHover.onpointerdown = () => {
-    if (xformer.isActive)
-        xformer.apply();
 };
 
 ui.domHoverItems[0].onclick = () => {
@@ -5909,8 +5967,11 @@ ui.domCameraAutoRotationCCW.onchange = (ev) => {
 ui.domVoxelizerText.onkeydown = (ev) => {
     if (ev.key === 'Enter' && ui.domVoxelizerTextNewScene.checked)
         ui.notification('uncheck new scene', 1000);
-    if (ui.checkMode(0) && ev.key === 'Enter' && !ui.domVoxelizerTextNewScene.checked)
+
+    if (ui.checkMode(0) && ev.key === 'Enter' && !ui.domVoxelizerTextNewScene.checked) {
         modules.voxelizer.voxelize2DText();
+        ev.target.blur();
+    }
 };
 
 ui.domSymmAxisS.onclick = () => {
@@ -5973,13 +6034,6 @@ ui.domDebugPick.onchange = (ev) => {
         helper.overlayPlane.renderingGroupId = 0;
 };
 
-document.getElementById('normalize_voxels').onclick = async () => {
-    if (ui.checkMode(0) && await ui.showConfirm('normalize voxel positions?')) {
-        builder.normalizeVoxelPositions();
-        camera.flagFrame = 1;
-    }
-};
-
 document.getElementById('input-newbox-coord').onkeydown = (ev) => {
     if (ev.key == 'Enter' && ui.checkMode(0)) {
         const str = ev.target.value.split(',');
@@ -5992,70 +6046,79 @@ document.getElementById('input-newbox-coord').onkeydown = (ev) => {
     }
 };
 
-document.getElementById('about_shortcuts').onclick = () =>          { ui.toggleElem(document.getElementById('shortcuts')) };
-document.getElementById('about_examples').onchange = (ev) =>        { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
-document.getElementById('about_examples_vox').onchange = (ev) =>    { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
-document.getElementById('fullscreen').onclick = () =>               { toggleFullscreen() };
-document.getElementById('reload_app').onclick = async () =>         { if (await ui.showConfirm('reload the application?')) window.location.reload() };
-document.getElementById('reset_hover').onclick = () =>              { modules.hover.resetTranslate() };
-document.getElementById('camera_frame').onclick = () =>             { camera.frame() };
-document.getElementById('btn_tool_frame_color').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
-document.getElementById('btn_tool_frame_voxels').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
-document.getElementById('camera_preset_top').onclick = () =>        { camera.setOrtho(); camera.setView('y'); };
-document.getElementById('camera_preset_bottom').onclick = () =>     { camera.setOrtho(); camera.setView('-y'); };
-document.getElementById('camera_preset_right').onclick = () =>      { camera.setOrtho(); camera.setView('x'); };
-document.getElementById('camera_preset_left').onclick = () =>       { camera.setOrtho(); camera.setView('-x'); };
-document.getElementById('hdr_dropdown').onchange = (ev) =>          { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
-document.getElementById('unload_hdr').onclick = () =>               { hdri.unloadHDR(true) };
-document.getElementById('new_project').onclick = () =>              { project.newProject() };
-document.getElementById('save_project').onclick = () =>             { project.save() };
-document.getElementById('save_snapshots').onclick = () =>           { snapshot.saveSnapshots() };
-document.getElementById('export_voxels').onclick = () =>            { project.exportVoxels(ui.domProjectName.value) };
-document.getElementById('export_meshes').onclick = () =>            { project.exportMeshes(ui.domProjectName.value, ui.domExportFormat.value) };
-document.getElementById('unbake_meshes').onclick = () =>            { pool.unbakeMeshes() };
-document.getElementById('screenshot').onclick = () =>               { project.createScreenshot() };
-document.getElementById('create_box').onclick = () =>               { if (ui.checkMode(0)) modules.generator.createBox() };
-document.getElementById('create_plane').onclick = () =>             { if (ui.checkMode(0)) modules.generator.createBox(true) };
-document.getElementById('create_isometric').onclick = () =>         { if (ui.checkMode(0)) modules.generator.createIsometric() };
-document.getElementById('create_sphere').onclick = () =>            { if (ui.checkMode(0)) modules.generator.createSphere() };
-document.getElementById('create_terrain').onclick = () =>           { if (ui.checkMode(0)) modules.generator.createTerrain() };
-document.getElementById('voxelize_text').onclick = () =>            { if (ui.checkMode(0)) modules.voxelizer.voxelize2DText() };
-document.getElementById('symm_p2n').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(1) };
-document.getElementById('symm_n2p').onclick = () =>                 { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(-1) };
-document.getElementById('symm_mirror').onclick = () =>              { if (ui.checkMode(0)) symmetry.mirrorVoxels() };
-document.getElementById('symm_p_half').onclick = () =>              { if (ui.checkMode(0)) symmetry.deleteHalfVoxels(-1) };
-document.getElementById('symm_n_half').onclick = () =>              { if (ui.checkMode(0)) symmetry.deleteHalfVoxels(1) };
-document.getElementById('btn_tool_add').onclick = () =>             { if (ui.checkMode(0)) tool.toolSelector('add') };
-document.getElementById('btn_tool_remove').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('remove') };
-document.getElementById('btn_tool_bridge').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bridge') };
-document.getElementById('btn_tool_box_add').onclick = () =>         { if (ui.checkMode(0)) tool.toolSelector('box_add') };
-document.getElementById('btn_tool_box_remove').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('box_remove') };
-document.getElementById('btn_tool_rect_add').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('rect_add') };
-document.getElementById('btn_tool_rect_remove').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('rect_remove') };
-document.getElementById('btn_tool_paint').onclick = () =>           { if (ui.checkMode(0)) tool.toolSelector('paint') };
-document.getElementById('btn_tool_box_paint').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('box_paint') };
-document.getElementById('btn_tool_rect_paint').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('rect_paint') };
-document.getElementById('btn_tool_bucket').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bucket') };
-document.getElementById('paint_all').onclick = () =>                { if (ui.checkMode(0)) builder.setColorsAndUpdate() };
-document.getElementById('btn_tool_eyedropper').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('eyedropper') };
-document.getElementById('btn_tool_transform_box').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('transform_box') };
-document.getElementById('btn_tool_transform_rect').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('transform_rect') };
-document.getElementById('btn_tool_transform_group').onclick = () => { if (ui.checkMode(0)) tool.toolSelector('transform_group') };
-document.getElementById('btn_tool_transform_island').onclick = () =>{ if (ui.checkMode(0)) tool.toolSelector('transform_island') };
-document.getElementById('btn_tool_transform_visible').onclick = ()=>{ if (ui.checkMode(0)) tool.toolSelector('transform_visible') };
-document.getElementById('btn_tool_measure_volume').onclick = () =>  { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
-document.getElementById('btn_optimize_voxels').onclick = () =>      { if (ui.checkMode(0)) builder.optimizeVoxelsAndUpdate() };
-document.getElementById('bakery_bake').onclick = () =>              { bakery.bakeVoxels() };
-document.getElementById('btn_tool_bakecolor').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('bake_color') };
-document.getElementById('delete_bake_all').onclick = () =>          { pool.dispose(true) };
-document.getElementById('delete_bake').onclick = () =>              { if (ui.checkMode(2)) pool.deleteSelected() };
-document.getElementById('create_random_islands').onclick = () =>    { if (ui.checkMode(0)) builder.createRandomIslandColors() };
-document.getElementById('btn_tool_isolate_color').onclick = () =>   { if (ui.checkMode(0)) tool.toolSelector('isolate_color') };
-document.getElementById('btn_tool_hide_color').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('hide_color') };
-document.getElementById('invert_visibility').onclick = () =>        { if (ui.checkMode(0)) builder.invertVisibility(); builder.create(); };
-document.getElementById('unhide_all').onclick = () =>               { if (ui.checkMode(0)) builder.setVoxelsVisibility(true); builder.create(); };
-document.getElementById('btn_tool_delete_color').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('delete_color') };
-document.getElementById('delete_hidden').onclick = () =>            { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
+document.getElementById('btn_action_normalize').onclick = async () => {
+    if (ui.checkMode(0) && await ui.showConfirm('normalize voxel positions?')) {
+        builder.normalizeVoxelPositions();
+        camera.flagFrame = 1;
+    }
+};
+
+document.getElementById('btn_action_about_shortcuts').onclick = () =>   { ui.toggleElem(document.getElementById('shortcuts')) };
+document.getElementById('btn_action_about_examples').onchange = (ev) => { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('btn_action_about_examples_vox').onchange = (ev) => { project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('btn_action_fullscreen').onclick = () =>        { toggleFullscreen() };
+document.getElementById('btn_action_reloadapp').onclick = async () =>   { if (await ui.showConfirm('reload the application?')) window.location.reload() };
+document.getElementById('btn_action_resethover').onclick = () =>        { modules.hover.resetTranslate() };
+document.getElementById('btn_action_camera_frame').onclick = () =>      { camera.frame() };
+document.getElementById('btn_tool_frame_color').onclick = () =>         { if (ui.checkMode(0)) tool.toolSelector('frame_color') };
+document.getElementById('btn_tool_frame_voxels').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('frame_voxels') };
+document.getElementById('btn_tool_frame_island').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('frame_island') };
+document.getElementById('btn_action_camera_preset_top').onclick = () => { camera.setOrtho(); camera.setView('y'); };
+document.getElementById('btn_action_camera_preset_bottom').onclick = () => { camera.setOrtho(); camera.setView('-y'); };
+document.getElementById('btn_action_camera_preset_right').onclick = () => { camera.setOrtho(); camera.setView('x'); };
+document.getElementById('btn_action_camera_preset_left').onclick = () => { camera.setOrtho(); camera.setView('-x'); };
+document.getElementById('btn_action_hdr_dropdown').onchange = (ev) =>   { hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value) };
+document.getElementById('btn_action_hdr_unload').onclick = () =>        { hdri.unloadHDR(true) };
+document.getElementById('btn_action_project_new').onclick = () =>       { project.newProject() };
+document.getElementById('btn_action_project_save').onclick = () =>      { project.save() };
+document.getElementById('btn_action_snapshots_save').onclick = () =>    { snapshot.saveSnapshots() };
+document.getElementById('btn_action_export_voxels').onclick = () =>     { project.exportVoxels(ui.domProjectName.value) };
+document.getElementById('btn_action_export_meshes').onclick = () =>     { project.exportMeshes(ui.domProjectName.value, ui.domExportFormat.value) };
+document.getElementById('btn_action_unbake_meshes').onclick = () =>     { pool.unbakeMeshes() };
+document.getElementById('btn_action_screenshot').onclick = () =>        { project.createScreenshot() };
+document.getElementById('btn_action_create_box').onclick = () =>        { if (ui.checkMode(0)) modules.generator.createBox() };
+document.getElementById('btn_action_create_plane').onclick = () =>      { if (ui.checkMode(0)) modules.generator.createBox(true) };
+document.getElementById('btn_action_create_isometric').onclick = () =>  { if (ui.checkMode(0)) modules.generator.createIsometric() };
+document.getElementById('btn_action_create_sphere').onclick = () =>     { if (ui.checkMode(0)) modules.generator.createSphere() };
+document.getElementById('btn_action_create_terrain').onclick = () =>    { if (ui.checkMode(0)) modules.generator.createTerrain() };
+document.getElementById('btn_action_voxelize_text').onclick = () =>     { if (ui.checkMode(0)) modules.voxelizer.voxelize2DText() };
+document.getElementById('btn_action_symm_p2n').onclick = () =>          { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(1) };
+document.getElementById('btn_action_symm_n2p').onclick = () =>          { if (ui.checkMode(0)) symmetry.symmetrizeVoxels(-1) };
+document.getElementById('btn_action_symm_mirror').onclick = () =>       { if (ui.checkMode(0)) symmetry.mirrorVoxels() };
+document.getElementById('btn_action_symm_half_p').onclick = () =>       { if (ui.checkMode(0)) symmetry.deleteHalfVoxels(-1) };
+document.getElementById('btn_action_symm_half_n').onclick = () =>       { if (ui.checkMode(0)) symmetry.deleteHalfVoxels(1) };
+document.getElementById('btn_tool_add').onclick = () =>                 { if (ui.checkMode(0)) tool.toolSelector('add') };
+document.getElementById('btn_tool_remove').onclick = () =>              { if (ui.checkMode(0)) tool.toolSelector('remove') };
+document.getElementById('btn_tool_bridge').onclick = () =>              { if (ui.checkMode(0)) tool.toolSelector('bridge') };
+document.getElementById('btn_tool_box_add').onclick = () =>             { if (ui.checkMode(0)) tool.toolSelector('box_add') };
+document.getElementById('btn_tool_box_remove').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('box_remove') };
+document.getElementById('btn_tool_rect_add').onclick = () =>            { if (ui.checkMode(0)) tool.toolSelector('rect_add') };
+document.getElementById('btn_tool_rect_remove').onclick = () =>         { if (ui.checkMode(0)) tool.toolSelector('rect_remove') };
+document.getElementById('btn_tool_paint').onclick = () =>               { if (ui.checkMode(0)) tool.toolSelector('paint') };
+document.getElementById('btn_tool_box_paint').onclick = () =>           { if (ui.checkMode(0)) tool.toolSelector('box_paint') };
+document.getElementById('btn_tool_rect_paint').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('rect_paint') };
+document.getElementById('btn_tool_bucket_group').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('bucket_group') };
+document.getElementById('btn_tool_bucket_island').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('bucket_island') };
+document.getElementById('btn_action_paint_all').onclick = () =>         { if (ui.checkMode(0)) builder.setColorsAndUpdate() };
+document.getElementById('btn_tool_eyedropper').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('eyedropper') };
+document.getElementById('btn_tool_transform_box').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('transform_box') };
+document.getElementById('btn_tool_transform_rect').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('transform_rect') };
+document.getElementById('btn_tool_transform_group').onclick = () =>     { if (ui.checkMode(0)) tool.toolSelector('transform_group') };
+document.getElementById('btn_tool_transform_island').onclick = () =>    { if (ui.checkMode(0)) tool.toolSelector('transform_island') };
+document.getElementById('btn_tool_transform_visible').onclick = ()=>    { if (ui.checkMode(0)) tool.toolSelector('transform_visible') };
+document.getElementById('btn_tool_measure_volume').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
+document.getElementById('btn_action_optimize').onclick = () =>          { if (ui.checkMode(0)) builder.optimizeVoxelsAndUpdate() };
+document.getElementById('btn_action_bakery_bake_colors').onclick = () => { bakery.bakeColors() };
+document.getElementById('btn_action_bakery_bake_islands').onclick = () => { bakery.bakeIslands() };
+document.getElementById('btn_action_bakery_delete_all').onclick = () => { pool.dispose(true) };
+document.getElementById('btn_action_bakery_delete').onclick = () =>     { if (ui.checkMode(2)) pool.deleteSelected() };
+document.getElementById('btn_action_groupislands').onclick = () =>      { if (ui.checkMode(0)) builder.createGroupsByIslands() };
+document.getElementById('btn_tool_isolate_color').onclick = () =>       { if (ui.checkMode(0)) tool.toolSelector('isolate_color') };
+document.getElementById('btn_tool_hide_color').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('hide_color') };
+document.getElementById('btn_action_invertvisibility').onclick = () =>  { if (ui.checkMode(0)) builder.invertVisibility(); builder.create(); };
+document.getElementById('btn_action_unhideall').onclick = () =>         { if (ui.checkMode(0)) builder.setVoxelsVisibility(true); builder.create(); };
+document.getElementById('btn_tool_delete_color').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('delete_color') };
+document.getElementById('btn_action_deletehidden').onclick = () =>      { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
 
 
 // -------------------------------------------------------
