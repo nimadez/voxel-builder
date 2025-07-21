@@ -5,19 +5,20 @@
     Voxelizer
 */
 
-import { Vector3, MergeMeshes, LoadAssetContainerAsync } from "../babylon.js";
+import { Vector3, MergeMeshes } from "../babylon.js";
 import { builder, pool, xformer, project, ui, preferences } from "../core.js";
+import { loaders } from "../loaders/loaders.js";
 import { rcv } from './raycaster.js';
 
 
 class Voxelizer {
     constructor() {}
 
-    voxelizeMesh(mesh, scale) {
-        scale = parseInt(scale);
+    voxelizeMesh(mesh) {
+        const scale = parseInt(ui.domVoxelizerScale.value);
 
         pool.normalizeMesh(mesh, scale);
-        const data = rcv.mesh_voxel(mesh, preferences.getRenderShadeColor());
+        const data = rcv.voxelizeMesh(mesh, preferences.getRenderShadeColor());
         
         builder.createVoxelsFromArray(data);
         project.resetSceneSetup();
@@ -27,7 +28,7 @@ class Voxelizer {
         const mesh = MergeMeshes(meshes, true, true);
         pool.resetPivot(mesh);
 
-        const data = rcv.bake_voxel(mesh);
+        const data = rcv.voxelizeBake(mesh);
         mesh.dispose();
 
         let isValidGLB = 0;
@@ -187,35 +188,12 @@ class Voxelizer {
 
     importBakedVoxels(url, scene) {
         ui.showProgress(1);
-        LoadAssetContainerAsync(url, '.glb', scene, (container) => {
-            const meshes = [];
-            for (let i = 0; i < container.meshes.length; i++) {
-                if (container.meshes[i].name !== '__root__')
-                    meshes.push(container.meshes[i].clone(container.meshes[i].name));
-            }
-            container.removeAllFromScene();
-            if (meshes.length > 0) {
-                this.voxelizeBake(meshes);
-            } else {
-                ui.errorMessage('unable to load baked meshes');
-            }
-            ui.showProgress(0);
-        }, () => {
-            ui.errorMessage('unable to load baked meshes');
-            ui.showProgress(0);
-        });
-    }
-
-    importMeshOBJ(url, scene) {
-        ui.showProgress(1);
-        LoadAssetContainerAsync(url, ".obj", scene, (container) => {
-            const mesh = MergeMeshes(container.meshes, true, true);
-            container.removeAllFromScene();
-            this.voxelizeMesh(mesh, ui.domVoxelizerScale.value);
+        loaders.loadGLB(url, scene).then(mesh => {
+            this.voxelizeBake([ mesh ]);
             mesh.dispose();
             ui.showProgress(0);
-        }, (err) => {
-            ui.errorMessage("unable to import/merge meshes");
+        }).catch(err => {
+            ui.errorMessage('unable to load mesh');
             ui.showProgress(0);
             console.error(err);
         });
@@ -223,23 +201,58 @@ class Voxelizer {
 
     importMeshGLB(url, scene) {
         ui.showProgress(1);
-        LoadAssetContainerAsync(url, ".glb", scene, (container) => {
-            const meshes = [];
-            for (let i = 0; i < container.meshes.length; i++) {
-                if (container.meshes[i].name !== '__root__')
-                    meshes.push(container.meshes[i]);
-            }
-            container.removeAllFromScene();
-            if (meshes.length > 0) {
-                const mesh = MergeMeshes(meshes, true, true);
-                this.voxelizeMesh(mesh, ui.domVoxelizerScale.value);
-                mesh.dispose();
-            } else {
-                ui.errorMessage('unable to find meshes');
-            }
+        loaders.loadGLB(url, scene).then(mesh => {
+            this.voxelizeMesh(mesh);
+            mesh.dispose();
             ui.showProgress(0);
-        }, (err) => {
-            ui.errorMessage("unable to import/merge meshes");
+        }).catch(err => {
+            ui.errorMessage('unable to load mesh');
+            ui.showProgress(0);
+            console.error(err);
+        });
+    }
+
+    importMeshOBJ(url, scene) {
+        ui.showProgress(1);
+        loaders.loadOBJ(url, scene).then(mesh => {
+            this.voxelizeMesh(mesh);
+            mesh.dispose();
+            ui.showProgress(0);
+        }).catch(err => {
+            ui.errorMessage('unable to load mesh');
+            ui.showProgress(0);
+            console.error(err);
+        });
+    }
+
+    importMeshSTL(url, scene) {
+        ui.showProgress(1);
+        loaders.loadSTL(url, scene).then(mesh => {
+            this.voxelizeMesh(mesh);
+            mesh.dispose();
+            ui.showProgress(0);
+        }).catch(err => {
+            ui.errorMessage('unable to load geometry');
+            ui.showProgress(0);
+            console.error(err);
+        });
+    }
+
+    importMeshPLY(url, scene) {
+        ui.showProgress(1);
+        let m = undefined;
+        loaders.loadPLY(url, scene).then(mesh => {
+            m = mesh;
+            this.voxelizeMesh(mesh);
+            mesh.dispose();
+            m.dispose();
+            m = null;
+            ui.showProgress(0);
+        }).catch(err => {
+            if (m && err instanceof RangeError)
+                m.dispose();
+            m = null;
+            ui.errorMessage('unable to load geometry');
             ui.showProgress(0);
             console.error(err);
         });

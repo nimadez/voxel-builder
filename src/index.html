@@ -37,20 +37,20 @@
             --scene: #3D4250;
             --border-radius: 4px;
             --border: solid 1px #00000025;
-            --menu-bg: #2e3542E1; /* overridden */
+            --menu-bg: #2e3542DD;
             --menu-shadow: #00000040;
-            --btn-bg: #2b313dBB;
+            --btn-bg: #2b313dDD;
             --btn-bg-shadow: inset 5px 5px 15px #00000050, inset -5px -5px 5px #00000010;
             --btn-color: #969fb1;
             --btn-color-hover: #444;
             --btn-tool-border: solid 1px #4682b4AA;
-            --input-bg: #00000040;
+            --input-bg: #21252eCC;
             --input-color: #8d98aa;
             --input-border-hover: solid 1px #4682b4AA;
             --label: #7f8da1;
             --label-info: #94a0b1EE;
             --label-help: #657183;
-            --cat-bg: #292e3890;
+            --cat-bg: #292e38AA;
             --cat-color: #69768d;
             --cat-border: solid 1px #3e485caa;
             --text-shadow: 1px 1px 0 #111;
@@ -165,9 +165,9 @@
         #hover .material-icons { font-size: 20px; }
         #palette { z-index: 400; display: none; background: #00000008; position: absolute; right: 5px; top: 80px; bottom: 285px; padding-right: 1px; overflow-y: scroll; overflow-x: hidden; }
         #meshlist { z-index: 400; display: none; background: #00000008; width: 45px; position: absolute; right: 5px; top: 80px; bottom: 5px; overflow-y: scroll; overflow-x: hidden; }
-        #meshlist .item_name { background: #3e4558; width: 39px; height: 19px; padding-top: 6px; font-size: 11px; border: var(--border); border-left-width: 2px; border-radius: var(--border-radius); text-align: center; }
-        #meshlist .item_name:hover { background: var(--btn-bg); color: orange; cursor: pointer; }
-        #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; }
+        #meshlist .item_name { background: #3D4250DD; width: 39px; height: 19px; padding-top: 6px; margin-bottom: 1px; font-size: 11px; border: var(--border); border-left-width: 2px; border-radius: var(--border-radius); text-align: center; }
+        #meshlist .item_name:hover { background: var(--btn-bg); color: orange; border-right-color: orange; cursor: pointer; }
+        #meshlist .item_name.mesh_select { background: var(--btn-bg); color: orange; border-right-color: orange; }
         #snapshots { height: auto; max-height: 630px; }
         #snapshots li { display: flex; flex-direction: row; gap: 2px; }
         #snapshots li img { object-fit: contain; width: 100%; height: 58px; background: #292f3aaa; box-shadow: inset 0 0 10px #25262e80; border-radius: var(--border-radius); overflow: hidden; cursor: pointer; }
@@ -308,7 +308,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.6.5 BETA
+                &#8627; 4.6.6 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -365,6 +365,14 @@
             <li class="category">SCENE</li>
             <li class="row_color"><label for="pref_background_check">BG</label> <input type="color" id="pref_background_color" value="#151515"> <input type="checkbox" id="pref_background_check" style="width: 57px;"></li>
             <li class="row_color" title="General shade color is widely distributed throughout the app."><label>Shade</label><input type="color" id="pref_render_shade" value="#90A0B3"><button style="width: 45px; padding: 2px;" title="Reset" onclick="this.previousElementSibling.value = '#90A0B3'; this.previousElementSibling.dispatchEvent(new Event('input', { bubbles: true }));">R</button></li>
+            <li class="row">
+                <label style="margin-right: 7px">Texture</label> <select id="pref_voxel_texture">
+                    <option value="0">None</option>
+                    <option value="1">Grid</option>
+                    <option value="2">Checker</option>
+                </select>
+            </li>
+            <li class="spacer"></li>
             <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
             <li class="category">SYSTEM</li>
             <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
@@ -389,7 +397,15 @@
             <li><button onclick="document.getElementById('openfile_import_voxels').click()">From JSON</button></li>
             <li title="Unbake: Upload exported GLB files only"><button onclick="document.getElementById('openfile_baked_glb').click()">From Baked GLB</button></li>
             <li class="category">EXPORT</li>
-            <li><button id="btn_action_export_voxels">Raw Voxels</button></li>
+            <li class="row_input">
+                <label style="width: 60%;">Format</label><select id="input_raw_export_format">
+                    <option value="obj_raw" selected>OBJ</option>
+                    <option value="stl_raw">STL</option>
+                    <option value="ply_raw">PLY</option>
+                </select>
+            </li>
+            <li class="spacer"></li>
+            <li><button id="btn_action_raw_export">Raw Voxels</button></li>
             <li class="category">CAPTURE</li>
             <li><button id="btn_action_screenshot">Screenshot</button></li>
         </ul>
@@ -473,13 +489,6 @@
             <li class="category">MORE</li>
             <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
             <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
-            <li class="row_input">
-                <label>Texture</label> <select id="input-pt-texture">
-                    <option value="0">None</option>
-                    <option value="1" selected>Grid</option>
-                    <option value="2">Checker</option>
-                </select>
-            </li>
             <li class="row_input"><label for="input-pt-plane">Plane</label> <input id="input-pt-plane" class="ignorekeys" type="number" value="0" min="0" step="1"></input></li>
         </ul>
 
@@ -488,6 +497,7 @@
             <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1"></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
+            <li><label class="help">? GLB | OBJ | STL | PLY</label></li>
             <li class="category">IMAGES</li>
             <li class="row"><label style="margin-right: 10px">Ratio</label> <input type="number" class="ignorekeys" id="input-voxelizer-ratio" value="5.0" min="0.1" step="0.1"></li>
             <li class="spacer"></li>
@@ -641,6 +651,8 @@
             <li><button id="btn_action_bakery_bake_islands">Bake by Islands</button></li>
             <li class="spacer"></li>
             <li title="Treats the corners as a connected island"><input type="checkbox" id="input-bake-islands-connected" checked> <label for="input-bake-islands-connected">Add Connected</label></li>
+            <li class="spacer"></li>
+            <li><button id="btn_tool_bake_color" class="tool tool_bake_color">Bake Color</button></li>
             <li class="category">UNBAKE</li>
             <li><button id="btn_action_unbake_meshes">Unbake Meshes</button></li>
             <li class="category">DELETE<li>
@@ -650,14 +662,6 @@
         </ul>
 
         <ul class="menu panel" id="menu-pbr">
-            <li class="category">TEXTURE</li>
-            <li class="row_input">
-                <select id="input-pbr-texture">
-                    <option value="0">None</option>
-                    <option value="1">Grid</option>
-                    <option value="2" selected>Checker</option>
-                </select>
-            </li>
             <li class="category">COLORS</li>
             <li class="row_color"><label>Vertex</label> <input type="color" id="input-pbr-vertexcolor" value="#CCCCCC"></li>
             <li class="row_color"><label>Albedo</label> <input type="color" id="input-pbr-albedo" value="#CCCCCC"></li>
@@ -672,17 +676,19 @@
         </ul>
 
         <ul class="menu panel" id="menu-export">
-            <li class="category">EXPORT</li>
+            <li class="category">EXPORT BAKES</li>
             <li class="row_input">
-                <label style="width: 60%;">Format</label><select id="export_format">
+                <label style="width: 60%;">Format</label><select id="input_export_format">
                     <option value="glb">GLB</option>
                     <option value="gltf">glTF</option>
                     <option value="obj">OBJ</option>
                     <option value="stl">STL</option>
+                    <option value="ply">PLY</option>
                 </select>
             </li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="export_selected_bake"> <label for="export_selected_bake">Selected Mesh</label></li>
+            <li><input type="checkbox" id="export_texture" checked disabled> <label for="export_texture">Export Texture</label></li>
             <li class="spacer"></li>
             <li><button id="btn_action_export_meshes">Export Meshes</button></li>
             <li><label class="help">? Keeping the exported GLB file means you have the voxel data. see File menu, "From Baked GLB"</label></li>
@@ -774,7 +780,7 @@
     <input style="display: none" type="file" id="openfile_json" accept=".json,.vbx" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_import_voxels" accept=".json" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_vox" accept=".vox" onclick="this.value = null">
-    <input style="display: none" type="file" id="openfile_voxelizer" accept=".obj,.glb" onclick="this.value = null">
+    <input style="display: none" type="file" id="openfile_voxelizer" accept=".obj,.glb,.stl,.ply" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_voxelizer_img" accept=".jpg,.png,.svg" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_hdr" accept=".hdr" onclick="this.value = null">
     <input style="display: none" type="file" id="openfile_baked_glb" accept=".glb" onclick="this.value = null">
@@ -814,8 +820,6 @@
 
 <script src="libs/babylon.js"></script>
 <script src="libs/babylonjs.materials.min.js"></script>
-<script src="libs/babylonjs.loaders.min.js"></script>
-<script src="libs/babylonjs.serializers.min.js"></script>
 <script src="libs/babylon.inspector.bundle.js"></script>
 <script type="importmap">
 {

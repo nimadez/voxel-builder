@@ -67,9 +67,8 @@ import {
     CreateTexture, HDRCubeTexture, RenderTargetTexture,
     TransformNode, PositionGizmo, AxisScaleGizmo, PlaneRotationGizmo, AxesViewer,
     CreateMesh, CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
-    PointsCloudSystem, SolidParticleSystem,
+    PointsCloudSystem,
     VertexData, MergeMeshes,
-    ExportGLB, ExportGLTF, ExportOBJ, ExportSTL,
     AnimatorCamera, CreateScreenshot, CreateScreenshotWithResizeAsync
 } from './babylon.js';
 
@@ -84,7 +83,7 @@ import * as modules from './modules.js';
 const ENVMAP = "assets/overcast_soil_puresky_1k.hdr";
 const SNAPSHOT = "data:image/png;base64,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";
 const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
-const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
+const TEX_CHECKER = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB3aWR0aD0iMjU2IgogICBoZWlnaHQ9IjI1NiIKICAgdmlld0JveD0iMCAwIDY3LjczMzMzNSA2Ny43MzMzMzUiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzEiCiAgIGlua3NjYXBlOnZlcnNpb249IjEuNCAoZTdjM2ZlYiwgMjAyNC0xMC0wOSkiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9InRleF9jaGVja2VyLnN2ZyIKICAgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiCiAgIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIKICAgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJuYW1lZHZpZXcxIgogICAgIHBhZ2Vjb2xvcj0iIzIwMjAyMCIKICAgICBib3JkZXJjb2xvcj0iIzdmN2Y3ZiIKICAgICBib3JkZXJvcGFjaXR5PSIxIgogICAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIwIgogICAgIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIgogICAgIGlua3NjYXBlOnBhZ2VjaGVja2VyYm9hcmQ9ImZhbHNlIgogICAgIGlua3NjYXBlOmRlc2tjb2xvcj0iIzMzMzkzYiIKICAgICBpbmtzY2FwZTpkb2N1bWVudC11bml0cz0icHgiCiAgICAgc2hvd2d1aWRlcz0idHJ1ZSIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMiIKICAgICBpbmtzY2FwZTpjeD0iMTI2IgogICAgIGlua3NjYXBlOmN5PSIxMzciCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ibGF5ZXIxIgogICAgIHNob3dib3JkZXI9ImZhbHNlIiAvPjxkZWZzCiAgICAgaWQ9ImRlZnMxIiAvPjxnCiAgICAgaW5rc2NhcGU6bGFiZWw9IkxheWVyIDEiCiAgICAgaW5rc2NhcGU6Z3JvdXBtb2RlPSJsYXllciIKICAgICBpZD0ibGF5ZXIxIj48dXNlCiAgICAgICB4PSIwIgogICAgICAgeT0iMCIKICAgICAgIHhsaW5rOmhyZWY9IiNyZWN0MiIKICAgICAgIGlkPSJ1c2UyIgogICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzMuODY2NjYzLC0zMy44NjY2NjUpIiAvPjxyZWN0CiAgICAgICBzdHlsZT0iZmlsbDojZmZmZmZmO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpldmVub2RkO3N0cm9rZTojZTVlNWU1O3N0cm9rZS13aWR0aDoxLjU4NzU7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjE7cGFpbnQtb3JkZXI6c3Ryb2tlIGZpbGwgbWFya2VycyIKICAgICAgIGlkPSJyZWN0MiIKICAgICAgIHdpZHRoPSIzMi41NTUyMzMiCiAgICAgICBoZWlnaHQ9IjMyLjU1NTIzMyIKICAgICAgIHg9IjAuNjU1NzE2MTgiCiAgICAgICB5PSIzNC41MjIzODEiCiAgICAgICBpbmtzY2FwZTpsYWJlbD0icmVjdDIiIC8+PHVzZQogICAgICAgeD0iMCIKICAgICAgIHk9IjAiCiAgICAgICB4bGluazpocmVmPSIjcmVjdDEiCiAgICAgICBpZD0idXNlMSIKICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMzLjg2NjY2MiwzMy44NjY2NjIpIgogICAgICAgc3R5bGU9InN0cm9rZS13aWR0aDoxLjMyMjkyO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtmaWxsOiNmYWZhZmE7ZmlsbC1vcGFjaXR5OjEiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOiNmYWZhZmE7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNlNWU1ZTU7c3Ryb2tlLXdpZHRoOjEuNTg3NTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MTtwYWludC1vcmRlcjpzdHJva2UgZmlsbCBtYXJrZXJzIgogICAgICAgaWQ9InJlY3QxIgogICAgICAgd2lkdGg9IjMyLjU1NTIzMyIKICAgICAgIGhlaWdodD0iMzIuNTU1MjMzIgogICAgICAgeD0iMC42NTU3MTYxOCIKICAgICAgIHk9IjAuNjU1NzE2MTgiCiAgICAgICBpbmtzY2FwZTpsYWJlbD0icmVjdDEiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOm5vbmU7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNkOWQ5ZDk7c3Ryb2tlLXdpZHRoOjAuNTM3ODI0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxO3BhaW50LW9yZGVyOnN0cm9rZSBmaWxsIG1hcmtlcnMiCiAgICAgICBpZD0icmVjdDMiCiAgICAgICB3aWR0aD0iNjcuMTk5MzQxIgogICAgICAgaGVpZ2h0PSI2Ny42MDUwMTkiCiAgICAgICB4PSIwLjI2NzYzNDQyIgogICAgICAgeT0iMC4xMjgzMjIzMyIgLz48L2c+PC9zdmc+Cg==";
 
 const COL_SCENE_BG = getStyleRoot('--scene');
 const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
@@ -743,15 +742,20 @@ class Material {
         this.mat_gridplane = undefined;
         this.mat_white = undefined;
         this.tex_pbr = undefined;
+        this.textureMaps = [];
         this.textures = [];
     }
 
     init() {
-        this.textures.push(this.loadTexture('tex_null', TEX_NULL));
-        this.textures.push(this.loadTexture('tex_grid', this.createVoxelTexture(), Texture_LINEAR_LINEAR_MIPLINEAR));
-        this.textures.push(this.loadTexture('tex_checker', TEX_CHECKER, Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textureMaps.push(TEX_NULL);
+        this.textureMaps.push(this.createVoxelTexture());
+        this.textureMaps.push(TEX_CHECKER);
+        
+        this.textures.push(this.loadTexture('tex_null', this.textureMaps[0], Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_grid', this.textureMaps[1], Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_checker', this.textureMaps[2], Texture_LINEAR_LINEAR_MIPLINEAR));
 
-        this.tex_pbr = this.textures[2];
+        this.tex_pbr = this.textures[preferences.getVoxelTextureId()];
 
         this.createCELMaterial();
         this.createGridPlaneMaterial();
@@ -766,7 +770,7 @@ class Material {
     createPBRMaterialVoxel() {
         const mat = PBRMaterial("PBR_V", scene);
         mat.albedoColor = Color3(1, 1, 1);
-        mat.albedoTexture = this.textures[1];
+        mat.albedoTexture = this.tex_pbr;
         mat.roughness = 0.8;
         mat.metallic = 0.1;
         mat.metallicF0Factor = 0;
@@ -818,18 +822,18 @@ class Material {
         this.mat_white = mat;
     }
 
-    createVoxelTexture(size = 256) {
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
+    createVoxelTexture(size = 128) {
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext('2d');
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, size, size);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#222222CC';
-        ctx.filter = 'blur(1px)';
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = '#000000EE';
+        //ctx.filter = 'blur(1px)';
         ctx.strokeRect(0, 0, size, size);
-        return canvas.toDataURL("image/png");
+        return c.toDataURL("image/png");
     }
 
     loadTexture(name, url, sampling = Texture_NEAREST_SAMPLINGMODE) {
@@ -844,7 +848,9 @@ class Material {
     }
 
     setPBRTexture() {
-        this.tex_pbr = this.textures[parseInt(ui.domPbrTexture.value)];
+        this.tex_pbr = this.textures[preferences.getVoxelTextureId()];
+        this.mat_pbr_vox.albedoTexture = this.tex_pbr;
+        this.updateCelMaterial();
         this.createPBRMaterial();
     }
 
@@ -908,6 +914,8 @@ class Material {
         
         uniform vec3 uLightPos;
         uniform vec3 uLightCol;
+        uniform int uTextureId;
+        uniform sampler2D uTexture;
         
         void main() {
             vec2 grid = abs(fract(vUv - 0.5) - 0.5) / fwidth(vUv);
@@ -930,9 +938,16 @@ class Material {
             brdf += 1.0 * dif * uLightCol;
 
             vec3 col = vColor.rgb;
-            col = mix(col, vec3(0), line * 0.22);
+            vec4 tex = texture2D(uTexture, vUv);
+
+            if (uTextureId == 1)
+                col = mix(col, vec3(0), line * 0.22);
+
             col *= brdf;
             col = pow(col, vec3(0.4545));
+
+            if (uTextureId > 1)
+                col *= tex.rgb;
         
             gl_FragColor = vec4(col, 1.0);
         }`;
@@ -942,7 +957,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uLightPos", "uLightCol" ],
+                              "uLightPos", "uLightCol", "uTextureId", "uTexture" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             });
@@ -956,7 +971,8 @@ class Material {
                     (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
                     (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
                     (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity));
-                //this.mat_cel.setTexture("uTexture", this.textures[3]);
+                this.mat_cel.setInt("uTextureId", preferences.getVoxelTextureId());
+                this.mat_cel.setTexture("uTexture", this.textures[preferences.getVoxelTextureId()]);
             }
         }
 }
@@ -1738,22 +1754,17 @@ class Bakery {
         ui.showProgress(1);
         setTimeout(() => {
             const baked = this.bake(voxels);
-
-            baked.sideOrientation = CounterClockWiseSideOrientation;
-            baked.name = `m${ pool.meshes.length + 1 }`;
             pool.resetPivot(baked);
 
+            baked.name = `m${ pool.meshes.length + 1 }`;
             baked.material = material.mat_pbr_msh.clone('mat_' + baked.name);
             baked.material.albedoTexture.name = 'tex_' + baked.name;
             baked.material.wireframe = ui.domPbrWireframe.checked;
             baked.checkCollisions = false;
             baked.receiveShadows = true;
-
-            light.addMesh(baked);
-            light.updateShadowMap();
+            baked.sideOrientation = CounterClockWiseSideOrientation;
 
             pool.meshes.push(baked);
-            pool.createMeshList();
 
             ui.showProgress(0);
         });
@@ -1766,6 +1777,12 @@ class Bakery {
             this.bakeToMesh(builder.getVoxelsByColor(builder.uniqueColors[i]));
 
         setTimeout(() => {
+            for (const mesh of pool.meshes)
+                light.addMesh(mesh);
+
+            light.updateShadowMap();
+            pool.createMeshList();
+
             if (MODE !== 2) {
                 pool.setPoolVisibility(false);
                 ui.notification('baked');
@@ -1799,6 +1816,12 @@ class Bakery {
             }
 
             setTimeout(() => {
+                for (const mesh of pool.meshes)
+                    light.addMesh(mesh);
+
+                light.updateShadowMap();
+                pool.createMeshList();
+
                 if (MODE !== 2) {
                     pool.setPoolVisibility(false);
                     ui.notification('baked');
@@ -1809,16 +1832,22 @@ class Bakery {
         }
     }
 
-    /* bakeColor(hex) {
+    bakeColor(hex) {
         this.bakeToMesh(builder.getVoxelsByColor(hex));
 
         setTimeout(() => {
+            for (const mesh of pool.meshes)
+                light.addMesh(mesh);
+
+            light.updateShadowMap();
+            pool.createMeshList();
+            
             if (MODE !== 2) {
                 pool.setPoolVisibility(false);
                 ui.notification('baked');
             }
         }, 100);
-    } */
+    }
 }
 
 
@@ -1831,20 +1860,6 @@ class MeshPool {
         this.meshes = [];
         this.selected = undefined;
         this.pick = undefined;
-    }
-
-    exportOptions = {
-        shouldExportNode: (node) => {
-            return this.meshes.includes(node);
-        }
-    }
-
-    exportOptionsSelected = {
-        shouldExportNode: (node) => {
-            if (ui.domExportSelectedBake.checked && this.selected)
-                return this.selected === node;
-            return false;
-        }
     }
 
     async unbakeMeshes() {
@@ -1951,7 +1966,7 @@ class MeshPool {
         for (let i = 0; i < this.meshes.length; i++) {
             if (this.meshes[i].material.albedoTexture)
                 this.meshes[i].material.albedoTexture.dispose();
-            this.meshes[i].material.albedoTexture = material.textures[parseInt(ui.domPbrTexture.value)].clone();
+            this.meshes[i].material.albedoTexture = material.textures[preferences.getVoxelTextureId()].clone();
             this.meshes[i].material.albedoTexture.name = 'tex_' + this.meshes[i].name;
         }
     }
@@ -2102,7 +2117,6 @@ class Ghosts {
     constructor() {
         this.thin = undefined;
         this.thinOne = undefined;
-        this.sps = undefined;
         this.cloud = undefined;
         this.tMatrix = MatrixIdentity();
         this.bufferMatrix = [];
@@ -2194,36 +2208,6 @@ class Ghosts {
         const idx = this.thinOne.thinInstanceAdd(MatrixTranslation(pos.x, pos.y, pos.z));
         const rgb = hexToRgbFloat(hex, 2.2);
         this.thinOne.thinInstanceSetAttributeAt("color", idx, [rgb.r, rgb.g, rgb.b, 1]);
-    }
-
-    createSPS(voxels = builder.voxels) {
-        if (voxels.length == 0) return;
-
-        this.disposeSPS();
-        
-        this.sps = SolidParticleSystem('ghost_sps', scene, false, false, true);
-
-        this.sps.addShape(vMesh.mesh, voxels.length, { positionFunction: (p, i, s) => {
-            p.position.copyFrom(voxels[i].position);
-            p.color = color4FromHex(voxels[i].color).toLinearSpace();
-            if (!voxels[i].visible) p.scaling.set(0,0,0);
-        }});
-
-        this.sps.initParticles();
-        this.sps.buildMesh();
-        this.sps.computeBoundingBox = false;
-        this.sps.mesh.isPickable = false;
-        this.sps.mesh.doNotSerialize = true;
-        this.sps.mesh.freezeNormals();
-    }
-
-    disposeSPS() {
-        if (this.sps) {
-            this.sps.mesh.material.dispose();
-            this.sps.mesh.dispose();
-            this.sps.dispose();
-        }
-        this.sps = undefined;
     }
 
     createPointCloud(voxels = builder.voxels) {
@@ -3167,6 +3151,9 @@ class Tool {
             case 'frame_island':
                 this.selected = builder.getVoxelsByIslands(this.pos, false);
                 break;
+            case 'bake_color':
+                bakery.bakeColor(builder.voxels[index].color);
+                break;
         }
     }
 
@@ -3425,7 +3412,6 @@ class Tool {
             faceNormalProbe.dispose();
             ghosts.disposeThin();
             ghosts.initThinOne();
-            ghosts.disposeSPS();
             helper.clearBoxShape();
             setTimeout(() => {
                 helper.clearOverlays();
@@ -3759,7 +3745,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.5",
+            version: "Voxel Builder 4.6.6",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3909,59 +3895,66 @@ class Project {
         modules.voxelizer.importBakedVoxels(url, scene);
     }
 
-    exportVoxels(name) {
-        const mesh = builder.createMesh();
-        downloadBlob(new Blob([ ExportOBJ([ mesh ]) ], { type: "octet/stream" }), `${name}.obj`);
-        mesh.dispose();
-    }
-
     exportMeshes(name, format) {
-        if (pool.meshes.length == 0) {
-            ui.notification('no baked meshes', 1000);
-            return;
-        }
-        if (ui.domExportSelectedBake.checked && !pool.selected) {
-            ui.notification('select a mesh', 1000);
-            return;
-        }
-
-        let exports = pool.exportOptions;
-        if (ui.domExportSelectedBake.checked && pool.selected)
-            exports = pool.exportOptionsSelected;
-
-        if (format == 'obj' || format == 'stl') {
-            if (ui.domExportSelectedBake.checked && pool.selected) {
-                exports = [ pool.selected ];
-            } else {
-                exports = pool.meshes;
+        if (![ 'obj_raw', 'stl_raw', 'ply_raw' ].includes(format)) {
+            if (pool.meshes.length == 0) {
+                ui.notification('no baked meshes', 1000);
+                return;
+            }
+            if (ui.domExportSelectedBake.checked && !pool.selected) {
+                ui.notification('select a mesh', 1000);
+                return;
             }
         }
 
+        const isSelected = ui.domExportSelectedBake.checked && pool.selected;
+
         switch (format) {
             case 'glb':
-                ExportGLB(scene, name, exports, true, () => { });
+                modules.exporters.exportGLTF(true, isSelected).then(res => {
+                    downloadData(res, `${name}.glb`);
+                }).catch(err => {
+                    ui.errorMessage('glb export failed');
+                    console.log(err);
+                });
                 break;
             case 'gltf':
-                ExportGLTF(scene, name, exports, false, (data) => {
-                    const fnames = Object.keys(Object.values(data)[0]);
-                    if (fnames.length > 0) {
-                        const contents = Object.values(Object.values(data)[0]);
-
-                        const zip = new JSZip();
-                        for (let i = 0; i < fnames.length; i++)
-                            zip.file(fnames[i], contents[i]);
-
-                        zip.generateAsync({ type: "blob" }).then(data => {
-                            downloadData(data, `${ name }_gltf.zip`);
-                        });
-                    }
+                modules.exporters.exportGLTF(false, isSelected).then(res => {
+                    downloadJson(JSON.stringify(res, null, 2), `${name}.gltf`);
+                }).catch(err => {
+                    ui.errorMessage('gltf export failed');
+                    console.log(err);
+                });
+                break;
+            case 'obj_raw':
+                modules.exporters.exportVoxelsOBJ().then(res => {
+                    downloadData(res, `${name}_raw.obj`);
                 });
                 break;
             case 'obj':
-                downloadBlob(new Blob([ ExportOBJ(exports) ], { type: "octet/stream" }), `${name}.obj`);
+                modules.exporters.exportMeshesOBJ(isSelected).then(res => {
+                    downloadData(res, `${name}.obj`);
+                });
+                break;
+            case 'stl_raw':
+                modules.exporters.exportVoxelsSTL().then(res => {
+                    downloadData(res, `${name}_raw.stl`);
+                });
                 break;
             case 'stl':
-                ExportSTL(exports, name);
+                modules.exporters.exportMeshesSTL(isSelected).then(res => {
+                    downloadData(res, `${name}.stl`);
+                });
+                break;
+            case 'ply_raw':
+                modules.exporters.exportVoxelsPLY().then(res => {
+                    downloadData(res, `${name}_raw.ply`);
+                });
+                break;
+            case 'ply':
+                modules.exporters.exportMeshesPLY(isSelected).then(res => {
+                    downloadData(res, `${name}.ply`);
+                });
                 break;
         }
     }
@@ -3976,7 +3969,7 @@ class Project {
                 });
             }
         }).catch(err => {
-            //
+            console.error(err);
         });
     }
 
@@ -4588,7 +4581,6 @@ class UserInterface {
         this.domVoxelizerTextVertical = document.getElementById('input-voxelizer-text-vertical');
         this.domVoxelizerTextEmoji = document.getElementById('input-voxelizer-text-emoji');
         this.domVoxelizerTextNewScene = document.getElementById('input-voxelizer-text-newscene');
-        this.domPbrTexture = document.getElementById('input-pbr-texture');
         this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
         this.domPbrEmissive = document.getElementById('input-pbr-emissive');
         this.domPbrRoughness = document.getElementById('input-pbr-roughness');
@@ -4598,7 +4590,8 @@ class UserInterface {
         this.domPbrWireframe = document.getElementById('input-pbr-wireframe');
         this.domMaterialSwitch = document.getElementById('material-switch');
         this.domProjectName = document.getElementById('project_name');
-        this.domExportFormat = document.getElementById('export_format');
+        this.domRawExportFormat = document.getElementById('input_raw_export_format');
+        this.domExportFormat = document.getElementById('input_export_format');
         this.domExportSelectedBake = document.getElementById('export_selected_bake');
         this.domRenderMaxSamples = document.getElementById('input-pt-maxsamples');
         this.domRenderBounces = document.getElementById('input-pt-bounces');
@@ -4617,7 +4610,6 @@ class UserInterface {
         this.domRenderMaterialEmissiveIntensity = document.getElementById('input-pt-emissive-intensity');
         this.domRenderAutoStart = document.getElementById('input-pt-autostart');
         this.domRenderShade = document.getElementById('input-pt-shade');
-        this.domRenderTexture = document.getElementById('input-pt-texture');
         this.domRenderPlane = document.getElementById('input-pt-plane');
         this.domMarquee = document.getElementById("marquee");
         this.domConfirm = document.getElementById('confirm');
@@ -4742,11 +4734,8 @@ class UserInterface {
 
     setFrostedGlassUI(isEnabled) {
         const blur = 'blur(15px)';
-        const style_menu_bg = getStyleRoot('--menu-bg').slice(0, -2);
 
         if (isEnabled) {
-            setStyleRoot('--menu-bg', style_menu_bg + 'CA');
-
             this.domToolbarScreenTopMode.style.backdropFilter = blur;
             this.domConfirm.style.backdropFilter = blur;
             modules.colorPicker.parent.style.backdropFilter = blur;
@@ -4767,8 +4756,6 @@ class UserInterface {
                 panel.elem.style.backdropFilter = blur;
 
         } else {
-            setStyleRoot('--menu-bg', style_menu_bg + 'E1');
-
             this.domToolbarScreenTopMode.style.backdropFilter = 'none';
             this.domConfirm.style.backdropFilter = 'none';
             modules.colorPicker.parent.style.backdropFilter = 'none';
@@ -5164,6 +5151,7 @@ const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
 const KEY_BACKGROUND_CHECK = "pref_background_check";
 const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_RENDER_SHADE = "pref_render_shade";
+const KEY_VOXEL_TEXTURE = "pref_voxel_texture";
 const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
 const KEY_HELP_LABELS = "pref_help_labels";
 const KEY_IGNORE_DIALOGS = "pref_ignore_dialogs";
@@ -5188,6 +5176,7 @@ class Preferences {
         document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
         document.getElementById(KEY_BACKGROUND_COLOR).value = getStyleRoot('--scene');
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
+        document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
         document.getElementById(KEY_HELP_LABELS).checked = true;
         document.getElementById(KEY_IGNORE_DIALOGS).checked = false;
@@ -5236,6 +5225,15 @@ class Preferences {
                 modules.sandbox.updateMaterials();
         });
 
+        this.setPref(KEY_VOXEL_TEXTURE, () => {
+            if (!this.isMinimal()) {
+                material.setPBRTexture();
+                pool.replaceTextures();
+                if (modules.sandbox.isActive())
+                    modules.sandbox.updateMeshes();
+            }
+        });
+
         this.setPrefCheck(KEY_SCENE_POINTCLOUD, (chk) => {
             (chk) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
         });
@@ -5253,6 +5251,10 @@ class Preferences {
 
     finish(startTime) {
         ui.init();
+        axisView.init();
+        modules.colorPicker.init();
+        modules.panels.showHelpLabels(this.isShowHelpLabels());
+        modules.palette.expand(this.getPaletteSize());
 
         scene.clearColor = (this.isBackgroundColor()) ?
             color4FromHex(this.getBackgroundColor()) :
@@ -5271,28 +5273,32 @@ class Preferences {
     }
 
     postFinish(startTime) {
-        axisView.init();
         snapshot.createElements(this.getSnapshotNum());
         snapshot.createSnapshots();
-        modules.colorPicker.init();
-        modules.panels.showHelpLabels(this.isShowHelpLabels());
-        modules.palette.expand(this.getPaletteSize());
-        ui.setFrostedGlassUI(this.isFrostedGlassUI());
-
-        console.log(`mobile: ${isMobile}`);
-        console.log(`webgpu: ${engine.engine.isWebGPU}`);
-        console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
-        this.isInitialized = true;
-
-        document.getElementById('introscreen').style.display = 'none';
-        canvas.style.pointerEvents = 'unset';
-        camera.flagFrame = 1;
+        
+        modules.translator.init();
+        
+        if (this.isMinimal()) {
+            document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
+            material.updateCelMaterial();
+        } else {
+            modules.sandbox.init();
+        }
 
         // inject the user module entry point
         const scriptUserModules = document.createElement('script');
         scriptUserModules.type = 'module';
         scriptUserModules.src = 'user/user.js';
         document.body.appendChild(scriptUserModules);
+
+        document.getElementById('introscreen').style.display = 'none';
+        canvas.style.pointerEvents = 'unset';
+        camera.flagFrame = 1;
+
+        console.log(`mobile: ${isMobile}`);
+        console.log(`webgpu: ${engine.engine.isWebGPU}`);
+        console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
+        this.isInitialized = true;
     }
 
     isWebGPU() {
@@ -5329,6 +5335,10 @@ class Preferences {
 
     getRenderShadeColor() {
         return document.getElementById(KEY_RENDER_SHADE).value.toUpperCase();
+    }
+
+    getVoxelTextureId() {
+        return document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex;
     }
 
     isPointCloud() {
@@ -5507,7 +5517,7 @@ window.addEventListener('wheel', (ev) => {
     pointer.wheelTimeout = setTimeout(() => {
         pointer.isWheel = false;
     }, 300);
-}, false);
+}, { passive: false });
 
 
 document.addEventListener("keydown", (ev) => {
@@ -5617,11 +5627,13 @@ function fileHandler(file) {
     const reader = new FileReader();
     reader.onload = () => {
         if (ext == 'json') project.load(reader.result);
-        if (ext == 'obj') if (MODE == 0) modules.voxelizer.importMeshOBJ(url, scene);
-        if (ext == 'glb') if (MODE == 0) modules.voxelizer.importMeshGLB(url, scene);
+        if (ext == 'zip') snapshot.loadSnapshots(reader.result);
+        if (ext == 'glb' && MODE == 0) modules.voxelizer.importMeshGLB(url, scene);
+        if (ext == 'obj' && MODE == 0) modules.voxelizer.importMeshOBJ(url, scene);
+        if (ext == 'stl' && MODE == 0) modules.voxelizer.importMeshSTL(url, scene);
+        if (ext == 'ply' && MODE == 0) modules.voxelizer.importMeshPLY(url, scene);
         if (ext == 'vox') project.loadMagicaVoxel(reader.result);
         if (ext == 'hdr') hdri.loadHDR(url);
-        if (ext == 'zip') snapshot.loadSnapshots(reader.result);
         if (MODE == 0) {
             if (['jpg','png','svg'].includes(ext))
                 modules.voxelizer.voxelize2D(reader.result);
@@ -5914,11 +5926,6 @@ ui.domRenderShade.onchange = () => {
         modules.sandbox.toggleShadeMode();
 };
 
-ui.domRenderTexture.onchange = () => {
-    if (modules.sandbox.isActive())
-        modules.sandbox.updateMeshes();
-};
-
 ui.domRenderPlane.onchange = () => {
     modules.sandbox.updatePlane();
 };
@@ -5994,11 +6001,6 @@ ui.domSymmWorldCenter.onclick = () => {
     helper.setSymmPivot();
 };
 
-ui.domPbrTexture.onclick = () => {
-    material.setPBRTexture();
-    pool.replaceTextures();
-};
-
 ui.domPbrVertexColor.oninput = (ev) => {
     pool.updateVertexColors(ev.target.value);
 };
@@ -6072,7 +6074,7 @@ document.getElementById('btn_action_hdr_unload').onclick = () =>        { hdri.u
 document.getElementById('btn_action_project_new').onclick = () =>       { project.newProject() };
 document.getElementById('btn_action_project_save').onclick = () =>      { project.save() };
 document.getElementById('btn_action_snapshots_save').onclick = () =>    { snapshot.saveSnapshots() };
-document.getElementById('btn_action_export_voxels').onclick = () =>     { project.exportVoxels(ui.domProjectName.value) };
+document.getElementById('btn_action_raw_export').onclick = () =>        { project.exportMeshes(ui.domProjectName.value, ui.domRawExportFormat.value) };
 document.getElementById('btn_action_export_meshes').onclick = () =>     { project.exportMeshes(ui.domProjectName.value, ui.domExportFormat.value) };
 document.getElementById('btn_action_unbake_meshes').onclick = () =>     { pool.unbakeMeshes() };
 document.getElementById('btn_action_screenshot').onclick = () =>        { project.createScreenshot() };
@@ -6108,8 +6110,7 @@ document.getElementById('btn_tool_transform_island').onclick = () =>    { if (ui
 document.getElementById('btn_tool_transform_visible').onclick = ()=>    { if (ui.checkMode(0)) tool.toolSelector('transform_visible') };
 document.getElementById('btn_tool_measure_volume').onclick = () =>      { if (ui.checkMode(0)) tool.toolSelector('measure_volume') };
 document.getElementById('btn_action_optimize').onclick = () =>          { if (ui.checkMode(0)) builder.optimizeVoxelsAndUpdate() };
-document.getElementById('btn_action_bakery_bake_colors').onclick = () => { bakery.bakeColors() };
-document.getElementById('btn_action_bakery_bake_islands').onclick = () => { bakery.bakeIslands() };
+document.getElementById('btn_tool_bake_color').onclick = () =>          { if (ui.checkMode(0)) tool.toolSelector('bake_color') };
 document.getElementById('btn_action_bakery_delete_all').onclick = () => { pool.dispose(true) };
 document.getElementById('btn_action_bakery_delete').onclick = () =>     { if (ui.checkMode(2)) pool.deleteSelected() };
 document.getElementById('btn_action_groupislands').onclick = () =>      { if (ui.checkMode(0)) builder.createGroupsByIslands() };
@@ -6119,6 +6120,23 @@ document.getElementById('btn_action_invertvisibility').onclick = () =>  { if (ui
 document.getElementById('btn_action_unhideall').onclick = () =>         { if (ui.checkMode(0)) builder.setVoxelsVisibility(true); builder.create(); };
 document.getElementById('btn_tool_delete_color').onclick = () =>        { if (ui.checkMode(0)) tool.toolSelector('delete_color') };
 document.getElementById('btn_action_deletehidden').onclick = () =>      { if (ui.checkMode(0)) builder.deleteHiddenAndUpdate() };
+
+document.getElementById('btn_action_bakery_bake_colors').onclick = async () => {
+    if (pool.meshes.length > 0) {
+        if (await ui.showConfirm("Replace all baked meshes?"))
+            bakery.bakeColors();
+    } else {
+        bakery.bakeColors();
+    }
+};
+document.getElementById('btn_action_bakery_bake_islands').onclick = async () => {
+    if (pool.meshes.length > 0) {
+        if (await ui.showConfirm("Replace all baked meshes?"))
+            bakery.bakeIslands();
+    } else {
+        bakery.bakeIslands();
+    }
+};
 
 
 // -------------------------------------------------------

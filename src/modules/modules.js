@@ -24,6 +24,8 @@ export { colorPicker } from './interfaces/colorpicker.js';
 export { sandbox } from './sandbox/sandbox.js';
 export { generator } from './generator/generator.js';
 export { voxelizer } from './raycaster/voxelizer.js';
+export { translator } from './translator.js';
+export { exporters } from './exporters/exporters.js';
 
 export { ReinventedColorWheel } from "../libs/utils/reinvented-color-wheel.bundle.js";
 

@@ -9,12 +9,12 @@ import { THREE, renderer } from '../three.js';
 import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer.js';
 import { RGBELoader } from '../../libs/addons/RGBELoader.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
-//import { mergeGeometries } from '../../libs/addons/BufferGeometryUtils.js';
 
 import { Tween, Group, Easing } from '../../libs/utils/tween.esm.js';
 
 import { engine, Vector3 } from '../babylon.js';
-import { ui, camera, hdri, light, vMesh, builder, preferences } from '../core.js';
+import { camera, hdri, light, builder, ui, preferences } from '../core.js';
+import { translator } from '../translator.js';
 
 
 const isMobile = isMobileDevice();
@@ -22,8 +22,6 @@ const FPS = 1000 / 60;
 const TILE = 4;
 const DPR_FAST = 0.5;
 const CAM_FAR = isMobile ? 1500 : 3000;
-const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
-const TEX_CHECKER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAArdJREFUeF7t3UGKwlAQhOEXFEEi2Si48v6HcqUiblyJCxExw0ucMXOG+rxBP5uX+ruqk+Z8PvfFL/YEmuPx2D8ej8gD6Pux95umiay/bdsyNMD7/S7b7TbqEF6vV7ndbkPNm82mLBaLqPr3+33RABrADeAG8AjwCKABaAAikAhEAUkYgAJgIAw0BzAIMggyCTQJNAo2CuYF8AKYQUkUWGAgDISBMBAGwkAYCANhIAyEgTAQBsLApBMQChUKlQoWCxcLtxdgL8BiiMUQm0E2g6yGWQ1LosACA2EgDISBMBAGwkAYCANhIAyEgTAQBgadgFSwVLBUsFSwVLBUsFSwVLBUsFSwVLBUsFRwEAQWy6HsYHYwO5gdzA5mB7OD2cHsYHYwO5gdzA6O4mAYCANhIAyEgTAQBsJAGAgDYSAMhIEwMOgEpIKlgqWCpYInqeD1eh10AY6lThsgrfjD4fC9AZ7PZ1kul2lnEF3v/X4vq9Vq/HawBsjrhX8NUMtPw8Ba8/V6Hf75ruviOuByuXwfAbX63W4XdQj11ps2wHw+j6r/dDppAA3woQA3QFfcAB4BHgFJJ0AD0ABE4G8iiAagAWAgDDQHSNJA5gAGQQZBBkEGQX9egEGQQVCSBCg0AA1AA9AANAANUBNBJoEmgSaBJoEmgUkYgAJQAApAASgABaCAMRZuFGwUnKQBjYJlAmUCZQJlAr+rYTQADUADJJ0ADUAD0AA0AA0wvCCCHWwQxA5mB7ODk0QwO5gdzA5mB7OD2cEogB0MA+UBvCaOGcQMSqJAgRBmEDOIGcQMYgYxgz4viyYCiUAiMOkEiEAikAgkAolAIpAIFAmzG+iTMZZDfTPIN4OSKLDAQBgIA2EgDISBMBAGwkAYCANhYDgGRjHgp9iKgvWXlgWoNdfa2ykFJDZAes2z2az8AHQh6tsoo9tQAAAAAElFTkSuQmCC";
 const toneMappingOptions = {
     0: THREE.NoToneMapping,
     1: THREE.LinearToneMapping,
@@ -69,7 +67,6 @@ class Sandbox {
         this.mat_pbr = undefined;
         this.mat_shade = undefined;
         this.mat_emissive = undefined;
-        this.textures = [];
 
         this.isShadeMode = false;
 
@@ -78,8 +75,6 @@ class Sandbox {
 
         this.now, this.elapsed = 0;
         this.then = performance.now();
-
-        this.init();
     }
 
     init() {
@@ -157,10 +152,6 @@ class Sandbox {
         this.mat_emissive = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x000000), side: THREE.BackSide });
         this.mat_emissive.emissiveIntensity = 1;
 
-        this.textures.push(new THREE.TextureLoader().load(TEX_NULL));
-        this.textures.push(createVoxelTexture());
-        this.textures.push(new THREE.TextureLoader().load(TEX_CHECKER));
-
         this.plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 1, 1), this.mat_shade);
         this.plane.rotation.x = Math.PI / 2;
         this.plane.receiveShadow = true;
@@ -178,56 +169,23 @@ class Sandbox {
     // Create meshes
 
     createMeshesFromBuffers() {
-        this.meshes = new Array(builder.uniqueColors.length);
+        this.meshes = translator.getMeshesVoxels();
+        translator.dispose();
 
-        for (let c = 0; c < builder.uniqueColors.length; c++) {
+        for (let i = 0; i < this.meshes.length; i++) {
+            const isEmissive = this.meshes[i].material.name === 'emissive';
+            this.meshes[i].material.dispose();
+
+            (isEmissive) ?
+                this.meshes[i].material = (ui.domRenderShade.checked) ? this.mat_shade : this.mat_emissive :
+                this.meshes[i].material = (ui.domRenderShade.checked) ? this.mat_shade : this.mat_pbr;
+
+            this.meshes[i].name = 'mesh';
+            this.meshes[i].frustumCulled = true;
+            this.meshes[i].castShadow = true;
+            this.meshes[i].receiveShadow = true;
             
-            const voxels = builder.getVoxelsByColor(builder.uniqueColors[c]);
-            const positions = new Float32Array(vMesh.positions.length * voxels.length);
-            const uvs = new Float32Array(vMesh.uvs.length * voxels.length);
-            const colors = new Float32Array(vMesh.uvs.length * 2 * voxels.length);
-            const indices = new Uint32Array(vMesh.indices.length * voxels.length);
-
-            for (let i = 0; i < voxels.length; i++) {
-                const idx = voxels[i].idx;
-                
-                for (let v = 0; v < vMesh.positions.length; v += 3) {
-                    positions[i * vMesh.positions.length + v] = builder.positions[idx * vMesh.positions.length + v];
-                    positions[i * vMesh.positions.length + v + 1] = builder.positions[idx * vMesh.positions.length + v + 1];
-                    positions[i * vMesh.positions.length + v + 2] = builder.positions[idx * vMesh.positions.length + v + 2];
-                }
-                for (let v = 0; v < vMesh.uvs.length; v += 2) {
-                    uvs[i * vMesh.uvs.length + v] = builder.uvs[idx * vMesh.uvs.length + v];
-                    uvs[i * vMesh.uvs.length + v + 1] = builder.uvs[idx * vMesh.uvs.length + v + 1];
-                    colors[i * vMesh.uvs.length * 2 + v * 2] = builder.colors[idx * vMesh.uvs.length * 2 + v * 2];
-                    colors[i * vMesh.uvs.length * 2 + v * 2 + 1] = builder.colors[idx * vMesh.uvs.length * 2 + v * 2 + 1];
-                    colors[i * vMesh.uvs.length * 2 + v * 2 + 2] = builder.colors[idx * vMesh.uvs.length * 2 + v * 2 + 2];
-                    colors[i * vMesh.uvs.length * 2 + v * 2 + 3] = builder.colors[idx * vMesh.uvs.length * 2 + v * 2 + 3];
-                }
-                for (let v = 0; v < vMesh.indices.length; v++) {
-                    indices[i * vMesh.indices.length + v] = builder.indices[i * vMesh.indices.length + v];
-                }
-            }
-
-            this.geom = new THREE.BufferGeometry();
-            this.geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            this.geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-            this.geom.setAttribute('color', new THREE.BufferAttribute(colors, 4));
-            this.geom.setIndex(new THREE.BufferAttribute(indices, 1));
-            this.geom.computeVertexNormals();
-
-            (builder.uniqueColors[c] === "#000000") ?
-                this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_emissive) :
-                this.meshes[c] = new THREE.Mesh(this.geom, (ui.domRenderShade.checked) ? this.mat_shade : this.mat_pbr);
-
-            this.meshes[c].name = builder.uniqueColors[c];
-            this.meshes[c].frustumCulled = true;
-            this.meshes[c].castShadow = true;
-            this.meshes[c].receiveShadow = true;
-            this.scene.add(this.meshes[c]);
-
-            this.geom.dispose();
-            this.geom = undefined;
+            this.scene.add(this.meshes[i]);
         }
     }
 
@@ -248,34 +206,6 @@ class Sandbox {
         this.meshes = [];
         this.disposePick();
     }
-
-    // currently not supported by three-gpu-pathtracer
-    /* createBatchedMesh(material) {
-        const batchedMesh = new THREE.BatchedMesh(
-            builder.voxels.length,
-            vMesh.positions.length, vMesh.indices.length,
-            material.clone());
-        const boxId = batchedMesh.addGeometry(new THREE.BoxGeometry(1, 1, 1));
-        const mat = new THREE.Matrix4();
-        const col = new THREE.Color();
-
-        for (let i = 0; i < builder.voxels.length; i++) {
-            const boxInst = batchedMesh.addInstance(boxId);
-            mat.fromArray(builder.bufferMatrix, i * 16);
-            batchedMesh.setMatrixAt(boxInst, mat);
-            col.r = builder.bufferColors[i * 4];
-            col.g = builder.bufferColors[i * 4 + 1];
-            col.b = builder.bufferColors[i * 4 + 2];
-            batchedMesh.setColorAt(boxInst, col);
-        }
-
-        batchedMesh.frustumCulled = true;
-        batchedMesh.sortObjects = false;
-		batchedMesh.perObjectFrustumCulled = true;
-        batchedMesh.material.vertexColors = false;
-        batchedMesh.material.side = THREE.FrontSide;
-        return [ batchedMesh ];
-    } */
 
     // Updates
 
@@ -340,7 +270,7 @@ class Sandbox {
     }
 
     updateMaterials() {
-        this.mat_pbr.map = this.textures[parseInt(ui.domRenderTexture.value)];
+        this.mat_pbr.map = translator.textures[preferences.getVoxelTextureId()];
         this.mat_pbr.roughness = ui.domRenderMaterialRoughness.value;
         this.mat_pbr.metalness = ui.domRenderMaterialMetalness.value;
         this.mat_pbr.transmission = ui.domRenderMaterialTransmission.value;
@@ -737,23 +667,6 @@ function downloadImage(imgSrc, filename) {
 
 function randomRangeInt(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
-}
-
-function createVoxelTexture(size = 64) {
-    const c = document.createElement('canvas');
-    c.width = size;
-    c.height = size;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, size, size);
-    ctx.lineWidth = 0.8;
-    ctx.strokeStyle = '#000000AA';
-    //ctx.filter = 'blur(1px)';
-    ctx.strokeRect(0, 0, size, size);
-    const tex = new THREE.CanvasTexture(c);
-    tex.minFilter = THREE.NearestMipmapLinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    return tex;
 }
 
 function timeFormat(t) {

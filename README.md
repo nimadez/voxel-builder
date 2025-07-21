@@ -22,9 +22,9 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 **File I/O**
 - Save and load JSON
 - Import MagicaVoxel VOX
-- Export to GLB, GLTF, OBJ, STL
-- Local storages, snapshots, quicksave, undo
-- Backup and share up to 100 snapshots in a ZIP archive
+- Export to GLB, GLTF, OBJ, STL, PLY
+- Localstorage, snapshots, quicksave, undo
+- Backup and share snapshots in a ZIP archive
 
 **Model and Paint**
 - High performance voxel engine
@@ -41,7 +41,7 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 
 **Voxelization**
 - Fast BVH voxelization
-- 3D model voxelizer
+- Model voxelizer *(GLB, OBJ, STL, PLY)*
 - Image voxelizer
 - Text voxelizer *(unicode & emoji)*
 
@@ -111,31 +111,31 @@ python3 update.py
 ✔️ If WebGPU is supported in your browser, the option to enable it will be available in the Preferences menu.
 
 ## Known Issues
-Higher than 512K is not recommended
-```
-Electron is recommended for working with a large number of voxels
 
-Higher values can have the following problems:
-- Intolerable delay when starting the renderer
-- Chrome tab may freeze or crash
+#### Low FPS at higher voxel volumes
+> Electron is recommended for working with a large number of voxels.<br>
+Also, the FPS depends on many factors, such as the material (CEL is faster) and the distance between the camera and the model. Rendering a dense Thin volume at close range greatly increases GPU load.
+>- Use "Minimal UIX" to save battery on mobile devices. (<100 ms startup)
+>- Do not enable "Frosted Glass UI"
+>- Use XFORM > "Optimize" to reduce the volume of voxels.
 
-Of course, the number of voxels is unlimited,
-I have rendered up to 1 million voxels.
-```
-Failed to import GLB meshes for voxelization
-```
-Multiple meshes need to have the same properties or they won't merge,
-the only solution is to merge meshes before exporting to GLB.
-```
-Wacom tablet crashes randomly and throws warning on Linux (GNOME)
-```
-Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.
-This problem is related to Babylon.js and nothing can be done.
-```
-Error: Exceeded the quota
-```
-Browser storage is limited, use Electron for much higher capacity.
-```
+#### Delay in drawing strokes
+> If you draw and it doesn't, it means the builder is working, you are drawing faster than your hardware and browser will allow. (latency > 150 ms)
+
+#### Error: Exceeded the quota
+> Browser storage is limited, use Electron for much higher capacity.
+
+#### Import GLB:
+##### Attributes error (voxelization)
+> Multiple meshes need to have the same properties or they won't merge, the only solution is to merge meshes before exporting to GLB.
+##### Morphtarget error (voxelization)
+> We do not support geometry animations.
+
+#### Import PLY: Throw RangeError (voxelization)
+> They are often a piece of a larger model data from the Stanford 3D repository.
+
+#### Wacom tablet crashes randomly and throws warning on Chrome (Linux:GNOME)
+> Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.<br>This problem is related to Babylon.js and nothing can be done.
 
 ## FAQ
 How to merge vertices after export to GLB?

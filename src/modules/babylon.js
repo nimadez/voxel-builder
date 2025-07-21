@@ -285,10 +285,6 @@ export function PointsCloudSystem(name, size, scene, isUpdatable) {
     return new BABYLON.PointsCloudSystem(name, size, scene, { updatable: isUpdatable });
 }
 
-export function SolidParticleSystem(name, scene, isUpdatable, isExpandable, isBoundingSphereOnly) {
-    return new BABYLON.SolidParticleSystem(name, scene, { updatable: isUpdatable, expandable: isExpandable, boundingSphereOnly: isBoundingSphereOnly });
-}
-
 // Mesh related functions
 
 export function VertexData() {
@@ -299,54 +295,10 @@ export function MergeMeshes(arr, disposeSource, allow32BitsIndices) {
     return BABYLON.Mesh.MergeMeshes(arr, disposeSource, allow32BitsIndices);
 }
 
-// Mesh IO
-
-export function LoadAssetContainerAsync(url, dotExt, scene, onLoaded, onError) {
-    BABYLON.SceneLoader.LoadAssetContainerAsync(url, '', scene, undefined, dotExt)
-        .then(container => {
-            onLoaded(container);
-        }).catch((err) => {
-            onError(err.message);
-        });
-}
-
-export function ExportGLB(scene, filename, exportOptions, isDownload, onLoaded) {
-    BABYLON.GLTF2Export.GLBAsync(scene, filename, exportOptions).then(data => {
-        if (isDownload)
-            data.downloadFiles();
-        onLoaded(data);
-    });
-}
-
-export function ExportGLTF(scene, filename, exportOptions, isDownload, onLoaded) {
-    BABYLON.GLTF2Export.GLTFAsync(scene, filename, exportOptions).then(data => {
-        if (isDownload)
-            data.downloadFiles();
-        onLoaded(data);
-    });
-}
-
-export function ExportOBJ(meshes) {
-    return BABYLON.OBJExport.OBJ(meshes, false, 'material', true);
-}
-
-export function ExportSTL(meshes, filename) {
-    return BABYLON.STLExport.CreateSTL(meshes, true, filename, null, null, false, true, false);
-}
-
 // Utilities
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);
-
-export function Animator(target, property, from, to, fps, totalFrames) {
-    return new Promise(resolve => {
-        BABYLON.Animation.CreateAndStartAnimation('animator',
-            target, property, fps, totalFrames, from, to, 
-            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
-            easingFunction, resolve);
-    });
-}
 
 export function AnimatorCamera(scene, camera, newRadius, newTarget, speedRatio = 1) {
     const totalFrames = 20;

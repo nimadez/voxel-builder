@@ -108,7 +108,7 @@ class RaycastMesh {
 class RaycastVoxelize {
     constructor() {}
 
-    mesh_voxel(mesh, color) {
+    voxelizeMesh(mesh, color) {
         const rcm = new RaycastMesh();
         
         rcm.createFromData(
@@ -142,7 +142,7 @@ class RaycastVoxelize {
         return data;
     }
     
-    bake_voxel(mesh) {
+    voxelizeBake(mesh) {
         const rcm = new RaycastMesh();
     
         rcm.createFromDataWithColor(
