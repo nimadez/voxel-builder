@@ -13,7 +13,7 @@ class Palette {
         this.canvas = document.getElementById('canvas_palette');
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
         
-        this.width = 35;
+        this.width = 39;
         this.height = 25;
         this.pad = 2;
         this.wPad = this.width + this.pad;

@@ -1,7 +1,7 @@
 {
     "version": "Voxel Builder 4.6.0",
     "project": {
-        "name": "pt_indirect",
+        "name": "test_pt_indirect",
         "voxels": 705
     },
     "data": {

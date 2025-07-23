@@ -7,7 +7,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { ui, builder, xformer, project, preferences } from '../core.js';
+import { ui, builder, preferences } from '../core.js';
 
 
 class Generator {
@@ -24,10 +24,7 @@ class Generator {
         }
     }
 
-    async createBox(isPlane = false) {
-        const isNewScene = document.getElementById('create_grid_new').checked;
-        if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
-        
+    createBox(isPlane = false) {
         const isFill = document.getElementById('create_grid_fill').checked;
         const X = parseInt(document.getElementById('create_grid_x').value);
         const Y = (isPlane) ? 1 : parseInt(document.getElementById('create_grid_y').value);
@@ -64,17 +61,10 @@ class Generator {
             }
         }
 
-        if (isNewScene) {
-            builder.createVoxelsFromArray(data);
-            project.resetSceneSetup();
-        } else {
-            xformer.beginNew(data);
-        }
+        builder.createXform(data);
     }
 
-    async createIsometric() {
-        const isNewScene = document.getElementById('create_grid_new').checked;
-        if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
+    createIsometric() {
         const X = parseInt(document.getElementById('create_grid_x').value);
         const Y = parseInt(document.getElementById('create_grid_y').value);
         const Z = parseInt(document.getElementById('create_grid_z').value);
@@ -94,18 +84,10 @@ class Generator {
             }
         }
 
-        if (isNewScene) {
-            builder.createVoxelsFromArray(data);
-            project.resetSceneSetup();
-        } else {
-            xformer.beginNew(data);
-        }
+        builder.createXform(data);
     }
 
-    async createSphere() {
-        const isNewScene = document.getElementById('create_sphere_new').checked;
-        if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
-
+    createSphere() {
         const outer = parseInt(document.getElementById('create_sphere_outer').value);
         let inner = parseInt(document.getElementById('create_sphere_inner').value);
         if (inner >= outer) {
@@ -143,17 +125,10 @@ class Generator {
             }
         }
         
-        if (isNewScene) {
-            builder.createVoxelsFromArray(data);
-            project.resetSceneSetup();
-        } else {
-            xformer.beginNew(data);
-        }
+        builder.createXform(data);
     }
 
-    async createTerrain() {
-        const isNewScene = document.getElementById('create_terrain_new').checked;
-        if (isNewScene && !await ui.showConfirm('clear and replace all voxels?')) return;
+    createTerrain() {
         const isHeightGrad = document.getElementById('create_terrain_grad').checked;
         const X = parseInt(document.getElementById('create_terrain_x').value);
         const Y = parseInt(document.getElementById('create_terrain_y').value);
@@ -191,12 +166,7 @@ class Generator {
             }
         }
 
-        if (isNewScene) {
-            builder.createVoxelsFromArray(data);
-            project.resetSceneSetup();
-        } else {
-            xformer.beginNew(data);
-        }
+        builder.createXform(data);
     }
 }
 

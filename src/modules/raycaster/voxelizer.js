@@ -5,8 +5,8 @@
     Voxelizer
 */
 
-import { Vector3, MergeMeshes } from "../babylon.js";
-import { builder, pool, xformer, project, ui, preferences } from "../core.js";
+import { Vector3 } from "../babylon.js";
+import { builder, pool, project, ui, preferences } from "../core.js";
 import { loaders } from "../loaders/loaders.js";
 import { rcv } from './raycaster.js';
 
@@ -18,14 +18,10 @@ class Voxelizer {
         const scale = parseInt(ui.domVoxelizerScale.value);
 
         pool.normalizeMesh(mesh, scale);
-        const data = rcv.voxelizeMesh(mesh, preferences.getRenderShadeColor());
-        
-        builder.createVoxelsFromArray(data);
-        project.resetSceneSetup();
+        builder.createXform(rcv.voxelizeMesh(mesh, preferences.getRenderShadeColor()));
     }
 
-    voxelizeBake(meshes) {
-        const mesh = MergeMeshes(meshes, true, true);
+    voxelizeBake(mesh) {
         pool.resetPivot(mesh);
 
         const data = rcv.voxelizeBake(mesh);
@@ -36,12 +32,11 @@ class Voxelizer {
             if (data[v].color == '#000NAN')
                 isValidGLB++;
 
-        if (data.length == 0 || isValidGLB == data.length) {
-            ui.errorMessage('Invalid GLB (not baked)');
-        } else {
-            builder.createVoxelsFromArray(data);
-            builder.normalizeVoxelPositions();
+        if (data.length > 0 && isValidGLB !== data.length) {
+            builder.createVoxelsFromArray(builder.normalizeVoxelPositionsArray(data));
             project.resetSceneSetup();
+        } else {
+            ui.errorMessage('Invalid GLB (not baked)');
         }
     }
 
@@ -92,20 +87,19 @@ class Voxelizer {
                 }
             }
 
-            builder.createVoxelsFromArray(data);
-            builder.normalizeVoxelPositions();
-            project.resetSceneSetup();
+            builder.createXform(builder.normalizeVoxelPositionsArray(data));
             ui.showProgress(0);
         }
     }
 
     async voxelize2DText() {
-        const color = preferences.getRenderShadeColor();
         const font = ui.domVoxelizerTextFont.value;
         const text = ui.domVoxelizerText.value;
         const extrude = parseInt(ui.domVoxelizerTextExtrude.value);
         const vertical = ui.domVoxelizerTextVertical.checked;
         const emoji = ui.domVoxelizerTextEmoji.checked;
+        const color = preferences.getRenderShadeColor();
+
         if (text == '') {
             ui.notification("undefined text", 1000);
             return;
@@ -114,6 +108,8 @@ class Voxelizer {
             ui.notification("incorrect font", 1000);
             return;
         }
+
+        if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
         ui.showProgress(1);
 
         const c = document.createElement("canvas");
@@ -172,24 +168,14 @@ class Voxelizer {
             }
         }
 
+        builder.createXform(builder.normalizeVoxelPositionsArray(data.concat(arr)));
         ui.showProgress(0);
-
-        const voxels = builder.normalizeVoxelPositionsArray(data.concat(arr));
-
-        if (ui.domVoxelizerTextNewScene.checked) {
-            if (await ui.showConfirm('clear and replace all voxels?')) {
-                builder.createVoxelsFromArray(voxels);
-                project.resetSceneSetup();
-            }
-        } else {
-            xformer.beginNew(voxels);
-        }
     }
 
     importBakedVoxels(url, scene) {
         ui.showProgress(1);
         loaders.loadGLB(url, scene).then(mesh => {
-            this.voxelizeBake([ mesh ]);
+            this.voxelizeBake(mesh);
             mesh.dispose();
             ui.showProgress(0);
         }).catch(err => {

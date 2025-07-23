@@ -101,10 +101,14 @@ class Sandbox {
 
         this.createScene();
 
+        console.log('init three-sandbox');
+    }
+
+    initPathTracer() {
         this.pt = new PathTracer();
         this.pt.create(this.scene, this.camera);
 
-        console.log('load three sandbox');
+        console.log('load three-gpu-pathtracer');
     }
 
     // Create scene
@@ -160,10 +164,10 @@ class Sandbox {
 
         this.pickBox = new THREE.BoxHelper(this.scene, 0xFFA500);
 
-        //this.lightHelper = new THREE.DirectionalLightHelper(this.light, 10, 0xFFFF80);
-        //this.lightHelper.lightPlane.material.opacity = 0.3;
-        //this.lightHelper.lightPlane.material.transparent = true;
-        //this.scene.add(this.lightHelper);
+        this.lightHelper = new THREE.DirectionalLightHelper(this.light, 10, 0xFFFF80);
+        this.lightHelper.lightPlane.material.opacity = 0.3;
+        this.lightHelper.lightPlane.material.transparent = true;
+        this.scene.add(this.lightHelper);
     }
 
     // Create meshes
@@ -512,6 +516,9 @@ class Sandbox {
 
     activate() {
         if (this.isLoaded) return; // avoid overdraw
+
+        if (!this.pt)
+            this.initPathTracer();
 
         engine.isRendering = false;
 

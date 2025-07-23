@@ -35,19 +35,18 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 - Color groups and visibility options
 
 **Rendering**
-- Three.js sandbox
+- Three.js Sandbox
 - Three.js GPU path tracer
 - Basic PBR rendering
 
 **Voxelization**
-- Fast BVH voxelization
+- Fast BVH method
 - Model voxelizer *(GLB, OBJ, STL, PLY)*
 - Image voxelizer
 - Text voxelizer *(unicode & emoji)*
 
 **Export Meshes**
 - Bake voxels to editable meshes
-- Bake voxels by color groups
 - Unbake exported GLB back to voxels
 - glTF compatible editor
 
@@ -115,12 +114,12 @@ python3 update.py
 #### Low FPS at higher voxel volumes
 > Electron is recommended for working with a large number of voxels.<br>
 Also, the FPS depends on many factors, such as the material (CEL is faster) and the distance between the camera and the model. Rendering a dense Thin volume at close range greatly increases GPU load.
->- Use "Minimal UIX" to save battery on mobile devices. (<100 ms startup)
+>- Use "Minimal UIX" to save battery on mobile devices.
 >- Do not enable "Frosted Glass UI"
 >- Use XFORM > "Optimize" to reduce the volume of voxels.
 
 #### Delay in drawing strokes
-> If you draw and it doesn't, it means the builder is working, you are drawing faster than your hardware and browser will allow. (latency > 150 ms)
+> If you draw and it doesn't, it means the builder is working, you are drawing faster than your hardware and browser will allow. (latency >150 ms)
 
 #### Error: Exceeded the quota
 > Browser storage is limited, use Electron for much higher capacity.

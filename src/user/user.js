@@ -11,4 +11,4 @@ See examples/
     Copy/paste them here and reload to see the result.
 */
 
-console.log('init user modules');
+console.log('init user-module');

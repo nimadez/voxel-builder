@@ -27,12 +27,19 @@ class Loaders {
                     }
                 });
 
-                const mesh = translator.getMeshFromThree(geometries, scene);
-                (mesh) ? resolve(mesh) : reject('Error: Bad Mesh Attributes');
+                if (geometries.length > 0) {
+
+                    const mesh = translator.getMeshFromThree(geometries, scene);
+                    (mesh) ? resolve(mesh) : reject('Error: Bad Geometry Attributes');
+
+                    for (const geom of geometries)
+                        geom.dispose();
+
+                } else {
+                    reject('Error: No Geometries');
+                }
 
                 translator.dispose();
-                for (const geom of geometries)
-                    geom.dispose();
 
             }, null, (err) => {
                 reject(err);
@@ -52,12 +59,19 @@ class Loaders {
                     }
                 });
 
-                const mesh = translator.getMeshFromThree(geometries, scene);
-                (mesh) ? resolve(mesh) : reject('Error: Bad Mesh Attributes');
+                if (geometries.length > 0) {
+                    
+                    const mesh = translator.getMeshFromThree(geometries, scene);
+                    (mesh) ? resolve(mesh) : reject('Error: Bad Geometry Attributes');
+
+                    for (const geom of geometries)
+                        geom.dispose();
+                    
+                } else {
+                    reject('Error: No Geometries');
+                }
 
                 translator.dispose();
-                for (const geom of geometries)
-                    geom.dispose();
 
             }, null, (err) => {
                 reject(err);
@@ -68,17 +82,12 @@ class Loaders {
             
     loadSTL(url, scene) {
         return new Promise((resolve, reject) => {
-            const geometries = [];
-
             new STLLoader().load(url, (geometry) => {
-                geometries.push(geometry);
 
-                const mesh = translator.getMeshFromThree(geometries, scene);
-                (mesh) ? resolve(mesh) : reject('Error: Bad Mesh Attributes');
+                const mesh = translator.getMeshFromThree([ geometry ], scene);
+                (mesh) ? resolve(mesh) : reject('Error: Bad Geometry Attributes');
 
                 translator.dispose();
-                for (const geom of geometries)
-                    geom.dispose();
 
             }, null, (err) => {
                 reject(err);
@@ -88,17 +97,12 @@ class Loaders {
 
     loadPLY(url, scene) {
         return new Promise((resolve, reject) => {
-            const geometries = [];
-
             new PLYLoader().load(url, (geometry) => {
-                geometries.push(geometry);
-
-                const mesh = translator.getMeshFromThree(geometries, scene);
-                (mesh) ? resolve(mesh) : reject('Error: Bad Mesh Attributes');
+                
+                const mesh = translator.getMeshFromThree([ geometry ], scene);
+                (mesh) ? resolve(mesh) : reject('Error: Bad Geometry Attributes');
 
                 translator.dispose();
-                for (const geom of geometries)
-                    geom.dispose();
 
             }, null, (err) => {
                 reject(err);

@@ -229,13 +229,13 @@ class Translator {
             
             const mesh = CreateMesh('mesh', scene);
             const vertexData = VertexData();
-            vertexData.positions = new Float32Array(geom.attributes.position.array);
-            vertexData.normals = new Float32Array(geom.attributes.normal.array);
+            vertexData.positions = Array.from(geom.attributes.position.array);
+            vertexData.normals = Array.from(geom.attributes.normal.array);
             if (geom.attributes.uv)
-                vertexData.uvs = new Float32Array(geom.attributes.uv.array);
+                vertexData.uvs = Array.from(geom.attributes.uv.array);
             if (geom.attributes.color)
-                vertexData.colors = new Float32Array(geom.attributes.color.array);
-            vertexData.indices = new Uint32Array(geom.index.array);
+                vertexData.colors = Array.from(geom.attributes.color.array);
+            vertexData.indices = Array.from(geom.index.array);
             vertexData.applyToMesh(mesh);
 
             geom.dispose();

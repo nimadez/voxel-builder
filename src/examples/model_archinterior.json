@@ -1,7 +1,7 @@
 {
     "version": "Voxel Builder 4.6.0",
     "project": {
-        "name": "test_archinterior",
+        "name": "model_archinterior",
         "voxels": 3994
     },
     "data": {

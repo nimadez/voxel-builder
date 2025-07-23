@@ -15,6 +15,9 @@ http.createServer((req, res) => {
     if (parsedUrl.pathname == '/')
         filePath = 'src/index.html';
 
+    if (parsedUrl.pathname.endsWith('js.map'))
+        return res.end();
+
     fs.readFile(filePath, (err, data) => {
         if (err) {
             console.log(`GET ${filePath} 404 NOT FOUND`)

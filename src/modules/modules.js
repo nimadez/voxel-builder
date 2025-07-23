@@ -20,6 +20,7 @@ workerPool.setWorkerCreator(() => {
 export { hover } from './interfaces/hover.js';
 export { panels } from './interfaces/panels.js';
 export { palette } from './interfaces/palette.js';
+export { confirm } from './interfaces/confirm.js';
 export { colorPicker } from './interfaces/colorpicker.js';
 export { sandbox } from './sandbox/sandbox.js';
 export { generator } from './generator/generator.js';

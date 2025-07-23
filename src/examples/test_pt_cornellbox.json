@@ -1,7 +1,7 @@
 {
     "version": "Voxel Builder 4.6.0",
     "project": {
-        "name": "pt_cornellbox",
+        "name": "test_pt_cornellbox",
         "voxels": 1090
     },
     "data": {
