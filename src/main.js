@@ -12,20 +12,10 @@ import { engine } from './modules/babylon.js';
 import * as CORE from './modules/core.js';
 
 
-let adapter = undefined;
-if (navigator.gpu) {
-    try {
-        adapter = await navigator.gpu.requestAdapter();
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-
 const startTime = performance.now();
-CORE.preferences.init(adapter);
+CORE.preferences.init();
 
-engine.init(adapter && CORE.preferences.isWebGPU()).then(eng => {
+engine.init().then(eng => {
 
     CORE.mainScene.create(eng).then(scn => {
 

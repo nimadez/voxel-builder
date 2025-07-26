@@ -11,6 +11,7 @@ import { ui } from '../core.js';
 class Confirm {
     constructor() {
         this.isAccept = false;
+        this.isPointerDown = false;
         this.isDragging = false;
         this.startX = 0;
         this.maxSwipe = 0;
@@ -32,7 +33,8 @@ class Confirm {
     }
 
     onPointerDown(ev) {
-        confirm.isDragging = true;
+        confirm.isPointerDown = true;
+        confirm.isDragging = false;
         confirm.startX = (ev.touches) ? ev.touches[0].clientX : ev.clientX;
 
         ui.domConfirm.children[0].style.left = '0px';
@@ -40,19 +42,21 @@ class Confirm {
     }
 
     onPointerMove(ev) {
-        if (confirm.isDragging) {
+        if (confirm.isPointerDown) {
             const deltaX = ((ev.touches) ? ev.touches[0].clientX : ev.clientX) - confirm.startX;
 
             // constrain within bounds
             confirm.maxSwipe = ui.domConfirm.offsetWidth - ui.domConfirm.children[0].offsetWidth;
             confirm.currentLeft = Math.max(0, Math.min(deltaX, confirm.maxSwipe));
             ui.domConfirm.children[0].style.left = `${ confirm.currentLeft }px`;
+            confirm.isDragging = true;
         }
     }
 
-    onPointerUp(ev) {
+    onPointerUp() {
+        confirm.isPointerDown = false;
         if (confirm.isDragging) {
-            confirm.isDragging = ev.touches;
+            confirm.isDragging = false;
 
             ui.domConfirm.children[0].style.transition = 'left 0.3s ease-out';
 

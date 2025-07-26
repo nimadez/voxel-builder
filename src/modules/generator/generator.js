@@ -7,7 +7,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { ui, builder, preferences } from '../core.js';
+import { builder, preferences } from '../core.js';
 
 
 class Generator {
@@ -25,10 +25,10 @@ class Generator {
     }
 
     createBox(isPlane = false) {
-        const isFill = document.getElementById('create_grid_fill').checked;
         const X = parseInt(document.getElementById('create_grid_x').value);
         const Y = (isPlane) ? 1 : parseInt(document.getElementById('create_grid_y').value);
         const Z = parseInt(document.getElementById('create_grid_z').value);
+        const isFill = document.getElementById('create_grid_fill').checked;
         const color = preferences.getRenderShadeColor();
         
         const data = [];
@@ -129,11 +129,10 @@ class Generator {
     }
 
     createTerrain() {
-        const isHeightGrad = document.getElementById('create_terrain_grad').checked;
         const X = parseInt(document.getElementById('create_terrain_x').value);
         const Y = parseInt(document.getElementById('create_terrain_y').value);
         const Z = parseInt(document.getElementById('create_terrain_z').value);
-
+        const isHeightGrad = document.getElementById('create_terrain_grad').checked;
         const color = preferences.getRenderShadeColor();
         
         const simplex = new SimplexNoise();

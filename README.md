@@ -59,8 +59,7 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 - Average startup time 300 ms *(after the first launch)*
 - Unique handcrafted user-interface
 - Minimum dependency, portable, online and offline
-- Vanilla open-source, no compressed or encrypted code
-- Ad-free, no trackers, no logging, no loading screens
+- Ad-free, no trackers, no logging
 
 ## Installation
 Install [Electron](https://github.com/electron/electron/releases) *(recommended)*
@@ -94,20 +93,6 @@ python3 update.py
 
 > - PWA A2HS-ready *(add to home screen)*
 > - For the best experience, a tablet with pen or Wacom is recommended
-
-#### Enable Unsafe WebGPU
-- Electron:
-    - Start Electron with ```--enable-unsafe-webgpu```
-    - In Linux, add ```--enable-features=Vulkan``` for hardware acceleration
-    - ```$ electron --enable-unsafe-webgpu --enable-features=Vulkan .```
-- Chrome:
-    - Use ```chrome://flags``` to enable "Unsafe WebGPU Support"
-    - In Linux, start Chrome with ```--enable-features=Vulkan``` for hardware acceleration
-- Firefox (dev edition):
-    - Use ```about:config``` to enable "dom.webgpu.enabled"
-    - It may not work
-
-✔️ If WebGPU is supported in your browser, the option to enable it will be available in the Preferences menu.
 
 ## Known Issues
 
@@ -162,7 +147,6 @@ git reset --hard $HASH
 ## History
 ```
 ↑ A major upgrade and overhaul
-↑ Unsafe WebGPU support
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)

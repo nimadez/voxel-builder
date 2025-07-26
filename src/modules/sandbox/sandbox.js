@@ -7,14 +7,14 @@
 
 import { THREE, renderer } from '../three.js';
 import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer.js';
-import { RGBELoader } from '../../libs/addons/RGBELoader.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
-
-import { Tween, Group, Easing } from '../../libs/utils/tween.esm.js';
 
 import { engine, Vector3 } from '../babylon.js';
 import { camera, hdri, light, builder, ui, preferences } from '../core.js';
 import { translator } from '../translator.js';
+import { loaders } from '../loaders/loaders.js';
+
+import { Tween, Group, Easing } from '../../libs/utils/tween.esm.js';
 
 
 const isMobile = isMobileDevice();
@@ -100,6 +100,7 @@ class Sandbox {
         });
 
         this.createScene();
+        this.initPathTracer();
 
         console.log('init three-sandbox');
     }
@@ -107,8 +108,6 @@ class Sandbox {
     initPathTracer() {
         this.pt = new PathTracer();
         this.pt.create(this.scene, this.camera);
-
-        console.log('load three-gpu-pathtracer');
     }
 
     // Create scene
@@ -229,7 +228,6 @@ class Sandbox {
         this.camera.focusDistance = ui.domCameraFocalLength.value;
         this.camera.updateProjectionMatrix();
         this.controls.update();
-
         this.pt.updateCamera();
     }
 
@@ -268,8 +266,7 @@ class Sandbox {
         this.light.target.position.set(0, 0, 0);
         this.light.color = new THREE.Color(ui.domRenderLightColor.value);
         this.light.intensity = ui.domRenderLightIntensity.value;
-        if (this.lightHelper)
-            this.lightHelper.update();
+        this.lightHelper.update();
         this.pt.updateLights();
     }
 
@@ -413,8 +410,17 @@ class Sandbox {
         this.cameraAnimator(position, center);
     }
 
-    async loadHDR(url, onLoad) {
-        await loadRGBE(url).then(tex => {
+    setView(position, center) {
+        position = new THREE.Vector3(position.x, position.y, position.z);
+        center = new THREE.Vector3(center.x, center.y, center.z);
+
+        this.camera.position.copy(position.multiplyScalar(this.controls.getDistance()).add(center));
+        this.controls.target.copy(center);
+        this.camera.updateProjectionMatrix();
+    }
+
+    loadHDR(url, onLoad) {
+        loaders.loadRGBE(url).then(tex => {
             tex.mapping = THREE.EquirectangularReflectionMapping;
             tex.minFilter = THREE.LinearFilter;
             tex.magFilter = THREE.LinearFilter;
@@ -516,9 +522,6 @@ class Sandbox {
 
     activate() {
         if (this.isLoaded) return; // avoid overdraw
-
-        if (!this.pt)
-            this.initPathTracer();
 
         engine.isRendering = false;
 
@@ -658,12 +661,6 @@ renderer.domElement.onpointermove = (ev) => {
 // -------------------------------------------------------
 // Utils
 
-
-async function loadRGBE(url) {
-    return new Promise(resolve => {
-        new RGBELoader().load(url, resolve);
-    });
-}
 
 function downloadImage(imgSrc, filename) {
     const a = document.createElement("a");

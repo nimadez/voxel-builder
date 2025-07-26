@@ -36,7 +36,7 @@ class Voxelizer {
             builder.createVoxelsFromArray(builder.normalizeVoxelPositionsArray(data));
             project.resetSceneSetup();
         } else {
-            ui.errorMessage('Invalid GLB (not baked)');
+            ui.errorMessage('invalid glb (not baked)');
         }
     }
 
@@ -92,7 +92,7 @@ class Voxelizer {
         }
     }
 
-    async voxelize2DText() {
+    voxelize2DText() {
         const font = ui.domVoxelizerTextFont.value;
         const text = ui.domVoxelizerText.value;
         const extrude = parseInt(ui.domVoxelizerTextExtrude.value);
@@ -109,7 +109,6 @@ class Voxelizer {
             return;
         }
 
-        if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
         ui.showProgress(1);
 
         const c = document.createElement("canvas");

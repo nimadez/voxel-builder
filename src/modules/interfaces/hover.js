@@ -50,7 +50,7 @@ class Hover {
 
         if (ev.target === hover.elemDrag) {
             hover.isActive = true;
-            tool.toolSelector('camera', false);
+            tool.toolSelector('camera', true);
         }
     }
 

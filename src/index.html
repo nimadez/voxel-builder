@@ -305,7 +305,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.6.7 BETA
+                &#8627; 4.6.8 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -354,6 +354,8 @@
             <li title="Less battery drain (&#60;100 ms startup)"><input type="checkbox" id="pref_minimal"> <label for="pref_minimal">Minimal UIX</label></li>
             <li><input type="checkbox" id="pref_toolbar_icons"> <label for="pref_toolbar_icons">Icon Toolbar</label></li>
             <li><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
+            <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
+            <li title="Warning: Increased hardware utilization"><input type="checkbox" id="pref_glass_ui"> <label for="pref_glass_ui">Frosted Glass UI</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
@@ -371,10 +373,7 @@
             <li class="spacer"></li>
             <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
             <li class="category">SYSTEM</li>
-            <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
-            <li title="Warning: Increased hardware utilization"><input type="checkbox" id="pref_glass_ui"> <label for="pref_glass_ui">Frosted Glass UI</label></li>
             <li title="Debug Picking"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
-            <li><input type="checkbox" id="pref_webgpu"> <label for="pref_webgpu">Unsafe WebGPU</label></li>
         </ul>
 
         <ul class="menu panel" id="menu-file">
@@ -414,7 +413,16 @@
             <li class="category">VIEW</li>
             <li><button id="btn-ortho">Perspective</button></li>
             <li class="spacer"></li>
-            <li class="row"><button id="btn_action_camera_preset_left" class="row_round_s" title="Left View">L</button> <button id="btn_action_camera_preset_right" class="row_round_m" title="Right View">R</button> <button id="btn_action_camera_preset_bottom" class="row_round_m" title="Bottom View">B</button> <button id="btn_action_camera_preset_top" class="row_round_e" title="Top View">T</button></li>
+            <li class="row">
+                <button id="btn_action_camera_preset_back" class="row_round_s" title="Back View">B</button>
+                <button id="btn_action_camera_preset_top" class="row_round_m" title="Top View">T</button>
+                <button id="btn_action_camera_preset_front" class="row_round_e" title="Front View">F</button>
+            </li>
+            <li class="row">
+                <button id="btn_action_camera_preset_left" class="row_round_s" title="Left View">L</button>
+                <button id="btn_action_camera_preset_bottom" class="row_round_m" title="Bottom View">B</button>
+                <button id="btn_action_camera_preset_right" class="row_round_e" title="Right View">R</button>
+            </li>
             <li class="category">FRAME</li>
             <li><button id="btn_action_camera_frame">Frame All</button></li>
             <li><button id="btn_tool_frame_color" class="tool tool_frame_color">Frame Color</button></li>
@@ -780,7 +788,7 @@
 
     <!-- shortcuts -->
     <div id="shortcuts" onclick="this.style.display = 'none'">
-        <table title="Double tap to close">
+        <table title="Click to Close">
             <tr><td>SPACE, ALT</td> <td>Toggle Free Camera (MODEL)</td></tr>
             <tr><td>ENTER</td> <td>Apply Transforms (MODEL)</td></tr>
             <tr><td>CTRL</td> <td>Translate Camera (MODEL)</td></tr>

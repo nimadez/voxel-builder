@@ -9,15 +9,12 @@
 class Engine {
     constructor() {
         this.canvas = document.getElementById('canvas');
-
+        
         this.engine = undefined;
         this.isRendering = false;
     }
 
-    init(useWebGPU) {
-        if (useWebGPU)
-            return this.initWebGPU();
-
+    init() {
         return new Promise(resolve => {
             this.engine = new BABYLON.Engine(this.canvas, true, {});
             this.engine.disablePerformanceMonitorInBackground = true;
@@ -26,22 +23,6 @@ class Engine {
             this.engine.enableOfflineSupport = false;
             this.engine.doNotHandleContextLost = true;
             this.engine.maxFPS = 60;
-
-            resolve(this.engine);
-        });
-    }
-
-    initWebGPU() {
-        return new Promise(async resolve => {
-            this.engine = new BABYLON.WebGPUEngine(this.canvas);
-            this.engine.disablePerformanceMonitorInBackground = true;
-            this.engine.preserveDrawingBuffer = false;
-            this.engine.premultipliedAlpha = true;
-            this.engine.enableOfflineSupport = false;
-            this.engine.doNotHandleContextLost = true;
-            this.engine.maxFPS = 60;
-
-            await this.engine.initAsync();
 
             resolve(this.engine);
         });
@@ -359,14 +340,18 @@ export function AnimatorCamera(scene, camera, newRadius, newTarget, speedRatio =
     });
 }
 
-export function CreateScreenshot(engine, camera, width, height, callback) {
-    BABYLON.ScreenshotTools.CreateScreenshot(engine, camera, { width: width, height: height }, (data) => {
-        callback(data);
+export function CreateScreenshot(engine, camera, width, height) {
+    return new Promise(resolve => {
+        BABYLON.ScreenshotTools.CreateScreenshot(engine, camera, { width: width, height: height }, (data) => {
+            resolve(data);
+        });
     });
 }
 
-export function CreateScreenshotWithResizeAsync(engine, camera, width, height, callback) {
-    BABYLON.ScreenshotTools.CreateScreenshotWithResizeAsync(engine, camera, width, height).then(() => {
-        callback();
+export function CreateScreenshotWithResizeAsync(engine, camera, width, height) {
+    return new Promise(resolve => {
+        BABYLON.ScreenshotTools.CreateScreenshotWithResizeAsync(engine, camera, width, height).then(() => {
+            resolve();
+        });
     });
 }

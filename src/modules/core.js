@@ -81,7 +81,7 @@ import * as modules from './modules.js';
 
 
 const ENVMAP = "assets/overcast_soil_puresky_1k.hdr";
-const SNAPSHOT = "data:image/png;base64,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";
+const IMG_SNAPSHOT = "data:image/png;base64,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";
 const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
 const TEX_CHECKER = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB3aWR0aD0iMjU2IgogICBoZWlnaHQ9IjI1NiIKICAgdmlld0JveD0iMCAwIDY3LjczMzMzNSA2Ny43MzMzMzUiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzEiCiAgIGlua3NjYXBlOnZlcnNpb249IjEuNCAoZTdjM2ZlYiwgMjAyNC0xMC0wOSkiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9InRleF9jaGVja2VyLnN2ZyIKICAgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiCiAgIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIKICAgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJuYW1lZHZpZXcxIgogICAgIHBhZ2Vjb2xvcj0iIzIwMjAyMCIKICAgICBib3JkZXJjb2xvcj0iIzdmN2Y3ZiIKICAgICBib3JkZXJvcGFjaXR5PSIxIgogICAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIwIgogICAgIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIgogICAgIGlua3NjYXBlOnBhZ2VjaGVja2VyYm9hcmQ9ImZhbHNlIgogICAgIGlua3NjYXBlOmRlc2tjb2xvcj0iIzMzMzkzYiIKICAgICBpbmtzY2FwZTpkb2N1bWVudC11bml0cz0icHgiCiAgICAgc2hvd2d1aWRlcz0idHJ1ZSIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMiIKICAgICBpbmtzY2FwZTpjeD0iMTI2IgogICAgIGlua3NjYXBlOmN5PSIxMzciCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ibGF5ZXIxIgogICAgIHNob3dib3JkZXI9ImZhbHNlIiAvPjxkZWZzCiAgICAgaWQ9ImRlZnMxIiAvPjxnCiAgICAgaW5rc2NhcGU6bGFiZWw9IkxheWVyIDEiCiAgICAgaW5rc2NhcGU6Z3JvdXBtb2RlPSJsYXllciIKICAgICBpZD0ibGF5ZXIxIj48dXNlCiAgICAgICB4PSIwIgogICAgICAgeT0iMCIKICAgICAgIHhsaW5rOmhyZWY9IiNyZWN0MiIKICAgICAgIGlkPSJ1c2UyIgogICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzMuODY2NjYzLC0zMy44NjY2NjUpIiAvPjxyZWN0CiAgICAgICBzdHlsZT0iZmlsbDojZmZmZmZmO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpldmVub2RkO3N0cm9rZTojZTVlNWU1O3N0cm9rZS13aWR0aDoxLjU4NzU7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjE7cGFpbnQtb3JkZXI6c3Ryb2tlIGZpbGwgbWFya2VycyIKICAgICAgIGlkPSJyZWN0MiIKICAgICAgIHdpZHRoPSIzMi41NTUyMzMiCiAgICAgICBoZWlnaHQ9IjMyLjU1NTIzMyIKICAgICAgIHg9IjAuNjU1NzE2MTgiCiAgICAgICB5PSIzNC41MjIzODEiCiAgICAgICBpbmtzY2FwZTpsYWJlbD0icmVjdDIiIC8+PHVzZQogICAgICAgeD0iMCIKICAgICAgIHk9IjAiCiAgICAgICB4bGluazpocmVmPSIjcmVjdDEiCiAgICAgICBpZD0idXNlMSIKICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMzLjg2NjY2MiwzMy44NjY2NjIpIgogICAgICAgc3R5bGU9InN0cm9rZS13aWR0aDoxLjMyMjkyO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtmaWxsOiNmYWZhZmE7ZmlsbC1vcGFjaXR5OjEiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOiNmYWZhZmE7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNlNWU1ZTU7c3Ryb2tlLXdpZHRoOjEuNTg3NTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MTtwYWludC1vcmRlcjpzdHJva2UgZmlsbCBtYXJrZXJzIgogICAgICAgaWQ9InJlY3QxIgogICAgICAgd2lkdGg9IjMyLjU1NTIzMyIKICAgICAgIGhlaWdodD0iMzIuNTU1MjMzIgogICAgICAgeD0iMC42NTU3MTYxOCIKICAgICAgIHk9IjAuNjU1NzE2MTgiCiAgICAgICBpbmtzY2FwZTpsYWJlbD0icmVjdDEiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOm5vbmU7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNkOWQ5ZDk7c3Ryb2tlLXdpZHRoOjAuNTM3ODI0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxO3BhaW50LW9yZGVyOnN0cm9rZSBmaWxsIG1hcmtlcnMiCiAgICAgICBpZD0icmVjdDMiCiAgICAgICB3aWR0aD0iNjcuMTk5MzQxIgogICAgICAgaGVpZ2h0PSI2Ny42MDUwMTkiCiAgICAgICB4PSIwLjI2NzYzNDQyIgogICAgICAgeT0iMC4xMjgzMjIzMyIgLz48L2c+PC9zdmc+Cg==";
 
@@ -159,7 +159,6 @@ const PLANE_UVS = [ 0,1, 1,1, 1,0, 0,0 ];
 const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
 const isMobile = isMobileDevice();
-const MAX_VOXELS = 512000;
 const MAX_VOXELS_DRAW = isMobile ? 64000 : 256000;
 const MAX_SNAPSHOTS = 100;
 const MAX_Z = isMobile ? 1500 : 3000;
@@ -168,13 +167,11 @@ const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
 const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
 
-const canvas = document.getElementById('canvas');
+export let MODE = -1; // model|render|export
 export const pointer = {
     x: 0, y: 0, isDown: false,
     isWheel: false, wheelTimeout: undefined
 };
-
-export let MODE = -1; // model|render|export
 
 const workplaneWhiteList = [
     'add',
@@ -288,10 +285,9 @@ class AxisViewScene {
         axisHelper.yAxis.parent = this.viewCube;
         axisHelper.zAxis.parent = this.viewCube;
 
-        const sphere = CreateSphere("viewaxes", 0.6, 6, FRONTSIDE, this.scene);
         this.viewAxes = [];
         for (let i = 0; i < 6; i++) {
-            this.viewAxes[i] = sphere.clone();
+            this.viewAxes[i] = CreateSphere("viewaxes", 0.6, 6, FRONTSIDE, this.scene);
             this.viewAxes[i].material = this.viewCube.material;
             this.viewAxes[i].renderOverlay = true;
             this.viewAxes[i].renderOutline = true;
@@ -301,7 +297,6 @@ class AxisViewScene {
             this.viewAxes[i].doNotSerialize = true;
             this.viewAxes[i].freezeNormals();
         }
-        sphere.dispose();
 
         this.viewAxes[0].position.x = 0.9;
         this.viewAxes[0].renderOutline = false;
@@ -337,8 +332,7 @@ class AxisViewScene {
     }
 
     getViewport(w, h, bottom, right) {
-        //return Viewport(1 - (w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
-        return Viewport((w + right) / canvas.width, 1 - (bottom + canvas.height) / canvas.height,   w / canvas.width, h / canvas.height);
+        return Viewport((w + right) / window.innerWidth, 1 - (bottom + window.innerHeight) / window.innerHeight,   w / window.innerWidth, h / window.innerHeight);
     }
 
     predicate = (mesh) => {
@@ -349,7 +343,9 @@ class AxisViewScene {
         const pick = this.scene.pick(this.scene.pointerX, this.scene.pointerY, this.predicate);
         if (pick.hit) {
             if (pick.pickedMesh == this.viewCube) {
-                camera.frame();
+                setTimeout(() => {
+                    camera.frame();
+                }, 50);
             } else {
                 if (pick.pickedMesh == this.viewAxes[0]) camera.setView('x');
                 else if (pick.pickedMesh == this.viewAxes[1]) camera.setView('-x');
@@ -357,11 +353,10 @@ class AxisViewScene {
                 else if (pick.pickedMesh == this.viewAxes[3]) camera.setView('-y');
                 else if (pick.pickedMesh == this.viewAxes[4]) camera.setView('z');
                 else if (pick.pickedMesh == this.viewAxes[5]) camera.setView('-z');
-                scene.activeCamera.detachControl(canvas);
+                scene.activeCamera.detachControl(engine.canvas);
             }
-            return true;
         }
-        return false;
+        return pick.hit;
     }
 }
 
@@ -391,13 +386,15 @@ class Camera {
         this.camera0.pinchPrecision = 30;       // def 12
         this.camera0.panningSensibility = 200;  // def 1000
         this.camera0.inertia = 0.9;             // def 0.9
-        //this.camera0.minZ = 0.01;
+        this.camera0.minZ = 1.0;
         this.camera0.maxZ = MAX_Z;
         this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
     }
 
     frame() {
         if (this.isFramingActive || pointer.isWheel) return;
+
+
 
         if (MODE == 0) {
             (xformer.isActive) ?
@@ -555,6 +552,9 @@ class Camera {
                 this.camera0.radius,
                 this.camera0.radius).add(center.clone()));
             this.camera0.setTarget(center.clone());
+
+            if (modules.sandbox.isActive())
+                modules.sandbox.setView(position, center);
         }
     }
 
@@ -1069,7 +1069,7 @@ class Builder {
                 camera.flagFrame = 0;
                 setTimeout(() => {
                     camera.frame();
-                }, 10);
+                }, 100);
             }
 
             if (preferences.isPointCloud())
@@ -1081,7 +1081,7 @@ class Builder {
     }
 
     createXform(voxels) {
-        return new Promise(async resolve => {
+        return new Promise(resolve => {
             if (ui.domOptionsScreenNewScene.checked) {
                 this.voxels = voxels;
                 this.create();
@@ -1144,7 +1144,6 @@ class Builder {
             
             if (this.getIndexAtPosition(voxel.position) !== undefined) {
                 this.voxels[i].position = RECYCLEBIN;
-                this.voxels[i].visible = false;
                 this.flagDuplicate = 1;
             } else {
                 this.tMatrix.m[12] = voxel.position.x;
@@ -1159,12 +1158,6 @@ class Builder {
                 this.rttColors[i * 4 + 2] = this.rgbIndex.b / 255;
                 this.rttColors[i * 4 + 3] = 1;
                 this.rttColorsMap[`${this.rgbIndex.r}_${this.rgbIndex.g}_${this.rgbIndex.b}`] = i;
-            
-                this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
-                this.bufferColors[i * 4] = this.rgbBuffer.r;
-                this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
-                this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
-                this.bufferColors[i * 4 + 3] = 1;
 
                 this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
             
@@ -1174,6 +1167,13 @@ class Builder {
                         this.invisibleColors.push(voxel.color);
                 }
             }
+
+            // prevent flagDuplicate shadowing
+            this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
+            this.bufferColors[i * 4] = this.rgbBuffer.r;
+            this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+            this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
+            this.bufferColors[i * 4 + 3] = 1;
         }
     }
 
@@ -1329,21 +1329,21 @@ class Builder {
         return this.normalizePositions(voxels, bounds);
     }
 
-    async getIndexAtPointer() {
-        return this.rttColorsMap[ await renderTarget.readPixel() ];
+    getIndexAtPointer() {
+        return this.rttColorsMap[ renderTarget.readPixel() ];
     }
 
-    async getIndexAtPointerFace() {
-        return this.rttColorsMap[ await renderTarget.readFace() ];
+    getIndexAtPointerFace() {
+        return this.rttColorsMap[ renderTarget.readFace() ];
     }
 
-    async getIndexAtPointerOmni(num, pad) {
-        return this.rttColorsMap[ await renderTarget.readOmni(num, pad) ];
+    getIndexAtPointerOmni(num, pad) {
+        return this.rttColorsMap[ renderTarget.readOmni(num, pad) ];
     }
 
-    async getIndexesAtTarget(x, y, w, h) {
+    getIndexesAtTarget(x, y, w, h) {
         const indexes = [];
-        const pixels = await renderTarget.readTarget(x, y, w, h);
+        const pixels = renderTarget.readTarget(x, y, w, h);
         for (let i = 0; i < pixels.length; i += 4) {
             if (pixels[i + 3] !== 0) {
                 const idx = this.rttColorsMap[ `${pixels[i]}_${pixels[i + 1]}_${pixels[i + 2]}` ];
@@ -1565,17 +1565,19 @@ class Builder {
         return undefined;
     }
 
-    async optimizeVoxelsAndUpdate() {
+    optimizeVoxelsAndUpdate() {
         ui.showProgress(1);
-        const last = this.voxels.length;
-        const voxels = await this.getOptimizedVoxels(this.voxels);
-        if (voxels) {
-            this.createVoxelsFromArray(voxels);
-            ui.notification(`${ last - this.voxels.length } voxels removed`);
-        } else {
-            ui.errorMessage('unable to optimize voxels');
-        }
-        ui.showProgress(0);
+        setTimeout(async () => {
+            const last = this.voxels.length;
+            const voxels = await this.getOptimizedVoxels(this.voxels);
+            if (voxels) {
+                this.createVoxelsFromArray(voxels);
+                ui.notification(`${ last - this.voxels.length } removed`);
+            } else {
+                ui.errorMessage('unable to optimize voxels');
+            }
+            ui.showProgress(0);
+        });
     }
 
     createGroupsByIslands() {
@@ -1758,7 +1760,6 @@ class Bakery {
     }
 
     bakeToMesh(voxels = builder.voxels) {
-        ui.showProgress(1);
         setTimeout(() => {
             const baked = this.bake(voxels);
             pool.resetPivot(baked);
@@ -1772,12 +1773,11 @@ class Bakery {
             baked.sideOrientation = CounterClockWiseSideOrientation;
 
             pool.meshes.push(baked);
-
-            ui.showProgress(0);
         });
     }
 
     bakeColors() {
+        ui.showProgress(1);
         pool.dispose();
 
         for (let i = 0; i < builder.uniqueColors.length; i++)
@@ -1794,10 +1794,13 @@ class Bakery {
                 pool.setPoolVisibility(false);
                 ui.notification('baked', 1000);
             }
+            
+            ui.showProgress(0);
         }, 100);
     }
 
     bakeIslands() {
+        ui.showProgress(1);
         pool.dispose();
 
         const islands = builder.getVoxelsByIslands(undefined, ui.domBakeryIslandsConnected.checked);
@@ -1833,6 +1836,8 @@ class Bakery {
                     pool.setPoolVisibility(false);
                     ui.notification('baked', 1000);
                 }
+
+                ui.showProgress(0);
             }, 100);
 
             arr = undefined;
@@ -1840,6 +1845,7 @@ class Bakery {
     }
 
     bakeColor(hex) {
+        ui.showProgress(1);
         this.bakeToMesh(builder.getVoxelsByColor(hex));
 
         setTimeout(() => {
@@ -1853,6 +1859,8 @@ class Bakery {
                 pool.setPoolVisibility(false);
                 ui.notification('baked', 1000);
             }
+
+            ui.showProgress(0);
         }, 100);
     }
 }
@@ -1874,15 +1882,8 @@ class MeshPool {
         this.albedoColor = ui.domPbrAlbedo.value.toUpperCase();
     }
 
-    deleteSelected() {
-        if (this.selected) {
-            this.disposeSelected();
-            this.createMeshList();
-            light.updateShadowMap();
-        }
-    }
-
     selectMesh(mesh) {
+        this.deselectMesh();
         this.selected = mesh;
         this.meshListSelect(mesh);
         this.getMaterial();
@@ -1890,13 +1891,14 @@ class MeshPool {
     }
 
     deselectMesh() {
-        this.selected = undefined;
-        this.meshListDeselect();
-        helper.hideBoundingBox();
+        if (this.selected) {
+            this.selected = undefined;
+            this.meshListDeselect();
+            helper.hideBoundingBox();
+        }
     }
 
     onGizmoAttached(mesh) {
-        this.deselectMesh(); // on user select
         this.selectMesh(mesh);
         this.getMaterial();
     }
@@ -2045,7 +2047,6 @@ class MeshPool {
             name.innerHTML = this.meshes[i].name;
             
             item.onclick = () => {
-                this.deselectMesh();
                 this.selectMesh(this.meshes[i]);
             };
 
@@ -2076,6 +2077,14 @@ class MeshPool {
     meshListDeselect() {
         for (const i of ui.domMeshList.children)
             i.firstChild.classList.remove("mesh_select");
+    }
+
+    deleteSelected() {
+        if (this.selected) {
+            this.disposeSelected();
+            this.createMeshList();
+            light.updateShadowMap();
+        }
     }
 
     disposeMeshes() { // save unnecessary dispose() computation
@@ -2189,7 +2198,6 @@ class Ghosts {
     }
 
     setThinHighlight(alpha, color = COL_ORANGE_RGB) {
-        // TODO: visual artifacts with thin-instances
         helper.highlightOverlayMesh(this.thin, color, alpha);
     }
 
@@ -3365,22 +3373,22 @@ class Tool {
 
     handleToolDown() {
         if (this.name !== 'camera') {
-            this.setPickInfo().then(async pick => {
+            this.setPickInfo().then(pick => {
                 if (xformer.isActive) {
                     if (ui.domTransformReactive.checked && !this.pick.WORKPLANE) {
                         xformer.apply();
                         pointer.isDown = false;
                         scene.stopAnimation(camera.camera0);
-                        camera.camera0.detachControl(canvas);
+                        camera.camera0.detachControl(engine.canvas);
                     }
                     return;
                 }
                 
                 scene.stopAnimation(camera.camera0);
-                camera.camera0.detachControl(canvas);
+                camera.camera0.detachControl(engine.canvas);
 
                 if (pixelReadWhiteList.includes(this.name))
-                    this.indexes = await builder.getIndexesAtTarget(0, 0, window.innerWidth, window.innerHeight);
+                    this.indexes = builder.getIndexesAtTarget(0, 0, window.innerWidth, window.innerHeight);
 
                 this.onToolDown(pick);
             });
@@ -3421,10 +3429,10 @@ class Tool {
             this.indexes = [];
             this.tmp = [];
 
-            faceNormalProbe.dispose();
             ghosts.disposeThin();
             ghosts.initThinOne();
             helper.clearBoxShape();
+            faceNormalProbe.dispose();
             setTimeout(() => {
                 helper.clearOverlays();
             }, 10); // prevent last overlay in touchscreen
@@ -3458,25 +3466,25 @@ class Tool {
     }
 
     setPickInfo() {
-        return new Promise(async resolve => {
+        return new Promise(resolve => {
 
-            const index = await builder.getIndexAtPointer();
+            const index = builder.getIndexAtPointer();
             if (index !== undefined) {
 
                 // direct face hits
 
                 this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
                 this.pickIndx = index;
-                this.pickNorm = await faceNormalProbe.getNormal(this.pick, index);
+                this.pickNorm = faceNormalProbe.getNormal(this.pick, index);
 
                 // dodging gaps
 
                 if (!this.pickNorm) {
                     for (let i = 0; i < 4; i++) {
-                        const _index = await builder.getIndexAtPointerOmni(i, 1);
+                        const _index = builder.getIndexAtPointerOmni(i, 1);
                         if (_index !== undefined) {
                             this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
-                            this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
+                            this.pickNorm = faceNormalProbe.getNormal(this.pick, _index);
                             if (this.pickNorm) {
                                 this.pickIndx = _index;
                                 break;
@@ -3487,10 +3495,10 @@ class Tool {
 
                 if (!this.pickNorm) {
                     for (let i = 0; i < 4; i++) {
-                        const _index = await builder.getIndexAtPointerOmni(i, 2);
+                        const _index = builder.getIndexAtPointerOmni(i, 2);
                         if (_index !== undefined) {
                             this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
-                            this.pickNorm = await faceNormalProbe.getNormal(this.pick, _index);
+                            this.pickNorm = faceNormalProbe.getNormal(this.pick, _index);
                             if (this.pickNorm) {
                                 this.pickIndx = _index;
                                 break;
@@ -3521,7 +3529,7 @@ class Tool {
                 } else {
                     helper.clearOverlays();
                     if (!camera.isCameraChange())
-                        camera.camera0.detachControl(canvas);
+                        camera.camera0.detachControl(engine.canvas);
                 }
     
             } else {
@@ -3545,7 +3553,7 @@ class Tool {
                     } else {
                         helper.clearOverlays();
                         if (!camera.isCameraChange())
-                            camera.camera0.detachControl(canvas);
+                            camera.camera0.detachControl(engine.canvas);
                     }
                 }
             }
@@ -3593,7 +3601,6 @@ class ToolMesh {
         if (pick.hit) {
             switch (this.name) {
                 case 'select':
-                    pool.deselectMesh();
                     pool.selectMesh(pick.pickedMesh);
                     break;
             }
@@ -3757,7 +3764,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.7",
+            version: "Voxel Builder 4.6.8",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4013,14 +4020,14 @@ class Project {
             modules.sandbox.shot();
         } else {
             scene.autoClear = preferences.isBackgroundColor();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            engine.engine.setSize(canvasWidth * scale, canvasHeight * scale);
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            engine.engine.setSize(w * scale, h * scale);
             axisView.isRenderAxisView = false;
-            CreateScreenshotWithResizeAsync(engine.engine, camera.camera0, canvasWidth * scale, canvasHeight * scale, () => {
-                    axisView.isRenderAxisView = true;
-                    engine.engine.setSize(canvasWidth, canvasHeight);
-                    scene.autoClear = true;
+            CreateScreenshotWithResizeAsync(engine.engine, camera.camera0, w * scale, h * scale).then(() => {
+                axisView.isRenderAxisView = true;
+                engine.engine.setSize(w, h);
+                scene.autoClear = true;
             });
         }
     }
@@ -4028,12 +4035,12 @@ class Project {
     createScreenshotBasic(width, height, callback) {
         scene.clearColor = COL_CLEAR_RGBA;
         axisView.isRenderAxisView = false;
-        CreateScreenshot(engine.engine, camera.camera0, width, height, (data) => {
-                axisView.isRenderAxisView = true;
-                scene.clearColor = (preferences.isBackgroundColor()) ?
-                    color4FromHex(preferences.getBackgroundColor()) :
-                    color4FromHex(COL_SCENE_BG);
-                callback(data);
+        CreateScreenshot(engine.engine, camera.camera0, width, height).then(data => {
+            axisView.isRenderAxisView = true;
+            scene.clearColor = (preferences.isBackgroundColor()) ?
+                color4FromHex(preferences.getBackgroundColor()) :
+                color4FromHex(COL_SCENE_BG);
+            callback(data);
         });
     }
 }
@@ -4149,7 +4156,7 @@ class Snapshot {
         for (let i = 0; i < num; i++) {
             const li = document.createElement("li");
             li.classList.add("storage");
-            li.innerHTML = `<img src="${SNAPSHOT}" id="shot${i}"><div><button>DEL</button><button>SAVE</button></div>`;
+            li.innerHTML = `<img src="${IMG_SNAPSHOT}" id="shot${i}"><div><button>DEL</button><button>SAVE</button></div>`;
             parent.appendChild(li);
         }
 
@@ -4181,15 +4188,15 @@ class Snapshot {
             }
 
             btn_del.addEventListener("click", async () => {
-                if (img.src !== SNAPSHOT && !await ui.confirm()) return;
-                img.src = SNAPSHOT;
+                if (img.src !== IMG_SNAPSHOT && !await ui.confirm()) return;
+                img.src = IMG_SNAPSHOT;
                 this.delStorage(vbstoreSnapshots + i);
                 this.delStorage(vbstoreSnapshotsImages + i);
                 btn_del.disabled = true;
             }, false);
 
             btn_save.addEventListener("click", async () => {
-                if (!ui.checkMode(0) || img.src !== SNAPSHOT && !await ui.confirm()) return;
+                if (!ui.checkMode(0) || img.src !== IMG_SNAPSHOT && !await ui.confirm()) return;
                 project.createScreenshotBasic(img.clientWidth, img.clientHeight, (screenshot) => {
                     const isQuotaAvailable = this.setStorageVoxels(vbstoreSnapshots + i);
                     if (isQuotaAvailable && localStorage.getItem(vbstoreSnapshots + i)) {
@@ -4201,7 +4208,7 @@ class Snapshot {
             }, false);
 
             img.addEventListener("click", async () => {
-                if (img.src !== SNAPSHOT && (ui.domOptionsScreenNewScene.checked && !await ui.confirm())) return;
+                if (img.src !== IMG_SNAPSHOT && (ui.domOptionsScreenNewScene.checked && !await ui.confirm())) return;
                 ui.setMode(0);
                 this.getStorageVoxels(vbstoreSnapshots + i);
             }, false);
@@ -4316,14 +4323,17 @@ class Snapshot {
 class RenderTarget {
     constructor() {
         this.pickTexture = undefined;
-        //this.frameBuffer = undefined;
+        this.frameBuffer = undefined;
         this.pixels = undefined;
         this.point = { x: 0, y: 0 };
         this.quad = new Array(4);
     }
 
     init() {
-        this.pickTexture = RenderTargetTexture('pick_texture', window.innerWidth, window.innerHeight, scene);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        this.pickTexture = RenderTargetTexture('pick_texture', w, h, scene);
 
         this.pickTexture.clearColor = COL_WHITE_RGBA;
         scene.customRenderTargets.push(this.pickTexture);
@@ -4338,27 +4348,22 @@ class RenderTarget {
                 builder.mesh.thinInstanceSetBuffer("color", builder.bufferColors, 4, true);
         }
 
-        //if (!engine.engine.isWebGPU)
-        //    this.frameBuffer = engine.engine._gl.createFramebuffer();
-
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const bufferSize = 4 * w * h; //engine.engine.isWebGPU ? (4 * w * h + 255) & ~255 : 4 * w * h;
-        this.pixels = new Uint8Array(engine.engine.isWebGPU ? bufferSize * 2 : bufferSize);
+        this.frameBuffer = engine.engine._gl.createFramebuffer();
+        this.pixels = new Uint8Array(4 * w * h);
     }
 
-    async readTarget(x, y, w, h) {
-        await this.readTexturePixels(x, y, w, h);
+    readTarget(x, y, w, h) {
+        this.readTexturePixels(x, y, w, h);
         return this.pixels;
     }
 
-    async readPixel() {
-        await this.readTexturePixels(this.point.x, this.point.y, 1, 1);
+    readPixel() {
+        this.readTexturePixels(this.point.x, this.point.y, 1, 1);
         return `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
     }
 
-    async readFace() {
-        await this.readTexturePixels(this.point.x - 1, this.point.y - 1, 2, 2);
+    readFace() {
+        this.readTexturePixels(this.point.x - 1, this.point.y - 1, 2, 2);
         
         this.quad[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
         this.quad[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
@@ -4369,19 +4374,19 @@ class RenderTarget {
             return this.quad[0];
     }
 
-    async readOmni(num, pad) {
+    readOmni(num, pad) {
         switch (num) {
             case 0:
-                await this.readTexturePixels(this.point.x + pad, this.point.y + pad, 2, 2);
+                this.readTexturePixels(this.point.x + pad, this.point.y + pad, 2, 2);
                 break;
             case 1:
-                await this.readTexturePixels(this.point.x - pad, this.point.y - pad, 2, 2);
+                this.readTexturePixels(this.point.x - pad, this.point.y - pad, 2, 2);
                 break;
             case 2:
-                await this.readTexturePixels(this.point.x + pad, this.point.y - pad, 2, 2);
+                this.readTexturePixels(this.point.x + pad, this.point.y - pad, 2, 2);
                 break;
             case 3:
-                await this.readTexturePixels(this.point.x - pad, this.point.y + pad, 2, 2);
+                this.readTexturePixels(this.point.x - pad, this.point.y + pad, 2, 2);
                 break;
         }
 
@@ -4396,10 +4401,10 @@ class RenderTarget {
         return mostDuplicatedItem(this.quad);
     }
     
-    async readTexturePixels(x, y, w, h) {
-        await engine.engine._readTexturePixels(this.pickTexture._texture, w, h, -1, 0, this.pixels, true, false, x, y);
+    readTexturePixels(x, y, w, h) {
+        //await engine.engine._readTexturePixels(this.pickTexture._texture, w, h, -1, 0, this.pixels, true, true, x, y);
         
-        /* if (this.frameBuffer) {
+        if (this.frameBuffer) {
             const gl = engine.engine._gl;
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.pickTexture._texture._hardwareTexture.underlyingResource, 0);
@@ -4408,7 +4413,7 @@ class RenderTarget {
         } else {
             engine.engine.flushFramebuffer();
             engine.engine._textureHelper.readPixels(this.pickTexture._texture._hardwareTexture.underlyingResource, x, y, w, h, this.pickTexture._texture._hardwareTexture.format, -1, 0, this.pixels, false);
-        } */
+        }
     }
 
     numToColor(num) {
@@ -4420,9 +4425,10 @@ class RenderTarget {
     }
 
     resize() {
-        const bufferSize = 4 * window.innerWidth * window.innerHeight;
-        this.pickTexture.resize({ width: window.innerWidth, height: window.innerHeight });
-        this.pixels = new Uint8Array(engine.engine.isWebGPU ? bufferSize * 2 : bufferSize);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        this.pickTexture.resize({ width: w, height: h });
+        this.pixels = new Uint8Array(4 * w * h);
     }
 }
 
@@ -4452,18 +4458,16 @@ class FaceNormalProbe {
     }
 
     getNormal(pick, index) {
-        return new Promise(resolve => {
-            this.normal = undefined;
-            
-            this.probe.position = builder.voxels[index].position.clone();
-            this.probe.layerMask = (ui.domDebugPick.checked) ? 0x0FFFFFFF : 0x00000000;
- 
-            const res = scene.pickWithRay(pick.ray, this.predicate);
-            if (res && res.hit)
-                this.normal = this.getFaceNormal(this.probe.position, res.pickedPoint);
-    
-            resolve(this.normal);
-        });
+        this.normal = undefined;
+        
+        this.probe.position = builder.voxels[index].position.clone();
+        this.probe.layerMask = (ui.domDebugPick.checked) ? 0x0FFFFFFF : 0x00000000;
+
+        const res = scene.pickWithRay(pick.ray, this.predicate);
+        if (res && res.hit)
+            this.normal = this.getFaceNormal(this.probe.position, res.pickedPoint);
+
+        return this.normal;
     }
 
     getFaceNormal(position, pickedPoint) {
@@ -4684,6 +4688,8 @@ class UserInterface {
         MODE = mode;
 
         xformer.apply();
+        pool.deselectMesh();
+        helper.clearOverlays();
 
         if (mode == 0) {
             modules.sandbox.deactivate();
@@ -4917,8 +4923,9 @@ class UserInterface {
         }, timeout);
     }
 
-    async confirm() {
-        const target = document.elementFromPoint(pointer.x, pointer.y);
+    async confirm(target = undefined) {
+        if (!target)
+            target = document.elementFromPoint(pointer.x, pointer.y);
 
         if (['BUTTON', 'INPUT', 'IMG'].includes(target.tagName)) {
             this.domConfirm.style.display = 'flex';
@@ -5148,10 +5155,11 @@ class UserInterfaceAdvanced {
 // Preferences
 
 
-const KEY_WEBGPU = "pref_webgpu";
 const KEY_MINIMAL = "pref_minimal";
 const KEY_TOOLBAR_ICONS = "pref_toolbar_icons";
 const KEY_USER_STARTUP = "pref_user_startup";
+const KEY_HELP_LABELS = "pref_help_labels";
+const KEY_GLASS_UI = "pref_glass_ui";
 const KEY_STARTBOX_SIZE = "pref_startbox_size";
 const KEY_PALETTE_SIZE = "pref_palette_size";
 const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
@@ -5160,22 +5168,20 @@ const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_RENDER_SHADE = "pref_render_shade";
 const KEY_VOXEL_TEXTURE = "pref_voxel_texture";
 const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
-const KEY_HELP_LABELS = "pref_help_labels";
-const KEY_GLASS_UI = "pref_glass_ui";
 
 class Preferences {
     constructor() {
         this.isInitialized = false;
     }
 
-    init(webgpu_adapter) {
+    init() {
         resetAllInputElements();
 
-        document.getElementById(KEY_WEBGPU).disabled = !webgpu_adapter;
-        document.getElementById(KEY_WEBGPU).checked = false;
         document.getElementById(KEY_MINIMAL).checked = isMobile;
         document.getElementById(KEY_TOOLBAR_ICONS).checked = isMobile;
         document.getElementById(KEY_USER_STARTUP).checked = false;
+        document.getElementById(KEY_HELP_LABELS).checked = true;
+        document.getElementById(KEY_GLASS_UI).checked = false;
         document.getElementById(KEY_STARTBOX_SIZE).value = 20;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
@@ -5184,11 +5190,13 @@ class Preferences {
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
         document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
-        document.getElementById(KEY_HELP_LABELS).checked = true;
-        document.getElementById(KEY_GLASS_UI).checked = false;
 
-        this.setPrefCheck(KEY_WEBGPU, () => {
-            window.location.reload();
+        this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
+            modules.panels.showHelpLabels(chk);
+        });
+
+        this.setPrefCheck(KEY_GLASS_UI, (chk) => {
+            ui.setFrostedGlassUI(chk);
         });
 
         this.setPrefCheck(KEY_MINIMAL);
@@ -5237,14 +5245,6 @@ class Preferences {
         this.setPrefCheck(KEY_SCENE_POINTCLOUD, (chk) => {
             (chk) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
         });
-
-        this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
-            modules.panels.showHelpLabels(chk);
-        });
-
-        this.setPrefCheck(KEY_GLASS_UI, (chk) => {
-            ui.setFrostedGlassUI(chk);
-        });
     }
 
     finish(startTime) {
@@ -5291,17 +5291,20 @@ class Preferences {
         document.body.appendChild(scriptUserModule);
 
         document.getElementById('introscreen').style.display = 'none';
-        canvas.style.pointerEvents = 'unset';
+        document.getElementById('canvas').style.pointerEvents = 'unset';
         camera.flagFrame = 1;
 
         console.log(`mobile: ${isMobile}`);
-        console.log(`webgpu: ${engine.engine.isWebGPU}`);
         console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
         this.isInitialized = true;
     }
 
-    isWebGPU() {
-        return document.getElementById(KEY_WEBGPU).checked;
+    isShowHelpLabels() {
+        return document.getElementById(KEY_HELP_LABELS).checked;
+    }
+
+    isFrostedGlassUI() {
+        return document.getElementById(KEY_GLASS_UI).checked;
     }
 
     isMinimal() {
@@ -5342,14 +5345,6 @@ class Preferences {
 
     isPointCloud() {
         return document.getElementById(KEY_SCENE_POINTCLOUD).checked;
-    }
-
-    isShowHelpLabels() {
-        return document.getElementById(KEY_HELP_LABELS).checked;
-    }
-
-    isFrostedGlassUI() {
-        return document.getElementById(KEY_GLASS_UI).checked;
     }
 
     setPref(key, callback = undefined) {
@@ -5432,7 +5427,7 @@ export function registerRenderLoops() {
                 }
 
                 if (!builder.isWorking)
-                    camera.camera0.attachControl(canvas, true);
+                    camera.camera0.attachControl(engine.canvas, true);
             }
 
             if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
@@ -5468,7 +5463,7 @@ window.addEventListener('pointerdown', (ev) => {
     pointer.isDown = true;
     pointer.isWheel = false;
     clearTimeout(pointer.wheelTimeout);
-    if (ev.target === canvas && !axisView.registerEvent() && !uix.isActive()) {
+    if (ev.target === engine.canvas && !axisView.registerEvent() && !uix.isActive()) {
         ev.preventDefault();
         if (MODE == 0) {
             renderTarget.point.x = Math.floor(pointer.x);
@@ -5484,7 +5479,7 @@ window.addEventListener('pointerdown', (ev) => {
 window.addEventListener('pointermove', (ev) => {
     pointer.x = ev.clientX;
     pointer.y = ev.clientY;
-    if (ev.target === canvas && MODE == 0 && !uix.isActive()) {
+    if (ev.target === engine.canvas && MODE == 0 && !uix.isActive()) {
         ev.preventDefault();
         renderTarget.point.x = Math.floor(pointer.x);
         renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
@@ -5497,7 +5492,7 @@ window.addEventListener('pointerup', (ev) => {
     pointer.isDown = false;
     pointer.isWheel = false;
     clearTimeout(pointer.wheelTimeout);
-    if (ev.target === canvas && MODE == 0) {
+    if (ev.target === engine.canvas && MODE == 0) {
         ev.preventDefault();
         tool.handleToolUp();
     }
@@ -5505,7 +5500,7 @@ window.addEventListener('pointerup', (ev) => {
 
 
 window.addEventListener('wheel', (ev) => {
-    if (ev.target === canvas)
+    if (ev.target === engine.canvas)
         ev.preventDefault();
     pointer.isWheel = true;
     clearTimeout(pointer.wheelTimeout);
@@ -5691,12 +5686,12 @@ document.getElementById('openfile_vox').addEventListener("change", (ev) => {
 }, false);
 
 document.getElementById('openfile_voxelizer').addEventListener("change", (ev) => {
-    if (ev.target.files.length > 0)
+    if (ui.checkMode(0) && ev.target.files.length > 0)
         fileHandler(ev.target.files[0]);
 }, false);
 
 document.getElementById('openfile_voxelizer_img').addEventListener("change", (ev) => {
-    if (ev.target.files.length > 0)
+    if (ui.checkMode(0) && ev.target.files.length > 0)
         fileHandler(ev.target.files[0]);
 }, false);
 
@@ -5756,20 +5751,13 @@ ui.domToolbarScreenStorage.children[0].onclick = () => {
     snapshot.getStorageVoxelsQuick();
 };
 
-ui.domToolbarScreenStorage.children[1].onclick = async () => {
-    if (await ui.confirm()) {
-        xformer.apply();
-        snapshot.setStorageVoxelsQuick();
-    }
+ui.domToolbarScreenStorage.children[1].onclick = () => {
+    xformer.apply();
+    snapshot.setStorageVoxelsQuick();
 };
 
-ui.domToolbarScreenExport.children[0].onclick = async () => {
-    if (pool.meshes.length > 0) {
-        if (await ui.confirm())
-            bakery.bakeColors();
-    } else {
-        bakery.bakeColors();
-    }
+ui.domToolbarScreenExport.children[0].onclick = () => {
+    bakery.bakeColors();
 };
 
 ui.domToolbarScreenMaterial.children[0].oninput = (ev) => {
@@ -5874,15 +5862,15 @@ document.getElementById('btn_action_fullscreen').onclick = () => {
     toggleFullscreen();
 };
 
-document.getElementById('btn_action_reloadapp').onclick = async () => {
-    if (await ui.confirm())
+document.getElementById('btn_action_reloadapp').onclick = async (ev) => {
+    if (await ui.confirm(ev.target))
         window.location.reload();
 };
 
 // File
 
-document.getElementById('btn_action_project_new').onclick = async () => {
-    if (await ui.confirm())
+document.getElementById('btn_action_project_new').onclick = async (ev) => {
+    if (await ui.confirm(ev.target))
         project.newProject();
 };
 
@@ -5949,24 +5937,28 @@ ui.domCameraAutoRotationCCW.onchange = (ev) => {
     camera.updateCameraAutoRotation(ev.target.checked);
 };
 
-document.getElementById('btn_action_camera_preset_top').onclick = () => {
-    camera.setOrtho();
-    camera.setView('y');
-};
-
-document.getElementById('btn_action_camera_preset_bottom').onclick = () => {
-    camera.setOrtho();
-    camera.setView('-y');
-};
-
 document.getElementById('btn_action_camera_preset_right').onclick = () => {
-    camera.setOrtho();
     camera.setView('x');
 };
 
 document.getElementById('btn_action_camera_preset_left').onclick = () => {
-    camera.setOrtho();
     camera.setView('-x');
+};
+
+document.getElementById('btn_action_camera_preset_top').onclick = () => {
+    camera.setView('y');
+};
+
+document.getElementById('btn_action_camera_preset_bottom').onclick = () => {
+    camera.setView('-y');
+};
+
+document.getElementById('btn_action_camera_preset_front').onclick = () => {
+    camera.setView('z');
+};
+
+document.getElementById('btn_action_camera_preset_back').onclick = () => {
+    camera.setView('-z');
 };
 
 document.getElementById('btn_action_camera_frame').onclick = () => {
@@ -6087,39 +6079,40 @@ document.getElementById('btn_action_hdr_unload').onclick = () => {
 
 // Create
 
-document.getElementById('btn_action_create_box').onclick = async () => {
-    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
+document.getElementById('btn_action_create_box').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
     if (ui.checkMode(0))
         modules.generator.createBox();
 };
 
-document.getElementById('btn_action_create_plane').onclick = async () => {
-    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
+document.getElementById('btn_action_create_plane').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
     if (ui.checkMode(0))
         modules.generator.createBox(true);
 };
 
-document.getElementById('btn_action_create_isometric').onclick = async () => {
-    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
+document.getElementById('btn_action_create_isometric').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
     if (ui.checkMode(0))
         modules.generator.createIsometric();
 };
 
-document.getElementById('btn_action_create_sphere').onclick = async () => {
-    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
+document.getElementById('btn_action_create_sphere').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
     if (ui.checkMode(0))
         modules.generator.createSphere();
 };
 
-document.getElementById('btn_action_create_terrain').onclick = async () => {
-    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm()) return;
+document.getElementById('btn_action_create_terrain').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
     if (ui.checkMode(0))
         modules.generator.createTerrain();
 };
 
 // Voxelize
 
-document.getElementById('btn_action_voxelize_text').onclick = () => {
+document.getElementById('btn_action_voxelize_text').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
     if (ui.checkMode(0))
         modules.voxelizer.voxelize2DText();
 };
@@ -6211,7 +6204,9 @@ document.getElementById('btn_tool_rect_remove').onclick = () => {
 document.getElementById('input-newbox-coord').onkeydown = (ev) => {
     if (ui.checkMode(0) && ev.key == 'Enter') {
         const str = ev.target.value.split(',');
-        if (str.length == 3 && parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
+        if (str.length == 3 &&
+            str[0] !== '' && str[1] !== '' && str[2] !== '' &&
+            parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN) {
             builder.add(Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), tool.currentColor, true);
             builder.create();
         } else {
@@ -6247,8 +6242,8 @@ document.getElementById('btn_tool_bucket_island').onclick = () => {
         tool.toolSelector('bucket_island');
 };
 
-document.getElementById('btn_action_paint_all').onclick = async () => {
-    if (ui.checkMode(0) && await ui.confirm())
+document.getElementById('btn_action_paint_all').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
         builder.setColorsAndUpdate(tool.currentColor);
 };
 
@@ -6289,23 +6284,23 @@ document.getElementById('btn_tool_measure_volume').onclick = () => {
         tool.toolSelector('measure_volume');
 };
 
-document.getElementById('btn_action_normalize').onclick = async () => {
-    if (ui.checkMode(0) && await ui.confirm()) {
+document.getElementById('btn_action_normalize').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target)) {
         builder.normalizeVoxelPositions();
         camera.flagFrame = 1;
         ui.notification('normalized', 1000);
     }
 };
 
-document.getElementById('btn_action_optimize').onclick = async () => {
-    if (ui.checkMode(0) && await ui.confirm())
+document.getElementById('btn_action_optimize').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
         builder.optimizeVoxelsAndUpdate();
 };
 
 // Groups
 
-document.getElementById('btn_action_groupislands').onclick = async () => {
-    if (ui.checkMode(0) && await ui.confirm())
+document.getElementById('btn_action_groupislands').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
         builder.createGroupsByIslands();
 };
 
@@ -6338,25 +6333,25 @@ document.getElementById('btn_tool_delete_color').onclick = () => {
         tool.toolSelector('delete_color');
 };
 
-document.getElementById('btn_action_deletehidden').onclick = async () => {
-    if (ui.checkMode(0) && await ui.confirm())
+document.getElementById('btn_action_deletehidden').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
         builder.deleteHiddenAndUpdate();
 };
 
 // Bakery
 
-document.getElementById('btn_action_bakery_bake_colors').onclick = async () => {
+document.getElementById('btn_action_bakery_bake_colors').onclick = async (ev) => {
     if (pool.meshes.length > 0) {
-        if (await ui.confirm())
+        if (await ui.confirm(ev.target))
             bakery.bakeColors();
     } else {
         bakery.bakeColors();
     }
 };
 
-document.getElementById('btn_action_bakery_bake_islands').onclick = async () => {
+document.getElementById('btn_action_bakery_bake_islands').onclick = async (ev) => {
     if (pool.meshes.length > 0) {
-        if (await ui.confirm())
+        if (await ui.confirm(ev.target))
             bakery.bakeIslands();
     } else {
         bakery.bakeIslands();
@@ -6368,17 +6363,17 @@ document.getElementById('btn_tool_bake_color').onclick = () => {
         tool.toolSelector('bake_color');
 };
 
-document.getElementById('btn_action_bakery_delete_all').onclick = async () => {
-    if (await ui.confirm())
+document.getElementById('btn_action_bakery_delete_all').onclick = async (ev) => {
+    if (await ui.confirm(ev.target))
         pool.dispose();
 };
 
-document.getElementById('btn_action_bakery_delete').onclick = async () => {
+document.getElementById('btn_action_bakery_delete').onclick = async (ev) => {
     if (!pool.selected) {
         ui.notification('select a mesh', 1000);
         return;
     }
-    if (ui.checkMode(2) && await ui.confirm())
+    if (ui.checkMode(2) && await ui.confirm(ev.target))
         pool.deleteSelected();
 };
 
@@ -6486,11 +6481,9 @@ function mostDuplicatedItem(arr) {
     let mostDuplicated;
 
     for (const item of arr) {
-        if (countMap[item]) {
-            countMap[item]++;
-        } else {
+        (countMap[item]) ?
+            countMap[item]++ :
             countMap[item] = 1;
-        }
 
         if (countMap[item] > maxCount) {
             maxCount = countMap[item];
