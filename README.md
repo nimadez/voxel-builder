@@ -182,6 +182,8 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [Reinvented Color Wheel](https://github.com/luncheon/reinvented-color-wheel)
 - [JSZip](https://github.com/Stuk/jszip)
 - [Blender](https://blender.org/)
+- [Inkscape](https://inkscape.org/)
+- [GIMP](https://www.gimp.org/)
 - [Sketchfab](https://sketchfab.com/)
 - [KhronosGroup](https://github.com/KhronosGroup/)
 - [Shadertoy](https://www.shadertoy.com/)

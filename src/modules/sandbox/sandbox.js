@@ -155,7 +155,8 @@ class Sandbox {
         this.mat_emissive = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x000000), side: THREE.BackSide });
         this.mat_emissive.emissiveIntensity = 1;
 
-        this.plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 1, 1), this.mat_shade);
+        this.plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 1, 1), this.mat_shade.clone());
+        this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
         this.plane.rotation.x = Math.PI / 2;
         this.plane.receiveShadow = true;
         this.plane.matrixAutoUpdate = false;
@@ -287,6 +288,7 @@ class Sandbox {
             this.plane.position.set(center.x, -0.5, center.z);
             this.plane.scale.set(ui.domRenderPlane.value, ui.domRenderPlane.value, 1);
             this.plane.updateMatrix();
+            this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
             this.scene.add(this.plane);
         } else {
             this.scene.remove(this.plane);
