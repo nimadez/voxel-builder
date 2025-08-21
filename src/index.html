@@ -37,16 +37,16 @@
             --scene: #3D4250;
             --border-radius: 4px;
             --border: solid 1px #00000025;
-            --menu-bg: #2e3542CC;
+            --menu-bg: #2e3542DC;
             --menu-shadow: #00000040;
             --menu-btn-height: 30px;
             --btn-height: 32px;
-            --btn-bg: #2b313dCC;
+            --btn-bg: #2b313dDC;
             --btn-bg-shadow: inset 5px 5px 15px #00000050, inset -5px -5px 5px #00000010;
             --btn-color: #969fb1;
             --btn-tool-border: solid 1px #4682b4AA;
             --btn-confirm-border: solid 1px #cd5c5cAA;
-            --input-bg: #21252eCC;
+            --input-bg: #21252eDC;
             --input-color: #8d98aa;
             --input-height: 26px;
             --label: #7f8da1;
@@ -69,6 +69,9 @@
         input[type=number] { font-family: var(--font); font-size: 13px; width: 98%; height: var(--input-height); text-indent: 5px; background: var(--input-bg); color: var(--input-color); border: var(--border); border-radius: 0; text-align: left; }
         input[type=number]:disabled { opacity: 0.5; }
         input[type=number] { appearance: textfield; }
+        input[type=range] { accent-color: steelblue; width: 100%; }
+        input[type=range]::-webkit-slider-runnable-track { background-color: slategray; height: 2px; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { transform: scale(0.85); cursor: pointer; margin-top: -7px; }
         input[type=text] { font-family: var(--font); font-size: 13px; letter-spacing: 0.04em; width: 98%; height: var(--input-height); background: var(--input-bg); color: var(--input-color); text-indent: 5px; border: var(--border); border-radius: 0; text-align: left; }
         input[type=url] { font-family: var(--font); font-size: 13px; width: 98%; height: var(--input-height); background: var(--input-bg); color: var(--input-color); margin-left: -2px; text-indent: 5px; border: var(--border); border-radius: 0; text-align: left; }
         input[type=checkbox] { filter: brightness(0.7); transform: scale(0.8); margin: 3px 0 3px 0; vertical-align: -2px; cursor: pointer; }
@@ -183,11 +186,13 @@
         #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
         #introscreen .logo :first-child { font-weight: normal; color: var(--col-white); }
         #introscreen .progress { color: slategray; font-size: 12px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
-        #shortcuts { z-index: 3000; display: none; background: #222731EE; padding: 10px; width: 100%; height: 100%; position: fixed; }
-        #shortcuts table { height: 100%; overflow-y: scroll; display: flex; flex-direction: column; }
-        #shortcuts tr { font-size: 13px; }
+        #shortcuts { z-index: 3000; display: none; background: #222731EE; padding: 20px; width: calc(100vw - 40px); height: calc(100vh - 40px); position: fixed; overflow-y: scroll; }
+        #shortcuts table { display: flex; flex-direction: column; }
+        #shortcuts tr { font-size: 14px; }
         #shortcuts tr :first-child { text-align: center; }
         #shortcuts th, td { width: fit-content; padding: 2px; }
+        #shortcuts span { font-size: 14px; color: slategray; }
+        #shortcuts hr { margin: 10px 0 10px 0; border-top: solid 1px slategray; }
         #menu-about .about { font-size: 13px; line-height: 1.4em; letter-spacing: 0.08em; background: var(--input-bg); color: var(--col-white); border: solid 1px #00000040; padding: 5px; }
         #menu-about .about :first-child { text-align: center; }
         .tool { border-left: var(--btn-tool-border); }
@@ -212,7 +217,10 @@
         ::-webkit-scrollbar-thumb { background: steelblue; border-radius: 2px; }
 
         @-moz-document url-prefix() {
-            div, li, ul { scrollbar-width: thin; }
+            div, li, ul { font-family: var(--font); scrollbar-width: thin; }
+            input[type=range] { background: none; }
+            input[type=range]::-moz-range-track { background: slategray; height: 2px; }
+            input[type=range]::-moz-range-thumb { background: steelblue; margin-top: 0; border: none; cursor: pointer; }
             input[type=color]::-moz-color-swatch { border: none; }
             select { text-indent: 2px; }
             .menu .category { padding-top: 2px; }
@@ -305,7 +313,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.6.8 BETA
+                &#8627; 4.6.9 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -352,14 +360,18 @@
             </li>
             <li class="category">GENERAL</li>
             <li title="Less battery drain (&#60;100 ms startup)"><input type="checkbox" id="pref_minimal"> <label for="pref_minimal">Minimal UIX</label></li>
-            <li><input type="checkbox" id="pref_toolbar_icons"> <label for="pref_toolbar_icons">Icon Toolbar</label></li>
             <li><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
-            <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
-            <li title="Warning: Increased hardware utilization"><input type="checkbox" id="pref_glass_ui"> <label for="pref_glass_ui">Frosted Glass UI</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
             <li class="row_input" title="Maximum 100 Storages"><label>Snapshot</label> <input type="number" id="pref_snapshot_num" class="ignorekeys" value="6" min="1" max="100" step="1"></li>
+            <li class="category">INTERFACE</li>
+            <li><input type="checkbox" id="pref_toolbar_icons"> <label for="pref_toolbar_icons">Icon Toolbar</label></li>
+            <li><input type="checkbox" id="pref_help_labels"> <label for="pref_help_labels">Show Help Texts</label></li>
+            <li title="Ignore and auto-accept swipe confirms"><input type="checkbox" id="pref_ignore_confirms"> <label for="pref_ignore_confirms">Ignore Confirms</label></li>
+            <li title="Warning: Increased hardware utilization"><input type="checkbox" id="pref_glass_ui"> <label for="pref_glass_ui">Frosted Glass UI</label></li>
+            <li class="spacer"></li>
+            <li class="row_input"><label>UI Opacity</label> <input type="range" id="pref_ui_opacity" class="ignorekeys" value="0.8" min="0.6" max="0.9" step="0.05"></li>
             <li class="category">SCENE</li>
             <li class="row_color"><label for="pref_background_check">BG</label> <input type="color" id="pref_background_color" value="#151515"> <input type="checkbox" id="pref_background_check" style="width: 57px;"></li>
             <li class="row_color" title="General shade color is widely distributed throughout the app."><label>Shade</label><input type="color" id="pref_render_shade" value="#90A0B3"><button style="width: 52px; height: 20px;" title="Reset" onclick="this.previousElementSibling.value = '#90A0B3'; this.previousElementSibling.dispatchEvent(new Event('input', { bubbles: true }));">R</button></li>
@@ -372,8 +384,6 @@
             </li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
-            <li class="category">SYSTEM</li>
-            <li title="Debug Picking"><input type="checkbox" id="debug_pick"> <label for="debug_pick">GPU Probe Test</label></li>
         </ul>
 
         <ul class="menu panel" id="menu-file">
@@ -492,6 +502,7 @@
             <li><input id="input-pt-autostart" type="checkbox"></input> <label for="input-pt-autostart">Auto Start</label></li>
             <li><input id="input-pt-shade" type="checkbox"></input> <label for="input-pt-shade">Shade Mode</label></li>
             <li class="row_input"><label for="input-pt-plane">Plane</label> <input id="input-pt-plane" class="ignorekeys" type="number" value="0" min="0" step="1"></input></li>
+            <li class="row_input"><label>Color</label> <input type="color" id="input-pt-plane-color" value="#90A0B3"></li>
         </ul>
 
         <ul class="menu panel" id="menu-voxelize">
@@ -788,6 +799,8 @@
 
     <!-- shortcuts -->
     <div id="shortcuts" onclick="this.style.display = 'none'">
+        <span>⚠️ It is recommended to hold down the SPACE or ALT keys to toggle the Free Camera while modeling or with a tool active, on the desktop. (just like in Blender, Maya, etc.)</span>
+        <hr>
         <table title="Click to Close">
             <tr><td>SPACE, ALT</td> <td>Toggle Free Camera (MODEL)</td></tr>
             <tr><td>ENTER</td> <td>Apply Transforms (MODEL)</td></tr>
@@ -797,8 +810,8 @@
             <tr><td>DEL</td> <td>Delete Selected Meshes (EXPORT)</td></tr>
             <tr><td>[ ` ], C</td> <td>Free Camera Tool (MODEL)</td></tr>
             <tr><td>F</td> <td>Frame Camera (ALL MODES)</td></tr>
-            <tr><td>F</td> <td>Frame Voxels (XFORM)</td></tr>
-            <tr><td>F</td> <td>Frame Meshes (RENDER/EXPORT)</td></tr>
+            <tr><td>F</td> <td>Frame Selected Voxels (XFORM)</td></tr>
+            <tr><td>F</td> <td>Frame Selected Meshes (RENDER/EXPORT)</td></tr>
             <tr><td>O</td> <td>Toggle Orthographic camera</td></tr>
             <tr><td>R</td> <td>Toggle Render tab</td></tr>
             <tr><td>S</td> <td>Switch Symmetry Axis</td></tr>

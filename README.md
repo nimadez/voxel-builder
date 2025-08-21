@@ -15,8 +15,6 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 [FAQ](https://github.com/nimadez/voxel-builder#faq)<br>
 [Bug Report](https://github.com/nimadez/voxel-builder/issues)
 
-###### **Open source, but not open contributions**<br>*It's great if you have suggestions or bugs to report in the Issues section, but Pull Requests will not be approved.*
-
 ## Features
 
 **File I/O**
@@ -161,8 +159,6 @@ git reset --hard $HASH
 ↑ Changed default handiness to right-handed coordinate
 ↑ New SPS particles to build the world
 ↑ 2019 - I wrote a playground for learning Babylon.js
-
-"If AI can do this, I won't call it AI anymore."
 ```
 
 Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
@@ -182,6 +178,8 @@ Code released under the [MIT license](https://github.com/nimadez/voxel-builder/b
 - [Reinvented Color Wheel](https://github.com/luncheon/reinvented-color-wheel)
 - [JSZip](https://github.com/Stuk/jszip)
 - [Blender](https://blender.org/)
+- [Inkscape](https://inkscape.org/)
+- [GIMP](https://www.gimp.org/)
 - [Sketchfab](https://sketchfab.com/)
 - [KhronosGroup](https://github.com/KhronosGroup/)
 - [Shadertoy](https://www.shadertoy.com/)
