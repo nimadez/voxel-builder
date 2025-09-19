@@ -1,5 +1,7 @@
 //
-// source: https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/VOXLoader.js
+// original source: https://github.com/mrdoob/three.js/blob/dev/examples/jsm/loaders/VOXLoader.js
+//
+// Layer parsing capability has been added to the original version and additional features have been removed.
 //
 
 const DEFAULT_PALETTE = [
@@ -37,60 +39,182 @@ const DEFAULT_PALETTE = [
     0xffbbbbbb, 0xffaaaaaa, 0xff888888, 0xff777777, 0xff555555, 0xff444444, 0xff222222, 0xff111111];
 
     
-export function parseMagicaVoxel(buffer) {
-    let data = new DataView(buffer);
-    
-    const id = data.getUint32(0, true);
-    const version = data.getUint32(4, true);
-    if (id !== 542658390 || version !== 150) {
-        console.log('not a valid MagicaVoxel file');
-        return;
+class VoxParser {
+    constructor(buffer) {
+        this.dataView = new DataView(buffer);
+        this.offset = 0;
+        this.models = [];
+        this.transformNodes = [];
+        this.shapeNodes = [];
+        this.layers = [];
+        this.palette = DEFAULT_PALETTE;
+        this.bufferSize = buffer.byteLength;
     }
 
-    let i = 8;
-    let chunk;
-    const chunks = [];
+    readString() {
+        const length = this.dataView.getInt32(this.offset, true);
+        this.offset += 4;
+        const bytes = new Uint8Array(this.dataView.buffer, this.offset, length);
+        this.offset += length;
+        return new TextDecoder().decode(bytes);
+    }
 
-    while (i < data.byteLength) {
-        let id = '';
-        for (let j = 0; j < 4; j++) {
-            id += String.fromCharCode(data.getUint8(i++));
+    readDict() {
+        const numPairs = this.dataView.getInt32(this.offset, true);
+        this.offset += 4;
+        const dict = {};
+        for (let i = 0; i < numPairs; i++) {
+            const key = this.readString();
+            const value = this.readString();
+            dict[key] = value;
+        }
+        return dict;
+    }
+
+    parse() {
+        const id = this.dataView.getUint32(0, true);
+        const version = this.dataView.getUint32(4, true);
+
+        if (id !== 542658390) {
+            this.dataView = null;
+            throw new TypeError('MagicaVoxel: invalid VOX file.');
+        }
+        if (![ 150, 200 ].includes(version)) {
+            this.dataView = null;
+            throw new TypeError(`MagicaVoxel: unsupported version ${version}.`);
         }
 
-        const chunkSize = data.getUint32(i, true);
-        i += 4;
-        i += 4; // childChunks
+        this.offset = 8;
 
-        if (id === 'SIZE') {
-            const x = data.getUint32(i, true);
-            i += 4;
-            const y = data.getUint32(i, true);
-            i += 4;
-            const z = data.getUint32(i, true);
-            i += 4;
-            chunk = {
-                palette: DEFAULT_PALETTE,
-                size: { x: x, y: y, z: z }
-            };
-            chunks.push(chunk);
-            i += chunkSize - (3 * 4);
-        } else if (id === 'XYZI') {
-            const numVoxels = data.getUint32(i, true);
-            i += 4;
-            chunk.data = new Uint8Array(buffer, i, numVoxels * 4);
-            i += numVoxels * 4;
-        } else if (id === 'RGBA') {
-            const palette = [0];
-            for (let j = 0; j < 256; j++) {
-                palette[j + 1] = data.getUint32(i, true);
-                i += 4;
+        while (this.offset < this.bufferSize) {
+            let id = '';
+            for (let j = 0; j < 4; j++) {
+                id += String.fromCharCode(this.dataView.getUint8(this.offset++));
             }
-            chunk.palette = palette;
-        } else {
-            i += chunkSize;
+
+            const chunkSize = this.dataView.getInt32(this.offset, true);
+            this.offset += 8;
+            const chunkStartOffset = this.offset;
+
+            if (id === 'SIZE') {
+                const x = this.dataView.getInt32(this.offset, true);
+                const y = this.dataView.getInt32(this.offset + 4, true);
+                const z = this.dataView.getInt32(this.offset + 8, true);
+
+                this.models.push({ size: { x: x, y: y, z: z }, voxels: [] })
+                this.offset += chunkSize;
+
+            } else if (id === 'XYZI') {
+                const numVoxels = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const voxels = [];
+                for (let v = 0; v < numVoxels; v++) {
+                    const x = this.dataView.getUint8(this.offset + 0);
+                    const y = this.dataView.getUint8(this.offset + 1);
+                    const z = this.dataView.getUint8(this.offset + 2);
+                    const c = this.dataView.getUint8(this.offset + 3);
+                    voxels.push([x, y, z, c]);
+                    this.offset += 4;
+                }
+
+                this.models[this.models.length - 1].voxels = voxels;
+                this.offset = chunkStartOffset + chunkSize;
+
+            } else if (id === 'nTRN') {
+                const nodeId = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const nodeAttrs = this.readDict();
+                const childId = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const reservedId = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const layerId = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const numFrames = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const frameAttrs = this.readDict()
+
+                this.transformNodes.push({ nodeId, childId, layerId, frameAttrs });
+                this.offset = chunkStartOffset + chunkSize;
+
+            } else if (id === 'nSHP') {
+                const nodeId = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const nodeAttrs = this.readDict();
+                const numModels = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const modelId = this.dataView.getInt32(this.offset, true);
+                this.offset += 4;
+                const modelAttrs = this.readDict();
+
+                this.shapeNodes.push({ nodeId, modelId });
+                this.offset = chunkStartOffset + chunkSize;
+
+            } else if (id === 'RGBA') {
+                this.palette = [0];
+                for (let j = 0; j < 256; j++) {
+                    this.palette[j + 1] = this.dataView.getUint32(this.offset, true);
+                    this.offset += 4;
+                }
+
+            } else {
+                this.offset += chunkSize; // skip other chunks
+            }
         }
     }
 
-    data = null;
-    return chunks;
+    translateVoxels() {
+        if (this.shapeNodes.length > 0) {
+            for (const shape of this.shapeNodes) {
+                const model = this.models[shape.modelId];
+                const transform = this.transformNodes.find(t => t.childId === shape.nodeId);
+
+                let translation = [0, 0, 0];
+                if (transform.frameAttrs._t) {
+                    translation = transform.frameAttrs._t.split(" ").map(Number);
+                    if (translation.length !== 3 || translation.some(isNaN)) {
+                        translation = [0, 0, 0];
+                    }
+                }
+
+                const translatedVoxels = model.voxels.map(voxel => {
+                    return [
+                        voxel[0] + translation[0],
+                        voxel[1] + translation[1],
+                        voxel[2] + translation[2],
+                        voxel[3]
+                    ];
+                });
+
+                this.layers.push({
+                    layerId: transform.layerId || 0,
+                    modelId: shape.modelId,
+                    size: model.size,
+                    voxels: translatedVoxels
+                });
+            }
+
+            return this.layers;
+        }
+
+        return this.models;
+    }
+
+    dispose() {
+        this.dataView = null;
+        this.models = null;
+        this.transformNodes = null;
+        this.shapeNodes = null;
+        this.layers = null;
+        this.palette = null;
+    }
+}
+
+export function parseMagicaVoxel(buffer) {
+    const parser = new VoxParser(buffer);
+    parser.parse();
+    const layers = parser.translateVoxels();
+    const palette = parser.palette;
+    parser.dispose();
+    return [ layers, palette ];
 }

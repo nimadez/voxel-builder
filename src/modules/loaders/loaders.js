@@ -9,7 +9,7 @@ import { GLTFLoader } from '../../libs/addons/GLTFLoader.js';
 import { OBJLoader } from '../../libs/addons/OBJLoader.js';
 import { STLLoader } from '../../libs/addons/STLLoader.js';
 import { PLYLoader } from '../../libs/addons/PLYLoader.js';
-import { RGBELoader } from '../../libs/addons/RGBELoader.js';
+import { HDRLoader } from '../../libs/addons/HDRLoader.js';
 import { translator } from '../translator.js';
 
 
@@ -113,7 +113,7 @@ class Loaders {
 
     loadRGBE(url) {
         return new Promise(resolve => {
-            new RGBELoader().load(url, resolve);
+            new HDRLoader().load(url, resolve);
         });
     }
 }

@@ -100,6 +100,7 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 >- Use "Minimal UIX" to save battery on mobile devices.
 >- Do not enable "Frosted Glass UI"
 >- Use XFORM > "Optimize" to reduce the volume of voxels.
+>- Note that this app runs on a web browser and you shouldn't expect much.
 
 #### Delay in drawing strokes
 > If you draw and it doesn't, it means the builder is working, you are drawing faster than your hardware and browser will allow. (latency >150 ms)

@@ -172,9 +172,9 @@
         #options_screen label { text-shadow: var(--text-shadow); font-size: 10px; }
         #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #info { z-index: 2; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; margin-bottom: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #info_tool { z-index: 501; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 46px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
+        #info_tool { z-index: 501; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
         #info_render { z-index: 301; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #notifier { z-index: 2000; display: none; font-size: 11px; background: var(--notifier-bg); color: var(--notifier-color); border: solid 1px var(--border); position: absolute; width: fit-content; min-width: 100px; left: 50%; top: 70px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 0.08em; text-align: center; border-radius: var(--border-radius); pointer-events: none; }
+        #notifier { z-index: 2000; display: none; font-size: 11px; background: var(--notifier-bg); color: var(--notifier-color); border: solid 1px var(--border); position: absolute; width: fit-content; min-width: 100px; left: 50%; top: 92px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 0.08em; text-align: center; border-radius: var(--border-radius); pointer-events: none; }
         #progressbar { z-index: 2000; background: linear-gradient(135deg, orange 25%, #ffd17c 25%, #ffd17c 50%, orange 50%, orange 75%, #ffd17c 75%); background-size: 20px 20px; width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
         #confirm { z-index: 2500; display: none; flex-direction: row; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: var(--border-radius); }
         #confirm :first-child { background: #4682b4BB; color: white; box-shadow: var(--btn-bg-shadow); width: 50%; height: 100%; position: relative; }
@@ -313,7 +313,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.6.9 BETA
+                &#8627; 4.7.0 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -384,6 +384,8 @@
             </li>
             <li class="spacer"></li>
             <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
+            <li class="spacer"></li>
+            <li><button id="btn_action_resetmultiplane">Reset MultiPlane</button></li>
         </ul>
 
         <ul class="menu panel" id="menu-file">
@@ -416,6 +418,8 @@
 
         <ul class="menu panel" id="menu-storage">
             <li class="category">SNAPSHOTS</li>
+            <li><label id="used_storage"></label></li>
+            <li class="spacer"></li>
             <li id="snapshots"></li>
         </ul>
 
@@ -642,6 +646,11 @@
             <li><button id="btn_action_groupislands">Group by Islands</button></li>
             <li class="spacer"></li>
             <li title="Treats the corners as a connected island"><input type="checkbox" id="input-groupislands-connected" checked> <label for="input-groupislands-connected">Add Connected</label></li>
+            <li class="category">SLICE VIEW</li>
+            <li class="row_input" title="Slice to a specific level of voxels in Y direction"><label>Slice Y</label> <input id="input-group-slice-y" type="number" class="ignorekeys" value="0" step="1"></li>
+            <li class="spacer"></li>
+            <li><button id="btn_action_slicetomultiplane">Slice &#62; MultiPlane</button></li>
+            <li><button id="btn_action_multiplanetoslice">MultiPlane &#62; Slice</button></li>
             <li class="category">VISIBILITY</li>
             <li><button id="btn_tool_isolate_color" class="tool tool_isolate_color">Isolate Color</button></li>
             <li><button id="btn_tool_hide_color" class="tool tool_hide_color">Hide Color</button></li>
@@ -741,6 +750,7 @@
     <ul id="toolbar-screen-toggles">
         <li><button id="btn-screen-gridplane" title="Grid Plane"><i class="material-icons">grid_4x4</i></button></li>
         <li><button id="btn-screen-workplane" title="Workplane 3D"><i class="material-icons">grid_on</i></button></li>
+        <li><button id="btn-screen-multiplane" title="Multi Plane"><i class="material-icons">grid_goldenratio</i></button></li>
         <li><button id="btn-screen-lightlocator" title="Light Locator"><i class="material-icons">tungsten</i></button></li>
         <li><button id="btn-screen-symmetry" title="Symmetry">S</button></li>
         <li><button id="btn-screen-ortho" title="Orthographic View">P</button></li>
@@ -760,6 +770,7 @@
     <!-- options screen -->
     <ul id="options_screen">
         <li title="Create new scene on import, quick-load, snapshots, generators, voxelizers"><input type="checkbox" id="check_screen_newscene" checked> <label for="check_screen_newscene">NEW SCENE</label></li>
+        <li title="Snap drawing to workplanes only"><input type="checkbox" id="check_workplane_only"> <label for="check_workplane_only">WORKPLANES</label></li>
     </ul>
 
     <!-- color pickers -->

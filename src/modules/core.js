@@ -2281,6 +2281,7 @@ class Helper {
         this.workplaneX = undefined;
         this.workplaneY = undefined;
         this.workplaneZ = undefined;
+        this.multiPlane = undefined;
         this.axisPlane = undefined;
         this.overlayPlane = undefined;
         this.overlayCube = undefined;
@@ -2290,6 +2291,7 @@ class Helper {
         this.symmPivot = undefined;
         this.isGridPlaneActive = false;
         this.isWorkplaneActive = false;
+        this.isMultiPlaneActive = false;
     }
 
     init() {
@@ -2297,6 +2299,7 @@ class Helper {
         this.workplaneX = CreatePlane("workplaneX", WORKPLANE_SIZE, BACKSIDE, scene);
         this.workplaneY = CreatePlane("workplaneY", WORKPLANE_SIZE, BACKSIDE, scene);
         this.workplaneZ = CreatePlane("workplaneZ", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.multiPlane = CreateDisc("multiplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
         this.axisPlane = CreatePlane("axisplane", 1.2, DOUBLESIDE, axisView.scene);
         this.overlayPlane = CreatePlane("overlay_plane", 1, BACKSIDE, scene);
         this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
@@ -2310,7 +2313,7 @@ class Helper {
         this.gridPlane.rotation.x = -PIH;
         this.gridPlane.material = material.mat_gridplane;
         this.gridPlane.isVisible = false;
-        this.gridPlane.isPickable = false; // overridden
+        this.gridPlane.isPickable = true;
         this.gridPlane.visibility = 0.1;
         this.gridPlane.doNotSerialize = true;
         this.gridPlane.freezeNormals();
@@ -2349,6 +2352,23 @@ class Helper {
         this.workplaneZ.visibility = 0.08;
         this.workplaneZ.doNotSerialize = true;
         this.workplaneZ.freezeNormals();
+
+        this.multiPlane.position.x = -0.5;
+        this.multiPlane.position.y = -0.5;
+        this.multiPlane.position.z = -0.5;
+        this.multiPlane.rotation.x = -PIH;
+        this.multiPlane.bakeCurrentTransformIntoVertices();
+        const center = this.multiPlane.getBoundingInfo().boundingSphere.centerWorld;
+        this.multiPlane.setPivotMatrix(MatrixTranslation(-center.x, -center.y, -center.z), false);
+        this.multiPlane.bakeCurrentTransformIntoVertices();
+        this.multiPlane.setPivotMatrix(MatrixIdentity());
+        this.multiPlane.position = center;
+        this.multiPlane.material = material.mat_gridplane;
+        this.multiPlane.isVisible = false;
+        this.multiPlane.isPickable = true;
+        this.multiPlane.visibility = 0.1;
+        this.multiPlane.doNotSerialize = true;
+        this.multiPlane.freezeNormals();
 
         this.axisPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
         this.axisPlane.isPickable = false;
@@ -2422,15 +2442,37 @@ class Helper {
     enableGridPlane(isEnabled) {
         this.isGridPlaneActive = isEnabled;
         this.displayGridPlane(isEnabled);
-        if (isEnabled)
+        if (isEnabled) {
             this.enableWorkplane(false);
+            this.enableMultiPlane(false);
+        }
     }
 
     enableWorkplane(isEnabled) {
         this.isWorkplaneActive = isEnabled;
         this.displayWorkplane(isEnabled);
-        if (isEnabled)
+        if (isEnabled) {
             this.enableGridPlane(false);
+            this.enableMultiPlane(false);
+        }
+    }
+
+    enableMultiPlane(isEnabled) {
+        this.isMultiPlaneActive = isEnabled;
+        this.displayMultiPlane(isEnabled);
+        if (isEnabled) {
+            this.enableGridPlane(false);
+            this.enableWorkplane(false);
+        }
+    }
+
+    displayGridPlane(isEnabled) {
+        this.gridPlane.isVisible = isEnabled;
+        if (isEnabled) {
+            ui.domScreenGridPlane.firstChild.style.color = COL_ORANGE;
+        } else {
+            ui.domScreenGridPlane.firstChild.style.color = COL_AQUA;
+        }
     }
 
     displayWorkplane(isEnabled) {
@@ -2444,14 +2486,31 @@ class Helper {
         }
     }
 
-    displayGridPlane(isEnabled, isPickable = true) {
-        this.gridPlane.isVisible = isEnabled;
-        this.gridPlane.isPickable = isPickable;
+    displayMultiPlane(isEnabled) {
+        this.multiPlane.isVisible = isEnabled;
         if (isEnabled) {
-            ui.domScreenGridPlane.firstChild.style.color = COL_ORANGE;
+            uix.bindMultiPlane();
+            ui.domScreenMultiPlane.firstChild.style.color = COL_ORANGE;
         } else {
-            ui.domScreenGridPlane.firstChild.style.color = COL_AQUA;
+            uix.unbindMultiPlane();
+            ui.domScreenMultiPlane.firstChild.style.color = COL_AQUA;
         }
+    }
+
+    rotateMultiPlane(axis) {
+        this.multiPlane.rotation.copyFrom(VEC3_ZERO);
+        if (axis == AXIS_X) this.multiPlane.rotation.z = PIH;
+        if (axis == AXIS_Y) this.multiPlane.rotation.y = PIH;
+        if (axis == AXIS_Z) this.multiPlane.rotation.x = PIH;
+    }
+
+    resetMultiPlane() {
+        this.multiPlane.position.x = -0.5;
+        this.multiPlane.position.y = -0.5;
+        this.multiPlane.position.z = -0.5;
+        this.multiPlane.rotation.x = 0;
+        this.multiPlane.rotation.y = PIH;
+        this.multiPlane.rotation.z = 0;
     }
 
     toggleWorkplane(id) {
@@ -2459,10 +2518,14 @@ class Helper {
             this.isGridPlaneActive = !this.isGridPlaneActive;
             this.displayGridPlane();
             this.enableGridPlane(this.isGridPlaneActive);
-        } else {
+        } else if (id == 1) {
             this.isWorkplaneActive = !this.isWorkplaneActive;
             this.displayWorkplane();
             this.enableWorkplane(this.isWorkplaneActive);
+        } else if (id == 2) {
+            this.isMultiPlaneActive = !this.isMultiPlaneActive;
+            this.displayMultiPlane();
+            this.enableMultiPlane(this.isMultiPlaneActive);
         }
     }
 
@@ -3265,7 +3328,7 @@ class Tool {
         }
     }
 
-    onToolUp() {
+    onToolUp() {        
         switch (this.name) {
             case 'add':
                 if (this.selected.length > 0) {
@@ -3456,25 +3519,44 @@ class Tool {
         if (helper.isWorkplaneActive)
             if (helper.workplaneX.isVisible || helper.workplaneY.isVisible || helper.workplaneZ.isVisible)
                 return mesh === helper.workplaneX || mesh === helper.workplaneY || mesh === helper.workplaneZ;
+        if (helper.isMultiPlaneActive && helper.multiPlane.isVisible)
+            return mesh === helper.multiPlane;
         return undefined;
     }
 
     pickWorkplane(pick, norm) {
         const pos = pick.pickedPoint.add(VEC3_ONE).subtract(VEC3_HALF).floor();
-        if (norm.x > 0) pos.x = -1;
-        if (norm.y > 0) pos.y = -1;
-        if (norm.z > 0) pos.z = -1;
-        if (norm.x < 0) pos.x = 0;
-        if (norm.y < 0) pos.y = 0;
-        if (norm.z < 0) pos.z = 0;
+        if (helper.isMultiPlaneActive && helper.multiPlane.isVisible) {
+            if (norm.x > 0) pos.x = helper.multiPlane.position.x - 0.5;
+            if (norm.y > 0) pos.y = helper.multiPlane.position.y - 0.5;
+            if (norm.z > 0) pos.z = helper.multiPlane.position.z - 0.5;
+            if (norm.x < 0) pos.x = helper.multiPlane.position.x + 0.5;
+            if (norm.y < 0) pos.y = helper.multiPlane.position.y + 0.5;
+            if (norm.z < 0) pos.z = helper.multiPlane.position.z + 0.5;
+        } else {
+            if (norm.x > 0) pos.x = -1;
+            if (norm.y > 0) pos.y = -1;
+            if (norm.z > 0) pos.z = -1;
+            if (norm.x < 0) pos.x = 0;
+            if (norm.y < 0) pos.y = 0;
+            if (norm.z < 0) pos.z = 0;
+        }
         return pos;
     }
 
     setPickInfo() {
         return new Promise(resolve => {
 
+            if (ui.domOptionsScreenWorkplaneOnly.checked) {
+                helper.overlayPlane.renderingGroupId = 2;
+                helper.boxShape.renderingGroupId = 2;
+            } else {
+                helper.overlayPlane.renderingGroupId = 0;
+                helper.boxShape.renderingGroupId = 0;
+            }
+
             const index = builder.getIndexAtPointer();
-            if (index !== undefined) {
+            if (index !== undefined && !ui.domOptionsScreenWorkplaneOnly.checked) {
 
                 // direct face hits
 
@@ -3550,7 +3632,7 @@ class Tool {
                     
                     const point = this.pickWorkplane(this.pick, norm);
                     const idx = builder.getIndexAtPosition(point.add(norm));
-                    if (idx === undefined) {
+                    if (idx === undefined || ui.domOptionsScreenWorkplaneOnly.checked) {
                         this.pick.INDEX = this.pick.faceId;
                         this.pick.NORMAL = norm;
                         this.pick.WORKPLANE = point;
@@ -3769,7 +3851,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.6.9",
+            version: "Voxel Builder 4.7.0",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3821,6 +3903,7 @@ class Project {
         memory.clear();
         symmetry.resetAxis();
         uix.hideLightLocator();
+        helper.resetMultiPlane();
 
         if (isFrameCamera)
             camera.flagFrame = 1;
@@ -4110,14 +4193,17 @@ const vbstoreSnapshots = 'vbstore_voxels_snap' + 'shot';
 const vbstoreSnapshotsImages = 'vbstore_voxels_snap_img' + 'shot';
 
 class Snapshot {
-    constructor() {}
+    constructor() {
+        this.usedBytes = -1;
+    }
 
     setStorageVoxelsQuick() {
         try {
             localStorage.setItem(vbstoreVoxels, builder.getStringData());
             ui.notification('saved', 1000);
+            ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
         } catch (err) {
-            ui.errorMessage('error: quota exceeded')
+            ui.errorMessage('quota exceeded');
         }
     }
 
@@ -4135,9 +4221,10 @@ class Snapshot {
         try {
             localStorage.setItem(name, builder.getStringData());
             ui.notification('saved', 1000);
+            ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
             return true;
         } catch (err) {
-            ui.errorMessage('error: quota exceeded')
+            ui.errorMessage('quota exceeded');
         }
         return false;
     }
@@ -4152,6 +4239,8 @@ class Snapshot {
     delStorage(name) {
         if (localStorage.getItem(name))
             localStorage.removeItem(name);
+        
+        ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
     }
 
     createElements(num) {
@@ -4208,6 +4297,7 @@ class Snapshot {
                         localStorage.setItem(vbstoreSnapshotsImages + i, screenshot);
                         img.src = screenshot;
                         btn_del.disabled = false;
+                        ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
                     }
                 });
             }, false);
@@ -4222,6 +4312,8 @@ class Snapshot {
                 ev.preventDefault();
             }, false);
         }
+
+        ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
     }
 
     saveSnapshots() {
@@ -4304,18 +4396,34 @@ class Snapshot {
                                 backup = null;
                             }
                         } catch (err) {
-                            ui.errorMessage('error: quota exceeded');
+                            ui.errorMessage('quota exceeded');
                             ui.showProgress(0);
                             restoreBackup();
                         }
                     });
                 } else {
-                    ui.errorMessage('error: invalid zip file');
+                    ui.errorMessage('invalid zip file');
                     ui.showProgress(0);
                     restoreBackup();
                 }
             });
         });
+    }
+
+    getLocalStorageQuota() {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+
+        this.usedBytes = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key))
+                this.usedBytes += ((key.length + localStorage[key].length) * 2); // UTF-16 encoding
+        }
+
+        if (this.usedBytes === 0) return 'Quota: N/A';
+        const i = parseInt(Math.floor(Math.log(this.usedBytes) / Math.log(1024)), 10);
+        if (i === 0) return `Quota: ${this.usedBytes} ${sizes[i]}`;
+
+        return `Quota: ${(this.usedBytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`;
     }
 }
 
@@ -4545,6 +4653,7 @@ class UserInterface {
         this.domScreenOrtho = document.getElementById('btn-screen-ortho');
         this.domScreenGridPlane = document.getElementById('btn-screen-gridplane');
         this.domScreenWorkplane = document.getElementById('btn-screen-workplane');
+        this.domScreenMultiPlane = document.getElementById('btn-screen-multiplane');
         this.domScreenLightLocator = document.getElementById('btn-screen-lightlocator');
         this.domHover = document.getElementById('hover');
         this.domHoverItems = document.querySelectorAll('#hover ul li');
@@ -4567,11 +4676,13 @@ class UserInterface {
         this.domSymmWorldCenter = document.getElementById('input-symm-worldcenter');
         this.domSymmPreview = document.getElementById('input-symm-preview');
         this.domToolBoxHeight = document.getElementById('input-tool-boxheight');
+        this.domToolBoxSlice = document.getElementById('input-tool-boxslice');
         this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
         this.domToolRectAddBypass = document.getElementById('input-tool-rectadd-bypass');
         this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domTransformIslandConnected = document.getElementById('input-transform-island-connected');
+        this.domGroupSliceY = document.getElementById('input-group-slice-y');
         this.domGroupIslandsConnected = document.getElementById('input-groupislands-connected');
         this.domBakeryIslandsConnected = document.getElementById('input-bake-islands-connected');
         this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
@@ -4615,6 +4726,7 @@ class UserInterface {
         this.domRenderPlaneColor = document.getElementById('input-pt-plane-color');
         this.domOptionsScreen = document.getElementById('options_screen');
         this.domOptionsScreenNewScene = document.getElementById('check_screen_newscene');
+        this.domOptionsScreenWorkplaneOnly = document.getElementById('check_workplane_only');
         this.domMarquee = document.getElementById("marquee");
         this.domConfirm = document.getElementById('confirm');
         this.domConfirmBlocker = document.getElementById('confirmblocker');
@@ -4624,6 +4736,7 @@ class UserInterface {
         this.domInfoTool = document.getElementById('info_tool');
         this.domInfoRender = document.getElementById('info_render');
         this.domProgressBar = document.getElementById('progressbar');
+        this.domUsedStorage = document.getElementById('used_storage');
 
         this.colorWheel = undefined;
         this.notificationTimer = undefined;
@@ -4658,10 +4771,10 @@ class UserInterface {
 
             this.domToolbarScreenTopMode.style.display = 'none';
             this.domToolbarScreenTopMem.style.top = '10px';
-            this.domInfoTool.style.top = '16px';
+            this.domInfoTool.style.top = '17px';
             this.domOptionsScreen.style.display = 'flex';
             this.domOptionsScreen.style.top = '40px';
-            this.domNotifier.style.top = '40px';
+            this.domNotifier.style.top = '62px';
 
             this.domToolbar.children[3].style.borderBottomRightRadius = getStyleRoot('--border-radius');
             this.domToolbar.children[3].firstChild.style.borderBottomRightRadius = getStyleRoot('--border-radius');
@@ -4924,10 +5037,21 @@ class UserInterface {
         }, timeout);
     }
 
+    warningMessage(str, timeout = 3000) {
+        if (this.notificationTimer)
+            clearTimeout(this.notificationTimer);
+        this.domNotifier.innerHTML = `WARNING: ${str.toUpperCase()}`;
+        this.domNotifier.style.background = 'darkkhaki';
+        this.domNotifier.style.display = 'unset';
+        this.notificationTimer = setTimeout(() => {
+            this.domNotifier.style.display = 'none';
+        }, timeout);
+    }
+
     errorMessage(str, timeout = 3000) {
         if (this.notificationTimer)
             clearTimeout(this.notificationTimer);
-        this.domNotifier.innerHTML = str.toUpperCase();
+        this.domNotifier.innerHTML = `ERROR: ${str.toUpperCase()}`;
         this.domNotifier.style.background = 'indianred';
         this.domNotifier.style.display = 'unset';
         this.notificationTimer = setTimeout(() => {
@@ -5059,6 +5183,8 @@ class UserInterfaceAdvanced {
         this.lightGizmoNews = undefined;
         this.isGizmoVoxelActive = false;
         this.isLightLocatorActive = false;
+        this.isMultiPlaneGizmoActive = false;
+        this.multiPlaneGizmos = [];
     }
 
     init() {
@@ -5070,7 +5196,8 @@ class UserInterfaceAdvanced {
 
     isActive() {
         return this.isLightLocatorActive ||
-               this.isGizmoVoxelActive;
+               this.isGizmoVoxelActive ||
+               this.isMultiPlaneGizmoActive;
     }
 
     bindVoxelGizmo(mesh) {
@@ -5165,6 +5292,70 @@ class UserInterfaceAdvanced {
     toggleLightLocator() {
         (this.lightGizmoUp.attachedMesh) ?
             this.hideLightLocator() : this.showLightLocator();
+    }
+
+    bindMultiPlane() {
+        this.multiPlaneGizmos[0] = PositionGizmo(this.utilLayer, 2.5);
+        this.multiPlaneGizmos[0].scaleRatio = 0.8;
+        this.multiPlaneGizmos[0].snapDistance = 1;
+        this.multiPlaneGizmos[0].planarGizmoEnabled = false;
+        this.multiPlaneGizmos[0].updateGizmoPositionToMatchAttachedMesh = true;
+        this.multiPlaneGizmos[0].updateGizmoRotationToMatchAttachedMesh = false;
+        [ this.multiPlaneGizmos[0].xGizmo,
+          this.multiPlaneGizmos[0].yGizmo,
+          this.multiPlaneGizmos[0].zGizmo ].forEach((gizmo) => {
+                gizmo.dragBehavior.onDragStartObservable.add(() => {
+                    this.isMultiPlaneGizmoActive = true;
+                });
+                gizmo.dragBehavior.onDragEndObservable.add(() => {
+                    this.isMultiPlaneGizmoActive = false;
+                });
+            });
+        this.multiPlaneGizmos[0].attachedMesh = helper.multiPlane;
+
+        this.multiPlaneGizmos[1] = AxisScaleGizmo(AXIS_X, COL_AQUA_RGB, this.utilLayer, 8);
+        this.multiPlaneGizmos[1].scaleRatio = -0.3;
+        this.multiPlaneGizmos[1].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[1].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[1].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[1].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            helper.rotateMultiPlane(AXIS_X);
+        });
+
+        this.multiPlaneGizmos[2] = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 8);
+        this.multiPlaneGizmos[2].scaleRatio = -0.3;
+        this.multiPlaneGizmos[2].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[2].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[2].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[2].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            helper.rotateMultiPlane(AXIS_Y);
+        });
+
+        this.multiPlaneGizmos[3] = AxisScaleGizmo(AXIS_Z, COL_AQUA_RGB, this.utilLayer, 8);
+        this.multiPlaneGizmos[3].scaleRatio = -0.3;
+        this.multiPlaneGizmos[3].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[3].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[3].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[3].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            helper.rotateMultiPlane(AXIS_Z);
+        });
+    }
+
+    unbindMultiPlane() {
+        if (this.multiPlaneGizmos.length > 0) {
+            for (let i = 0; i < this.multiPlaneGizmos.length; i++) {
+                this.multiPlaneGizmos[i].attachedMesh = null;
+                this.multiPlaneGizmos[i].dispose();
+                this.multiPlaneGizmos[i] = null;
+            }
+        }
+        this.multiPlaneGizmos = [];
     }
 }
 
@@ -5842,6 +6033,10 @@ ui.domScreenWorkplane.onclick = () => {
     helper.toggleWorkplane(1);
 };
 
+ui.domScreenMultiPlane.onclick = () => {
+    helper.toggleWorkplane(2);
+};
+
 ui.domScreenLightLocator.onclick = () => {
     uix.toggleLightLocator();
 };
@@ -5895,6 +6090,10 @@ document.getElementById('btn_action_fullscreen').onclick = () => {
 document.getElementById('btn_action_reloadapp').onclick = async (ev) => {
     if (await ui.confirm(ev.target))
         window.location.reload();
+};
+
+document.getElementById('btn_action_resetmultiplane').onclick = () => {
+    helper.resetMultiPlane();
 };
 
 // File
@@ -6332,6 +6531,32 @@ document.getElementById('btn_action_optimize').onclick = async (ev) => {
 };
 
 // Groups
+
+ui.domGroupSliceY.onchange = (ev) => {
+    const sliceY = parseInt(ev.target.value);
+
+    if (sliceY === 0) {
+        builder.setVoxelsVisibility(true);
+    } else {
+        const posY = (sliceY > 0) ? sliceY - 1 : sliceY;
+        for (let i = 0; i < builder.voxels.length; i++)
+            builder.voxels[i].visible = builder.voxels[i].position.y === posY;
+    }
+    
+    builder.create();
+};
+
+document.getElementById('btn_action_slicetomultiplane').onclick = () => {
+    if (ui.checkMode(0)) {
+        ui.domGroupSliceY.value = helper.multiPlane.position.y + 0.5;
+        ui.domGroupSliceY.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+};
+
+document.getElementById('btn_action_multiplanetoslice').onclick = () => {
+    if (ui.checkMode(0))
+        helper.multiPlane.position.y = parseInt(ui.domGroupSliceY.value) - 0.5;
+};
 
 document.getElementById('btn_action_groupislands').onclick = async (ev) => {
     if (ui.checkMode(0) && await ui.confirm(ev.target))
