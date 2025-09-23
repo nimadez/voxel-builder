@@ -104,19 +104,22 @@ onmessage = (ev) => {
 
 
         case 'parseMagicaVoxel':
-            const chunks = parseMagicaVoxel(ev.data.data);
-            if (!chunks) {
-                throw new TypeError("Parse MagicaVoxel, chunk not found.");
+            const data = parseMagicaVoxel(ev.data.data);
+            if (!data) {
+                throw new TypeError("MagicaVoxel: parse error.");
             }
+            
             arr = [];
-            for (let i = 0; i < chunks[0].data.length; i+=4) {
-                const x = chunks[0].data[ i + 0 ];
-                const y = chunks[0].data[ i + 1 ];
-                const z = chunks[0].data[ i + 2 ];
-                const c = chunks[0].data[ i + 3 ];
-                const hex = chunks[0].palette[ c ];
-                const color = '#' + ("000000" + (((hex & 0xFF) << 16) + (hex & 0xFF00) + ((hex >> 16) & 0xFF)).toString(16)).slice(-6);
-                arr.push({ x: x, y: z, z: -y, color: color.toUpperCase() });
+            for (let i = 0; i < data[0].length; i++) {
+                for (let j = 0; j < data[0][i].voxels.length; j++) {
+                    const x = data[0][i].voxels[j][0];
+                    const y = data[0][i].voxels[j][1];
+                    const z = data[0][i].voxels[j][2];
+                    const c = data[0][i].voxels[j][3];
+                    const hex = data[1][ c ];
+                    const color = '#' + ("000000" + (((hex & 0xFF) << 16) + (hex & 0xFF00) + ((hex >> 16) & 0xFF)).toString(16)).slice(-6);
+                    arr.push({ x: x, y: z, z: -y, color: color.toUpperCase() });
+                }
             }
             postMessage(arr);
             arr = [];
