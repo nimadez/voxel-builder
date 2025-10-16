@@ -3557,7 +3557,10 @@ class Tool {
     setPickInfo() {
         return new Promise(resolve => {
 
-            if (ui.domOptionsScreenWorkplaneOnly.checked) {
+            const isWorkplaneOnly = ui.domOptionsScreenWorkplaneOnly.checked &&
+                                    !this.name.startsWith('transform_');
+
+            if (isWorkplaneOnly) {
                 helper.overlayPlane.renderingGroupId = 2;
                 helper.boxShape.renderingGroupId = 2;
             } else {
@@ -3566,7 +3569,7 @@ class Tool {
             }
 
             const index = builder.getIndexAtPointer();
-            if (index !== undefined && !ui.domOptionsScreenWorkplaneOnly.checked) {
+            if (index !== undefined && !isWorkplaneOnly) {
 
                 // direct face hits
 
@@ -3642,7 +3645,7 @@ class Tool {
                     
                     const point = this.pickWorkplane(this.pick, norm);
                     const idx = builder.getIndexAtPosition(point.add(norm));
-                    if (idx === undefined || ui.domOptionsScreenWorkplaneOnly.checked) {
+                    if (idx === undefined || isWorkplaneOnly) {
                         this.pick.INDEX = this.pick.faceId;
                         this.pick.NORMAL = norm;
                         this.pick.WORKPLANE = point;
@@ -3861,7 +3864,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.0",
+            version: "Voxel Builder 4.7.1",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -5330,7 +5333,7 @@ class UserInterfaceAdvanced {
         this.multiPlaneGizmos[1].dragBehavior.onDragStartObservable.add(() => {
             this.multiPlaneGizmos[1].dragBehavior.releaseDrag();
             this.isMultiPlaneGizmoActive = true;
-            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_X);
         });
 
@@ -5341,7 +5344,7 @@ class UserInterfaceAdvanced {
         this.multiPlaneGizmos[2].dragBehavior.onDragStartObservable.add(() => {
             this.multiPlaneGizmos[2].dragBehavior.releaseDrag();
             this.isMultiPlaneGizmoActive = true;
-            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_Y);
         });
 
@@ -5352,7 +5355,7 @@ class UserInterfaceAdvanced {
         this.multiPlaneGizmos[3].dragBehavior.onDragStartObservable.add(() => {
             this.multiPlaneGizmos[3].dragBehavior.releaseDrag();
             this.isMultiPlaneGizmoActive = true;
-            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_Z);
         });
     }
