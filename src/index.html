@@ -168,13 +168,13 @@
         #color-picker-selected div { width: 100%; height: 15px; background: black; }
         #color-picker-selected :first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; cursor: pointer; }
         #color-picker-selected :last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
-        #options_screen { z-index: 501; display: none; flex-direction: row; gap: 10px; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); }
+        #options_screen { z-index: 501; display: none; background: #ffffff08; padding: 0 5px 0 5px; border-radius: var(--border-radius); flex-direction: row; gap: 10px; position: absolute; top: 73px; left: 50%; transform: translateX(-50%); }
         #options_screen label { text-shadow: var(--text-shadow); font-size: 10px; }
         #marquee { z-index: 500; display: none; background: #00ffff10; border: dotted 2px aqua; position: fixed; }
         #info { z-index: 2; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; margin-bottom: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
         #info_tool { z-index: 501; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: auto; top: 47px; left: 50%; transform: translateX(-50%); text-align: center; text-transform: uppercase; }
         #info_render { z-index: 301; display: none; color: var(--label-info); letter-spacing: 0.06em; text-shadow: var(--text-shadow); font-size: 10px; position: absolute; padding: 2px; width: 100%; bottom: 2px; text-align: center; pointer-events: none; }
-        #notifier { z-index: 2000; display: none; font-size: 11px; background: var(--notifier-bg); color: var(--notifier-color); border: solid 1px var(--border); position: absolute; width: fit-content; min-width: 100px; left: 50%; top: 92px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 0.08em; text-align: center; border-radius: var(--border-radius); pointer-events: none; }
+        #notifier { z-index: 2000; display: none; font-size: 11px; background: var(--notifier-bg); color: var(--notifier-color); border: solid 1px var(--border); position: absolute; width: fit-content; min-width: 100px; left: 50%; top: 100px; transform: translateX(-50%); padding: 3px 6px 2px 6px; letter-spacing: 0.08em; text-align: center; border-radius: var(--border-radius); pointer-events: none; }
         #progressbar { z-index: 2000; background: linear-gradient(135deg, orange 25%, #ffd17c 25%, #ffd17c 50%, orange 50%, orange 75%, #ffd17c 75%); background-size: 20px 20px; width: 0; max-width: 100%; height: 3px; bottom: 0; position: fixed; }
         #confirm { z-index: 2500; display: none; flex-direction: row; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: var(--border-radius); }
         #confirm :first-child { background: #4682b4BB; color: white; box-shadow: var(--btn-bg-shadow); width: 50%; height: 100%; position: relative; }
@@ -313,7 +313,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.7.0 BETA
+                &#8627; 4.7.1 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -770,7 +770,7 @@
     <!-- options screen -->
     <ul id="options_screen">
         <li title="Create new scene on import, quick-load, snapshots, generators, voxelizers"><input type="checkbox" id="check_screen_newscene" checked> <label for="check_screen_newscene">NEW SCENE</label></li>
-        <li title="Snap drawing to workplanes only"><input type="checkbox" id="check_workplane_only"> <label for="check_workplane_only">WORKPLANES</label></li>
+        <li title="Snap drawing to workplanes only (add, box add, box remove, and box paint tools)"><input type="checkbox" id="check_workplane_only"> <label for="check_workplane_only">WORKPLANES</label></li>
     </ul>
 
     <!-- color pickers -->
@@ -809,10 +809,10 @@
     <input style="display: none" type="file" id="openfile_snapshot_zip" accept=".zip" onclick="this.value = null">
 
     <!-- shortcuts -->
-    <div id="shortcuts" onclick="this.style.display = 'none'">
+    <div id="shortcuts" onclick="this.style.display = 'none'" title="Click to Close">
         <span>⚠️ It is recommended to hold down the SPACE or ALT keys to toggle the Free Camera while modeling or with a tool active, on the desktop. (just like in Blender, Maya, etc.)</span>
         <hr>
-        <table title="Click to Close">
+        <table>
             <tr><td>SPACE, ALT</td> <td>Toggle Free Camera (MODEL)</td></tr>
             <tr><td>ENTER</td> <td>Apply Transforms (MODEL)</td></tr>
             <tr><td>CTRL</td> <td>Translate Camera (MODEL)</td></tr>
@@ -838,7 +838,7 @@
             <tr><td>CTRL + Z</td> <td>Undo (MODEL)</td></tr>
             <tr><td>CTRL + X</td> <td>Redo (MODEL)</td></tr>
             <tr><td>CTRL + /</td> <td>Toggle Inspector</td></tr>
-          </table>
+        </table>
     </div>
 
 <script src="libs/babylon.js"></script>

@@ -183,6 +183,11 @@ const workplaneWhiteList = [
     'measure_volume', 'frame_voxels'
 ];
 
+const workplaneOnlyWhiteList = [
+    'add',
+    'box_add', 'box_remove', 'box_paint'
+];
+
 const pixelReadWhiteList = [
     'rect_add'
 ];
@@ -2876,6 +2881,7 @@ class Tool {
 
         this.isSymmetry = false;
         this.isWorkplane = false;
+        this.isWorkplaneOnly = false;
         this.startBox = undefined;
         this.startRect = undefined;
         this.pos = undefined;
@@ -3557,7 +3563,11 @@ class Tool {
     setPickInfo() {
         return new Promise(resolve => {
 
-            if (ui.domOptionsScreenWorkplaneOnly.checked) {
+            this.isWorkplaneOnly = ui.domOptionsScreenWorkplaneOnly.checked &&
+                                   (helper.isGridPlaneActive || helper.isWorkplaneActive || helper.isMultiPlaneActive) &&
+                                   workplaneOnlyWhiteList.includes(this.name);
+
+            if (this.isWorkplaneOnly) {
                 helper.overlayPlane.renderingGroupId = 2;
                 helper.boxShape.renderingGroupId = 2;
             } else {
@@ -3566,7 +3576,7 @@ class Tool {
             }
 
             const index = builder.getIndexAtPointer();
-            if (index !== undefined && !ui.domOptionsScreenWorkplaneOnly.checked) {
+            if (index !== undefined && !this.isWorkplaneOnly) {
 
                 // direct face hits
 
@@ -3642,7 +3652,7 @@ class Tool {
                     
                     const point = this.pickWorkplane(this.pick, norm);
                     const idx = builder.getIndexAtPosition(point.add(norm));
-                    if (idx === undefined || ui.domOptionsScreenWorkplaneOnly.checked) {
+                    if (idx === undefined || this.isWorkplaneOnly) {
                         this.pick.INDEX = this.pick.faceId;
                         this.pick.NORMAL = norm;
                         this.pick.WORKPLANE = point;
@@ -3861,7 +3871,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.0",
+            version: "Voxel Builder 4.7.1",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4783,8 +4793,8 @@ class UserInterface {
             this.domToolbarScreenTopMem.style.top = '10px';
             this.domInfoTool.style.top = '17px';
             this.domOptionsScreen.style.display = 'flex';
-            this.domOptionsScreen.style.top = '40px';
-            this.domNotifier.style.top = '62px';
+            this.domOptionsScreen.style.top = '43px';
+            this.domNotifier.style.top = '70px';
 
             this.domToolbar.children[3].style.borderBottomRightRadius = getStyleRoot('--border-radius');
             this.domToolbar.children[3].firstChild.style.borderBottomRightRadius = getStyleRoot('--border-radius');
@@ -5330,7 +5340,7 @@ class UserInterfaceAdvanced {
         this.multiPlaneGizmos[1].dragBehavior.onDragStartObservable.add(() => {
             this.multiPlaneGizmos[1].dragBehavior.releaseDrag();
             this.isMultiPlaneGizmoActive = true;
-            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_X);
         });
 
@@ -5341,7 +5351,7 @@ class UserInterfaceAdvanced {
         this.multiPlaneGizmos[2].dragBehavior.onDragStartObservable.add(() => {
             this.multiPlaneGizmos[2].dragBehavior.releaseDrag();
             this.isMultiPlaneGizmoActive = true;
-            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_Y);
         });
 
@@ -5352,7 +5362,7 @@ class UserInterfaceAdvanced {
         this.multiPlaneGizmos[3].dragBehavior.onDragStartObservable.add(() => {
             this.multiPlaneGizmos[3].dragBehavior.releaseDrag();
             this.isMultiPlaneGizmoActive = true;
-            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 1000);
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_Z);
         });
     }
