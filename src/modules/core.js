@@ -3686,6 +3686,7 @@ class Tool {
         helper.clearOverlays();
 
         ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ') }`;
+        ui.domOptionsScreenWorkplaneOnly.disabled = !workplaneOnlyWhiteList.includes(this.name);
     }
 }
 
@@ -3871,7 +3872,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.1",
+            version: "Voxel Builder 4.7.2",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4098,29 +4099,54 @@ class Project {
         });
     }
 
-    async loadMagicaVoxel(buffer) {
+    loadMagicaVoxel(url) {
         ui.showProgress(1);
-        const msg = await modules.workerPool.postMessage({
-            id: 'parseMagicaVoxel',
-            data: buffer
-        });
-        if (msg) {
-            const voxels = [];
-            for (let i = 0; i < msg.data.length; i++) {
-                voxels.push({ 
-                    position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
-                    color: msg.data[i].color,
-                    visible: true
-                });
+
+        modules.loaders.loadVOX(url).then(async data => {
+            const msg = await modules.workerPool.postMessage({
+                id: 'parseMagicaVoxel',
+                chunks: data.chunks
+            });
+
+            if (msg) {
+                const voxels = [];
+
+                if (data.scene) {
+                    for (let i = 0; i < msg.data.length; i++) {
+                        voxels.push({ 
+                            position: Vector3(
+                                msg.data[i].x + data.scene.children[ msg.data[i].id ].position.x,
+                                msg.data[i].y + data.scene.children[ msg.data[i].id ].position.y,
+                                msg.data[i].z + data.scene.children[ msg.data[i].id ].position.z),
+                            color: msg.data[i].color,
+                            visible: true
+                        });
+                    }
+                } else {
+                    for (let i = 0; i < msg.data.length; i++) {
+                        voxels.push({ 
+                            position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                            color: msg.data[i].color,
+                            visible: true
+                        });
+                    }
+                }
+                
+                builder.createVoxelsFromArray(builder.normalizeVoxelPositionsArray(voxels));
+                this.resetSceneSetup();
+                ui.domProjectName.value = 'untitled';
+                ui.showProgress(0);
+            } else {
+                ui.errorMessage('incompatible vox file');
+                ui.showProgress(0);
             }
-            builder.createVoxelsFromArray(builder.normalizeVoxelPositionsArray(voxels));
-            this.resetSceneSetup();
-            ui.domProjectName.value = 'untitled';
+            
             ui.showProgress(0);
-        } else {
-            ui.errorMessage('incompatible vox file');
+        }).catch(err => {
+            ui.errorMessage('unable to load geometry');
             ui.showProgress(0);
-        }
+            console.error(err);
+        });
     }
 
     createScreenshot(scale = 4) {
@@ -5772,6 +5798,7 @@ document.addEventListener("keydown", (ev) => {
 
     if (MODE == 0 && !tool.last && !pointer.isDown) {
         if (ev.altKey || ev.key == ' ') {
+            ev.preventDefault();
             tool.last = tool.name;
             tool.toolSelector('camera', false);
             return;
@@ -5873,7 +5900,7 @@ function fileHandler(file) {
         if (ext == 'obj' && MODE == 0) modules.voxelizer.importMeshOBJ(url, scene);
         if (ext == 'stl' && MODE == 0) modules.voxelizer.importMeshSTL(url, scene);
         if (ext == 'ply' && MODE == 0) modules.voxelizer.importMeshPLY(url, scene);
-        if (ext == 'vox') project.loadMagicaVoxel(reader.result);
+        if (ext == 'vox' && MODE == 0) project.loadMagicaVoxel(url);
         if (ext == 'hdr') hdri.loadHDR(url);
         if (MODE == 0) {
             if (['jpg','png','svg'].includes(ext))
@@ -5883,7 +5910,7 @@ function fileHandler(file) {
     }
     if (ext == 'json') {
         reader.readAsText(file);
-    } else if (ext == 'vox' || ext == 'zip') {
+    } else if (ext == 'zip') {
         reader.readAsArrayBuffer(file);
     } else {
         reader.readAsDataURL(file);
@@ -6552,30 +6579,6 @@ document.getElementById('btn_action_optimize').onclick = async (ev) => {
 
 // Groups
 
-ui.domGroupSliceY.oninput = (ev) => {
-    if (ui.checkMode(0) && ev.target.value !== '') {
-        builder.setVoxelsVisibilityBySliceY(parseInt(ev.target.value));
-        builder.create();
-    }
-};
-
-ui.domGroupSliceY.onwheel = () => {
-    if (ui.checkMode(0))
-        ui.domGroupSliceY.dispatchEvent(new Event('input', { bubbles: true }));
-};
-
-document.getElementById('btn_action_slicetomultiplane').onclick = () => {
-    if (ui.checkMode(0)) {
-        ui.domGroupSliceY.value = helper.multiPlane.position.y + 0.5;
-        ui.domGroupSliceY.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-};
-
-document.getElementById('btn_action_multiplanetoslice').onclick = () => {
-    if (ui.checkMode(0))
-        helper.multiPlane.position.y = parseInt(ui.domGroupSliceY.value) - 0.5;
-};
-
 document.getElementById('btn_action_groupislands').onclick = async (ev) => {
     if (ui.checkMode(0) && await ui.confirm(ev.target))
         builder.createGroupsByIslands();
@@ -6602,6 +6605,36 @@ document.getElementById('btn_action_unhideall').onclick = () => {
     if (ui.checkMode(0)) {
         builder.setVoxelsVisibility(true);
         builder.create();
+    }
+};
+
+ui.domGroupSliceY.oninput = (ev) => {
+    if (ui.checkMode(0) && ev.target.value !== '') {
+        builder.setVoxelsVisibilityBySliceY(parseInt(ev.target.value));
+        builder.create();
+    }
+};
+
+ui.domGroupSliceY.onwheel = () => {
+    if (ui.checkMode(0))
+        ui.domGroupSliceY.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+document.getElementById('btn_action_getmultiplane').onclick = () => {
+    if (ui.checkMode(0)) {
+        (helper.multiPlane.position.y > 0) ?
+            ui.domGroupSliceY.value = helper.multiPlane.position.y + 1.5 :
+            ui.domGroupSliceY.value = helper.multiPlane.position.y + 0.5;
+        ui.domGroupSliceY.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+};
+
+document.getElementById('btn_action_setmultiplane').onclick = () => {
+    if (ui.checkMode(0)) {
+        const slice = parseInt(ui.domGroupSliceY.value);
+        (slice > 0) ?
+            helper.multiPlane.position.y = slice - 1.5 :
+            helper.multiPlane.position.y = slice - 0.5;
     }
 };
 

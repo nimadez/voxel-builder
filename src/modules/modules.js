@@ -27,6 +27,7 @@ export { generator } from './generator/generator.js';
 export { voxelizer } from './raycaster/voxelizer.js';
 export { translator } from './translator.js';
 export { exporters } from './exporters/exporters.js';
+export { loaders } from './loaders/loaders.js';
 
 export { ReinventedColorWheel } from "../libs/utils/reinvented-color-wheel.bundle.js";
 

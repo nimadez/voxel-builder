@@ -5,8 +5,6 @@
     Web worker processor
 */
 
-import { parseMagicaVoxel } from '../loaders/magicavoxel.js';
-
 
 let arr = [];
 
@@ -103,22 +101,17 @@ onmessage = (ev) => {
             break;
 
 
-        case 'parseMagicaVoxel':
-            const data = parseMagicaVoxel(ev.data.data);
-            if (!data) {
-                throw new TypeError("MagicaVoxel: parse error.");
-            }
-            
+        case 'parseMagicaVoxel':            
             arr = [];
-            for (let i = 0; i < data[0].length; i++) {
-                for (let j = 0; j < data[0][i].voxels.length; j++) {
-                    const x = data[0][i].voxels[j][0];
-                    const y = data[0][i].voxels[j][1];
-                    const z = data[0][i].voxels[j][2];
-                    const c = data[0][i].voxels[j][3];
-                    const hex = data[1][ c ];
+            for (let i = 0; i < ev.data.chunks.length; i++) {
+                for (let j = 0; j < ev.data.chunks[i].data.length; j+=4) {
+                    const x = ev.data.chunks[i].data[j];
+                    const y = ev.data.chunks[i].data[j + 1];
+                    const z = ev.data.chunks[i].data[j + 2];
+                    const c = ev.data.chunks[i].data[j + 3];
+                    const hex = ev.data.chunks[i].palette[ c ];
                     const color = '#' + ("000000" + (((hex & 0xFF) << 16) + (hex & 0xFF00) + ((hex >> 16) & 0xFF)).toString(16)).slice(-6);
-                    arr.push({ x: x, y: z, z: -y, color: color.toUpperCase() });
+                    arr.push({ id: i, x: x, y: z, z: -y, color: color.toUpperCase() });
                 }
             }
             postMessage(arr);

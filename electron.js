@@ -4,13 +4,13 @@
 if (!require('electron').app.requestSingleInstanceLock())
     require('electron').app.exit(0);
 
-const { app, BrowserWindow, globalShortcut } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
         icon: './src/assets/appicon.png',
         width: 1200,
-        height: 800,
+        height: 900,
         autoHideMenuBar: true,
         resizable: true,
         alwaysOnTop: false,
@@ -26,31 +26,30 @@ function createWindow() {
     });
 
     mainWindow.loadFile('src/index.html');
-    mainWindow.removeMenu();
 
-    const reload = () => mainWindow.reload();
-    const devTools = () => mainWindow.webContents.toggleDevTools();
-    const register = () => {
-        globalShortcut.register('f5', reload);
-        globalShortcut.register('f1', devTools);
-    };
-    const unregister = () => {
-        globalShortcut.unregister('f5', reload);
-        globalShortcut.unregister('f1', devTools);
-    }
-    mainWindow.on('focus', register);
-    mainWindow.on('blur', unregister);
-    mainWindow.on('beforeunload', unregister);
-    mainWindow.on('closed', () => {});
+    Menu.setApplicationMenu(Menu.buildFromTemplate([
+        { 
+            label: "Reload",
+            accelerator: "f5",
+            click() {
+                mainWindow.reload();
+            }
+        }, {
+            label: "DevTools",
+            accelerator: "f1",
+            click() {
+                mainWindow.webContents.toggleDevTools();
+            }
+        }
+    ]));
+
+    mainWindow.webContents.on('devtools-opened', () => {
+        mainWindow.webContents.focus();
+    });
 }
 
 app.whenReady().then(() => {
     createWindow();
-
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0)
-            createWindow();
-    });
 });
 
 app.on('window-all-closed', () => {

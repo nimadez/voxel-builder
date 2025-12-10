@@ -313,7 +313,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.7.1 BETA
+                &#8627; 4.7.2 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -646,18 +646,18 @@
             <li><button id="btn_action_groupislands">Group by Islands</button></li>
             <li class="spacer"></li>
             <li title="Treats the corners as a connected island"><input type="checkbox" id="input-groupislands-connected" checked> <label for="input-groupislands-connected">Add Connected</label></li>
-            <li class="category">SLICE VIEW</li>
-            <li class="row_input" title="Slice to a specific level of voxels in Y direction"><label>Slice Y</label> <input id="input-group-slice-y" type="number" class="ignorekeys" value="0" step="1"></li>
-            <li class="spacer"></li>
-            <li><button id="btn_action_slicetomultiplane">Slice &#62; MultiPlane</button></li>
-            <li><button id="btn_action_multiplanetoslice">MultiPlane &#62; Slice</button></li>
             <li class="category">VISIBILITY</li>
             <li><button id="btn_tool_isolate_color" class="tool tool_isolate_color">Isolate Color</button></li>
             <li><button id="btn_tool_hide_color" class="tool tool_hide_color">Hide Color</button></li>
             <li><button id="btn_action_invertvisibility">Invert Visibility</button></li>
             <li><button id="btn_action_unhideall">Unhide All</button></li>
+            <li class="category">SLICE VIEW</li>
+            <li class="row_input" title="View specific level of voxels in Y direction"><label>Slice Y</label> <input id="input-group-slice-y" type="number" class="ignorekeys" value="0" step="1"></li>
+            <li class="spacer"></li>
+            <li><button id="btn_action_getmultiplane">Get MultiPlane</button></li>
+            <li><button id="btn_action_setmultiplane">Set MultiPlane</button></li>
             <li class="category">DELETE</li>
-            <li><button id="btn_tool_delete_color" class="tool tool_delete_color">Delete Color</button></li>
+            <li><button id="btn_tool_delete_color" class="tool tool_delete_color">Delete by Color</button></li>
             <li><button id="btn_action_deletehidden">Delete Hidden</button></li>
             <li><label class="help">? Each color is a group, Set a unique color to define color groups.</label></li>
         </ul>
@@ -769,8 +769,8 @@
 
     <!-- options screen -->
     <ul id="options_screen">
-        <li title="Create new scene on import, quick-load, snapshots, generators, voxelizers"><input type="checkbox" id="check_screen_newscene" checked> <label for="check_screen_newscene">NEW SCENE</label></li>
-        <li title="Snap drawing to workplanes only (add, box add, box remove, and box paint tools)"><input type="checkbox" id="check_workplane_only"> <label for="check_workplane_only">WORKPLANES</label></li>
+        <li title="Create new scene on import, load, snapshot, generate and voxelize"><input type="checkbox" id="check_screen_newscene" checked> <label for="check_screen_newscene">NEW SCENE</label></li>
+        <li title="Snap drawing to workplanes"><input type="checkbox" id="check_workplane_only"> <label for="check_workplane_only">WORKPLANES</label></li>
     </ul>
 
     <!-- color pickers -->

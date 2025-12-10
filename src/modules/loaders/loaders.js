@@ -9,6 +9,7 @@ import { GLTFLoader } from '../../libs/addons/GLTFLoader.js';
 import { OBJLoader } from '../../libs/addons/OBJLoader.js';
 import { STLLoader } from '../../libs/addons/STLLoader.js';
 import { PLYLoader } from '../../libs/addons/PLYLoader.js';
+import { VOXLoader } from '../../libs/addons/VOXLoader.js';
 import { HDRLoader } from '../../libs/addons/HDRLoader.js';
 import { translator } from '../translator.js';
 
@@ -105,6 +106,19 @@ class Loaders {
 
                 translator.dispose();
 
+            }, null, (err) => {
+                reject(err);
+            });
+        });
+    }
+
+    loadVOX(url) {
+        return new Promise((resolve, reject) => {
+            new VOXLoader().load(url, (proxy) => {
+                resolve({
+                    chunks: proxy.chunks,
+                    scene: proxy.scene
+                });
             }, null, (err) => {
                 reject(err);
             });

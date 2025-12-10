@@ -1,6 +1,6 @@
 {
     "name": "voxel-builder",
-    "version": "4.7.1",
+    "version": "4.7.2",
     "description": "Voxel-based 3D modeling application",
     "main": "electron.js",
     "scripts": {
@@ -10,10 +10,10 @@
     "author": "@nimadez",
     "license": "MIT",
     "devDependencies": {
-        "electron": "^37.0.0",
-        "babylonjs": "8.32.0",
-        "three": "0.181.0",
-        "three-mesh-bvh": "0.9.2",
+        "electron": "^38.0.0",
+        "babylonjs": "8.40.1",
+        "three": "0.182.0",
+        "three-mesh-bvh": "0.9.3",
         "three-gpu-pathtracer": "0.0.23",
         "@tweenjs/tween.js": "25.0.0",
         "reinvented-color-wheel": "0.4.0",
