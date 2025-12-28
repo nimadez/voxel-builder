@@ -20,7 +20,11 @@ const TRAVERSAL_COST = 1;
 
 // Build constants
 const BYTES_PER_NODE = 6 * 4 + 4 + 4;
+const UINT32_PER_NODE = BYTES_PER_NODE / 4;
 const IS_LEAFNODE_FLAG = 0xFFFF;
+
+// Bit masks for 32 bit node data
+const LEAFNODE_MASK_32 = IS_LEAFNODE_FLAG << 16;
 
 // EPSILON for computing floating point error during build
 // https://en.wikipedia.org/wiki/Machine_epsilon#Values_for_standard_hardware_floating_point_arithmetics
@@ -117,11 +121,15 @@ function getRootIndexRanges( geo, range ) {
 	const drawRangeEnd = ( drawRange.start + drawRange.count ) / 3;
 
 	// Create events for group boundaries
+	const triCount = getTriCount( geo );
 	const events = [];
 	for ( const group of geo.groups ) {
 
-		const groupStart = group.start / 3;
-		const groupEnd = ( group.start + group.count ) / 3;
+		// Account for cases where group size is set to Infinity
+		const { start, count } = group;
+		const groupStart = start / 3;
+		const groupCount = isFinite( count ) ? count : ( triCount * 3 - start );
+		const groupEnd = ( start + groupCount ) / 3;
 
 		// Only add events if the group intersects with the draw range
 		if ( groupStart < drawRangeEnd && groupEnd > drawRangeStart ) {
@@ -481,7 +489,7 @@ function computeSurfaceArea( bounds ) {
 
 const BIN_COUNT = 32;
 const binsSort = ( a, b ) => a.candidate - b.candidate;
-const sahBins = new Array( BIN_COUNT ).fill().map( () => {
+const sahBins = /* @__PURE__ */ new Array( BIN_COUNT ).fill().map( () => {
 
 	return {
 
@@ -494,7 +502,7 @@ const sahBins = new Array( BIN_COUNT ).fill().map( () => {
 	};
 
 } );
-const leftBounds = new Float32Array( 6 );
+const leftBounds = /* @__PURE__ */ new Float32Array( 6 );
 
 function getOptimalSplit( nodeBoundingData, centroidBoundingData, triangleBounds, offset, count, strategy ) {
 
@@ -932,48 +940,6 @@ function partition_indirect( indirectBuffer, index, triangleBounds, offset, coun
 
 }
 
-function IS_LEAF( n16, uint16Array ) {
-
-	return uint16Array[ n16 + 15 ] === 0xFFFF;
-
-}
-
-function OFFSET( n32, uint32Array ) {
-
-	return uint32Array[ n32 + 6 ];
-
-}
-
-function COUNT( n16, uint16Array ) {
-
-	return uint16Array[ n16 + 14 ];
-
-}
-
-function LEFT_NODE( n32 ) {
-
-	return n32 + 8;
-
-}
-
-function RIGHT_NODE( n32, uint32Array ) {
-
-	return uint32Array[ n32 + 6 ];
-
-}
-
-function SPLIT_AXIS( n32, uint32Array ) {
-
-	return uint32Array[ n32 + 7 ];
-
-}
-
-function BOUNDING_DATA_INDEX( n32 ) {
-
-	return n32;
-
-}
-
 let float32Array, uint32Array, uint16Array, uint8Array;
 const MAX_POINTER = Math.pow( 2, 32 );
 
@@ -1008,13 +974,13 @@ function populateBuffer( byteOffset, node, buffer ) {
 // splitAxis / isLeaf + count 	: 1 uint32 / 2 uint16
 function _populateBuffer( byteOffset, node ) {
 
-	const stride4Offset = byteOffset / 4;
-	const stride2Offset = byteOffset / 2;
+	const node32Index = byteOffset / 4;
+	const node16Index = byteOffset / 2;
 	const isLeaf = 'count' in node;
 	const boundingData = node.boundingData;
 	for ( let i = 0; i < 6; i ++ ) {
 
-		float32Array[ stride4Offset + i ] = boundingData[ i ];
+		float32Array[ node32Index + i ] = boundingData[ i ];
 
 	}
 
@@ -1022,54 +988,44 @@ function _populateBuffer( byteOffset, node ) {
 
 		if ( node.buffer ) {
 
-			const buffer = node.buffer;
-			uint8Array.set( new Uint8Array( buffer ), byteOffset );
-
-			for ( let offset = byteOffset, l = byteOffset + buffer.byteLength; offset < l; offset += BYTES_PER_NODE ) {
-
-				const offset2 = offset / 2;
-				if ( ! IS_LEAF( offset2, uint16Array ) ) {
-
-					uint32Array[ ( offset / 4 ) + 6 ] += stride4Offset;
-
-
-				}
-
-			}
-
-			return byteOffset + buffer.byteLength;
+			uint8Array.set( new Uint8Array( node.buffer ), byteOffset );
+			return byteOffset + node.buffer.byteLength;
 
 		} else {
 
-			const offset = node.offset;
-			const count = node.count;
-			uint32Array[ stride4Offset + 6 ] = offset;
-			uint16Array[ stride2Offset + 14 ] = count;
-			uint16Array[ stride2Offset + 15 ] = IS_LEAFNODE_FLAG;
+			uint32Array[ node32Index + 6 ] = node.offset;
+			uint16Array[ node16Index + 14 ] = node.count;
+			uint16Array[ node16Index + 15 ] = IS_LEAFNODE_FLAG;
 			return byteOffset + BYTES_PER_NODE;
 
 		}
 
 	} else {
 
-		const left = node.left;
-		const right = node.right;
-		const splitAxis = node.splitAxis;
+		const { left, right, splitAxis } = node;
 
-		let nextUnusedPointer;
-		nextUnusedPointer = _populateBuffer( byteOffset + BYTES_PER_NODE, left );
+		// fill in the left node contents
+		const leftByteOffset = byteOffset + BYTES_PER_NODE;
+		let rightByteOffset = _populateBuffer( leftByteOffset, left );
 
-		if ( ( nextUnusedPointer / 4 ) > MAX_POINTER ) {
+		// calculate relative offset from parent to right child
+		const currentNodeIndex = byteOffset / BYTES_PER_NODE;
+		const rightNodeIndex = rightByteOffset / BYTES_PER_NODE;
+		const relativeRightIndex = rightNodeIndex - currentNodeIndex;
 
-			throw new Error( 'MeshBVH: Cannot store child pointer greater than 32 bits.' );
+		// check if the relative offset is too high
+		if ( relativeRightIndex > MAX_POINTER ) {
+
+			throw new Error( 'MeshBVH: Cannot store relative child node offset greater than 32 bits.' );
 
 		}
 
-		uint32Array[ stride4Offset + 6 ] = nextUnusedPointer / 4;
-		nextUnusedPointer = _populateBuffer( nextUnusedPointer, right );
+		// fill in the right node contents (store as relative offset)
+		uint32Array[ node32Index + 6 ] = relativeRightIndex;
+		uint32Array[ node32Index + 7 ] = splitAxis;
 
-		uint32Array[ stride4Offset + 7 ] = splitAxis;
-		return nextUnusedPointer;
+		// return the next available buffer pointer
+		return _populateBuffer( rightByteOffset, right );
 
 	}
 
@@ -1310,7 +1266,7 @@ class SeparatingAxisBounds {
 
 SeparatingAxisBounds.prototype.setFromBox = ( function () {
 
-	const p = new Vector3();
+	const p = /* @__PURE__ */ new Vector3();
 	return function setFromBox( axis, box ) {
 
 		const boxMin = box.min;
@@ -1346,7 +1302,7 @@ SeparatingAxisBounds.prototype.setFromBox = ( function () {
 
 const areIntersecting = ( function () {
 
-	const cacheSatBounds = new SeparatingAxisBounds();
+	const cacheSatBounds = /* @__PURE__ */ new SeparatingAxisBounds();
 	return function areIntersecting( shape1, shape2 ) {
 
 		const points1 = shape1.points;
@@ -1384,9 +1340,9 @@ const areIntersecting = ( function () {
 const closestPointLineToLine = ( function () {
 
 	// https://github.com/juj/MathGeoLib/blob/master/src/Geometry/Line.cpp#L56
-	const dir1 = new Vector3();
-	const dir2 = new Vector3();
-	const v02 = new Vector3();
+	const dir1 = /* @__PURE__ */ new Vector3();
+	const dir2 = /* @__PURE__ */ new Vector3();
+	const v02 = /* @__PURE__ */ new Vector3();
 	return function closestPointLineToLine( l1, l2, result ) {
 
 		const v0 = l1.start;
@@ -1439,9 +1395,9 @@ const closestPointLineToLine = ( function () {
 const closestPointsSegmentToSegment = ( function () {
 
 	// https://github.com/juj/MathGeoLib/blob/master/src/Geometry/LineSegment.cpp#L187
-	const paramResult = new Vector2();
-	const temp1 = new Vector3();
-	const temp2 = new Vector3();
+	const paramResult = /* @__PURE__ */ new Vector2();
+	const temp1 = /* @__PURE__ */ new Vector3();
+	const temp2 = /* @__PURE__ */ new Vector3();
 	return function closestPointsSegmentToSegment( l1, l2, target1, target2 ) {
 
 		closestPointLineToLine( l1, l2, paramResult );
@@ -1541,10 +1497,10 @@ const closestPointsSegmentToSegment = ( function () {
 const sphereIntersectTriangle = ( function () {
 
 	// https://stackoverflow.com/questions/34043955/detect-collision-between-sphere-and-triangle-in-three-js
-	const closestPointTemp = new Vector3();
-	const projectedPointTemp = new Vector3();
-	const planeTemp = new Plane();
-	const lineTemp = new Line3();
+	const closestPointTemp = /* @__PURE__ */ new Vector3();
+	const projectedPointTemp = /* @__PURE__ */ new Vector3();
+	const planeTemp = /* @__PURE__ */ new Plane();
+	const lineTemp = /* @__PURE__ */ new Line3();
 	return function sphereIntersectTriangle( sphere, triangle ) {
 
 		const { radius, center } = sphere;
@@ -1699,9 +1655,9 @@ class ExtendedTriangle extends Triangle {
 
 ExtendedTriangle.prototype.closestPointToSegment = ( function () {
 
-	const point1 = new Vector3();
-	const point2 = new Vector3();
-	const edge = new Line3();
+	const point1 = /* @__PURE__ */ new Vector3();
+	const point2 = /* @__PURE__ */ new Vector3();
+	const edge = /* @__PURE__ */ new Line3();
 
 	return function distanceToSegment( segment, target1 = null, target2 = null ) {
 
@@ -1759,18 +1715,18 @@ ExtendedTriangle.prototype.closestPointToSegment = ( function () {
 
 ExtendedTriangle.prototype.intersectsTriangle = ( function () {
 
-	const saTri2 = new ExtendedTriangle();
-	const cachedSatBounds = new SeparatingAxisBounds();
-	const cachedSatBounds2 = new SeparatingAxisBounds();
-	const tmpVec = new Vector3();
-	const dir1 = new Vector3();
-	const dir2 = new Vector3();
-	const tempDir = new Vector3();
-	const edge1 = new Line3();
-	const edge2 = new Line3();
-	const tempPoint = new Vector3();
-	const bounds1 = new Vector2();
-	const bounds2 = new Vector2();
+	const saTri2 = /* @__PURE__ */ new ExtendedTriangle();
+	const cachedSatBounds = /* @__PURE__ */ new SeparatingAxisBounds();
+	const cachedSatBounds2 = /* @__PURE__ */ new SeparatingAxisBounds();
+	const tmpVec = /* @__PURE__ */ new Vector3();
+	const dir1 = /* @__PURE__ */ new Vector3();
+	const dir2 = /* @__PURE__ */ new Vector3();
+	const tempDir = /* @__PURE__ */ new Vector3();
+	const edge1 = /* @__PURE__ */ new Line3();
+	const edge2 = /* @__PURE__ */ new Line3();
+	const tempPoint = /* @__PURE__ */ new Vector3();
+	const bounds1 = /* @__PURE__ */ new Vector2();
+	const bounds2 = /* @__PURE__ */ new Vector2();
 
 	function coplanarIntersectsTriangle( self, other, target, suppressLog ) {
 
@@ -2290,7 +2246,7 @@ ExtendedTriangle.prototype.intersectsTriangle = ( function () {
 
 ExtendedTriangle.prototype.distanceToPoint = ( function () {
 
-	const target = new Vector3();
+	const target = /* @__PURE__ */ new Vector3();
 	return function distanceToPoint( point ) {
 
 		this.closestPointToPoint( point, target );
@@ -2303,11 +2259,11 @@ ExtendedTriangle.prototype.distanceToPoint = ( function () {
 
 ExtendedTriangle.prototype.distanceToTriangle = ( function () {
 
-	const point = new Vector3();
-	const point2 = new Vector3();
+	const point = /* @__PURE__ */ new Vector3();
+	const point2 = /* @__PURE__ */ new Vector3();
 	const cornerFields = [ 'a', 'b', 'c' ];
-	const line1 = new Line3();
-	const line2 = new Line3();
+	const line1 = /* @__PURE__ */ new Line3();
+	const line2 = /* @__PURE__ */ new Line3();
 
 	return function distanceToTriangle( other, target1 = null, target2 = null ) {
 
@@ -2492,7 +2448,7 @@ OrientedBox.prototype.update = ( function () {
 
 OrientedBox.prototype.intersectsBox = ( function () {
 
-	const aabbBounds = new SeparatingAxisBounds();
+	const aabbBounds = /* @__PURE__ */ new SeparatingAxisBounds();
 	return function intersectsBox( box ) {
 
 		// TODO: should this be doing SAT against the AABB?
@@ -2537,11 +2493,11 @@ OrientedBox.prototype.intersectsBox = ( function () {
 
 OrientedBox.prototype.intersectsTriangle = ( function () {
 
-	const saTri = new ExtendedTriangle();
-	const pointsArr = new Array( 3 );
-	const cachedSatBounds = new SeparatingAxisBounds();
-	const cachedSatBounds2 = new SeparatingAxisBounds();
-	const cachedAxis = new Vector3();
+	const saTri = /* @__PURE__ */ new ExtendedTriangle();
+	const pointsArr = /* @__PURE__ */ new Array( 3 );
+	const cachedSatBounds = /* @__PURE__ */ new SeparatingAxisBounds();
+	const cachedSatBounds2 = /* @__PURE__ */ new SeparatingAxisBounds();
+	const cachedAxis = /* @__PURE__ */ new Vector3();
 	return function intersectsTriangle( triangle ) {
 
 		if ( this.needsUpdate ) {
@@ -2649,11 +2605,11 @@ OrientedBox.prototype.distanceToPoint = ( function () {
 OrientedBox.prototype.distanceToBox = ( function () {
 
 	const xyzFields = [ 'x', 'y', 'z' ];
-	const segments1 = new Array( 12 ).fill().map( () => new Line3() );
-	const segments2 = new Array( 12 ).fill().map( () => new Line3() );
+	const segments1 = /* @__PURE__ */ new Array( 12 ).fill().map( () => new Line3() );
+	const segments2 = /* @__PURE__ */ new Array( 12 ).fill().map( () => new Line3() );
 
-	const point1 = new Vector3();
-	const point2 = new Vector3();
+	const point1 = /* @__PURE__ */ new Vector3();
+	const point2 = /* @__PURE__ */ new Vector3();
 
 	// early out if we find a value below threshold
 	return function distanceToBox( box, threshold = 0, target1 = null, target2 = null ) {
@@ -2854,6 +2810,52 @@ class ExtendedTrianglePoolBase extends PrimitivePool {
 
 const ExtendedTrianglePool = /* @__PURE__ */ new ExtendedTrianglePoolBase();
 
+function IS_LEAF( n16, uint16Array ) {
+
+	return uint16Array[ n16 + 15 ] === IS_LEAFNODE_FLAG;
+
+}
+
+function OFFSET( n32, uint32Array ) {
+
+	return uint32Array[ n32 + 6 ];
+
+}
+
+function COUNT( n16, uint16Array ) {
+
+	return uint16Array[ n16 + 14 ];
+
+}
+
+// Returns the uint32-aligned offset of the left child node for performance
+function LEFT_NODE( n32 ) {
+
+	return n32 + UINT32_PER_NODE;
+
+}
+
+// Returns the uint32-aligned offset of the right child node for performance
+function RIGHT_NODE( n32, uint32Array ) {
+
+	// stored value is relative offset from parent, convert to absolute uint32 index
+	const relativeOffset = uint32Array[ n32 + 6 ];
+	return n32 + relativeOffset * UINT32_PER_NODE;
+
+}
+
+function SPLIT_AXIS( n32, uint32Array ) {
+
+	return uint32Array[ n32 + 7 ];
+
+}
+
+function BOUNDING_DATA_INDEX( n32 ) {
+
+	return n32;
+
+}
+
 class _BufferStack {
 
 	constructor() {
@@ -2898,13 +2900,13 @@ class _BufferStack {
 
 }
 
-const BufferStack = new _BufferStack();
+const BufferStack = /* @__PURE__ */ new _BufferStack();
 
 let _box1$1, _box2$1;
-const boxStack = [];
+const boxStack =  [];
 const boxPool = /* @__PURE__ */ new PrimitivePool( () => new Box3() );
 
-function shapecast( bvh, root, intersectsBounds, intersectsRange, boundsTraverseOrder, byteOffset ) {
+function shapecast( bvh, root, intersectsBounds, intersectsRange, boundsTraverseOrder, nodeOffset ) {
 
 	// setup
 	_box1$1 = boxPool.getPrimitive();
@@ -2912,7 +2914,7 @@ function shapecast( bvh, root, intersectsBounds, intersectsRange, boundsTraverse
 	boxStack.push( _box1$1, _box2$1 );
 	BufferStack.setBuffer( bvh._roots[ root ] );
 
-	const result = shapecastTraverse( 0, bvh.geometry, intersectsBounds, intersectsRange, boundsTraverseOrder, byteOffset );
+	const result = shapecastTraverse( 0, bvh.geometry, intersectsBounds, intersectsRange, boundsTraverseOrder, nodeOffset );
 
 	// cleanup
 	BufferStack.clearBuffer();
@@ -2939,7 +2941,7 @@ function shapecastTraverse(
 	intersectsBoundsFunc,
 	intersectsRangeFunc,
 	nodeScoreFunc = null,
-	nodeIndexByteOffset = 0, // offset for unique node identifier
+	nodeIndexOffset = 0, // offset for unique node identifier
 	depth = 0
 ) {
 
@@ -2952,7 +2954,7 @@ function shapecastTraverse(
 		const offset = OFFSET( nodeIndex32, uint32Array );
 		const count = COUNT( nodeIndex16, uint16Array );
 		arrayToBox( BOUNDING_DATA_INDEX( nodeIndex32 ), float32Array, _box1$1 );
-		return intersectsRangeFunc( offset, count, false, depth, nodeIndexByteOffset + nodeIndex32, _box1$1 );
+		return intersectsRangeFunc( offset, count, false, depth, nodeIndexOffset + nodeIndex32 / UINT32_PER_NODE, _box1$1 );
 
 	} else {
 
@@ -3000,7 +3002,7 @@ function shapecastTraverse(
 		}
 
 		const isC1Leaf = IS_LEAF( c1 * 2, uint16Array );
-		const c1Intersection = intersectsBoundsFunc( box1, isC1Leaf, score1, depth + 1, nodeIndexByteOffset + c1 );
+		const c1Intersection = intersectsBoundsFunc( box1, isC1Leaf, score1, depth + 1, nodeIndexOffset + c1 / UINT32_PER_NODE );
 
 		let c1StopTraversal;
 		if ( c1Intersection === CONTAINED ) {
@@ -3009,7 +3011,7 @@ function shapecastTraverse(
 			const end = getRightEndOffset( c1 );
 			const count = end - offset;
 
-			c1StopTraversal = intersectsRangeFunc( offset, count, true, depth + 1, nodeIndexByteOffset + c1, box1 );
+			c1StopTraversal = intersectsRangeFunc( offset, count, true, depth + 1, nodeIndexOffset + c1 / UINT32_PER_NODE, box1 );
 
 		} else {
 
@@ -3021,7 +3023,7 @@ function shapecastTraverse(
 					intersectsBoundsFunc,
 					intersectsRangeFunc,
 					nodeScoreFunc,
-					nodeIndexByteOffset,
+					nodeIndexOffset,
 					depth + 1
 				);
 
@@ -3035,7 +3037,7 @@ function shapecastTraverse(
 		arrayToBox( BOUNDING_DATA_INDEX( c2 ), float32Array, box2 );
 
 		const isC2Leaf = IS_LEAF( c2 * 2, uint16Array );
-		const c2Intersection = intersectsBoundsFunc( box2, isC2Leaf, score2, depth + 1, nodeIndexByteOffset + c2 );
+		const c2Intersection = intersectsBoundsFunc( box2, isC2Leaf, score2, depth + 1, nodeIndexOffset + c2 / UINT32_PER_NODE );
 
 		let c2StopTraversal;
 		if ( c2Intersection === CONTAINED ) {
@@ -3044,7 +3046,7 @@ function shapecastTraverse(
 			const end = getRightEndOffset( c2 );
 			const count = end - offset;
 
-			c2StopTraversal = intersectsRangeFunc( offset, count, true, depth + 1, nodeIndexByteOffset + c2, box2 );
+			c2StopTraversal = intersectsRangeFunc( offset, count, true, depth + 1, nodeIndexOffset + c2 / UINT32_PER_NODE, box2 );
 
 		} else {
 
@@ -3056,7 +3058,7 @@ function shapecastTraverse(
 					intersectsBoundsFunc,
 					intersectsRangeFunc,
 					nodeScoreFunc,
-					nodeIndexByteOffset,
+					nodeIndexOffset,
 					depth + 1
 				);
 
@@ -3540,7 +3542,6 @@ function getTriangleHitPointInfo( point, geometry, triangleIndex, target ) {
 /*************************************************************/
 /* This file is generated from "iterationUtils.template.js". */
 /*************************************************************/
-/* eslint-disable indent */
 
 function intersectTris( bvh, materialOrSide, ray, offset, count, intersections, near, far ) {
 
@@ -3645,14 +3646,13 @@ function refit( bvh, nodeIndices = null ) {
 
 	}
 
-	function _traverse( node32Index, byteOffset, force = false ) {
+	function _traverse( nodeIndex32, byteOffset, force = false ) {
 
-		const node16Index = node32Index * 2;
-		const isLeaf = uint16Array[ node16Index + 15 ] === IS_LEAFNODE_FLAG;
-		if ( isLeaf ) {
+		const nodeIndex16 = nodeIndex32 * 2;
+		if ( IS_LEAF( nodeIndex16, uint16Array ) ) {
 
-			const offset = uint32Array[ node32Index + 6 ];
-			const count = uint16Array[ node16Index + 14 ];
+			const offset = uint32Array[ nodeIndex32 + 6 ];
+			const count = uint16Array[ nodeIndex16 + 14 ];
 
 			let minx = Infinity;
 			let miny = Infinity;
@@ -3682,22 +3682,22 @@ function refit( bvh, nodeIndices = null ) {
 
 
 			if (
-				float32Array[ node32Index + 0 ] !== minx ||
-				float32Array[ node32Index + 1 ] !== miny ||
-				float32Array[ node32Index + 2 ] !== minz ||
+				float32Array[ nodeIndex32 + 0 ] !== minx ||
+				float32Array[ nodeIndex32 + 1 ] !== miny ||
+				float32Array[ nodeIndex32 + 2 ] !== minz ||
 
-				float32Array[ node32Index + 3 ] !== maxx ||
-				float32Array[ node32Index + 4 ] !== maxy ||
-				float32Array[ node32Index + 5 ] !== maxz
+				float32Array[ nodeIndex32 + 3 ] !== maxx ||
+				float32Array[ nodeIndex32 + 4 ] !== maxy ||
+				float32Array[ nodeIndex32 + 5 ] !== maxz
 			) {
 
-				float32Array[ node32Index + 0 ] = minx;
-				float32Array[ node32Index + 1 ] = miny;
-				float32Array[ node32Index + 2 ] = minz;
+				float32Array[ nodeIndex32 + 0 ] = minx;
+				float32Array[ nodeIndex32 + 1 ] = miny;
+				float32Array[ nodeIndex32 + 2 ] = minz;
 
-				float32Array[ node32Index + 3 ] = maxx;
-				float32Array[ node32Index + 4 ] = maxy;
-				float32Array[ node32Index + 5 ] = maxz;
+				float32Array[ nodeIndex32 + 3 ] = maxx;
+				float32Array[ nodeIndex32 + 4 ] = maxy;
+				float32Array[ nodeIndex32 + 5 ] = maxz;
 
 				return true;
 
@@ -3709,13 +3709,11 @@ function refit( bvh, nodeIndices = null ) {
 
 		} else {
 
-			const left = node32Index + 8;
-			const right = uint32Array[ node32Index + 6 ];
+			const left = LEFT_NODE( nodeIndex32 );
+			const right = RIGHT_NODE( nodeIndex32, uint32Array );
 
 			// the identifying node indices provided by the shapecast function include offsets of all
 			// root buffers to guarantee they're unique between roots so offset left and right indices here.
-			const offsetLeft = left + byteOffset;
-			const offsetRight = right + byteOffset;
 			let forceChildren = force;
 			let includesLeft = false;
 			let includesRight = false;
@@ -3726,8 +3724,10 @@ function refit( bvh, nodeIndices = null ) {
 				// then we assume that all children need to be updated.
 				if ( ! forceChildren ) {
 
-					includesLeft = nodeIndices.has( offsetLeft );
-					includesRight = nodeIndices.has( offsetRight );
+					const leftNodeId = left / UINT32_PER_NODE + byteOffset / BYTES_PER_NODE;
+					const rightNodeId = right / UINT32_PER_NODE + byteOffset / BYTES_PER_NODE;
+					includesLeft = nodeIndices.has( leftNodeId );
+					includesRight = nodeIndices.has( rightNodeId );
 					forceChildren = ! includesLeft && ! includesRight;
 
 				}
@@ -3761,15 +3761,15 @@ function refit( bvh, nodeIndices = null ) {
 
 				for ( let i = 0; i < 3; i ++ ) {
 
-					const lefti = left + i;
-					const righti = right + i;
-					const minLeftValue = float32Array[ lefti ];
-					const maxLeftValue = float32Array[ lefti + 3 ];
-					const minRightValue = float32Array[ righti ];
-					const maxRightValue = float32Array[ righti + 3 ];
+					const left_i = left + i;
+					const right_i = right + i;
+					const minLeftValue = float32Array[ left_i ];
+					const maxLeftValue = float32Array[ left_i + 3 ];
+					const minRightValue = float32Array[ right_i ];
+					const maxRightValue = float32Array[ right_i + 3 ];
 
-					float32Array[ node32Index + i ] = minLeftValue < minRightValue ? minLeftValue : minRightValue;
-					float32Array[ node32Index + i + 3 ] = maxLeftValue > maxRightValue ? maxLeftValue : maxRightValue;
+					float32Array[ nodeIndex32 + i ] = minLeftValue < minRightValue ? minLeftValue : minRightValue;
+					float32Array[ nodeIndex32 + i + 3 ] = maxLeftValue > maxRightValue ? maxLeftValue : maxRightValue;
 
 				}
 
@@ -3865,7 +3865,6 @@ function intersectRay( nodeIndex32, array, ray, near, far ) {
 /*************************************************************/
 /* This file is generated from "iterationUtils.template.js". */
 /*************************************************************/
-/* eslint-disable indent */
 
 function intersectTris_indirect( bvh, materialOrSide, ray, offset, count, intersections, near, far ) {
 
@@ -4218,8 +4217,8 @@ function _intersectsGeometry$1( nodeIndex32, bvh, otherGeometry, geometryToBvh, 
 
 	} else {
 
-		const left = nodeIndex32 + 8;
-		const right = uint32Array[ nodeIndex32 + 6 ];
+		const left = LEFT_NODE( nodeIndex32 );
+		const right = RIGHT_NODE( nodeIndex32, uint32Array );
 
 		arrayToBox( BOUNDING_DATA_INDEX( left ), float32Array, boundingBox$2 );
 		const leftIntersection =
@@ -4521,14 +4520,13 @@ function refit_indirect( bvh, nodeIndices = null ) {
 
 	}
 
-	function _traverse( node32Index, byteOffset, force = false ) {
+	function _traverse( nodeIndex32, byteOffset, force = false ) {
 
-		const node16Index = node32Index * 2;
-		const isLeaf = uint16Array[ node16Index + 15 ] === IS_LEAFNODE_FLAG;
-		if ( isLeaf ) {
+		const nodeIndex16 = nodeIndex32 * 2;
+		if ( IS_LEAF( nodeIndex16, uint16Array ) ) {
 
-			const offset = uint32Array[ node32Index + 6 ];
-			const count = uint16Array[ node16Index + 14 ];
+			const offset = uint32Array[ nodeIndex32 + 6 ];
+			const count = uint16Array[ nodeIndex16 + 14 ];
 
 			let minx = Infinity;
 			let miny = Infinity;
@@ -4565,22 +4563,22 @@ function refit_indirect( bvh, nodeIndices = null ) {
 
 
 			if (
-				float32Array[ node32Index + 0 ] !== minx ||
-				float32Array[ node32Index + 1 ] !== miny ||
-				float32Array[ node32Index + 2 ] !== minz ||
+				float32Array[ nodeIndex32 + 0 ] !== minx ||
+				float32Array[ nodeIndex32 + 1 ] !== miny ||
+				float32Array[ nodeIndex32 + 2 ] !== minz ||
 
-				float32Array[ node32Index + 3 ] !== maxx ||
-				float32Array[ node32Index + 4 ] !== maxy ||
-				float32Array[ node32Index + 5 ] !== maxz
+				float32Array[ nodeIndex32 + 3 ] !== maxx ||
+				float32Array[ nodeIndex32 + 4 ] !== maxy ||
+				float32Array[ nodeIndex32 + 5 ] !== maxz
 			) {
 
-				float32Array[ node32Index + 0 ] = minx;
-				float32Array[ node32Index + 1 ] = miny;
-				float32Array[ node32Index + 2 ] = minz;
+				float32Array[ nodeIndex32 + 0 ] = minx;
+				float32Array[ nodeIndex32 + 1 ] = miny;
+				float32Array[ nodeIndex32 + 2 ] = minz;
 
-				float32Array[ node32Index + 3 ] = maxx;
-				float32Array[ node32Index + 4 ] = maxy;
-				float32Array[ node32Index + 5 ] = maxz;
+				float32Array[ nodeIndex32 + 3 ] = maxx;
+				float32Array[ nodeIndex32 + 4 ] = maxy;
+				float32Array[ nodeIndex32 + 5 ] = maxz;
 
 				return true;
 
@@ -4592,13 +4590,11 @@ function refit_indirect( bvh, nodeIndices = null ) {
 
 		} else {
 
-			const left = node32Index + 8;
-			const right = uint32Array[ node32Index + 6 ];
+			const left = LEFT_NODE( nodeIndex32 );
+			const right = RIGHT_NODE( nodeIndex32, uint32Array );
 
 			// the identifying node indices provided by the shapecast function include offsets of all
 			// root buffers to guarantee they're unique between roots so offset left and right indices here.
-			const offsetLeft = left + byteOffset;
-			const offsetRight = right + byteOffset;
 			let forceChildren = force;
 			let includesLeft = false;
 			let includesRight = false;
@@ -4609,8 +4605,10 @@ function refit_indirect( bvh, nodeIndices = null ) {
 				// then we assume that all children need to be updated.
 				if ( ! forceChildren ) {
 
-					includesLeft = nodeIndices.has( offsetLeft );
-					includesRight = nodeIndices.has( offsetRight );
+					const leftNodeId = left / UINT32_PER_NODE + byteOffset / BYTES_PER_NODE;
+					const rightNodeId = right / UINT32_PER_NODE + byteOffset / BYTES_PER_NODE;
+					includesLeft = nodeIndices.has( leftNodeId );
+					includesRight = nodeIndices.has( rightNodeId );
 					forceChildren = ! includesLeft && ! includesRight;
 
 				}
@@ -4644,15 +4642,15 @@ function refit_indirect( bvh, nodeIndices = null ) {
 
 				for ( let i = 0; i < 3; i ++ ) {
 
-					const lefti = left + i;
-					const righti = right + i;
-					const minLeftValue = float32Array[ lefti ];
-					const maxLeftValue = float32Array[ lefti + 3 ];
-					const minRightValue = float32Array[ righti ];
-					const maxRightValue = float32Array[ righti + 3 ];
+					const left_i = left + i;
+					const right_i = right + i;
+					const minLeftValue = float32Array[ left_i ];
+					const maxLeftValue = float32Array[ left_i + 3 ];
+					const minRightValue = float32Array[ right_i ];
+					const maxRightValue = float32Array[ right_i + 3 ];
 
-					float32Array[ node32Index + i ] = minLeftValue < minRightValue ? minLeftValue : minRightValue;
-					float32Array[ node32Index + i + 3 ] = maxLeftValue > maxRightValue ? maxLeftValue : maxRightValue;
+					float32Array[ nodeIndex32 + i ] = minLeftValue < minRightValue ? minLeftValue : minRightValue;
+					float32Array[ nodeIndex32 + i + 3 ] = maxLeftValue > maxRightValue ? maxLeftValue : maxRightValue;
 
 				}
 
@@ -4942,8 +4940,8 @@ function _intersectsGeometry( nodeIndex32, bvh, otherGeometry, geometryToBvh, ca
 
 	} else {
 
-		const left = nodeIndex32 + 8;
-		const right = uint32Array[ nodeIndex32 + 6 ];
+		const left = LEFT_NODE( nodeIndex32 );
+		const right = RIGHT_NODE( nodeIndex32, uint32Array );
 
 		arrayToBox( BOUNDING_DATA_INDEX( left ), float32Array, boundingBox$1 );
 		const leftIntersection =
@@ -5256,14 +5254,14 @@ function convertToBufferType( array, BufferConstructor ) {
 
 }
 
-const _bufferStack1 = new BufferStack.constructor();
-const _bufferStack2 = new BufferStack.constructor();
-const _boxPool = new PrimitivePool( () => new Box3() );
-const _leftBox1 = new Box3();
-const _rightBox1 = new Box3();
+const _bufferStack1 = /* @__PURE__ */ new BufferStack.constructor();
+const _bufferStack2 = /* @__PURE__ */ new BufferStack.constructor();
+const _boxPool = /* @__PURE__ */ new PrimitivePool( () => new Box3() );
+const _leftBox1 = /* @__PURE__ */ new Box3();
+const _rightBox1 = /* @__PURE__ */ new Box3();
 
-const _leftBox2 = new Box3();
-const _rightBox2 = new Box3();
+const _leftBox2 = /* @__PURE__ */ new Box3();
+const _rightBox2 = /* @__PURE__ */ new Box3();
 
 let _active = false;
 
@@ -5280,15 +5278,15 @@ function bvhcast( bvh, otherBvh, matrixToLocal, intersectsRanges ) {
 	const roots = bvh._roots;
 	const otherRoots = otherBvh._roots;
 	let result;
-	let offset1 = 0;
-	let offset2 = 0;
+	let nodeOffset1 = 0;
+	let nodeOffset2 = 0;
 	const invMat = new Matrix4().copy( matrixToLocal ).invert();
 
 	// iterate over the first set of roots
 	for ( let i = 0, il = roots.length; i < il; i ++ ) {
 
 		_bufferStack1.setBuffer( roots[ i ] );
-		offset2 = 0;
+		nodeOffset2 = 0;
 
 		// prep the initial root box
 		const localBox = _boxPool.getPrimitive();
@@ -5302,12 +5300,12 @@ function bvhcast( bvh, otherBvh, matrixToLocal, intersectsRanges ) {
 
 			result = _traverse(
 				0, 0, matrixToLocal, invMat, intersectsRanges,
-				offset1, offset2, 0, 0,
+				nodeOffset1, nodeOffset2, 0, 0,
 				localBox,
 			);
 
 			_bufferStack2.clearBuffer();
-			offset2 += otherRoots[ j ].byteLength;
+			nodeOffset2 += otherRoots[ j ].byteLength / BYTES_PER_NODE;
 
 			if ( result ) {
 
@@ -5320,7 +5318,7 @@ function bvhcast( bvh, otherBvh, matrixToLocal, intersectsRanges ) {
 		// release stack info
 		_boxPool.releasePrimitive( localBox );
 		_bufferStack1.clearBuffer();
-		offset1 += roots[ i ].byteLength;
+		nodeOffset1 += roots[ i ].byteLength / BYTES_PER_NODE;
 
 		if ( result ) {
 
@@ -5343,8 +5341,8 @@ function _traverse(
 	intersectsRangesFunc,
 
 	// offsets for ids
-	node1IndexByteOffset = 0,
-	node2IndexByteOffset = 0,
+	node1IndexOffset = 0,
+	node2IndexOffset = 0,
 
 	// tree depth
 	depth1 = 0,
@@ -5393,8 +5391,8 @@ function _traverse(
 			result = intersectsRangesFunc(
 				OFFSET( node2Index32, uint32Array2 ), COUNT( node2Index32 * 2, uint16Array2 ),
 				OFFSET( node1Index32, uint32Array1 ), COUNT( node1Index32 * 2, uint16Array1 ),
-				depth2, node2IndexByteOffset + node2Index32,
-				depth1, node1IndexByteOffset + node1Index32,
+				depth2, node2IndexOffset + node2Index32 / UINT32_PER_NODE,
+				depth1, node1IndexOffset + node1Index32 / UINT32_PER_NODE,
 			);
 
 		} else {
@@ -5402,8 +5400,8 @@ function _traverse(
 			result = intersectsRangesFunc(
 				OFFSET( node1Index32, uint32Array1 ), COUNT( node1Index32 * 2, uint16Array1 ),
 				OFFSET( node2Index32, uint32Array2 ), COUNT( node2Index32 * 2, uint16Array2 ),
-				depth1, node1IndexByteOffset + node1Index32,
-				depth2, node2IndexByteOffset + node2Index32,
+				depth1, node1IndexOffset + node1Index32 / UINT32_PER_NODE,
+				depth2, node2IndexOffset + node2Index32 / UINT32_PER_NODE,
 			);
 
 		}
@@ -5431,13 +5429,13 @@ function _traverse(
 		result = (
 			intersectCl1 && _traverse(
 				node2Index32, cl1, matrix1to2, matrix2to1, intersectsRangesFunc,
-				node2IndexByteOffset, node1IndexByteOffset, depth2, depth1 + 1,
+				node2IndexOffset, node1IndexOffset, depth2, depth1 + 1,
 				newBox, ! reversed,
 			)
 		) || (
 			intersectCr1 && _traverse(
 				node2Index32, cr1, matrix1to2, matrix2to1, intersectsRangesFunc,
-				node2IndexByteOffset, node1IndexByteOffset, depth2, depth1 + 1,
+				node2IndexOffset, node1IndexOffset, depth2, depth1 + 1,
 				newBox, ! reversed,
 			)
 		);
@@ -5462,11 +5460,11 @@ function _traverse(
 			// continue to traverse both children if they both intersect
 			result = _traverse(
 				node1Index32, cl2, matrix2to1, matrix1to2, intersectsRangesFunc,
-				node1IndexByteOffset, node2IndexByteOffset, depth1, depth2 + 1,
+				node1IndexOffset, node2IndexOffset, depth1, depth2 + 1,
 				currBox, reversed,
 			) || _traverse(
 				node1Index32, cr2, matrix2to1, matrix1to2, intersectsRangesFunc,
-				node1IndexByteOffset, node2IndexByteOffset, depth1, depth2 + 1,
+				node1IndexOffset, node2IndexOffset, depth1, depth2 + 1,
 				currBox, reversed,
 			);
 
@@ -5477,7 +5475,7 @@ function _traverse(
 				// if the current box is a leaf then just continue
 				result = _traverse(
 					node1Index32, cl2, matrix2to1, matrix1to2, intersectsRangesFunc,
-					node1IndexByteOffset, node2IndexByteOffset, depth1, depth2 + 1,
+					node1IndexOffset, node2IndexOffset, depth1, depth2 + 1,
 					currBox, reversed,
 				);
 
@@ -5499,13 +5497,13 @@ function _traverse(
 				result = (
 					intersectCl1 && _traverse(
 						cl2, cl1, matrix1to2, matrix2to1, intersectsRangesFunc,
-						node2IndexByteOffset, node1IndexByteOffset, depth2, depth1 + 1,
+						node2IndexOffset, node1IndexOffset, depth2, depth1 + 1,
 						newBox, ! reversed,
 					)
 				) || (
 					intersectCr1 && _traverse(
 						cl2, cr1, matrix1to2, matrix2to1, intersectsRangesFunc,
-						node2IndexByteOffset, node1IndexByteOffset, depth2, depth1 + 1,
+						node2IndexOffset, node1IndexOffset, depth2, depth1 + 1,
 						newBox, ! reversed,
 					)
 				);
@@ -5521,7 +5519,7 @@ function _traverse(
 				// if the current box is a leaf then just continue
 				result = _traverse(
 					node1Index32, cr2, matrix2to1, matrix1to2, intersectsRangesFunc,
-					node1IndexByteOffset, node2IndexByteOffset, depth1, depth2 + 1,
+					node1IndexOffset, node2IndexOffset, depth1, depth2 + 1,
 					currBox, reversed,
 				);
 
@@ -5543,13 +5541,13 @@ function _traverse(
 				result = (
 					intersectCl1 && _traverse(
 						cr2, cl1, matrix1to2, matrix2to1, intersectsRangesFunc,
-						node2IndexByteOffset, node1IndexByteOffset, depth2, depth1 + 1,
+						node2IndexOffset, node1IndexOffset, depth2, depth1 + 1,
 						newBox, ! reversed,
 					)
 				) || (
 					intersectCr1 && _traverse(
 						cr2, cr1, matrix1to2, matrix2to1, intersectsRangesFunc,
-						node2IndexByteOffset, node1IndexByteOffset, depth2, depth1 + 1,
+						node2IndexOffset, node1IndexOffset, depth2, depth1 + 1,
 						newBox, ! reversed,
 					)
 				);
@@ -5593,22 +5591,23 @@ class MeshBVH {
 		const rootData = bvh._roots;
 		const indirectBuffer = bvh._indirectBuffer;
 		const indexAttribute = geometry.getIndex();
-		let result;
+		const result = {
+			version: 1,
+			roots: null,
+			index: null,
+			indirectBuffer: null,
+		};
 		if ( options.cloneBuffers ) {
 
-			result = {
-				roots: rootData.map( root => root.slice() ),
-				index: indexAttribute ? indexAttribute.array.slice() : null,
-				indirectBuffer: indirectBuffer ? indirectBuffer.slice() : null,
-			};
+			result.roots = rootData.map( root => root.slice() );
+			result.index = indexAttribute ? indexAttribute.array.slice() : null;
+			result.indirectBuffer = indirectBuffer ? indirectBuffer.slice() : null;
 
 		} else {
 
-			result = {
-				roots: rootData,
-				index: indexAttribute ? indexAttribute.array : null,
-				indirectBuffer: indirectBuffer,
-			};
+			result.roots = rootData;
+			result.index = indexAttribute ? indexAttribute.array : null;
+			result.indirectBuffer = indirectBuffer;
 
 		}
 
@@ -5625,6 +5624,19 @@ class MeshBVH {
 		};
 
 		const { index, roots, indirectBuffer } = data;
+
+		// handle backwards compatibility by fixing up the buffer roots
+		// see issue gkjohnson/three-mesh-bvh#759
+		if ( ! data.version ) {
+
+			console.warn(
+				'MeshBVH.deserialize: Serialization format has been changed and will be fixed up. ' +
+				'It is recommended to regenerate any stored serialized data.'
+			);
+			fixupVersion0( roots );
+
+		}
+
 		const bvh = new MeshBVH( geometry, { ...options, [ SKIP_GENERATION ]: true } );
 		bvh._roots = roots;
 		bvh._indirectBuffer = indirectBuffer || null;
@@ -5647,6 +5659,33 @@ class MeshBVH {
 		}
 
 		return bvh;
+
+		// convert version 0 serialized data (uint32 indices) to version 1 (node indices)
+		function fixupVersion0( roots ) {
+
+			for ( let rootIndex = 0; rootIndex < roots.length; rootIndex ++ ) {
+
+				const root = roots[ rootIndex ];
+				const uint32Array = new Uint32Array( root );
+				const uint16Array = new Uint16Array( root );
+
+				// iterate over nodes and convert right child offsets
+				for ( let node = 0, l = root.byteLength / BYTES_PER_NODE; node < l; node ++ ) {
+
+					const node32Index = UINT32_PER_NODE * node;
+					const node16Index = 2 * node32Index;
+					if ( ! IS_LEAF( node16Index, uint16Array ) ) {
+
+						// convert absolute right child offset to relative offset
+						uint32Array[ node32Index + 6 ] = uint32Array[ node32Index + 6 ] / UINT32_PER_NODE - node;
+
+					}
+
+				}
+
+			}
+
+		}
 
 	}
 
@@ -5707,6 +5746,47 @@ class MeshBVH {
 
 	}
 
+	shiftTriangleOffsets( offset ) {
+
+		const indirectBuffer = this._indirectBuffer;
+		if ( indirectBuffer ) {
+
+			// the offsets are embedded in the indirect buffer
+			for ( let i = 0, l = indirectBuffer.length; i < l; i ++ ) {
+
+				indirectBuffer[ i ] += offset;
+
+			}
+
+		} else {
+
+			// offsets are embedded in the leaf nodes
+			const roots = this._roots;
+			for ( let rootIndex = 0; rootIndex < roots.length; rootIndex ++ ) {
+
+				const root = roots[ rootIndex ];
+				const uint32Array = new Uint32Array( root );
+				const uint16Array = new Uint16Array( root );
+				const totalNodes = root.byteLength / BYTES_PER_NODE;
+				for ( let node = 0; node < totalNodes; node ++ ) {
+
+					const node32Index = UINT32_PER_NODE * node;
+					const node16Index = 2 * node32Index;
+					if ( IS_LEAF( node16Index, uint16Array ) ) {
+
+						// offset value
+						uint32Array[ node32Index + 6 ] += offset;
+
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
 	refit( nodeIndices = null ) {
 
 		const refitFunc = this.indirect ? refit_indirect : refit;
@@ -5724,7 +5804,7 @@ class MeshBVH {
 		function _traverse( node32Index, depth = 0 ) {
 
 			const node16Index = node32Index * 2;
-			const isLeaf = uint16Array[ node16Index + 15 ] === IS_LEAFNODE_FLAG;
+			const isLeaf = IS_LEAF( node16Index, uint16Array );
 			if ( isLeaf ) {
 
 				const offset = uint32Array[ node32Index + 6 ];
@@ -5733,10 +5813,9 @@ class MeshBVH {
 
 			} else {
 
-				// TODO: use node functions here
-				const left = node32Index + BYTES_PER_NODE / 4;
-				const right = uint32Array[ node32Index + 6 ];
-				const splitAxis = uint32Array[ node32Index + 7 ];
+				const left = LEFT_NODE( node32Index );
+				const right = RIGHT_NODE( node32Index, uint32Array );
+				const splitAxis = SPLIT_AXIS( node32Index, uint32Array );
 				const stopTraversal = callback( depth, isLeaf, new Float32Array( buffer, node32Index * 4, 6 ), splitAxis );
 
 				if ( ! stopTraversal ) {
@@ -5861,12 +5940,12 @@ class MeshBVH {
 
 		// run shapecast
 		let result = false;
-		let byteOffset = 0;
+		let nodeOffset = 0;
 		const roots = this._roots;
 		for ( let i = 0, l = roots.length; i < l; i ++ ) {
 
 			const root = roots[ i ];
-			result = shapecast( this, i, intersectsBounds, intersectsRange, boundsTraverseOrder, byteOffset );
+			result = shapecast( this, i, intersectsBounds, intersectsRange, boundsTraverseOrder, nodeOffset );
 
 			if ( result ) {
 
@@ -5874,7 +5953,7 @@ class MeshBVH {
 
 			}
 
-			byteOffset += root.byteLength;
+			nodeOffset += root.byteLength / BYTES_PER_NODE;
 
 		}
 
@@ -7428,17 +7507,17 @@ function bvhToTextures( bvh, boundsTexture, contentsTexture ) {
 			const count = COUNT( nodeIndex16, uint16Array );
 			const offset = OFFSET( nodeIndex32, uint32Array );
 
-			const mergedLeafCount = 0xffff0000 | count;
+			const mergedLeafCount = LEAFNODE_MASK_32 | count;
 			contentsArray[ i * 2 + 0 ] = mergedLeafCount;
 			contentsArray[ i * 2 + 1 ] = offset;
 
 		} else {
 
-			const rightIndex = 4 * RIGHT_NODE( nodeIndex32, uint32Array ) / BYTES_PER_NODE;
+			const rightNodeIndex = uint32Array[ nodeIndex32 + 6 ];
 			const splitAxis = SPLIT_AXIS( nodeIndex32, uint32Array );
 
 			contentsArray[ i * 2 + 0 ] = splitAxis;
-			contentsArray[ i * 2 + 1 ] = rightIndex;
+			contentsArray[ i * 2 + 1 ] = rightNodeIndex;
 
 		}
 
@@ -8501,7 +8580,7 @@ float _bvhClosestPointToPoint(
 
 			uint leftIndex = currNodeIndex + 1u;
 			uint splitAxis = boundsInfo.x & 0x0000ffffu;
-			uint rightIndex = boundsInfo.y;
+			uint rightIndex = currNodeIndex + boundsInfo.y;
 			bool leftToRight = distanceSqToBVHNodeBoundsPoint( point, bvh_bvhBounds, leftIndex ) < distanceSqToBVHNodeBoundsPoint( point, bvh_bvhBounds, rightIndex );//rayDirection[ splitAxis ] >= 0.0;
 			uint c1 = leftToRight ? leftIndex : rightIndex;
 			uint c2 = leftToRight ? rightIndex : leftIndex;
@@ -8713,7 +8792,7 @@ bool _bvhIntersectFirstHit(
 
 			uint leftIndex = currNodeIndex + 1u;
 			uint splitAxis = boundsInfo.x & 0x0000ffffu;
-			uint rightIndex = boundsInfo.y;
+			uint rightIndex = currNodeIndex + boundsInfo.y;
 
 			bool leftToRight = rayDirection[ splitAxis ] >= 0.0;
 			uint c1 = leftToRight ? leftIndex : rightIndex;

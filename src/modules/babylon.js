@@ -196,7 +196,7 @@ export function CreateTexture(url, scene, sampling) {
 }
 
 export function HDRCubeTexture(url, scene, texSize, callback) {
-    return new BABYLON.HDRCubeTexture(url, scene, texSize, false, false, false, undefined, callback);
+    return new BABYLON.HDRCubeTexture(url, scene, texSize, false, true, false, undefined, callback);
 }
 
 export function RenderTargetTexture(name, width, height, scene) {
