@@ -10,7 +10,7 @@ function createWindow() {
     const mainWindow = new BrowserWindow({
         icon: './src/assets/appicon.png',
         width: 1200,
-        height: 900,
+        height: 800,
         autoHideMenuBar: true,
         resizable: true,
         alwaysOnTop: false,

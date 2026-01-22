@@ -3872,7 +3872,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.3",
+            version: "Voxel Builder 4.7.4",
             project: {
                 name: "untitled",
                 voxels: 0
