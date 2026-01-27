@@ -1419,7 +1419,7 @@ class PathTracingSceneGenerator {
 				const bvhOptions = {
 					strategy: 0,
 					maxDepth: 40,
-					maxLeafTris: 1,
+					maxLeafSize: 1,
 					indirect: true,
 					onProgress,
 					...this.bvhOptions,
