@@ -5,6 +5,7 @@
     Three.js Sandbox
 */
 
+
 import { THREE, renderer } from '../three.js';
 import { WebGLPathTracer, PhysicalCamera } from '../../libs/three-gpu-pathtracer.js';
 import { OrbitControls } from '../../libs/addons/OrbitControls.js';
@@ -110,7 +111,9 @@ class Sandbox {
         this.pt.create(this.scene, this.camera);
     }
 
+
     // Create scene
+
 
     createScene() {
         this.ambient = new THREE.AmbientLight(0xAAAAAA, 1);
@@ -170,7 +173,9 @@ class Sandbox {
         this.scene.add(this.lightHelper);
     }
 
+
     // Create meshes
+
 
     createMeshesFromBuffers() {
         this.meshes = translator.getMeshesVoxels();
@@ -211,7 +216,9 @@ class Sandbox {
         this.disposePick();
     }
 
+
     // Updates
+
 
     updateScene() {
         if (this.isRendering)
@@ -298,7 +305,9 @@ class Sandbox {
         this.updateScene();
     }
 
+
     // Rendering
+
 
     animate() {
         if (sandbox.isLoaded) {
@@ -339,7 +348,9 @@ class Sandbox {
         }
     }
 
+
     // Picking
+
 
     pickMesh() {
         this.disposePick();
@@ -360,7 +371,9 @@ class Sandbox {
             this.scene.remove(this.pickBox);
     }
 
+
     // Animations
+
 
     cameraAnimator(position, center) {
         if (this.tween1) {
@@ -381,7 +394,9 @@ class Sandbox {
         this.tweens.add(this.tween2);
     }
 
+
     // Shared Functions
+
 
     resize(ratio = 1.0) {
         this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -490,8 +505,10 @@ class Sandbox {
         downloadImage(uri, `${ ui.domProjectName.value }_${ new Date().toJSON().slice(0,10) }_${ randomRangeInt(1000, 9999) }.png`);
     }
 
+
     // Activation
 
+    
     startPathTracer(isEnabled) {
         this.isRendering = isEnabled;
         this.controls.enableDamping = !isEnabled;

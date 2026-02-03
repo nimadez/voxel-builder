@@ -5,6 +5,7 @@
     Floating hover menu
 */
 
+
 import { tool } from '../core.js';
 
 
@@ -108,5 +109,6 @@ class Hover {
         this.elem.style.transform = "translate(0, 0)";
     }
 }
+
 
 export const hover = new Hover();

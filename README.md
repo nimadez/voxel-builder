@@ -4,7 +4,7 @@
 
 ### **Voxel-based 3D Modeling Application**
 **Model . Render . Export**<br>
-This application is suitable for rapid prototyping, speed modeling, creating small assets in large numbers, importing MagicaVoxel models, or simply playing around and learning 3D modeling.
+This application is suitable for rapid prototyping, speed modeling, creating small assets in large numbers, loading and saving MagicaVoxel VOX format, or simply playing around and learning 3D modeling.
 
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
@@ -19,7 +19,7 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 
 **File I/O**
 - Save and load JSON
-- Import MagicaVoxel VOX
+- Save and load MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL, PLY
 - Localstorage, snapshots, quicksave, undo
 - Backup and share snapshots in a ZIP archive
@@ -121,6 +121,19 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.<br>This problem is related to Babylon.js and nothing can be done.
 
 ## FAQ
+Why can't I freely transform 3D objects like in other 3D software?
+```
+There are no objects, you work with a grid of voxels,
+the XFORM feature only mimics the transformation of 3D objects,
+you just grab a piece of connected voxels and move them.
+```
+Why isn't there an option to export raw voxels as GLB?
+```
+GLB has a special use in this application,
+you can save and retrieve voxel data using baked meshes,
+exporting raw voxels to GLB leads to interference and errors
+when loading it using the "Load Bakes" option.
+```
 How to merge vertices after export to GLB?
 ```
 1- Open exported GLB file in Blender

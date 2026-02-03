@@ -5,6 +5,7 @@
     Palette
 */
 
+
 import { builder, xformer, ui, preferences } from "../core.js";
 
 
@@ -105,6 +106,7 @@ class Palette {
         return (data[3] > 0) ? rgbIntToHex(data[0], data[1], data[2]) : undefined;
     }
 }
+
 
 export const palette = new Palette();
 

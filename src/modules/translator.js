@@ -5,6 +5,7 @@
     Translator: Translate Mesh Data
 */
 
+
 import { THREE } from './three.js';
 import { PositionKind, NormalKind, ColorKind, UVKind, VertexData, CreateMesh } from './babylon.js';
 import { material, vMesh, builder, pool, preferences } from './core.js';
@@ -63,8 +64,10 @@ class Translator {
             this.scene.remove(this.scene.children[0]);
     }
 
+
     // Babylon to Three
 
+    
     convertMaterialPBR(mat, mesh) {
         mat.map = this.textures[preferences.getVoxelTextureId()];
         mat.color = new THREE.Color(
@@ -216,7 +219,9 @@ class Translator {
         return mesh;
     }
 
+
     // Three to Babylon
+
 
     getMeshFromThree(geometries, scene) {
         let geom = mergeGeometries(geometries, false);
@@ -247,5 +252,6 @@ class Translator {
         return undefined;
     }
 }
+
 
 export const translator = new Translator();

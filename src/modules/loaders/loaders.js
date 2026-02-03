@@ -5,6 +5,7 @@
     Loaders
 */
 
+
 import { GLTFLoader } from '../../libs/addons/GLTFLoader.js';
 import { OBJLoader } from '../../libs/addons/OBJLoader.js';
 import { STLLoader } from '../../libs/addons/STLLoader.js';
@@ -131,5 +132,6 @@ class Loaders {
         });
     }
 }
+
 
 export const loaders = new Loaders();

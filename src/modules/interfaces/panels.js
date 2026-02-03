@@ -228,4 +228,5 @@ class Panels {
     }
 }
 
+
 export const panels = new Panels();

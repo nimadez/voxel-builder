@@ -5,6 +5,7 @@
     Generate voxels
 */
 
+
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
 import { builder, preferences } from '../core.js';
@@ -168,6 +169,7 @@ class Generator {
         builder.createXform(data);
     }
 }
+
 
 export const generator = new Generator();
 

@@ -5,6 +5,7 @@
     Voxelizer
 */
 
+
 import { Vector3 } from "../babylon.js";
 import { builder, pool, project, ui, preferences } from "../core.js";
 import { loaders } from "../loaders/loaders.js";
@@ -243,6 +244,7 @@ class Voxelizer {
         });
     }
 }
+
 
 export const voxelizer = new Voxelizer();
 

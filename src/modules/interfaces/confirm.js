@@ -5,6 +5,7 @@
     Swipe Confirm
 */
 
+
 import { ui } from '../core.js';
 
 
@@ -91,5 +92,6 @@ class Confirm {
         });
     }
 }
+
 
 export const confirm = new Confirm();

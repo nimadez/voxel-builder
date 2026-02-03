@@ -3872,7 +3872,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.4",
+            version: "Voxel Builder 4.7.5",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -3932,13 +3932,13 @@ class Project {
 
     newProjectStartup(color, size = 20) {
         color = color.toUpperCase();
-        const blueLine = (size < 5) ? color : '#3B76BF';
         
         builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
                 for (let z = 0; z < size; z++) {
-                    builder.add(Vector3(x, y, z), y == 0 ? blueLine : color, true);
+                    const blue = (x % 2 == 0 && z % 2 == 0 || x % 2 == 1 && z % 2 == 1) ? '#5F89BE' : '#3B76BF';
+                    builder.add(Vector3(x, y, z), y == 0 ? (size < 5) ? color : blue : color, true);
                 }
             }
         }
@@ -4147,6 +4147,12 @@ class Project {
             ui.showProgress(0);
             console.error(err);
         });
+    }
+
+    saveMagicaVoxel(name) {
+        const buffer = modules.exportersVox.exportVOX(builder.voxels, builder.getSize());
+        const blob = new Blob([buffer], { type: "application/octet-stream" });
+        downloadBlob(blob, name + '.vox');
     }
 
     createScreenshot(scale = 4) {
@@ -6164,6 +6170,10 @@ document.getElementById('btn_action_raw_export').onclick = () => {
 
 document.getElementById('btn_action_export_meshes').onclick = () => {
     project.exportMeshes(ui.domProjectName.value, ui.domExportFormat.value);
+};
+
+document.getElementById('btn_action_save_vox').onclick = () => {
+    project.saveMagicaVoxel(ui.domProjectName.value);
 };
 
 document.getElementById('btn_action_screenshot').onclick = () => {

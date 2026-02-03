@@ -5,6 +5,7 @@
     Raycasters
 */
 
+
 import { THREE } from '../three.js';
 import { Vector3, PositionKind, ColorKind } from '../babylon.js';
 
@@ -187,5 +188,6 @@ class RaycastVoxelize {
         return data;
     }    
 }
+
 
 export const rcv = new RaycastVoxelize();

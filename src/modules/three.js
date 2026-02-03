@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import {
     acceleratedRaycast,
     computeBoundsTree, disposeBoundsTree,
-    computeBatchedBoundsTree, disposeBatchedBoundsTree,
+    computeBatchedBoundsTree, disposeBatchedBoundsTree
 } from '../libs/three-mesh-bvh.js';
 
 
@@ -30,6 +30,8 @@ const renderer = new THREE.WebGLRenderer({
     alpha: true
 });
 
+
 export { THREE, renderer };
 
-console.log(`Three.js r${ THREE.REVISION } - WebGL2`);
+
+console.log(`Three.js 0.${ THREE.REVISION }.0 - WebGL2`);

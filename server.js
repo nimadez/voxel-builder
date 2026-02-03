@@ -1,12 +1,16 @@
 #!/usr/bin/env node
-// Aug 2024 https://nimadez.github.io/
+
+// Aug 2024
 // Voxel Builder Server
+
 
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
 
+
 const PORT = 8011;
+
 
 http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
@@ -30,10 +34,12 @@ http.createServer((req, res) => {
         res.write(data);
         return res.end();
     });
+    
 }).listen(PORT, () => {
     console.log('Voxel Builder')
     console.log(`Server running at http://localhost:${PORT}`);
 });
+
 
 function getContentType(filePath) {
     const extname = String(filePath).split('.').pop().toLowerCase();

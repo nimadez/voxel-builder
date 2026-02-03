@@ -5,6 +5,7 @@
     Color Picker Dialog
 */
 
+
 import { pointer, ui } from '../core.js';
 import { ReinventedColorWheel } from '../modules.js';
 
@@ -117,5 +118,6 @@ class ColorPicker {
         });
     }
 }
+
 
 export const colorPicker = new ColorPicker();

@@ -33,7 +33,9 @@ class Engine {
     }
 }
 
+
 // Constants
+
 
 export const engine = new Engine();
 
@@ -63,7 +65,9 @@ export const Texture_NEAREST_SAMPLINGMODE = BABYLON.Texture.NEAREST_SAMPLINGMODE
 export const EffectShadersStore = BABYLON.Effect.ShadersStore;
 export const CounterClockWiseSideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
 
+
 // Vector3
+
 
 export function Vector3(x = 0, y = 0, z = 0) {
     return new BABYLON.Vector3(x, y, z);
@@ -101,7 +105,9 @@ export function Vector3Project(target, scene, camera, width, height) {
         camera.viewport.toGlobal(width, height));
 }
 
+
 // Colors
+
 
 export function Color3(r, g, b) {
     return new BABYLON.Color3(r, g, b);
@@ -111,7 +117,9 @@ export function Color4(r, g, b, a) {
     return new BABYLON.Color4(r, g, b, a);
 }
 
+
 // Matrices and Quaternion
+
 
 export function MatrixIdentity() {
     return BABYLON.Matrix.Identity();
@@ -129,7 +137,9 @@ export function QuaternionRotationAxis(axis, angle) {
     return BABYLON.Quaternion.RotationAxis(axis, angle);
 }
 
+
 // Scenes
+
 
 export function CreateScene(engine) {
     return new BABYLON.Scene(engine);
@@ -139,7 +149,9 @@ export function UtilityLayerRenderer(scene) {
     return new BABYLON.UtilityLayerRenderer(scene);
 }
 
+
 // Cameras
+
 
 export function ArcRotateCamera(name, distance, direction, scene) {
     return new BABYLON.ArcRotateCamera(name, 0, 0, distance, direction, scene);
@@ -149,7 +161,9 @@ export function Viewport(x, y, width, height) {
     return new BABYLON.Viewport(x, y, width, height);
 }
 
+
 // Lights
+
 
 export function DirectionalLight(name, direction, scene) {
     return new BABYLON.DirectionalLight(name, direction, scene);
@@ -163,7 +177,9 @@ export function ShadowGenerator(texSize, source) {
     return new BABYLON.ShadowGenerator(texSize, source);
 }
 
+
 // Materials
+
 
 export function StandardMaterial(name, scene) {
     return new BABYLON.StandardMaterial(name, scene);
@@ -189,7 +205,9 @@ export function GridMaterial(name, scene) {
     return new BABYLON.GridMaterial(name, scene);
 }
 
+
 // Textures
+
 
 export function CreateTexture(url, scene, sampling) {
     return new BABYLON.Texture(url, scene, undefined, undefined, sampling);
@@ -212,7 +230,9 @@ export function RenderTargetTexture(name, width, height, scene) {
         }, scene);
 }
 
+
 // Nodes and Gizmos
+
 
 export function TransformNode(name) {
     return new BABYLON.TransformNode(name);
@@ -234,7 +254,9 @@ export function AxesViewer(scene, scale, thickness) {
     return new BABYLON.AxesViewer(scene, scale, 0, null,null,null, thickness);
 }
 
+
 // Create meshes
+
 
 export function CreateMesh(name, scene) {
     return new BABYLON.Mesh(name, scene);
@@ -260,13 +282,17 @@ export function CreateLine(name, lines, colors, scene) {
     return BABYLON.MeshBuilder.CreateLineSystem(name, { lines: lines, colors: colors, useVertexAlpha: true, updatable: false }, scene);
 }
 
+
 // Create particles
+
 
 export function PointsCloudSystem(name, size, scene, isUpdatable) {
     return new BABYLON.PointsCloudSystem(name, size, scene, { updatable: isUpdatable });
 }
 
+
 // Mesh related functions
+
 
 export function VertexData() {
     return new BABYLON.VertexData();
@@ -276,7 +302,9 @@ export function MergeMeshes(arr, disposeSource, allow32BitsIndices) {
     return BABYLON.Mesh.MergeMeshes(arr, disposeSource, allow32BitsIndices);
 }
 
+
 // Utilities
+
 
 const easingFunction = new BABYLON.CubicEase();
 easingFunction.setEasingMode(BABYLON.EasingFunction.EASINGMODE_EASEINOUT);

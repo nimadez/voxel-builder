@@ -1,10 +1,14 @@
-// Aug 2019 https://nimadez.github.io/
+//
+// Aug 2019
 // Voxel Builder Electron
+
 
 if (!require('electron').app.requestSingleInstanceLock())
     require('electron').app.exit(0);
 
+
 const { app, BrowserWindow, Menu } = require('electron');
+
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -48,9 +52,11 @@ function createWindow() {
     });
 }
 
+
 app.whenReady().then(() => {
     createWindow();
 });
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin')
