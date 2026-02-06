@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #
-# Blender 4.x.x
+# Blender 4.x.x / 5.x.x
 # Run script inside Blender and select .JSON file
+
 
 import os
 import json

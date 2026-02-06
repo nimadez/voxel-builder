@@ -1,6 +1,7 @@
 //
 // This example load voxel data, bake meshes and export GLB
 //
+
 /*
 Voxel:
     position: VEC3 INTEGER { x, y, z } (no floats)
@@ -26,9 +27,10 @@ const data = [
     { position: Vector3(0, 1, 0), color: '#00FF00', visible: true },
     { position: Vector3(0, 2, 0), color: '#0000FF', visible: true }
 ];
-builder.voxels = [];
-builder.addArray(data);
-builder.create();
+//builder.voxels = [];      // clear voxels
+//builder.addArray(data);   // add more voxels
+//builder.create();         // rebuild voxels
+builder.createVoxelsFromArray(data); // clear and rebuild voxels array
 
 
 // Bake Voxels

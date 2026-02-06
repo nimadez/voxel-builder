@@ -121,34 +121,77 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.<br>This problem is related to Babylon.js and nothing can be done.
 
 ## FAQ
-Why can't I freely transform 3D objects like in other 3D software?
+
+#### Why isn't there a layering feature and a layer list?
+> There is, you can have 16,777,216 layers (groups or color groups), because the layering system in this app is determined by colors, even a change in the brightness of a color creates a new group that can contain hundreds of voxels.<br>
+> So groups are automatically created, merged, or deleted based on color. You can even hide, delete, select, paint, transform, or duplicate color groups.
+
+> *Note, however, that you can only have 255 colors to send and receive from MagicaVoxel.*
+
+#### Why can't I freely transform 3D objects like in other 3D software?
+> There are no objects, you work with a grid of voxels, the XFORM feature only mimics the transformation of 3D objects, you just grab a piece of connected voxels and move them.
+
+#### Can two voxels be in the same position?
+> Never, even if they have different colors, the system will automatically delete one.
+
+#### Why isn't there an option to export raw voxels as GLB?
+> GLB has a special use in this application, you can save and retrieve voxel data using baked meshes, exporting raw voxels to GLB leads to interference and errors when loading it using the "Load Bakes" option.
+
+#### What are the methods for saving and loading voxel data?
 ```
-There are no objects, you work with a grid of voxels,
-the XFORM feature only mimics the transformation of 3D objects,
-you just grab a piece of connected voxels and move them.
+There are currently 4 methods to store voxel data:
+
+1- Save to JSON (primary, human-readable, fastest)
+2- Export baked meshes to GLB (and Load Bakes, supports Blender and other 3D apps, slower)
+3- Save snapshots to ZIP archive (easy to share, browser storage limits, speed is variable)
+4- Save to VOX format (supported by many 3D apps and engines, very fast)
 ```
-Why isn't there an option to export raw voxels as GLB?
+
+#### How to add more post-processing shaders?
+> Post-process shaders are automatically recognized, so all the work is done in the "**index.html**" file, just create a script tag called "fx{**Example**}FragmentShader", and add the value "**fxExample**" to "**pref_scene_postfx**". *(the prefix "**fx**" is required)*
 ```
-GLB has a special use in this application,
-you can save and retrieve voxel data using baked meshes,
-exporting raw voxels to GLB leads to interference and errors
-when loading it using the "Load Bakes" option.
+<label style="margin-right: 10px">PostFX</label> <select id="pref_scene_postfx">
+    <option value="none">None</option>
+    <option value="fxOutline">Outline</option>
+    <option value="fxExample">Example</option>
+    ...
+</select>
+
+<script type="x-shader/x-fragment" id="fxExampleFragmentShader">
+    #ifdef GL_ES
+        precision highp float;
+    #endif
+
+    varying vec2 vUV;
+
+    uniform vec2 uRes;
+    uniform float uTime;
+    uniform int uSamples;
+    uniform vec3 uCamPos;
+    uniform vec3 uLightPos;
+    uniform sampler2D textureSampler;
+
+    // shader content
+</script>
 ```
-How to merge vertices after export to GLB?
+
+#### How to merge vertices after export to GLB?
 ```
 1- Open exported GLB file in Blender
 2- Go to "Modeling" tab and choose vertex selection mode
 3- Select all vertices (Ctrl + A)
 4- Mesh > Clean Up > Merge by Distance
 ```
-How to run Blender importer script?
+
+#### How to run Blender importer script?
 ```
 1- Save project to JSON
 2- Open Blender and go to "Scripting" tab
 3- Click "Open" and select "blender-importer.py"
 4- Run the script and select a JSON file
 ```
-How to go back to the previous version?
+
+#### How to go back to the previous version?
 ```
 git clone https://github.com/nimadez/voxel-builder
 cd voxel-builder

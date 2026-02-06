@@ -34,7 +34,7 @@ class Voxelizer {
                 isValidGLB++;
 
         if (data.length > 0 && isValidGLB !== data.length) {
-            builder.createVoxelsFromArray(builder.normalizeVoxelPositionsArray(data));
+            builder.createVoxelsFromArray(builder.normalizePositionsBounds(data));
             project.resetSceneSetup();
         } else {
             ui.errorMessage('invalid glb (not baked)');
@@ -88,7 +88,7 @@ class Voxelizer {
                 }
             }
 
-            builder.createXform(builder.normalizeVoxelPositionsArray(data));
+            builder.createXform(builder.normalizePositionsBounds(data));
             ui.showProgress(0);
         }
     }
@@ -168,7 +168,7 @@ class Voxelizer {
             }
         }
 
-        builder.createXform(builder.normalizeVoxelPositionsArray(data.concat(arr)));
+        builder.createXform(builder.normalizePositionsBounds(data.concat(arr)));
         ui.showProgress(0);
     }
 

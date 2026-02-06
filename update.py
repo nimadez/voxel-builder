@@ -1,6 +1,7 @@
 #
 # Voxel Builder Updater
-#
+
+
 import os
 import sys
 import shutil

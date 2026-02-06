@@ -1,6 +1,6 @@
 {
     "name": "voxel-builder",
-    "version": "4.7.5",
+    "version": "4.7.6",
     "description": "Voxel-based 3D modeling application",
     "main": "electron.js",
     "scripts": {
@@ -11,7 +11,7 @@
     "license": "MIT",
     "devDependencies": {
         "electron": "^38.0.0",
-        "babylonjs": "8.49.6",
+        "babylonjs": "8.50.0",
         "three": "0.182.0",
         "three-mesh-bvh": "0.9.7",
         "three-gpu-pathtracer": "0.0.23",

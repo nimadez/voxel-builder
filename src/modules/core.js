@@ -31,6 +31,7 @@
 
     - Render Target
     - Face Normal Probe
+    - Post Process Effect
     
     - UserInterface
     - UserInterfaceAdvanced
@@ -54,17 +55,17 @@ import {
     AXIS_X, AXIS_Y, AXIS_Z,
     ORTHOGRAPHIC_CAMERA, PERSPECTIVE_CAMERA,
     REFRESHRATE_RENDER_ONCE, ShadowGenerator_QUALITY_LOW, ShadowGenerator_QUALITY_MEDIUM,
-    Texture_CUBIC_MODE, Texture_SKYBOX_MODE, Texture_NEAREST_SAMPLINGMODE, Texture_LINEAR_LINEAR_MIPLINEAR,
-    EffectShadersStore, CounterClockWiseSideOrientation,
+    EffectShadersStore, Texture_CUBIC_MODE, Texture_SKYBOX_MODE, Texture_NEAREST_SAMPLINGMODE, Texture_LINEAR_LINEAR_MIPLINEAR,
+    CounterClockWiseSideOrientation,
     
-    Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
+    Vector2, Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
     Color3, Color4,
     MatrixIdentity, MatrixTranslation, MatrixScaling, QuaternionRotationAxis,
     CreateScene, UtilityLayerRenderer,
     ArcRotateCamera, Viewport,
     DirectionalLight, HemisphericLight, ShadowGenerator,
     StandardMaterial, ShaderMaterial, PBRMaterial, ShadowOnlyMaterial, NormalMaterial, GridMaterial,
-    CreateTexture, HDRCubeTexture, RenderTargetTexture,
+    CreateTexture, HDRCubeTexture, RenderTargetTexture, PostProcess,
     TransformNode, PositionGizmo, AxisScaleGizmo, PlaneRotationGizmo, AxesViewer,
     CreateMesh, CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
     PointsCloudSystem,
@@ -85,7 +86,7 @@ const DEBUG_GPU_PROBE = false;
 const ENVMAP = "assets/overcast_soil_puresky_1k.hdr";
 const IMG_SNAPSHOT = "data:image/png;base64,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";
 const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
-const TEX_CHECKER = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB3aWR0aD0iMjU2IgogICBoZWlnaHQ9IjI1NiIKICAgdmlld0JveD0iMCAwIDY3LjczMzMzNSA2Ny43MzMzMzUiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzEiCiAgIGlua3NjYXBlOnZlcnNpb249IjEuNCAoZTdjM2ZlYiwgMjAyNC0xMC0wOSkiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHNvZGlwb2RpOmRvY25hbWU9InRleF9jaGVja2VyLnN2ZyIKICAgeG1sbnM6aW5rc2NhcGU9Imh0dHA6Ly93d3cuaW5rc2NhcGUub3JnL25hbWVzcGFjZXMvaW5rc2NhcGUiCiAgIHhtbG5zOnNvZGlwb2RpPSJodHRwOi8vc29kaXBvZGkuc291cmNlZm9yZ2UubmV0L0RURC9zb2RpcG9kaS0wLmR0ZCIKICAgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJuYW1lZHZpZXcxIgogICAgIHBhZ2Vjb2xvcj0iIzIwMjAyMCIKICAgICBib3JkZXJjb2xvcj0iIzdmN2Y3ZiIKICAgICBib3JkZXJvcGFjaXR5PSIxIgogICAgIGlua3NjYXBlOnNob3dwYWdlc2hhZG93PSIwIgogICAgIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIgogICAgIGlua3NjYXBlOnBhZ2VjaGVja2VyYm9hcmQ9ImZhbHNlIgogICAgIGlua3NjYXBlOmRlc2tjb2xvcj0iIzMzMzkzYiIKICAgICBpbmtzY2FwZTpkb2N1bWVudC11bml0cz0icHgiCiAgICAgc2hvd2d1aWRlcz0idHJ1ZSIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMiIKICAgICBpbmtzY2FwZTpjeD0iMTI2IgogICAgIGlua3NjYXBlOmN5PSIxMzciCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ibGF5ZXIxIgogICAgIHNob3dib3JkZXI9ImZhbHNlIiAvPjxkZWZzCiAgICAgaWQ9ImRlZnMxIiAvPjxnCiAgICAgaW5rc2NhcGU6bGFiZWw9IkxheWVyIDEiCiAgICAgaW5rc2NhcGU6Z3JvdXBtb2RlPSJsYXllciIKICAgICBpZD0ibGF5ZXIxIj48dXNlCiAgICAgICB4PSIwIgogICAgICAgeT0iMCIKICAgICAgIHhsaW5rOmhyZWY9IiNyZWN0MiIKICAgICAgIGlkPSJ1c2UyIgogICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzMuODY2NjYzLC0zMy44NjY2NjUpIiAvPjxyZWN0CiAgICAgICBzdHlsZT0iZmlsbDojZmZmZmZmO2ZpbGwtb3BhY2l0eToxO2ZpbGwtcnVsZTpldmVub2RkO3N0cm9rZTojZTVlNWU1O3N0cm9rZS13aWR0aDoxLjU4NzU7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjE7cGFpbnQtb3JkZXI6c3Ryb2tlIGZpbGwgbWFya2VycyIKICAgICAgIGlkPSJyZWN0MiIKICAgICAgIHdpZHRoPSIzMi41NTUyMzMiCiAgICAgICBoZWlnaHQ9IjMyLjU1NTIzMyIKICAgICAgIHg9IjAuNjU1NzE2MTgiCiAgICAgICB5PSIzNC41MjIzODEiCiAgICAgICBpbmtzY2FwZTpsYWJlbD0icmVjdDIiIC8+PHVzZQogICAgICAgeD0iMCIKICAgICAgIHk9IjAiCiAgICAgICB4bGluazpocmVmPSIjcmVjdDEiCiAgICAgICBpZD0idXNlMSIKICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMzLjg2NjY2MiwzMy44NjY2NjIpIgogICAgICAgc3R5bGU9InN0cm9rZS13aWR0aDoxLjMyMjkyO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtmaWxsOiNmYWZhZmE7ZmlsbC1vcGFjaXR5OjEiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOiNmYWZhZmE7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNlNWU1ZTU7c3Ryb2tlLXdpZHRoOjEuNTg3NTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MTtwYWludC1vcmRlcjpzdHJva2UgZmlsbCBtYXJrZXJzIgogICAgICAgaWQ9InJlY3QxIgogICAgICAgd2lkdGg9IjMyLjU1NTIzMyIKICAgICAgIGhlaWdodD0iMzIuNTU1MjMzIgogICAgICAgeD0iMC42NTU3MTYxOCIKICAgICAgIHk9IjAuNjU1NzE2MTgiCiAgICAgICBpbmtzY2FwZTpsYWJlbD0icmVjdDEiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOm5vbmU7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNkOWQ5ZDk7c3Ryb2tlLXdpZHRoOjAuNTM3ODI0O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxO3BhaW50LW9yZGVyOnN0cm9rZSBmaWxsIG1hcmtlcnMiCiAgICAgICBpZD0icmVjdDMiCiAgICAgICB3aWR0aD0iNjcuMTk5MzQxIgogICAgICAgaGVpZ2h0PSI2Ny42MDUwMTkiCiAgICAgICB4PSIwLjI2NzYzNDQyIgogICAgICAgeT0iMC4xMjgzMjIzMyIgLz48L2c+PC9zdmc+Cg==";
+const TEX_CHECKER = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB3aWR0aD0iMjU2IgogICBoZWlnaHQ9IjI1NiIKICAgdmlld0JveD0iMCAwIDY3LjczMzMzNSA2Ny43MzMzMzUiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzEiCiAgIGlua3NjYXBlOnZlcnNpb249IjEuNC4zICgwZDE1Zjc1LCAyMDI1LTEyLTI1KSIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgc29kaXBvZGk6ZG9jbmFtZT0idGV4X2NoZWNrZXIuc3ZnIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgaWQ9Im5hbWVkdmlldzEiCiAgICAgcGFnZWNvbG9yPSIjMjAyMDIwIgogICAgIGJvcmRlcmNvbG9yPSIjN2Y3ZjdmIgogICAgIGJvcmRlcm9wYWNpdHk9IjEiCiAgICAgaW5rc2NhcGU6c2hvd3BhZ2VzaGFkb3c9IjAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgICAgaW5rc2NhcGU6cGFnZWNoZWNrZXJib2FyZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6ZGVza2NvbG9yPSIjMzMzOTNiIgogICAgIGlua3NjYXBlOmRvY3VtZW50LXVuaXRzPSJweCIKICAgICBzaG93Z3VpZGVzPSJ0cnVlIgogICAgIHNob3dncmlkPSJmYWxzZSIKICAgICBpbmtzY2FwZTp6b29tPSIyIgogICAgIGlua3NjYXBlOmN4PSIxMjYuMjUiCiAgICAgaW5rc2NhcGU6Y3k9IjEzNyIKICAgICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJsYXllcjEiCiAgICAgc2hvd2JvcmRlcj0iZmFsc2UiIC8+PGRlZnMKICAgICBpZD0iZGVmczEiIC8+PGcKICAgICBpbmtzY2FwZTpsYWJlbD0iTGF5ZXIgMSIKICAgICBpbmtzY2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIGlkPSJsYXllcjEiPjx1c2UKICAgICAgIHg9IjAiCiAgICAgICB5PSIwIgogICAgICAgeGxpbms6aHJlZj0iI3JlY3QyIgogICAgICAgaWQ9InVzZTIiCiAgICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMy44NjY2NjMsLTMzLjg2NjY2NSkiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOiNmZmZmZmY7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNlNWU1ZTU7c3Ryb2tlLXdpZHRoOjEuNTg3NTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MTtwYWludC1vcmRlcjpzdHJva2UgZmlsbCBtYXJrZXJzIgogICAgICAgaWQ9InJlY3QyIgogICAgICAgd2lkdGg9IjMyLjU1NTIzMyIKICAgICAgIGhlaWdodD0iMzIuNTU1MjMzIgogICAgICAgeD0iMC42NTU3MTYxOCIKICAgICAgIHk9IjM0LjUyMjM4MSIKICAgICAgIGlua3NjYXBlOmxhYmVsPSJyZWN0MiIgLz48dXNlCiAgICAgICB4PSIwIgogICAgICAgeT0iMCIKICAgICAgIHhsaW5rOmhyZWY9IiNyZWN0MSIKICAgICAgIGlkPSJ1c2UxIgogICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzMuODY2NjYyLDMzLjg2NjY2MikiCiAgICAgICBzdHlsZT0ic3Ryb2tlLXdpZHRoOjEuMzIyOTI7c3Ryb2tlLWRhc2hhcnJheTpub25lO2ZpbGw6I2ZhZmFmYTtmaWxsLW9wYWNpdHk6MSIgLz48cmVjdAogICAgICAgc3R5bGU9ImZpbGw6I2YyZjJmMjtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6I2U1ZTVlNTtzdHJva2Utd2lkdGg6MS41ODc1O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxO3BhaW50LW9yZGVyOnN0cm9rZSBmaWxsIG1hcmtlcnMiCiAgICAgICBpZD0icmVjdDEiCiAgICAgICB3aWR0aD0iMzIuNTU1MjMzIgogICAgICAgaGVpZ2h0PSIzMi41NTUyMzMiCiAgICAgICB4PSIwLjY1NTcxNjE4IgogICAgICAgeT0iMC42NTU3MTYxOCIKICAgICAgIGlua3NjYXBlOmxhYmVsPSJyZWN0MSIgLz48cmVjdAogICAgICAgc3R5bGU9ImZpbGw6bm9uZTtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6I2Q5ZDlkOTtzdHJva2Utd2lkdGg6MC41Mzc4MjQ7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjE7cGFpbnQtb3JkZXI6c3Ryb2tlIGZpbGwgbWFya2VycyIKICAgICAgIGlkPSJyZWN0MyIKICAgICAgIHdpZHRoPSI2Ny4xOTkzNDEiCiAgICAgICBoZWlnaHQ9IjY3LjYwNTAxOSIKICAgICAgIHg9IjAuMjY3NjM0NDIiCiAgICAgICB5PSIwLjEyODMyMjMzIiAvPjwvZz48L3N2Zz4K";
 
 const COL_SCENE_BG = getStyleRoot('--scene');
 const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
@@ -339,7 +340,9 @@ class AxisViewScene {
     }
 
     getViewport(w, h, bottom, right) {
-        return Viewport((w + right) / window.innerWidth, 1 - (bottom + window.innerHeight) / window.innerHeight,   w / window.innerWidth, h / window.innerHeight);
+        const engineWidth = engine.engine.getRenderWidth();
+        const engineHeight = engine.engine.getRenderHeight();
+        return Viewport((w + right) / engineWidth, 1 - (bottom + engineHeight) / engineHeight,   w / engineWidth, h / engineHeight);
     }
 
     predicate = (mesh) => {
@@ -398,11 +401,15 @@ class Camera {
         this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
     }
 
+    frameStartup() {
+        const f = this.getFramedMesh(builder.mesh);
+        this.camera0.radius = f.radius;
+        this.camera0.target.copyFrom(f.target);
+    }
+
     frame() {
         if (this.isFramingActive || pointer.isWheel) return;
-
-
-
+        
         if (MODE == 0) {
             (xformer.isActive) ?
                 this.setFramingBehaviorMesh(this.camera0, ghosts.thin) :
@@ -694,24 +701,24 @@ class Light {
     updateAngle(angle) {
         this.setLightPositionByAngle(angle, this.location.x);
         this.updateShadowMap();
-        material.updateCelMaterial();
+        material.updateShaderMaterials();
     }
     
     updateHeight(posY) {
         this.directional.position.y = posY;
         this.directional.setDirectionToTarget(VEC3_ZERO);
         this.updateShadowMap();
-        material.updateCelMaterial();
+        material.updateShaderMaterials();
     }
     
     updateIntensity(value) {
         this.directional.intensity = parseFloat(value);
-        material.updateCelMaterial();
+        material.updateShaderMaterials();
     }
     
     updateColor(hex) {
         this.directional.diffuse = color3FromHex(hex).toLinearSpace();
-        material.updateCelMaterial();
+        material.updateShaderMaterials();
     }
     
     getDirection() {
@@ -747,9 +754,9 @@ class Material {
         this.mat_pbr_msh = undefined;
         this.mat_gridplane = undefined;
         this.mat_white = undefined;
-        this.tex_pbr = undefined;
-        this.textureMaps = [];
+        this.tex_voxel = undefined;
         this.textures = [];
+        this.textureMaps = [];
     }
 
     init() {
@@ -761,7 +768,7 @@ class Material {
         this.textures.push(this.loadTexture('tex_grid', this.textureMaps[1], Texture_LINEAR_LINEAR_MIPLINEAR));
         this.textures.push(this.loadTexture('tex_checker', this.textureMaps[2], Texture_LINEAR_LINEAR_MIPLINEAR));
 
-        this.tex_pbr = this.textures[preferences.getVoxelTextureId()];
+        this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
 
         this.createCELMaterial();
         this.createGridPlaneMaterial();
@@ -769,14 +776,64 @@ class Material {
 
         if (!preferences.isMinimal()) {
             this.createPBRMaterialVoxel();
-            this.createPBRMaterial(true);
+            this.createPBRMaterialMesh(true);
+        }
+    }
+
+    getMaterial() {
+        if (this.mode == 'CEL') {
+            return this.mat_cel;
+        } else if (this.mode == 'PBR') {
+            return this.mat_pbr_vox;
+        }
+    }
+
+    switchMaterial() {
+        if (this.mode == 'CEL') {
+            this.mode = 'PBR';
+            builder.mesh.material = this.mat_pbr_vox;
+        } else if (this.mode == 'PBR') {
+            this.mode = 'CEL';
+            builder.mesh.material = this.mat_cel;
+        }
+        
+        ui.domMaterialSwitch.innerHTML = this.mode;
+    }
+
+    createCELMaterial() {
+        this.mat_cel = ShaderMaterial(
+            'CEL', scene, {
+                vertexElement: 'uniVertexShader',
+                fragmentElement: 'celFragmentShader'
+            }, {
+                attributes: [ "position", "normal", "uv", "color" ],
+                uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
+                              "uCamPos", "uLightPos", "uLightCol", "uTextureId", "uTexture" ],
+                needAlphaBlending: false,
+                needAlphaTesting: false
+            }
+        );
+
+        this.updateShaderMaterials();
+    }
+    
+    updateShaderMaterials() {
+        if (this.mat_cel) {
+            this.mat_cel.setVector3("uCamPos", camera.camera0.position);
+            this.mat_cel.setVector3("uLightPos", light.directional.position);
+            this.mat_cel.setColor3("uLightCol", Color3(
+                (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
+                (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
+                (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity));
+            this.mat_cel.setInt("uTextureId", preferences.getVoxelTextureId());
+            this.mat_cel.setTexture("uTexture", this.textures[preferences.getVoxelTextureId()]);
         }
     }
 
     createPBRMaterialVoxel() {
         const mat = PBRMaterial("PBR_V", scene);
         mat.albedoColor = Color3(1, 1, 1);
-        mat.albedoTexture = this.tex_pbr;
+        mat.albedoTexture = this.tex_voxel;
         mat.roughness = 0.8;
         mat.metallic = 0.1;
         mat.metallicF0Factor = 0;
@@ -787,14 +844,14 @@ class Material {
         this.mat_pbr_vox = mat;
     }
 
-    createPBRMaterial() {
+    createPBRMaterialMesh() {
         if (this.mat_pbr_msh) {
             this.mat_pbr_msh.albedoTexture.dispose();
             this.mat_pbr_msh.dispose();
         }
         const mat = PBRMaterial("PBR", scene);
         mat.albedoColor = Color3(1, 1, 1);
-        mat.albedoTexture = this.tex_pbr.clone();
+        mat.albedoTexture = this.tex_voxel.clone();
         mat.roughness = 1;
         mat.metallic = 0;
         mat.metallicF0Factor = 0;
@@ -842,6 +899,13 @@ class Material {
         return c.toDataURL("image/png");
     }
 
+    setVoxelTexture() {
+        this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
+        this.mat_pbr_vox.albedoTexture = this.tex_voxel;
+        this.createPBRMaterialMesh();
+        this.updateShaderMaterials();
+    }
+
     loadTexture(name, url, sampling = Texture_NEAREST_SAMPLINGMODE) {
         const tex = CreateTexture(url, scene, sampling);
         tex.name = name;
@@ -852,135 +916,6 @@ class Material {
         tex.optimizeUVAllocation = true;
         return tex;
     }
-
-    setPBRTexture() {
-        this.tex_pbr = this.textures[preferences.getVoxelTextureId()];
-        this.mat_pbr_vox.albedoTexture = this.tex_pbr;
-        this.updateCelMaterial();
-        this.createPBRMaterial();
-    }
-
-    switchMaterial() {
-        if (this.mode == 'CEL') {
-            this.mode = 'PBR';
-            builder.mesh.material = this.mat_pbr_vox;
-        } else if (this.mode == 'PBR') {
-            this.mode = 'CEL';
-            builder.mesh.material = this.mat_cel;
-        }
-        ui.domMaterialSwitch.innerHTML = this.mode;
-    }
-
-    getMaterial() {
-        if (this.mode == 'CEL') {
-            return this.mat_cel;
-        } else if (this.mode == 'PBR') {
-            return this.mat_pbr_vox;
-        }
-    }
-
-    createCELMaterial() {
-        EffectShadersStore['celVertexShader'] = `
-        precision highp float;
-
-        attribute vec3 position;
-        attribute vec3 normal;
-        attribute vec2 uv;
-        attribute vec4 color;
-
-        varying vec3 vPositionW;
-        varying vec3 vNormalW;
-        varying vec2 vUv;
-        varying vec4 vColor;
-
-        uniform mat4 viewProjection;
-
-        #include<instancesDeclaration>
-
-        void main() {
-            #include<instancesVertex>
-            
-            vec4 worldPos = finalWorld * vec4(position, 1.0);
-            gl_Position = viewProjection * worldPos;
-            
-            #include<vertexColorMixing>
-            
-            vPositionW = vec3(worldPos);
-            vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
-            vUv = uv;
-        }`;
-        
-        EffectShadersStore['celFragmentShader'] = `
-        precision highp float;
-        
-        varying vec3 vPositionW;
-        varying vec3 vNormalW;
-        varying vec2 vUv;
-        varying vec4 vColor;
-        
-        uniform vec3 uLightPos;
-        uniform vec3 uLightCol;
-        uniform int uTextureId;
-        uniform sampler2D uTexture;
-        
-        void main() {
-            vec2 grid = abs(fract(vUv - 0.5) - 0.5) / fwidth(vUv);
-            float line = min(grid.x, grid.y);
-            line = 1.0 - min(line, 1.0);
-        
-            vec3 position = normalize(vPositionW);
-            vec3 normal = normalize(vNormalW);
-            vec3 lightDir = normalize(uLightPos - position);
-            
-            float amb = clamp(0.8 + 0.5 * normal.y, 0.0, 1.0);
-            float dif = max(0.0, dot(normal, lightDir));
-            dif += 0.8 * max(0.0, dot(normal, -lightDir));
-            
-            if (dot(normal, lightDir) < 0.0)
-                amb *= 1.1;
-
-            vec3 brdf = vec3(0);
-            brdf += 0.8 * amb * vec3(0.9);
-            brdf += 1.0 * dif * uLightCol;
-
-            vec3 col = vColor.rgb;
-            vec4 tex = texture2D(uTexture, vUv);
-
-            if (uTextureId == 1)
-                col = mix(col, vec3(0), line * 0.22);
-
-            col *= brdf;
-            col = pow(col, vec3(0.4545));
-
-            if (uTextureId > 1)
-                col *= tex.rgb;
-        
-            gl_FragColor = vec4(col, 1.0);
-        }`;
-        
-        this.mat_cel = ShaderMaterial('CEL', scene, {
-                vertex: "cel", fragment: "cel",
-            }, {
-                attributes: [ "position", "normal", "uv", "color" ],
-                uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uLightPos", "uLightCol", "uTextureId", "uTexture" ],
-                needAlphaBlending: false,
-                needAlphaTesting: false
-            });
-            this.updateCelMaterial();
-        }
-        
-        updateCelMaterial() {
-            if (this.mat_cel) {
-                this.mat_cel.setVector3("uLightPos", light.directional.position);
-                this.mat_cel.setColor3("uLightCol", Color3(
-                    (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
-                    (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
-                    (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity));
-                this.mat_cel.setInt("uTextureId", preferences.getVoxelTextureId());
-                this.mat_cel.setTexture("uTexture", this.textures[preferences.getVoxelTextureId()]);
-            }
-        }
 }
 
 
@@ -1322,14 +1257,20 @@ class Builder {
         const centerZ = (-bounds.boundingBox.center.z + size.z / 2) - 0.5;
         const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
 
-        for (let i = 0; i < voxels.length; i++)
-            voxels[i].position = Vector3TransformCoordinates(
-                voxels[i].position, tMatrix);
+        const newArr = [];
 
-        return voxels;
+        for (let i = 0; i < voxels.length; i++) {
+            newArr.push({
+                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
+                color: voxels[i].color,
+                visible: voxels[i].visible
+            });
+        }
+
+        return newArr;
     }
 
-    normalizeVoxelPositionsArray(voxels) {
+    normalizePositionsBounds(voxels) {
         ghosts.createThin(voxels);
         const bounds = ghosts.thin.getBoundingInfo();
         ghosts.disposeThin();
@@ -1560,7 +1501,8 @@ class Builder {
 
     normalizeVoxelPositions() {
         const bounds = this.mesh.getBoundingInfo();
-        this.createVoxelsFromArray(this.normalizePositions(this.voxels, bounds));
+        const voxels = this.normalizePositions(this.voxels, bounds);
+        this.createVoxelsFromArray(voxels);
     }
 
     async getOptimizedVoxels(voxels) {
@@ -3048,7 +2990,7 @@ class Tool {
     }
 
     isTargetIn = (startPos, endPos, target, camera, scene) => {
-        const screenPosition = Vector3Project(target, scene, camera, window.innerWidth, window.innerHeight);
+        const screenPosition = Vector3Project(target, scene, camera, engine.engine.getRenderWidth(), engine.engine.getRenderHeight());
         const rect = {
             x: Math.min(startPos.x, endPos.x),
             y: Math.min(startPos.y, endPos.y),
@@ -3472,7 +3414,7 @@ class Tool {
                 camera.camera0.detachControl(engine.canvas);
 
                 if (pixelReadWhiteList.includes(this.name))
-                    this.indexes = builder.getIndexesAtTarget(0, 0, window.innerWidth, window.innerHeight);
+                    this.indexes = builder.getIndexesAtTarget(0, 0, engine.engine.getRenderWidth(), engine.engine.getRenderHeight());
 
                 this.onToolDown(pick);
             });
@@ -3584,7 +3526,7 @@ class Tool {
                 this.pickIndx = index;
                 this.pickNorm = faceNormalProbe.getNormal(this.pick, index);
 
-                // dodging gaps
+                // dodging gaps (proof that you can dodge bullets)
 
                 if (!this.pickNorm) {
                     for (let i = 0; i < 4; i++) {
@@ -3872,7 +3814,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.5",
+            version: "Voxel Builder 4.7.6",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4085,20 +4027,6 @@ class Project {
         }
     }
 
-    loadFromUrl(url, onLoad = undefined) {
-        if (url === '') return;
-        fetch(url).then(res => {
-            if (res.status === 200) {
-                res.text().then(data => {
-                    this.load(data);
-                    if (onLoad) onLoad();
-                });
-            }
-        }).catch(err => {
-            console.error(err);
-        });
-    }
-
     loadMagicaVoxel(url) {
         ui.showProgress(1);
 
@@ -4132,7 +4060,7 @@ class Project {
                     }
                 }
                 
-                builder.createVoxelsFromArray(builder.normalizeVoxelPositionsArray(voxels));
+                builder.createVoxelsFromArray(builder.normalizePositionsBounds(voxels));
                 this.resetSceneSetup();
                 ui.domProjectName.value = 'untitled';
                 ui.showProgress(0);
@@ -4151,8 +4079,7 @@ class Project {
 
     saveMagicaVoxel(name) {
         const buffer = modules.exportersVox.exportVOX(builder.voxels, builder.getSize());
-        const blob = new Blob([buffer], { type: "application/octet-stream" });
-        downloadBlob(blob, name + '.vox');
+        downloadData(buffer, name + '.vox');
     }
 
     createScreenshot(scale = 4) {
@@ -4160,8 +4087,8 @@ class Project {
             modules.sandbox.shot();
         } else {
             scene.autoClear = preferences.isBackgroundColor();
-            const w = window.innerWidth;
-            const h = window.innerHeight;
+            const w = engine.engine.getRenderWidth();
+            const h = engine.engine.getRenderHeight();
             engine.engine.setSize(w * scale, h * scale);
             axisView.isRenderAxisView = false;
             CreateScreenshotWithResizeAsync(engine.engine, camera.camera0, w * scale, h * scale).then(() => {
@@ -4175,12 +4102,28 @@ class Project {
     createScreenshotBasic(width, height, callback) {
         scene.clearColor = COL_CLEAR_RGBA;
         axisView.isRenderAxisView = false;
+        postProcessFx.detach();
         CreateScreenshot(engine.engine, camera.camera0, width, height).then(data => {
-            axisView.isRenderAxisView = true;
             scene.clearColor = (preferences.isBackgroundColor()) ?
                 color4FromHex(preferences.getBackgroundColor()) :
                 color4FromHex(COL_SCENE_BG);
+            axisView.isRenderAxisView = true;
+            postProcessFx.attach();
             callback(data);
+        });
+    }
+
+    loadFromUrl(url, onLoad = undefined) {
+        if (url === '') return;
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                res.text().then(data => {
+                    this.load(data);
+                    if (onLoad) onLoad();
+                });
+            }
+        }).catch(err => {
+            console.error(err);
         });
     }
 }
@@ -4343,11 +4286,11 @@ class Snapshot {
 
             btn_save.addEventListener("click", async () => {
                 if (!ui.checkMode(0) || img.src !== IMG_SNAPSHOT && !await ui.confirm()) return;
-                project.createScreenshotBasic(img.clientWidth, img.clientHeight, (screenshot) => {
+                project.createScreenshotBasic(img.clientWidth, img.clientHeight, (image) => {
                     const isQuotaAvailable = this.setStorageVoxels(vbstoreSnapshots + i);
                     if (isQuotaAvailable && localStorage.getItem(vbstoreSnapshots + i)) {
-                        localStorage.setItem(vbstoreSnapshotsImages + i, screenshot);
-                        img.src = screenshot;
+                        localStorage.setItem(vbstoreSnapshotsImages + i, image);
+                        img.src = image;
                         btn_del.disabled = false;
                         ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
                     }
@@ -4419,7 +4362,7 @@ class Snapshot {
         }
 
         // need to wipe current items before Async
-        // + to avoid a quota error caused by waste, need to free up localstorage
+        // to avoid a quota error caused by waste, need to free up localstorage.
         // so testing the archive is not enough, the only way is to backup and restore.
         createBackup();
 
@@ -4494,8 +4437,8 @@ class RenderTarget {
     }
 
     init() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        const w = engine.engine.getRenderWidth();
+        const h = engine.engine.getRenderHeight();
 
         this.pickTexture = RenderTargetTexture('pick_texture', w, h, scene);
 
@@ -4591,8 +4534,8 @@ class RenderTarget {
     }
 
     resize() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        const w = engine.engine.getRenderWidth();
+        const h = engine.engine.getRenderHeight();
         this.pickTexture.resize({ width: w, height: h });
         this.pixels = new Uint8Array(4 * w * h);
     }
@@ -4681,6 +4624,66 @@ class FaceNormalProbe {
     dispose() {
         this.probe.position.copyFrom(RECYCLEBIN);
         this.probe.layerMask = 0x00000000;
+    }
+}
+
+
+// -------------------------------------------------------
+// Post Process Effect
+
+
+class PostProcessEffect {
+    constructor() {
+        this.effect = undefined;
+    }
+
+    start() {
+        this.dispose();
+
+        EffectShadersStore["fxFragmentShader"] = document.getElementById(`${ preferences.getPostProcessValue() }FragmentShader`).textContent;
+        
+        this.effect = PostProcess('fx', camera.camera0,
+            [ 'uRes', 'uTime', 'uSamples', 'uCamPos', 'uLightPos' ]);
+
+        this.effect.autoClear = true;
+        this.effect._samples = parseInt(preferences.getPostProcessSamples());
+
+        this.effect.onApply = (effect) => {
+            effect.setVector2("uRes", Vector2(engine.engine.getRenderWidth(), engine.engine.getRenderHeight()));
+            effect.setFloat("uTime", performance.now());
+            effect.setInt("uSamples", this.effect._samples);
+            effect.setVector3("uCamPos", camera.camera0.position);
+            effect.setVector3("uLightPos", light.directional.position);
+        };
+    }
+
+    setSamples(num) {
+        if (this.effect)
+            this.effect._samples = parseInt(num);
+    }
+
+    attach() {
+        if (this.effect) {
+            camera.camera0.attachPostProcess(this.effect);
+            this.effect._reusable = false;
+        }
+    }
+
+    // never leave it on detach mode, use dispose instead
+    detach() {
+        if (this.effect) {
+            this.effect._reusable = true; 
+            camera.camera0.detachPostProcess(this.effect);
+        }
+    }
+
+    dispose() {
+        if (this.effect) {
+            this.detach();
+            this.effect.dispose();
+            this.effect = null;
+            EffectShadersStore["fxFragmentShader"] = undefined;
+        }
     }
 }
 
@@ -4868,6 +4871,7 @@ class UserInterface {
             builder.setMeshVisibility(true);
             pool.setPoolVisibility(false);
             light.updateShadowMap();
+            postProcessFx.attach();
         } else if (mode == 1) {
             setTimeout(() => {
                 modules.sandbox.activate();
@@ -4878,6 +4882,7 @@ class UserInterface {
             pool.setPoolVisibility(true);
             pool.createMeshList();
             light.updateShadowMap();
+            postProcessFx.detach();
         }
 
         if (!preferences.isMinimal())
@@ -5046,7 +5051,7 @@ class UserInterface {
             appendTo: ui.domColorWheel,
             hex: tool.currentColor,
             wheelDiameter: 112,
-            wheelThickness: 14,
+            wheelThickness: 16,
             handleDiameter: 10,
             wheelReflectsSaturation: false,
 
@@ -5430,6 +5435,8 @@ const KEY_BACKGROUND_CHECK = "pref_background_check";
 const KEY_BACKGROUND_COLOR = "pref_background_color";
 const KEY_RENDER_SHADE = "pref_render_shade";
 const KEY_VOXEL_TEXTURE = "pref_voxel_texture";
+const KEY_SCENE_POSTPROCESS = "pref_scene_postfx";
+const KEY_SCENE_POSTPROCESS_SAMPLES = "pref_scene_postfx_samples";
 const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
 
 class Preferences {
@@ -5454,6 +5461,8 @@ class Preferences {
         document.getElementById(KEY_BACKGROUND_COLOR).value = getStyleRoot('--scene');
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
         document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
+        document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex = 0;
+        document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value = 2;
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
 
         this.setPrefCheck(KEY_MINIMAL);
@@ -5504,13 +5513,21 @@ class Preferences {
                 modules.sandbox.updateMaterials();
         });
 
-        this.setPref(KEY_VOXEL_TEXTURE, () => {
+        this.setPrefSelect(KEY_VOXEL_TEXTURE, () => {
             if (!this.isMinimal()) {
-                material.setPBRTexture();
+                material.setVoxelTexture();
                 pool.replaceTextures();
                 if (modules.sandbox.isActive())
                     modules.sandbox.updateMeshes();
             }
+        });
+
+        this.setPrefSelect(KEY_SCENE_POSTPROCESS, (idx) => {
+            (idx == 0) ? postProcessFx.dispose() : postProcessFx.start();
+        });
+
+        this.setPref(KEY_SCENE_POSTPROCESS_SAMPLES, (val) => {
+            postProcessFx.setSamples(val);
         });
 
         this.setPrefCheck(KEY_SCENE_POINTCLOUD, (chk) => {
@@ -5550,10 +5567,13 @@ class Preferences {
         
         if (this.isMinimal()) {
             document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
-            material.updateCelMaterial();
+            material.updateShaderMaterials();
         } else {
             modules.sandbox.init();
         }
+
+        if (this.getPostProcessId() !== 0)
+            postProcessFx.start();
 
         // inject the user module entry point
         const scriptUserModule = document.createElement('script');
@@ -5561,13 +5581,13 @@ class Preferences {
         scriptUserModule.src = 'user/user.js';
         document.body.appendChild(scriptUserModule);
 
-        document.getElementById('introscreen').style.display = 'none';
-        document.getElementById('canvas').style.pointerEvents = 'unset';
-        camera.flagFrame = 1;
-
         console.log(`mobile: ${isMobile}`);
         console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
         this.isInitialized = true;
+
+        document.getElementById('introscreen').style.display = 'none';
+        document.getElementById('canvas').style.pointerEvents = 'unset';
+        camera.frameStartup();
     }
 
     isMinimal() {
@@ -5622,6 +5642,18 @@ class Preferences {
         return document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex;
     }
 
+    getPostProcessId() {
+        return document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex;
+    }
+
+    getPostProcessValue() {
+        return document.getElementById(KEY_SCENE_POSTPROCESS).options[document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex].value;
+    }
+
+    getPostProcessSamples() {
+        return document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value;
+    }
+
     isPointCloud() {
         return document.getElementById(KEY_SCENE_POINTCLOUD).checked;
     }
@@ -5645,6 +5677,16 @@ class Preferences {
             if (callback) callback(ev.target.checked);
         }, false);
     }
+
+    setPrefSelect(key, callback = undefined) {
+        if (localStorage.getItem(key))
+            document.getElementById(key).selectedIndex = localStorage.getItem(key);
+
+        document.getElementById(key).addEventListener("input", (ev) => {
+            localStorage.setItem(key, ev.target.selectedIndex);
+            if (callback) callback(ev.target.selectedIndex);
+        }, false);
+    }
 }
 
 
@@ -5665,6 +5707,7 @@ export const mainScene = new MainScene();
 export const memory = new Memory();
 export const material = new Material();
 export const pool = new MeshPool();
+export const postProcessFx = new PostProcessEffect();
 export const preferences = new Preferences();
 export const project = new Project();
 export const renderTarget = new RenderTarget();
@@ -5723,7 +5766,7 @@ window.addEventListener("resize", () => {
     renderTarget.resize();
     
     axisView.updateViewport();
-    material.updateCelMaterial();
+    material.updateShaderMaterials();
 
     if (MODE == 0) modules.palette.create();
     if (MODE == 2) pool.createMeshList();
@@ -5746,7 +5789,7 @@ window.addEventListener('pointerdown', (ev) => {
         ev.preventDefault();
         if (MODE == 0) {
             renderTarget.point.x = Math.floor(pointer.x);
-            renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
+            renderTarget.point.y = engine.engine.getRenderHeight() - Math.floor(pointer.y);
             tool.handleToolDown();
         } else if (MODE == 2) {
             toolMesh.handleToolDown();
@@ -5761,7 +5804,7 @@ window.addEventListener('pointermove', (ev) => {
     if (ev.target === engine.canvas && MODE == 0 && !uix.isActive()) {
         ev.preventDefault();
         renderTarget.point.x = Math.floor(pointer.x);
-        renderTarget.point.y = window.innerHeight - Math.floor(pointer.y);
+        renderTarget.point.y = engine.engine.getRenderHeight() - Math.floor(pointer.y);
         tool.handleToolMove();
     }
 }, false);
@@ -6820,6 +6863,7 @@ function mostDuplicatedItem(arr) {
     return mostDuplicated;
 }
 
+// Fix unwanted value memory in Firefox
 function resetAllInputElements() {
     const inputs = document.querySelectorAll('input, select');
 

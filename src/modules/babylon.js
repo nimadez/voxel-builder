@@ -66,6 +66,14 @@ export const EffectShadersStore = BABYLON.Effect.ShadersStore;
 export const CounterClockWiseSideOrientation = BABYLON.Material.CounterClockWiseSideOrientation;
 
 
+// Vector2
+
+
+export function Vector2(x = 0, y = 0) {
+    return new BABYLON.Vector2(x, y);
+}
+
+
 // Vector3
 
 
@@ -228,6 +236,10 @@ export function RenderTargetTexture(name, width, height, scene) {
             generateStencilBuffer: false,
             useSRGBBuffer: false
         }, scene);
+}
+
+export function PostProcess(name, camera, parameters) {
+    return new BABYLON.PostProcess(name, name, parameters, null, 1, camera);
 }
 
 

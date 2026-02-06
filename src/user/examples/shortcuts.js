@@ -8,7 +8,8 @@ import { MODE, builder, tool, xformer, ui } from "../modules/core.js";
 
 document.addEventListener("keydown", (ev) => {
 
-    if (MODE == 0) { // model|render|export
+    // model|render|export
+    if (MODE == 0) {
 
         switch (ev.key.toLowerCase()) {
 

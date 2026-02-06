@@ -7,6 +7,7 @@ See examples/
     Example 1: Bind tools to shortcuts (easy)
     Example 2: Create a custom panel (intermediate)
     Example 3: Load voxel data, bake meshes and export GLB (advanced)
+    Example 4: Websockets blockchain visualizer (data visualization)
 
     Copy/paste them here and reload to see the result.
 */
