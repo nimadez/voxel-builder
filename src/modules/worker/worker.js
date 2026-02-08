@@ -36,6 +36,7 @@ onmessage = (ev) => {
 
             for (let i = 0; i < len; i++) {
                 
+                // mat.fromArray(this.bufferMatrix, i * 16).m;
                 for (let j = 0; j < 16; j++)
                     m[j] = bufferMatrix[i * 16 + j];
 
@@ -75,6 +76,7 @@ onmessage = (ev) => {
                     indices[i * vIndices.length + v] = vIndices[v] + i * vPositions.length / 3;
                 }
             }
+            
             // return bufferMatrix to resolve DataCloneError after 1 million voxels
             postMessage([ bufferMatrix, positions, normals, uvs, colors, indices ]);
             break;

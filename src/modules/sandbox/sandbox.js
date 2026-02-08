@@ -65,6 +65,7 @@ class Sandbox {
         this.meshes = [];
         this.materials = [];
 
+        this.mat_shadow = undefined;
         this.mat_pbr = undefined;
         this.mat_shade = undefined;
         this.mat_emissive = undefined;
@@ -112,7 +113,7 @@ class Sandbox {
     }
 
 
-    // Create scene
+    // Create Scene
 
 
     createScene() {
@@ -139,15 +140,7 @@ class Sandbox {
         axis.position.setScalar(-0.5);
         this.scene.add(axis);
         
-        const mat_shadow = new THREE.ShadowMaterial({ opacity: 0.15 });
-        this.shadowGround = new THREE.Mesh(new THREE.PlaneGeometry(CAM_FAR, CAM_FAR, 1, 1), mat_shadow);
-        this.shadowGround.position.setScalar(-0.51);
-        this.shadowGround.rotation.x = -Math.PI / 2;
-        this.shadowGround.receiveShadow = true;
-        this.shadowGround.matrixAutoUpdate = false;
-        this.shadowGround.updateMatrix();
-        this.scene.add(this.shadowGround);
-
+        this.mat_shadow = new THREE.ShadowMaterial({ opacity: 0.15 });
         this.mat_pbr = new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.BackSide });
         this.mat_pbr.specularIntensity = 1;
         this.mat_pbr.clearcoat = 0; // high gpu usage
@@ -158,12 +151,20 @@ class Sandbox {
         this.mat_emissive = new THREE.MeshStandardMaterial({ emissive: new THREE.Color(0x000000), side: THREE.BackSide });
         this.mat_emissive.emissiveIntensity = 1;
 
+        this.shadowGround = new THREE.Mesh(new THREE.PlaneGeometry(CAM_FAR, CAM_FAR, 1, 1), this.mat_shadow);
+        this.shadowGround.rotation.x = -Math.PI / 2;
+        this.shadowGround.receiveShadow = true;
+        this.shadowGround.matrixAutoUpdate = false;
+        this.shadowGround.updateMatrix();
+        this.scene.add(this.shadowGround);
+
         this.plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, 1, 1), this.mat_shade.clone());
-        this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
         this.plane.rotation.x = Math.PI / 2;
         this.plane.receiveShadow = true;
+        this.plane.visible = false;
         this.plane.matrixAutoUpdate = false;
         this.plane.updateMatrix();
+        this.scene.add(this.plane);
 
         this.pickBox = new THREE.BoxHelper(this.scene, 0xFFA500);
 
@@ -174,7 +175,7 @@ class Sandbox {
     }
 
 
-    // Create meshes
+    // Create Meshes
 
 
     createMeshesFromBuffers() {
@@ -198,14 +199,6 @@ class Sandbox {
         }
     }
 
-    updateMeshes() {
-        this.disposeMeshes();
-        this.updateMaterials();
-        this.createMeshesFromBuffers();
-        this.isLoaded = true;
-        this.updateScene();
-    }
-
     disposeMeshes() {
         for (let i = 0; i < this.meshes.length; i++) {
             this.meshes[i].geometry.dispose();
@@ -217,10 +210,10 @@ class Sandbox {
     }
 
 
-    // Updates
+    // Update Scene
 
 
-    updateScene() {
+    updateSceneOnce() {
         if (this.isRendering)
             this.flagUpdateScene = 1;
     }
@@ -289,20 +282,27 @@ class Sandbox {
         this.pt.updateMaterials();
     }
 
-    updatePlane() {
-        if (ui.domRenderPlane.value > 0) {
-            const center = builder.getCenter();
-            this.plane.position.set(center.x, -0.5, center.z);
-            this.plane.scale.set(ui.domRenderPlane.value, ui.domRenderPlane.value, 1);
-            this.plane.updateMatrix();
-            this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
-            this.scene.add(this.plane);
-        } else {
-            this.scene.remove(this.plane);
-        }
-
+    updateMeshes() {
+        this.disposeMeshes();
         this.updateMaterials();
-        this.updateScene();
+        this.createMeshesFromBuffers();
+        this.updatePlane();
+        this.isLoaded = true;
+        this.updateSceneOnce();
+    }
+
+    updatePlane() {
+        const center = builder.getCenter();
+
+        this.plane.visible = ui.domRenderPlane.value > 0;
+        this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
+        
+        this.plane.position.set(center.x, builder.minY - 0.5, center.z);
+        this.plane.scale.set(ui.domRenderPlane.value, ui.domRenderPlane.value, 1);
+        this.plane.updateMatrix();
+
+        this.shadowGround.position.set(center.x, builder.minY - 0.51, center.z);
+        this.shadowGround.updateMatrix();
     }
 
 
@@ -518,18 +518,18 @@ class Sandbox {
         if (isEnabled) {
             renderer.toneMappingExposure = 1;
 
-            this.scene.remove(this.shadowGround);
+            this.shadowGround.visible = false;
 
             this.pt.updateBounces(ui.domRenderBounces.value);
             this.pt.updateMaxSamples(ui.domRenderMaxSamples.value);
-            this.updateScene();
+            this.updateSceneOnce();
 
             ui.domInfoRender.style.display = 'unset';
             ui.domToolbarScreenRender.children[0].children[0].firstChild.innerHTML = 'stop';
         } else {
             renderer.toneMappingExposure = 0.8;
 
-            this.scene.add(this.shadowGround);
+            this.shadowGround.visible = true;
             this.isProgressing = false;
 
             ui.domInfoRender.style.display = 'none';
@@ -668,7 +668,8 @@ renderer.domElement.onpointerdown = (ev) => {
     sandbox.mouse.x = (ev.clientX / window.innerWidth) * 2 - 1;
     sandbox.mouse.y = -(ev.clientY / window.innerHeight) * 2 + 1;
     sandbox.pt.update();
-    sandbox.pickMesh();
+    if (ev.buttons == 1)
+        sandbox.pickMesh();
 };
 
 renderer.domElement.onpointermove = (ev) => {

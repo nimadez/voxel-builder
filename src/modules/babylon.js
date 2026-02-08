@@ -238,8 +238,8 @@ export function RenderTargetTexture(name, width, height, scene) {
         }, scene);
 }
 
-export function PostProcess(name, camera, parameters) {
-    return new BABYLON.PostProcess(name, name, parameters, null, 1, camera);
+export function PostProcess(name, camera, parameters, options) {
+    return new BABYLON.PostProcess(name, name, parameters, options, 1.0, camera);
 }
 
 

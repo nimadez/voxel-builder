@@ -126,8 +126,6 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > There is, you can have 16,777,216 layers (groups or color groups), because the layering system in this app is determined by colors, even a change in the brightness of a color creates a new group that can contain hundreds of voxels.<br>
 > So groups are automatically created, merged, or deleted based on color. You can even hide, delete, select, paint, transform, or duplicate color groups.
 
-> *Note, however, that you can only have 255 colors to send and receive from MagicaVoxel.*
-
 #### Why can't I freely transform 3D objects like in other 3D software?
 > There are no objects, you work with a grid of voxels, the XFORM feature only mimics the transformation of 3D objects, you just grab a piece of connected voxels and move them.
 
@@ -145,34 +143,6 @@ There are currently 4 methods to store voxel data:
 2- Export baked meshes to GLB (and Load Bakes, supports Blender and other 3D apps, slower)
 3- Save snapshots to ZIP archive (easy to share, browser storage limits, speed is variable)
 4- Save to VOX format (supported by many 3D apps and engines, very fast)
-```
-
-#### How to add more post-processing shaders?
-> Post-process shaders are automatically recognized, so all the work is done in the "**index.html**" file, just create a script tag called "fx{**Example**}FragmentShader", and add the value "**fxExample**" to "**pref_scene_postfx**". *(the prefix "**fx**" is required)*
-```
-<label style="margin-right: 10px">PostFX</label> <select id="pref_scene_postfx">
-    <option value="none">None</option>
-    <option value="fxOutline">Outline</option>
-    <option value="fxExample">Example</option>
-    ...
-</select>
-
-<script type="x-shader/x-fragment" id="fxExampleFragmentShader">
-    #ifdef GL_ES
-        precision highp float;
-    #endif
-
-    varying vec2 vUV;
-
-    uniform vec2 uRes;
-    uniform float uTime;
-    uniform int uSamples;
-    uniform vec3 uCamPos;
-    uniform vec3 uLightPos;
-    uniform sampler2D textureSampler;
-
-    // shader content
-</script>
 ```
 
 #### How to merge vertices after export to GLB?
@@ -201,7 +171,8 @@ git reset --hard $HASH
 
 ## History
 ```
-↑ A major upgrade and overhaul
+↑ Upgrade in the Renaissance Bubble
+↑ A fundamental overhaul of the core
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
 ↑ ES6 (the original index.html playground was moved)
@@ -222,7 +193,7 @@ Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
 ![screenshot](media/devshots.jpg?raw=true "Screenshot")
 
 ## License
-Code released under the [MIT license](https://github.com/nimadez/voxel-builder/blob/main/LICENSE).
+Code released under the [GNU license](https://github.com/nimadez/voxel-builder/blob/main/LICENSE).
 
 ## Credits
 - [Babylon.js](https://www.babylonjs.com/)

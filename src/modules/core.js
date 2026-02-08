@@ -109,9 +109,9 @@ const COL_AXIS_Z_RGBA = color4FromHex(COL_AXIS_Z + 'FF');
 const COL_ICE = '#90A0B3';
 const COL_RED = '#FF0000';
 const COL_RED_RGB = color3FromHex(COL_RED);
+const COL_PINK = '#FF00FF';
+const COL_PINK_RGB = color3FromHex(COL_PINK);
 
-const PI2 = Math.PI * 2;
-const PIH = Math.PI / 2;
 const VEC3_ZERO = Vector3();
 const VEC3_HALF = Vector3(0.5, 0.5, 0.5);
 const VEC3_ONE = Vector3(1, 1, 1);
@@ -155,6 +155,17 @@ const VEC20_CORNERS = [
     Vector3(-1, -1, 0)   // edge 6,7
 ];
 
+const axisLines = [
+    [ VEC3_ZERO, Vector3(1, 0, 0) ],
+    [ VEC3_ZERO, Vector3(0, 1, 0) ],
+    [ VEC3_ZERO, Vector3(0, 0, 1) ]
+];
+const axisColors = [
+    [ COL_AXIS_X_RGBA, COL_AXIS_X_RGBA ],
+    [ COL_AXIS_Y_RGBA, COL_AXIS_Y_RGBA ],
+    [ COL_AXIS_Z_RGBA, COL_AXIS_Z_RGBA ]
+];
+
 // right-handed plane
 const PLANE_POSITIONS = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
 const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ];
@@ -169,6 +180,8 @@ const GRIDPLANE_SIZE = MAX_Z + 100;
 const WORKPLANE_SIZE = 120;
 const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
 const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
+const PI2 = Math.PI * 2;
+const PIH = Math.PI / 2;
 
 export let MODE = -1; // model|render|export
 export const pointer = {
@@ -199,7 +212,9 @@ const pixelReadWhiteList = [
 
 
 class MainScene {
-    constructor() {}
+    constructor() {
+        this.shadowcatcher = undefined;
+    }
 
     create(engine) {
         return new Promise(resolve => {
@@ -215,22 +230,20 @@ class MainScene {
             ambient.diffuse = Color3(0.4, 0.4, 0.4);
             ambient.groundColor = Color3(0.2, 0.2, 0.2);
             
-            const shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
-            shadowcatcher.material = ShadowOnlyMaterial('shadowcatcher', scene);
-            shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
-            //shadowcatcher.material.activeLight = light.directional; // later
-            shadowcatcher.material.backFaceCulling = true;
-            shadowcatcher.material.alpha = 0.1;
-            shadowcatcher.position.y = -0.5;
-            shadowcatcher.rotation.x = -PIH;
-            shadowcatcher.receiveShadows = true;
-            shadowcatcher.isPickable = false;
-            shadowcatcher.doNotSyncBoundingInfo = true;
-            shadowcatcher.doNotSerialize = true;
-            shadowcatcher.infiniteDistance = true;
-            shadowcatcher.freezeWorldMatrix();
-            shadowcatcher.freezeNormals();
-    
+            this.shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
+            this.shadowcatcher.material = ShadowOnlyMaterial('shadowcatcher', scene);
+            this.shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
+            //this.shadowcatcher.material.activeLight = light.directional; // later
+            this.shadowcatcher.material.backFaceCulling = true;
+            this.shadowcatcher.material.alpha = 0.1;
+            this.shadowcatcher.position.y = -0.5;
+            this.shadowcatcher.rotation.x = -PIH;
+            this.shadowcatcher.receiveShadows = true;
+            this.shadowcatcher.isPickable = false;
+            this.shadowcatcher.doNotSerialize = true;
+            this.shadowcatcher.bakeCurrentTransformIntoVertices();
+            this.shadowcatcher.freezeNormals();
+
             resolve(scene);
         });
     }
@@ -679,7 +692,6 @@ class Light {
         this.directional.shadowMinZ = -2500;
         this.directional.setDirectionToTarget(VEC3_ZERO);
         this.setLightPositionByAngle(this.angle, this.location.x);
-        scene.getNodeByName("shadowcatcher").material.activeLight = this.directional;
 
         const shadowSize = isMobile ? 256 : 1024;
         const shadowGen = ShadowGenerator(shadowSize, this.directional);
@@ -692,6 +704,8 @@ class Light {
         shadowGen.forceBackFacesOnly = false;
         shadowGen.bias = 0.00001; // def 0.00005
         shadowGen.setDarkness(0);
+
+        mainScene.shadowcatcher.material.activeLight = this.directional;
     }
 
     updateShadowMap() {
@@ -726,7 +740,7 @@ class Light {
     }
     
     enableShadows(isEnabled) {
-        scene.getNodeByName("shadowcatcher").isVisible = isEnabled;
+        mainScene.shadowcatcher.isVisible = isEnabled;
         this.directional.shadowEnabled = isEnabled;
     }
 
@@ -752,7 +766,7 @@ class Material {
         this.mat_cel = undefined;
         this.mat_pbr_vox = undefined;
         this.mat_pbr_msh = undefined;
-        this.mat_gridplane = undefined;
+        this.mat_grid = undefined;
         this.mat_white = undefined;
         this.tex_voxel = undefined;
         this.textures = [];
@@ -771,7 +785,7 @@ class Material {
         this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
 
         this.createCELMaterial();
-        this.createGridPlaneMaterial();
+        this.createGridMaterial();
         this.createWhiteMaterial();
 
         if (!preferences.isMinimal()) {
@@ -864,8 +878,8 @@ class Material {
         this.mat_pbr_msh = mat;
     }
 
-    createGridPlaneMaterial() {
-        const mat = GridMaterial("gridplane", scene);
+    createGridMaterial() {
+        const mat = GridMaterial("grid", scene);
         mat.gridRatio = 1;
         mat.majorUnitFrequency = 20;
         mat.minorUnitVisibility = 0.4;
@@ -873,7 +887,7 @@ class Material {
         mat.lineColor = Color3(1, 1, 1);
         mat.backFaceCulling = false;
         mat.freeze();
-        this.mat_gridplane = mat;
+        this.mat_grid = mat;
     }
 
     createWhiteMaterial() {
@@ -903,6 +917,11 @@ class Material {
         this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
         this.mat_pbr_vox.albedoTexture = this.tex_voxel;
         this.createPBRMaterialMesh();
+        this.updateShaderMaterials();
+    }
+
+    setVoxelTextureNoPBR() {
+        this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
         this.updateShaderMaterials();
     }
 
@@ -988,6 +1007,8 @@ class Builder {
 
         this.uniqueColors = [];
         this.invisibleColors = [];
+
+        this.minY = Infinity;
     }
 
     init() {
@@ -1017,6 +1038,7 @@ class Builder {
             if (preferences.isPointCloud())
                 ghosts.createPointCloud();
 
+            mainScene.shadowcatcher.position.y = this.minY;
             helper.setSymmPivot();
             modules.palette.create();
         });
@@ -1078,6 +1100,7 @@ class Builder {
         this.positionsMap = new Array(this.voxels.length);
         this.uniqueColors = [];
         this.invisibleColors = [];
+        this.minY = Infinity;
 
         for (let i = 0; i < this.voxels.length; i++) {
             const voxel = this.voxels[i];
@@ -1108,6 +1131,8 @@ class Builder {
                     if (!voxel.visible)
                         this.invisibleColors.push(voxel.color);
                 }
+                
+                this.minY = Math.min(this.minY, voxel.position.y);
             }
 
             // prevent flagDuplicate shadowing
@@ -1118,59 +1143,6 @@ class Builder {
             this.bufferColors[i * 4 + 3] = 1;
         }
     }
-
-    // This function is moved to the worker module and is not used
-    /* fillMeshBuffers() {
-        this.positions = new Float32Array(vMesh.positions.length * this.voxels.length);
-        this.normals = new Float32Array(vMesh.positions.length * this.voxels.length);
-        this.uvs = new Float32Array(vMesh.uvs.length * this.voxels.length);
-        this.colors = new Float32Array(vMesh.uvs.length * 2 * this.voxels.length);
-        this.indices = new Uint32Array(vMesh.indices.length * this.voxels.length);
-
-        const mat = MatrixIdentity();
-        const p = Vector3();
-
-        for (let i = 0; i < this.voxels.length; i++) {
-            
-            const m = mat.fromArray(this.bufferMatrix, i * 16).m;
-
-            for (let v = 0; v < vMesh.positions.length; v += 3) {
-                p.x = vMesh.positions[v];
-                p.y = vMesh.positions[v + 1];
-                p.z = vMesh.positions[v + 2];
-                p.x = p.x * m[0] + p.y * m[4] + p.z * m[8] + m[12];
-                p.y = p.x * m[1] + p.y * m[5] + p.z * m[9] + m[13];
-                p.z = p.x * m[2] + p.y * m[6] + p.z * m[10] + m[14];
-                const rw = 1 / (p.x * m[3] + p.y * m[7] + p.z * m[11] + m[15]);
-                this.positions[i * vMesh.positions.length + v] = p.x * rw;
-                this.positions[i * vMesh.positions.length + v + 1] = p.y * rw;
-                this.positions[i * vMesh.positions.length + v + 2] = p.z * rw;
-
-                p.x = vMesh.normals[v];
-                p.y = vMesh.normals[v + 1];
-                p.z = vMesh.normals[v + 2];
-                p.x = p.x * m[0] + p.y * m[4] + p.z * m[8];
-                p.y = p.x * m[1] + p.y * m[5] + p.z * m[9];
-                p.z = p.x * m[2] + p.y * m[6] + p.z * m[10];
-                this.normals[i * vMesh.normals.length + v] = p.x;
-                this.normals[i * vMesh.normals.length + v + 1] = p.y;
-                this.normals[i * vMesh.normals.length + v + 2] = p.z;
-            }
-
-            for (let v = 0; v < vMesh.uvs.length; v += 2) {
-                this.uvs[i * vMesh.uvs.length + v] = vMesh.uvs[v];
-                this.uvs[i * vMesh.uvs.length + v + 1] = vMesh.uvs[v + 1];
-                this.colors[i * vMesh.uvs.length * 2 + v * 2] = this.bufferColors[i * 4];
-                this.colors[i * vMesh.uvs.length * 2 + v * 2 + 1] = this.bufferColors[i * 4 + 1];
-                this.colors[i * vMesh.uvs.length * 2 + v * 2 + 2] = this.bufferColors[i * 4 + 2];
-                this.colors[i * vMesh.uvs.length * 2 + v * 2 + 3] = 1;
-            }
-
-            for (let v = 0; v < vMesh.indices.length; v++) {
-                this.indices[i * vMesh.indices.length + v] = vMesh.indices[v] + i * vMesh.positions.length / 3;
-            }
-        }
-    } */
 
     fillMeshBuffersWorker() {
         return new Promise(async resolve => {
@@ -1252,10 +1224,12 @@ class Builder {
             Math.abs(bounds.minimum.x - bounds.maximum.x),
             Math.abs(bounds.minimum.y - bounds.maximum.y),
             Math.abs(bounds.minimum.z - bounds.maximum.z));
-        const centerX = (-bounds.boundingBox.center.x + size.x / 2) - 0.5;
-        const centerY = (size.y / 2 - bounds.boundingBox.center.y) - 0.5;
-        const centerZ = (-bounds.boundingBox.center.z + size.z / 2) - 0.5;
-        const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
+            
+        const tMatrix = MatrixTranslation(
+            (-bounds.boundingBox.center.x + size.x / 2) - 0.5,
+            (size.y / 2 - bounds.boundingBox.center.y) - 0.5,
+            (-bounds.boundingBox.center.z + size.z / 2) - 0.5
+        );
 
         const newArr = [];
 
@@ -1275,6 +1249,47 @@ class Builder {
         const bounds = ghosts.thin.getBoundingInfo();
         ghosts.disposeThin();
         return this.normalizePositions(voxels, bounds);
+    }
+
+    centralizePositions(voxels, bounds) {
+        const tMatrix = MatrixTranslation(
+            -bounds.boundingBox.center.x - 0.5,
+            -bounds.boundingBox.center.y - 0.5,
+            -bounds.boundingBox.center.z - 0.5
+        );
+
+        const newArr = [];
+
+        for (let i = 0; i < voxels.length; i++) {
+            newArr.push({
+                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
+                color: voxels[i].color,
+                visible: voxels[i].visible
+            });
+        }
+
+        return newArr;
+    }
+
+    async optimizeVoxels(voxels) {
+        const msg = await modules.workerPool.postMessage({
+            id: 'findInnerVoxels',
+            data: [ voxels, this.positionsMap ]
+        });
+
+        if (msg) {
+            const data = [];
+            for (let i = 0; i < msg.data.length; i++) {
+                data.push({
+                    position: Vector3(msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
+                    color: msg.data[i].color,
+                    visible: msg.data[i].visible
+                });
+            }
+            return data;
+        }
+
+        return undefined;
     }
 
     getIndexAtPointer() {
@@ -1499,36 +1514,23 @@ class Builder {
         this.create();
     }
 
-    normalizeVoxelPositions() {
+    normalizePositionsAction() {
         const bounds = this.mesh.getBoundingInfo();
         const voxels = this.normalizePositions(this.voxels, bounds);
         this.createVoxelsFromArray(voxels);
     }
 
-    async getOptimizedVoxels(voxels) {
-        const msg = await modules.workerPool.postMessage({
-            id: 'findInnerVoxels',
-            data: [ voxels, this.positionsMap ]
-        });
-        if (msg) {
-            const data = [];
-            for (let i = 0; i < msg.data.length; i++) {
-                data.push({
-                    position: Vector3(msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
-                    color: msg.data[i].color,
-                    visible: msg.data[i].visible
-                });
-            }
-            return data;
-        }
-        return undefined;
+    centralizePositionsAction() {
+        const bounds = this.mesh.getBoundingInfo();
+        const voxels = this.centralizePositions(this.voxels, bounds);
+        this.createVoxelsFromArray(voxels);
     }
 
-    optimizeVoxelsAndUpdate() {
+    optimizeVoxelsAction() {
         ui.showProgress(1);
         setTimeout(async () => {
             const last = this.voxels.length;
-            const voxels = await this.getOptimizedVoxels(this.voxels);
+            const voxels = await this.optimizeVoxels(this.voxels);
             if (voxels) {
                 this.createVoxelsFromArray(voxels);
                 ui.notification(`${ last - this.voxels.length } removed`);
@@ -2234,81 +2236,82 @@ class Ghosts {
 
 class Helper {
     constructor() {
-        this.gridPlane = undefined;
-        this.workplaneX = undefined;
-        this.workplaneY = undefined;
-        this.workplaneZ = undefined;
+        this.floorPlane = undefined;
+        this.volumePlaneX = undefined;
+        this.volumePlaneY = undefined;
+        this.volumePlaneZ = undefined;
         this.multiPlane = undefined;
-        this.axisPlane = undefined;
         this.overlayPlane = undefined;
         this.overlayCube = undefined;
         this.boxShape = undefined;
         this.boxShapeSymm = undefined;
         this.bbox = undefined;
         this.symmPivot = undefined;
-        this.isGridPlaneActive = false;
-        this.isWorkplaneActive = false;
+        this.symmPlane = undefined;
+        this.isFloorPlaneActive = false;
+        this.isVolumePlaneActive = false;
         this.isMultiPlaneActive = false;
     }
 
     init() {
-        this.gridPlane = CreateDisc("gridplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
-        this.workplaneX = CreatePlane("workplaneX", WORKPLANE_SIZE, BACKSIDE, scene);
-        this.workplaneY = CreatePlane("workplaneY", WORKPLANE_SIZE, BACKSIDE, scene);
-        this.workplaneZ = CreatePlane("workplaneZ", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.floorPlane = CreateDisc("floorplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
+        this.volumePlaneX = CreatePlane("volumeplaneX", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.volumePlaneY = CreatePlane("volumeplaneY", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.volumePlaneZ = CreatePlane("volumeplaneZ", WORKPLANE_SIZE, BACKSIDE, scene);
         this.multiPlane = CreateDisc("multiplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
-        this.axisPlane = CreatePlane("axisplane", 1.2, DOUBLESIDE, axisView.scene);
         this.overlayPlane = CreatePlane("overlay_plane", 1, BACKSIDE, scene);
         this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
         this.bbox = CreateBox("bbox", 1, FRONTSIDE, scene);
+        this.symmPivot = CreateLine("symm_pivot", axisLines, axisColors, uix.utilLayer.utilityLayerScene);
+        this.symmPlane = CreatePlane("symm_plane", 1.2, DOUBLESIDE, axisView.scene);
 
-        this.gridPlane.position.x = -0.5;
-        this.gridPlane.position.y = -0.5;
-        this.gridPlane.position.z = -0.5;
-        this.gridPlane.rotation.x = -PIH;
-        this.gridPlane.material = material.mat_gridplane;
-        this.gridPlane.isVisible = false;
-        this.gridPlane.isPickable = true;
-        this.gridPlane.visibility = 0.1;
-        this.gridPlane.doNotSerialize = true;
-        this.gridPlane.freezeNormals();
+        this.floorPlane.position.x = -0.5;
+        this.floorPlane.position.y = -0.5;
+        this.floorPlane.position.z = -0.5;
+        this.floorPlane.rotation.x = -PIH;
+        this.floorPlane.material = material.mat_grid;
+        this.floorPlane.isVisible = false;
+        this.floorPlane.isPickable = true;
+        this.floorPlane.visibility = 0.1;
+        this.floorPlane.doNotSerialize = true;
+        this.floorPlane.freezeNormals();
 
         const wpHalf = WORKPLANE_SIZE / 2;
 
-        this.workplaneX.material = material.mat_gridplane;
-        this.workplaneX.isVisible = false;
-        this.workplaneX.isPickable = true;
-        this.workplaneX.position.x = wpHalf - 0.5;
-        this.workplaneX.position.y = -0.5;
-        this.workplaneX.position.z = wpHalf - 0.5;
-        this.workplaneX.rotation.x = -PIH;
-        this.workplaneX.visibility = 0.08;
-        this.workplaneX.doNotSerialize = true;
-        this.workplaneX.freezeNormals();
+        this.volumePlaneX.material = material.mat_grid;
+        this.volumePlaneX.isVisible = false;
+        this.volumePlaneX.isPickable = true;
+        this.volumePlaneX.position.x = wpHalf - 0.5;
+        this.volumePlaneX.position.y = -0.5;
+        this.volumePlaneX.position.z = wpHalf - 0.5;
+        this.volumePlaneX.rotation.x = -PIH;
+        this.volumePlaneX.visibility = 0.08;
+        this.volumePlaneX.doNotSerialize = true;
+        this.volumePlaneX.freezeNormals();
 
-        this.workplaneY.material = material.mat_gridplane;
-        this.workplaneY.isVisible = false;
-        this.workplaneY.isPickable = true;
-        this.workplaneY.position.x = -0.5;
-        this.workplaneY.position.y = wpHalf - 0.5;
-        this.workplaneY.position.z = wpHalf - 0.5;
-        this.workplaneY.rotation.y = PIH;
-        this.workplaneY.visibility = 0.08;
-        this.workplaneY.doNotSerialize = true;
-        this.workplaneY.freezeNormals();
+        this.volumePlaneY.material = material.mat_grid;
+        this.volumePlaneY.isVisible = false;
+        this.volumePlaneY.isPickable = true;
+        this.volumePlaneY.position.x = -0.5;
+        this.volumePlaneY.position.y = wpHalf - 0.5;
+        this.volumePlaneY.position.z = wpHalf - 0.5;
+        this.volumePlaneY.rotation.y = PIH;
+        this.volumePlaneY.visibility = 0.08;
+        this.volumePlaneY.doNotSerialize = true;
+        this.volumePlaneY.freezeNormals();
 
-        this.workplaneZ.material = material.mat_gridplane;
-        this.workplaneZ.isVisible = false;
-        this.workplaneZ.isPickable = true;
-        this.workplaneZ.position.x = wpHalf - 0.5;
-        this.workplaneZ.position.y = wpHalf - 0.5;
-        this.workplaneZ.position.z = -0.5;
-        this.workplaneZ.rotation.z = PIH;
-        this.workplaneZ.visibility = 0.08;
-        this.workplaneZ.doNotSerialize = true;
-        this.workplaneZ.freezeNormals();
+        this.volumePlaneZ.material = material.mat_grid;
+        this.volumePlaneZ.isVisible = false;
+        this.volumePlaneZ.isPickable = true;
+        this.volumePlaneZ.position.x = wpHalf - 0.5;
+        this.volumePlaneZ.position.y = wpHalf - 0.5;
+        this.volumePlaneZ.position.z = -0.5;
+        this.volumePlaneZ.rotation.z = PIH;
+        this.volumePlaneZ.visibility = 0.08;
+        this.volumePlaneZ.doNotSerialize = true;
+        this.volumePlaneZ.freezeNormals();
 
         this.multiPlane.position.x = -0.5;
         this.multiPlane.position.y = -0.5;
@@ -2320,22 +2323,12 @@ class Helper {
         this.multiPlane.bakeCurrentTransformIntoVertices();
         this.multiPlane.setPivotMatrix(MatrixIdentity());
         this.multiPlane.position = center;
-        this.multiPlane.material = material.mat_gridplane;
+        this.multiPlane.material = material.mat_grid;
         this.multiPlane.isVisible = false;
         this.multiPlane.isPickable = true;
         this.multiPlane.visibility = 0.1;
         this.multiPlane.doNotSerialize = true;
         this.multiPlane.freezeNormals();
-
-        this.axisPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
-        this.axisPlane.isPickable = false;
-        this.axisPlane.visibility = 0.01;
-        this.axisPlane.doNotSerialize = true;
-        this.highlightOverlayMesh(this.axisPlane, COL_AQUA_RGB, 0.35); // overridden
-        this.axisPlane.edgesWidth = 8;
-        this.axisPlane.edgesColor = COL_AQUA_RGBA;
-        this.axisPlane.enableEdgesRendering();
-        this.axisPlane.freezeNormals();
 
         this.overlayPlane.isVisible = false;
         this.overlayPlane.isPickable = false;
@@ -2379,37 +2372,36 @@ class Helper {
         this.bbox.doNotSerialize = true;
         this.bbox.freezeNormals();
 
-        const axisLines = [
-            [ VEC3_ZERO, Vector3(1, 0, 0) ],
-            [ VEC3_ZERO, Vector3(0, 1, 0) ],
-            [ VEC3_ZERO, Vector3(0, 0, 1) ]
-        ];
-        const axisColors = [
-            [ COL_AXIS_X_RGBA, COL_AXIS_X_RGBA ],
-            [ COL_AXIS_Y_RGBA, COL_AXIS_Y_RGBA ],
-            [ COL_AXIS_Z_RGBA, COL_AXIS_Z_RGBA ]
-        ];
-        this.symmPivot = CreateLine("symmpivot", axisLines, axisColors, uix.utilLayer.utilityLayerScene);
         this.symmPivot.isVisible = false;
         this.symmPivot.isPickable = false;
         this.symmPivot.doNotSerialize = true;
         this.symmPivot.scaling.set(8, 8, 8);
+
+        this.symmPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
+        this.symmPlane.isPickable = false;
+        this.symmPlane.visibility = 0.01;
+        this.symmPlane.doNotSerialize = true;
+        this.highlightOverlayMesh(this.symmPlane, COL_AQUA_RGB, 0.35); // overridden
+        this.symmPlane.edgesWidth = 8;
+        this.symmPlane.edgesColor = COL_AQUA_RGBA;
+        this.symmPlane.enableEdgesRendering();
+        this.symmPlane.freezeNormals();
     }
 
-    enableGridPlane(isEnabled) {
-        this.isGridPlaneActive = isEnabled;
-        this.displayGridPlane(isEnabled);
+    enableFloorPlane(isEnabled) {
+        this.isFloorPlaneActive = isEnabled;
+        this.displayFloorPlane(isEnabled);
         if (isEnabled) {
-            this.enableWorkplane(false);
+            this.enableVolumePlane(false);
             this.enableMultiPlane(false);
         }
     }
 
-    enableWorkplane(isEnabled) {
-        this.isWorkplaneActive = isEnabled;
-        this.displayWorkplane(isEnabled);
+    enableVolumePlane(isEnabled) {
+        this.isVolumePlaneActive = isEnabled;
+        this.displayVolumePlane(isEnabled);
         if (isEnabled) {
-            this.enableGridPlane(false);
+            this.enableFloorPlane(false);
             this.enableMultiPlane(false);
         }
     }
@@ -2418,28 +2410,28 @@ class Helper {
         this.isMultiPlaneActive = isEnabled;
         this.displayMultiPlane(isEnabled);
         if (isEnabled) {
-            this.enableGridPlane(false);
-            this.enableWorkplane(false);
+            this.enableFloorPlane(false);
+            this.enableVolumePlane(false);
         }
     }
 
-    displayGridPlane(isEnabled) {
-        this.gridPlane.isVisible = isEnabled;
+    displayFloorPlane(isEnabled) {
+        this.floorPlane.isVisible = isEnabled;
         if (isEnabled) {
-            ui.domScreenGridPlane.firstChild.style.color = COL_ORANGE;
+            ui.domScreenFloorPlane.firstChild.style.color = COL_ORANGE;
         } else {
-            ui.domScreenGridPlane.firstChild.style.color = COL_AQUA;
+            ui.domScreenFloorPlane.firstChild.style.color = COL_AQUA;
         }
     }
 
-    displayWorkplane(isEnabled) {
-        this.workplaneX.isVisible = isEnabled;
-        this.workplaneY.isVisible = isEnabled;
-        this.workplaneZ.isVisible = isEnabled;
+    displayVolumePlane(isEnabled) {
+        this.volumePlaneX.isVisible = isEnabled;
+        this.volumePlaneY.isVisible = isEnabled;
+        this.volumePlaneZ.isVisible = isEnabled;
         if (isEnabled) {
-            ui.domScreenWorkplane.firstChild.style.color = COL_ORANGE;
+            ui.domScreenVolumePlane.firstChild.style.color = COL_ORANGE;
         } else {
-            ui.domScreenWorkplane.firstChild.style.color = COL_AQUA;
+            ui.domScreenVolumePlane.firstChild.style.color = COL_AQUA;
         }
     }
 
@@ -2470,15 +2462,15 @@ class Helper {
         this.multiPlane.rotation.z = 0;
     }
 
-    toggleWorkplane(id) {
+    toggleWorkplanes(id) {
         if (id == 0) {
-            this.isGridPlaneActive = !this.isGridPlaneActive;
-            this.displayGridPlane();
-            this.enableGridPlane(this.isGridPlaneActive);
+            this.isFloorPlaneActive = !this.isFloorPlaneActive;
+            this.displayFloorPlane();
+            this.enableFloorPlane(this.isFloorPlaneActive);
         } else if (id == 1) {
-            this.isWorkplaneActive = !this.isWorkplaneActive;
-            this.displayWorkplane();
-            this.enableWorkplane(this.isWorkplaneActive);
+            this.isVolumePlaneActive = !this.isVolumePlaneActive;
+            this.displayVolumePlane();
+            this.enableVolumePlane(this.isVolumePlaneActive);
         } else if (id == 2) {
             this.isMultiPlaneActive = !this.isMultiPlaneActive;
             this.displayMultiPlane();
@@ -2500,30 +2492,30 @@ class Helper {
         }
     }
 
-    setAxisPlane(axis) {
-        this.axisPlane.isVisible = true;
-        this.axisPlane.rotation.copyFrom(VEC3_ZERO);
+    setSymmPlane(axis) {
+        this.symmPlane.isVisible = true;
+        this.symmPlane.rotation.copyFrom(VEC3_ZERO);
         if (axis.x == 1) {
-            this.axisPlane.rotation.y = PIH;
-            this.axisPlane.overlayColor = COL_AXIS_X_RGB;
-            this.axisPlane.edgesColor = COL_AXIS_X_RGBA;
+            this.symmPlane.rotation.y = PIH;
+            this.symmPlane.overlayColor = COL_AXIS_X_RGB;
+            this.symmPlane.edgesColor = COL_AXIS_X_RGBA;
         }
         else if (axis.y == 1) {
-            this.axisPlane.rotation.x = PIH;
-            this.axisPlane.overlayColor = COL_AXIS_Y_RGB;
-            this.axisPlane.edgesColor = COL_AXIS_Y_RGBA;
+            this.symmPlane.rotation.x = PIH;
+            this.symmPlane.overlayColor = COL_AXIS_Y_RGB;
+            this.symmPlane.edgesColor = COL_AXIS_Y_RGBA;
         }
         else if (axis.z == 1) {
-            this.axisPlane.rotation.z = PIH;
-            this.axisPlane.overlayColor = COL_AXIS_Z_RGB;
-            this.axisPlane.edgesColor = COL_AXIS_Z_RGBA;
+            this.symmPlane.rotation.z = PIH;
+            this.symmPlane.overlayColor = COL_AXIS_Z_RGB;
+            this.symmPlane.edgesColor = COL_AXIS_Z_RGBA;
         }
-        this.axisPlane.edgesColor.a = 0.6;
+        this.symmPlane.edgesColor.a = 0.6;
     }
 
-    toggleAxisPlane(isVisible) {
-        this.axisPlane.isVisible = isVisible;
+    toggleSymmHelpers(isVisible) {
         this.symmPivot.isVisible = isVisible;
+        this.symmPlane.isVisible = isVisible;
     }
 
     setOverlayPlane(pos, norm, scale) {
@@ -2631,13 +2623,13 @@ class Symmetry {
 
     setAxis(axis) {
         this.axis = axis;
-        helper.toggleAxisPlane(false);
+        helper.toggleSymmHelpers(false);
         helper.setSymmPivot();
 
         const btnCol = getStyleRoot('--btn-color');
 
         if (axis == AXIS_X) {
-            helper.setAxisPlane(AXIS_X);
+            helper.setSymmPlane(AXIS_X);
             ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = COL_AXIS_X;
             ui.domSymmAxisY.style.color = btnCol;
@@ -2645,7 +2637,7 @@ class Symmetry {
             ui.domScreenSymmAxis.innerHTML = 'X';
             ui.domScreenSymmAxis.style.color = COL_AXIS_X;
         } else if (axis == AXIS_Y) {
-            helper.setAxisPlane(AXIS_Y);
+            helper.setSymmPlane(AXIS_Y);
             ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = btnCol;
             ui.domSymmAxisY.style.color = COL_AXIS_Y;
@@ -2653,7 +2645,7 @@ class Symmetry {
             ui.domScreenSymmAxis.innerHTML = 'Y';
             ui.domScreenSymmAxis.style.color = COL_AXIS_Y;
         } else if (axis == AXIS_Z) {
-            helper.setAxisPlane(AXIS_Z);
+            helper.setSymmPlane(AXIS_Z);
             ui.domSymmAxisS.style.color = btnCol;
             ui.domSymmAxisX.style.color = btnCol;
             ui.domSymmAxisY.style.color = btnCol;
@@ -3472,11 +3464,11 @@ class Tool {
     }
 
     predicateWorkplane(mesh) {
-        if (helper.isGridPlaneActive && helper.gridPlane.isVisible)
-            return mesh === helper.gridPlane;
-        if (helper.isWorkplaneActive)
-            if (helper.workplaneX.isVisible || helper.workplaneY.isVisible || helper.workplaneZ.isVisible)
-                return mesh === helper.workplaneX || mesh === helper.workplaneY || mesh === helper.workplaneZ;
+        if (helper.isFloorPlaneActive && helper.floorPlane.isVisible)
+            return mesh === helper.floorPlane;
+        if (helper.isVolumePlaneActive)
+            if (helper.volumePlaneX.isVisible || helper.volumePlaneY.isVisible || helper.volumePlaneZ.isVisible)
+                return mesh === helper.volumePlaneX || mesh === helper.volumePlaneY || mesh === helper.volumePlaneZ;
         if (helper.isMultiPlaneActive && helper.multiPlane.isVisible)
             return mesh === helper.multiPlane;
         return undefined;
@@ -3506,7 +3498,7 @@ class Tool {
         return new Promise(resolve => {
 
             this.isWorkplaneOnly = ui.domOptionsScreenWorkplaneOnly.checked &&
-                                   (helper.isGridPlaneActive || helper.isWorkplaneActive || helper.isMultiPlaneActive) &&
+                                   (helper.isFloorPlaneActive || helper.isVolumePlaneActive || helper.isMultiPlaneActive) &&
                                    workplaneOnlyWhiteList.includes(this.name);
 
             if (this.isWorkplaneOnly) {
@@ -3814,7 +3806,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.6",
+            version: "Voxel Builder 4.7.7",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4643,17 +4635,15 @@ class PostProcessEffect {
         EffectShadersStore["fxFragmentShader"] = document.getElementById(`${ preferences.getPostProcessValue() }FragmentShader`).textContent;
         
         this.effect = PostProcess('fx', camera.camera0,
-            [ 'uRes', 'uTime', 'uSamples', 'uCamPos', 'uLightPos' ]);
+            [ 'uRes', 'uTime' ],
+            [ 'textureSampler' ]);
 
         this.effect.autoClear = true;
         this.effect._samples = parseInt(preferences.getPostProcessSamples());
 
         this.effect.onApply = (effect) => {
             effect.setVector2("uRes", Vector2(engine.engine.getRenderWidth(), engine.engine.getRenderHeight()));
-            effect.setFloat("uTime", performance.now());
-            effect.setInt("uSamples", this.effect._samples);
-            effect.setVector3("uCamPos", camera.camera0.position);
-            effect.setVector3("uLightPos", light.directional.position);
+            effect.setFloat("uTime", performance.now() / 1000);
         };
     }
 
@@ -4663,13 +4653,12 @@ class PostProcessEffect {
     }
 
     attach() {
-        if (this.effect) {
+        if (this.effect && this.effect._reusable) {
             camera.camera0.attachPostProcess(this.effect);
             this.effect._reusable = false;
         }
     }
 
-    // never leave it on detach mode, use dispose instead
     detach() {
         if (this.effect) {
             this.effect._reusable = true; 
@@ -4706,8 +4695,8 @@ class UserInterface {
         this.domToolbarScreenExport = document.getElementById('toolbar-screen-export');
         this.domScreenSymmAxis = document.getElementById('btn-screen-symmetry');
         this.domScreenOrtho = document.getElementById('btn-screen-ortho');
-        this.domScreenGridPlane = document.getElementById('btn-screen-gridplane');
-        this.domScreenWorkplane = document.getElementById('btn-screen-workplane');
+        this.domScreenFloorPlane = document.getElementById('btn-screen-floorplane');
+        this.domScreenVolumePlane = document.getElementById('btn-screen-volumeplane');
         this.domScreenMultiPlane = document.getElementById('btn-screen-multiplane');
         this.domScreenLightLocator = document.getElementById('btn-screen-lightlocator');
         this.domHover = document.getElementById('hover');
@@ -4844,7 +4833,7 @@ class UserInterface {
             this.domToolbarScreenMaterial.children[3].style.pointerEvents = 'none';
             this.domToolbarScreenToggles.style.display = 'flex';
             this.domToolbarScreenToggles.children[2].style.display = 'none';
-            this.domToolbarScreenToggles.children[4].style.display = 'none';
+            this.domToolbarScreenToggles.children[5].style.display = 'none';
 
             this.domInfo[3].style.display = 'none';
             this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
@@ -5051,7 +5040,7 @@ class UserInterface {
             appendTo: ui.domColorWheel,
             hex: tool.currentColor,
             wheelDiameter: 112,
-            wheelThickness: 16,
+            wheelThickness: 14,
             handleDiameter: 10,
             wheelReflectsSaturation: false,
 
@@ -5300,7 +5289,7 @@ class UserInterfaceAdvanced {
         this.lightNode.doNotSerialize = true;
 
         this.lightGizmoUp = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 2);
-        this.lightGizmoUp.scaleRatio = 0.7;
+        this.lightGizmoUp.scaleRatio = 0.8;
         this.lightGizmoUp.sensitivity = 5.0;
         this.lightGizmoUp.attachedMesh = null;
         this.lightGizmoUp.uniformScaling = true;
@@ -5320,6 +5309,7 @@ class UserInterfaceAdvanced {
         this.lightGizmoNews = PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
         this.lightGizmoNews.scaleRatio = 0.6;
         this.lightGizmoNews.attachedMesh = null;
+        this.lightGizmoNews._gizmoMesh.scaling.z *= 5;
         this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
         this.lightGizmoNews.dragBehavior.onDragObservable.add(() => {
             light.updateAngle(this.lightNode.rotation.y * 180 / Math.PI);
@@ -5370,8 +5360,8 @@ class UserInterfaceAdvanced {
             });
         this.multiPlaneGizmos[0].attachedMesh = helper.multiPlane;
 
-        this.multiPlaneGizmos[1] = AxisScaleGizmo(AXIS_X, COL_AQUA_RGB, this.utilLayer, 8);
-        this.multiPlaneGizmos[1].scaleRatio = -0.3;
+        this.multiPlaneGizmos[1] = AxisScaleGizmo(AXIS_X, COL_AQUA_RGB, this.utilLayer, 5);
+        this.multiPlaneGizmos[1].scaleRatio = -0.4;
         this.multiPlaneGizmos[1].attachedMesh = helper.multiPlane;
         this.multiPlaneGizmos[1].updateGizmoRotationToMatchAttachedMesh = false;
         this.multiPlaneGizmos[1].dragBehavior.onDragStartObservable.add(() => {
@@ -5381,8 +5371,8 @@ class UserInterfaceAdvanced {
             helper.rotateMultiPlane(AXIS_X);
         });
 
-        this.multiPlaneGizmos[2] = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 8);
-        this.multiPlaneGizmos[2].scaleRatio = -0.3;
+        this.multiPlaneGizmos[2] = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 5);
+        this.multiPlaneGizmos[2].scaleRatio = -0.4;
         this.multiPlaneGizmos[2].attachedMesh = helper.multiPlane;
         this.multiPlaneGizmos[2].updateGizmoRotationToMatchAttachedMesh = false;
         this.multiPlaneGizmos[2].dragBehavior.onDragStartObservable.add(() => {
@@ -5392,8 +5382,8 @@ class UserInterfaceAdvanced {
             helper.rotateMultiPlane(AXIS_Y);
         });
 
-        this.multiPlaneGizmos[3] = AxisScaleGizmo(AXIS_Z, COL_AQUA_RGB, this.utilLayer, 8);
-        this.multiPlaneGizmos[3].scaleRatio = -0.3;
+        this.multiPlaneGizmos[3] = AxisScaleGizmo(AXIS_Z, COL_AQUA_RGB, this.utilLayer, 5);
+        this.multiPlaneGizmos[3].scaleRatio = -0.4;
         this.multiPlaneGizmos[3].attachedMesh = helper.multiPlane;
         this.multiPlaneGizmos[3].updateGizmoRotationToMatchAttachedMesh = false;
         this.multiPlaneGizmos[3].dragBehavior.onDragStartObservable.add(() => {
@@ -5402,6 +5392,22 @@ class UserInterfaceAdvanced {
             setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
             helper.rotateMultiPlane(AXIS_Z);
         });
+
+        this.multiPlaneGizmos[4] = AxisScaleGizmo(AXIS_Y, COL_PINK_RGB, this.utilLayer, 8);
+        this.multiPlaneGizmos[4].scaleRatio = -0.3;
+        this.multiPlaneGizmos[4].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[4].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[4].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[4].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
+            helper.resetMultiPlane();
+        });
+
+        this.multiPlaneGizmos[4+1] = CreateBox("gizmo_handle_remove_multiplane", 0.04, FRONTSIDE, this.utilLayer.utilityLayerScene);
+        this.multiPlaneGizmos[4+1].material = material.mat_white.clone();
+        helper.highlightOverlayMesh(this.multiPlaneGizmos[4+1], COL_PINK_RGB, 1);
+        this.multiPlaneGizmos[4].setCustomMesh(this.multiPlaneGizmos[4+1])
     }
 
     unbindMultiPlane() {
@@ -5519,6 +5525,8 @@ class Preferences {
                 pool.replaceTextures();
                 if (modules.sandbox.isActive())
                     modules.sandbox.updateMeshes();
+            } else {
+                material.setVoxelTextureNoPBR();
             }
         });
 
@@ -5565,10 +5573,7 @@ class Preferences {
         modules.translator.init();
         modules.confirm.init();
         
-        if (this.isMinimal()) {
-            document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
-            material.updateShaderMaterials();
-        } else {
+        if (!this.isMinimal()) {
             modules.sandbox.init();
         }
 
@@ -5785,7 +5790,7 @@ window.addEventListener('pointerdown', (ev) => {
     pointer.isDown = true;
     pointer.isWheel = false;
     clearTimeout(pointer.wheelTimeout);
-    if (ev.target === engine.canvas && !axisView.registerEvent() && !uix.isActive()) {
+    if (ev.buttons == 1 && ev.target === engine.canvas && !axisView.registerEvent() && !uix.isActive()) {
         ev.preventDefault();
         if (MODE == 0) {
             renderTarget.point.x = Math.floor(pointer.x);
@@ -6121,16 +6126,16 @@ ui.domToolbarScreenExport.children[1].onclick = () => {
     project.exportMeshes(ui.domProjectName.value, 'glb');
 };
 
-ui.domScreenGridPlane.onclick = () => {
-    helper.toggleWorkplane(0);
+ui.domScreenFloorPlane.onclick = () => {
+    helper.toggleWorkplanes(0);
 };
 
-ui.domScreenWorkplane.onclick = () => {
-    helper.toggleWorkplane(1);
+ui.domScreenVolumePlane.onclick = () => {
+    helper.toggleWorkplanes(1);
 };
 
 ui.domScreenMultiPlane.onclick = () => {
-    helper.toggleWorkplane(2);
+    helper.toggleWorkplanes(2);
 };
 
 ui.domScreenLightLocator.onclick = () => {
@@ -6186,10 +6191,6 @@ document.getElementById('btn_action_fullscreen').onclick = () => {
 document.getElementById('btn_action_reloadapp').onclick = async (ev) => {
     if (await ui.confirm(ev.target))
         window.location.reload();
-};
-
-document.getElementById('btn_action_resetmultiplane').onclick = () => {
-    helper.resetMultiPlane();
 };
 
 // File
@@ -6396,10 +6397,14 @@ ui.domRenderShade.onchange = () => {
 
 ui.domRenderPlane.onchange = () => {
     modules.sandbox.updatePlane();
+    modules.sandbox.updateMaterials();
+    modules.sandbox.updateSceneOnce();
 };
 
 ui.domRenderPlaneColor.onchange = () => {
     modules.sandbox.updatePlane();
+    modules.sandbox.updateMaterials();
+    modules.sandbox.updateSceneOnce();
 };
 
 document.getElementById('btn_action_hdr_dropdown').onchange = (ev) => {
@@ -6619,15 +6624,23 @@ document.getElementById('btn_tool_measure_volume').onclick = () => {
 
 document.getElementById('btn_action_normalize').onclick = async (ev) => {
     if (ui.checkMode(0) && await ui.confirm(ev.target)) {
-        builder.normalizeVoxelPositions();
+        builder.normalizePositionsAction();
         camera.flagFrame = 1;
         ui.notification('normalized', 1000);
     }
 };
 
+document.getElementById('btn_action_centralize').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target)) {
+        builder.centralizePositionsAction();
+        camera.flagFrame = 1;
+        ui.notification('centralized', 1000);
+    }
+};
+
 document.getElementById('btn_action_optimize').onclick = async (ev) => {
     if (ui.checkMode(0) && await ui.confirm(ev.target))
-        builder.optimizeVoxelsAndUpdate();
+        builder.optimizeVoxelsAction();
 };
 
 // Groups
@@ -6662,15 +6675,10 @@ document.getElementById('btn_action_unhideall').onclick = () => {
 };
 
 ui.domGroupSliceY.oninput = (ev) => {
-    if (ui.checkMode(0) && ev.target.value !== '') {
+    if (ui.checkMode(0)) {
         builder.setVoxelsVisibilityBySliceY(parseInt(ev.target.value));
         builder.create();
     }
-};
-
-ui.domGroupSliceY.onwheel = () => {
-    if (ui.checkMode(0))
-        ui.domGroupSliceY.dispatchEvent(new Event('input', { bubbles: true }));
 };
 
 document.getElementById('btn_action_getmultiplane').onclick = () => {

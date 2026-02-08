@@ -254,19 +254,18 @@
             ::-webkit-scrollbar-thumb:hover { background: steelblue; }
         }
 
-        .cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
-        .cube-faces { transform-style: preserve-3d; height: 30px; width: 30px; position: relative; }
+        .cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 3s infinite; }
+        .cube-faces { transform-style: preserve-3d; height: 35px; width: 35px; position: relative; }
         .cube-face { position: absolute; inset: 0; border: solid 1px orange; box-shadow: inset 0 0 20px #FFA50030; outline: 1px solid transparent; }
-        .cube-face.shadow { transform: translateZ(-25px) scale(1.3); background: #11111130; border-color: #11111140; box-shadow: none; }
-        .cube-face.top { transform: translateZ(30px); }
+        .cube-face.shadow { transform: translateZ(-15px) scale(1.2); background: #11111130; border-color: #11111140; box-shadow: none; }
+        .cube-face.top { transform: translateZ(35px); }
         .cube-face.front { transform-origin: 0 50%; transform: rotateY(-90deg); }
-        .cube-face.back { transform-origin: 0 50%; transform: rotateY(-90deg) translateZ(-30px); }
-        .cube-face.right { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px); }
-        .cube-face.left { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-30px) translateZ(30px); }
+        .cube-face.back { transform-origin: 0 50%; transform: rotateY(-90deg) translateZ(-35px); }
+        .cube-face.right { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-35px); }
+        .cube-face.left { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-35px) translateZ(35px); }
         @keyframes rotation {
-            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.1, 0.8, 0.4, 1); }
-            50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.7, 0.1, 0.8, 0); }
-            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.1, 0.8, 0.4, 1); }
+            0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.1, 0.2, 0.3, 1); }
+            100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.2, 0.3, 0.4, 1); }
         }
 
         .reinvented-color-wheel,
@@ -313,7 +312,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.7.6 BETA
+                &#8627; 4.7.7 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -375,6 +374,8 @@
             <li class="category">SCENE</li>
             <li class="row_color"><label for="pref_background_check">BG</label> <input type="color" id="pref_background_color" value="#151515"> <input type="checkbox" id="pref_background_check" style="width: 57px;"></li>
             <li class="row_color" title="General shade color is widely distributed throughout the app."><label>Shade</label><input type="color" id="pref_render_shade" value="#90A0B3"><button style="width: 52px; height: 20px;" title="Reset" onclick="this.previousElementSibling.value = '#90A0B3'; this.previousElementSibling.dispatchEvent(new Event('input', { bubbles: true }));">R</button></li>
+            <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
+            <li class="category">RENDER</li>
             <li class="row">
                 <label style="margin-right: 7px">Texture</label> <select id="pref_voxel_texture">
                     <option value="0">None</option>
@@ -388,11 +389,8 @@
                     <option value="fxOutline">Outline</option>
                 </select>
             </li>
+            <li class="spacer"></li>
             <li class="row_input" title="PostFX Samples"><label>Samples</label> <input type="range" id="pref_scene_postfx_samples" class="ignorekeys" value="2" min="1" max="8" step="1"></li>
-            <li class="spacer"></li>
-            <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
-            <li class="spacer"></li>
-            <li><button id="btn_action_resetmultiplane">Reset MultiPlane</button></li>
         </ul>
 
         <ul class="menu panel" id="menu-file">
@@ -645,9 +643,11 @@
             <li title="Island: Treats the corners as a connected island"><input type="checkbox" id="input-transform-island-connected" checked> <label for="input-transform-island-connected">Add Connected</label></li>
             <li><label class="help">? Apply: Enter<br>? Clone: Shift<br>? Delete: Del<br>? Camera: F<br>? Paintable<br>? No Symmetry</label></li>
             <li class="category">MANIPULATE</li>
-            <li><button id="btn_tool_measure_volume" class="tool tool_measure_volume">Measure Volume</button></li>
             <li><button id="btn_action_normalize">Normalize Voxels</button></li>
+            <li><button id="btn_action_centralize">Centralize Voxels</button></li>
             <li><button id="btn_action_optimize">Optimize Voxels</button></li>
+            <li class="spacer"></li>
+            <li><button id="btn_tool_measure_volume" class="tool tool_measure_volume">Measure Volume</button></li>
         </ul>
 
         <ul class="menu panel" id="menu-groups">
@@ -757,8 +757,8 @@
     </ul>
 
     <ul id="toolbar-screen-toggles">
-        <li><button id="btn-screen-gridplane" title="Grid Plane"><i class="material-icons">grid_4x4</i></button></li>
-        <li><button id="btn-screen-workplane" title="Workplane 3D"><i class="material-icons">grid_on</i></button></li>
+        <li><button id="btn-screen-floorplane" title="Floor Plane"><i class="material-icons">grid_4x4</i></button></li>
+        <li><button id="btn-screen-volumeplane" title="Volume Plane"><i class="material-icons">grid_on</i></button></li>
         <li><button id="btn-screen-multiplane" title="Multi Plane"><i class="material-icons">grid_goldenratio</i></button></li>
         <li><button id="btn-screen-lightlocator" title="Light Locator"><i class="material-icons">tungsten</i></button></li>
         <li><button id="btn-screen-symmetry" title="Symmetry">S</button></li>
@@ -983,7 +983,7 @@
         return sqrt(Gx*Gx + Gy*Gy);
     }
 
-    void main(void) {
+    void main() {
         vec2 uv = gl_FragCoord.xy / uRes.xy;
 
         vec3 sb = sobel(textureSampler, uv);
