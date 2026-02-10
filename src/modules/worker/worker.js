@@ -13,7 +13,7 @@ onmessage = (ev) => {
     switch (ev.data.id) {
 
         case 'init':
-            console.log('worker created');
+            console.log('init worker');
             break;
 
         
@@ -96,7 +96,34 @@ onmessage = (ev) => {
                 if (idx[0] > -1 && idx[1] > -1 && idx[2] > -1 && idx[3] > -1 && idx[4] > -1 && idx[5] > -1)
                     continue;
                 else
-                    arr.push(ev.data.data[0][i]);
+                    arr.push({
+                        x: ev.data.data[0][i].position._x,
+                        y: ev.data.data[0][i].position._y,
+                        z: ev.data.data[0][i].position._z,
+                        color: ev.data.data[0][i].color
+                    });
+            }
+            postMessage(arr);
+            arr = [];
+            break;
+
+
+        case 'upsampleVoxels':
+            arr = [];
+            const factor = 2;
+            for (let i = 0; i < ev.data.voxels.length; i++) {
+                for (let dx = 0; dx < factor; dx++) {
+                    for (let dy = 0; dy < factor; dy++) {
+                        for (let dz = 0; dz < factor; dz++) {
+                            arr.push({
+                                x: ev.data.voxels[i].position._x * factor + dx,
+                                y: ev.data.voxels[i].position._y * factor + dy,
+                                z: ev.data.voxels[i].position._z * factor + dz,
+                                color: ev.data.voxels[i].color
+                            });
+                        }
+                    }
+                }
             }
             postMessage(arr);
             arr = [];

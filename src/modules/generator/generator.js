@@ -8,7 +8,7 @@
 
 import { SimplexNoise } from '../../libs/addons/SimplexNoise.js';
 import { Vector3 } from '../babylon.js';
-import { builder, preferences } from '../core.js';
+import { builder, tool, preferences } from '../core.js';
 
 
 class Generator {
@@ -89,6 +89,7 @@ class Generator {
     }
 
     createSphere() {
+        const useInnerColor = document.getElementById('create_sphere_inner_color').checked;
         const outer = parseInt(document.getElementById('create_sphere_outer').value);
         let inner = parseInt(document.getElementById('create_sphere_inner').value);
         if (inner >= outer) {
@@ -112,6 +113,14 @@ class Generator {
             return (rrmin <= rr) && (rr <= rrmax);
         }
 
+        function isCore(x, y, z) {
+            const dx = 2*x - center;
+            const dy = 2*y - center;
+            const dz = 2*z - center;
+            const rr = dx*dx + dy*dy + dz*dz;
+            return (rrmin >= rr) && (rr <= rrmax);
+        }
+
         for (let z = 0; z < outer; z++) {
             for (let y = 0; y < outer; y++) {
                 for (let x = 0; x < outer; x++) {
@@ -119,6 +128,13 @@ class Generator {
                         data.push({
                             position: Vector3(x, y, z),
                             color: color,
+                            visible: true
+                        });
+                    }
+                    if (useInnerColor && isCore(x, y, z)) {
+                        data.push({
+                            position: Vector3(x, y, z),
+                            color: tool.currentColor,
                             visible: true
                         });
                     }

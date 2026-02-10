@@ -27,36 +27,16 @@ class Palette {
         this.canvas.height = this.canvas.clientHeight;
 
         this.canvas.addEventListener("pointerdown", (ev) => {
-            const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
-            if (hex && builder.uniqueColors.includes(hex))
-                ui.colorWheel.hex = hex;
+            this.selectColor(ev.offsetX, ev.offsetY);
         }, false);
                 
         this.canvas.addEventListener("contextmenu", (ev) => {
             ev.preventDefault();
-            if (xformer.isActive) return;
-            const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
-            if (hex && builder.uniqueColors.includes(hex)) {
-                const index = builder.invisibleColors.indexOf(hex);
-                (index > -1) ?
-                    builder.invisibleColors.splice(index, 1) :
-                    builder.invisibleColors.push(hex);
-                builder.setVoxelsVisibilityByColor(hex, index > -1);
-                builder.create();
-            }
+            this.hideColor(ev.offsetX, ev.offsetY);
         }, false);
 
         this.canvas.addEventListener("dblclick", (ev) => {
-            if (xformer.isActive) return;
-            const hex = this.getCanvasColor(this.ctx, ev.offsetX, ev.offsetY);
-            if (hex && builder.uniqueColors.includes(hex)) {
-                const index = builder.invisibleColors.indexOf(hex);
-                (index > -1) ?
-                    builder.invisibleColors.splice(index, 1) :
-                    builder.invisibleColors.push(hex);
-                builder.setVoxelsVisibilityByColor(hex, index > -1);
-                builder.create();
-            }
+            this.hideColor(ev.offsetX, ev.offsetY);
         }, false);
 
         new ResizeObserver(() => {
@@ -99,6 +79,25 @@ class Palette {
         }
         this.ctx.fillStyle = hex;
         this.ctx.fillRect(x, y, this.width, this.height);
+    }
+
+    selectColor(x, y) {
+        const hex = this.getCanvasColor(this.ctx, x, y);
+        if (hex && builder.uniqueColors.includes(hex))
+            ui.colorWheel.hex = hex;
+    }
+
+    hideColor(x, y) {
+        if (xformer.isActive) return;
+        const hex = this.getCanvasColor(this.ctx, x, y);
+        if (hex && builder.uniqueColors.includes(hex)) {
+            const index = builder.invisibleColors.indexOf(hex);
+            (index > -1) ?
+                builder.invisibleColors.splice(index, 1) :
+                builder.invisibleColors.push(hex);
+            builder.setVoxelsVisibilityByColor(hex, index > -1);
+            builder.create();
+        }
     }
 
     getCanvasColor(context, x, y) {

@@ -83,10 +83,9 @@ import * as modules from './modules.js';
 
 const DEBUG_GPU_PROBE = false;
 
-const ENVMAP = "assets/overcast_soil_puresky_1k.hdr";
-const IMG_SNAPSHOT = "data:image/png;base64,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";
-const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAMAAABFaP0WAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ODg4NzQ1MjgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4ODg4NzQ1MzgxNEExMUVEQjVDQTlGMzY0ODY0NzdERiI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg4ODg3NDUwODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg4ODg3NDUxODE0QTExRURCNUNBOUYzNjQ4NjQ3N0RGIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+xCfx0wAAAAZQTFRF////AAAAVcLTfgAAAA5JREFUeNpiYAABgAADAAAGAAHgQhFOAAAAAElFTkSuQmCC";
-const TEX_CHECKER = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB3aWR0aD0iMjU2IgogICBoZWlnaHQ9IjI1NiIKICAgdmlld0JveD0iMCAwIDY3LjczMzMzNSA2Ny43MzMzMzUiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzEiCiAgIGlua3NjYXBlOnZlcnNpb249IjEuNC4zICgwZDE1Zjc1LCAyMDI1LTEyLTI1KSIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgc29kaXBvZGk6ZG9jbmFtZT0idGV4X2NoZWNrZXIuc3ZnIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48c29kaXBvZGk6bmFtZWR2aWV3CiAgICAgaWQ9Im5hbWVkdmlldzEiCiAgICAgcGFnZWNvbG9yPSIjMjAyMDIwIgogICAgIGJvcmRlcmNvbG9yPSIjN2Y3ZjdmIgogICAgIGJvcmRlcm9wYWNpdHk9IjEiCiAgICAgaW5rc2NhcGU6c2hvd3BhZ2VzaGFkb3c9IjAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgICAgaW5rc2NhcGU6cGFnZWNoZWNrZXJib2FyZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6ZGVza2NvbG9yPSIjMzMzOTNiIgogICAgIGlua3NjYXBlOmRvY3VtZW50LXVuaXRzPSJweCIKICAgICBzaG93Z3VpZGVzPSJ0cnVlIgogICAgIHNob3dncmlkPSJmYWxzZSIKICAgICBpbmtzY2FwZTp6b29tPSIyIgogICAgIGlua3NjYXBlOmN4PSIxMjYuMjUiCiAgICAgaW5rc2NhcGU6Y3k9IjEzNyIKICAgICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJsYXllcjEiCiAgICAgc2hvd2JvcmRlcj0iZmFsc2UiIC8+PGRlZnMKICAgICBpZD0iZGVmczEiIC8+PGcKICAgICBpbmtzY2FwZTpsYWJlbD0iTGF5ZXIgMSIKICAgICBpbmtzY2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIGlkPSJsYXllcjEiPjx1c2UKICAgICAgIHg9IjAiCiAgICAgICB5PSIwIgogICAgICAgeGxpbms6aHJlZj0iI3JlY3QyIgogICAgICAgaWQ9InVzZTIiCiAgICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMy44NjY2NjMsLTMzLjg2NjY2NSkiIC8+PHJlY3QKICAgICAgIHN0eWxlPSJmaWxsOiNmZmZmZmY7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlOiNlNWU1ZTU7c3Ryb2tlLXdpZHRoOjEuNTg3NTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MTtwYWludC1vcmRlcjpzdHJva2UgZmlsbCBtYXJrZXJzIgogICAgICAgaWQ9InJlY3QyIgogICAgICAgd2lkdGg9IjMyLjU1NTIzMyIKICAgICAgIGhlaWdodD0iMzIuNTU1MjMzIgogICAgICAgeD0iMC42NTU3MTYxOCIKICAgICAgIHk9IjM0LjUyMjM4MSIKICAgICAgIGlua3NjYXBlOmxhYmVsPSJyZWN0MiIgLz48dXNlCiAgICAgICB4PSIwIgogICAgICAgeT0iMCIKICAgICAgIHhsaW5rOmhyZWY9IiNyZWN0MSIKICAgICAgIGlkPSJ1c2UxIgogICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzMuODY2NjYyLDMzLjg2NjY2MikiCiAgICAgICBzdHlsZT0ic3Ryb2tlLXdpZHRoOjEuMzIyOTI7c3Ryb2tlLWRhc2hhcnJheTpub25lO2ZpbGw6I2ZhZmFmYTtmaWxsLW9wYWNpdHk6MSIgLz48cmVjdAogICAgICAgc3R5bGU9ImZpbGw6I2YyZjJmMjtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6I2U1ZTVlNTtzdHJva2Utd2lkdGg6MS41ODc1O3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtzdHJva2Utb3BhY2l0eToxO3BhaW50LW9yZGVyOnN0cm9rZSBmaWxsIG1hcmtlcnMiCiAgICAgICBpZD0icmVjdDEiCiAgICAgICB3aWR0aD0iMzIuNTU1MjMzIgogICAgICAgaGVpZ2h0PSIzMi41NTUyMzMiCiAgICAgICB4PSIwLjY1NTcxNjE4IgogICAgICAgeT0iMC42NTU3MTYxOCIKICAgICAgIGlua3NjYXBlOmxhYmVsPSJyZWN0MSIgLz48cmVjdAogICAgICAgc3R5bGU9ImZpbGw6bm9uZTtmaWxsLW9wYWNpdHk6MTtmaWxsLXJ1bGU6ZXZlbm9kZDtzdHJva2U6I2Q5ZDlkOTtzdHJva2Utd2lkdGg6MC41Mzc4MjQ7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjE7cGFpbnQtb3JkZXI6c3Ryb2tlIGZpbGwgbWFya2VycyIKICAgICAgIGlkPSJyZWN0MyIKICAgICAgIHdpZHRoPSI2Ny4xOTkzNDEiCiAgICAgICBoZWlnaHQ9IjY3LjYwNTAxOSIKICAgICAgIHg9IjAuMjY3NjM0NDIiCiAgICAgICB5PSIwLjEyODMyMjMzIiAvPjwvZz48L3N2Zz4K";
+const ENVMAP = "./assets/hdr_overcast_soil_puresky_1k.hdr";
+const IMG_SNAPSHOT = "./assets/img_snapshot.png";
+const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAAXNSR0IB2cksfwAAAARnQU1BAACxjwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+oCCgwHIBNDbisAAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=";
 
 const COL_SCENE_BG = getStyleRoot('--scene');
 const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
@@ -679,7 +678,7 @@ class Light {
     constructor() {
         this.directional = undefined;
         this.location = Vector3(50, 100, 50);
-        this.angle = 70;
+        this.angle = 75;
     }
 
     init() {
@@ -690,7 +689,6 @@ class Light {
         this.directional.intensity = 0.8;
         this.directional.shadowMaxZ = 2500;
         this.directional.shadowMinZ = -2500;
-        this.directional.setDirectionToTarget(VEC3_ZERO);
         this.setLightPositionByAngle(this.angle, this.location.x);
 
         const shadowSize = isMobile ? 256 : 1024;
@@ -708,6 +706,10 @@ class Light {
         mainScene.shadowcatcher.material.activeLight = this.directional;
     }
 
+    addMesh(mesh) {
+        this.directional.getShadowGenerator().addShadowCaster(mesh);
+    }
+
     updateShadowMap() {
         this.directional.getShadowGenerator().getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
     }
@@ -716,6 +718,7 @@ class Light {
         this.setLightPositionByAngle(angle, this.location.x);
         this.updateShadowMap();
         material.updateShaderMaterials();
+        modules.sandbox.updateLights();
     }
     
     updateHeight(posY) {
@@ -723,6 +726,7 @@ class Light {
         this.directional.setDirectionToTarget(VEC3_ZERO);
         this.updateShadowMap();
         material.updateShaderMaterials();
+        modules.sandbox.updateLights();
     }
     
     updateIntensity(value) {
@@ -735,23 +739,15 @@ class Light {
         material.updateShaderMaterials();
     }
     
-    getDirection() {
-        return this.directional.direction;
-    }
-    
     enableShadows(isEnabled) {
         mainScene.shadowcatcher.isVisible = isEnabled;
         this.directional.shadowEnabled = isEnabled;
     }
 
-    addMesh(mesh) {
-        this.directional.getShadowGenerator().addShadowCaster(mesh);
-    }
-
     setLightPositionByAngle(angle, dist) {
-        scene.lights[1].position.x = Math.cos(angle * Math.PI / 180) * dist;
-        scene.lights[1].position.z = Math.sin(angle * Math.PI / 180) * dist;
-        scene.lights[1].setDirectionToTarget(VEC3_ZERO);
+        this.directional.position.x = Math.cos(angle * Math.PI / 180) * dist;
+        this.directional.position.z = Math.sin(angle * Math.PI / 180) * dist;
+        this.directional.setDirectionToTarget(VEC3_ZERO);
     }
 }
 
@@ -776,11 +772,13 @@ class Material {
     init() {
         this.textureMaps.push(TEX_NULL);
         this.textureMaps.push(this.createVoxelTexture());
-        this.textureMaps.push(TEX_CHECKER);
-        
+        this.textureMaps.push("./assets/tex_checker.png");
+        this.textureMaps.push("./assets/tex_minecraft.png");
+
         this.textures.push(this.loadTexture('tex_null', this.textureMaps[0], Texture_LINEAR_LINEAR_MIPLINEAR));
         this.textures.push(this.loadTexture('tex_grid', this.textureMaps[1], Texture_LINEAR_LINEAR_MIPLINEAR));
         this.textures.push(this.loadTexture('tex_checker', this.textureMaps[2], Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_minecraft', this.textureMaps[3], Texture_LINEAR_LINEAR_MIPLINEAR));
 
         this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
 
@@ -822,7 +820,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uCamPos", "uLightPos", "uLightCol", "uTextureId", "uTexture" ],
+                              "uLightPos", "uLightCol", "uTextureId", "uTexture" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             }
@@ -833,7 +831,6 @@ class Material {
     
     updateShaderMaterials() {
         if (this.mat_cel) {
-            this.mat_cel.setVector3("uCamPos", camera.camera0.position);
             this.mat_cel.setVector3("uLightPos", light.directional.position);
             this.mat_cel.setColor3("uLightCol", Color3(
                 (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
@@ -1009,6 +1006,7 @@ class Builder {
         this.invisibleColors = [];
 
         this.minY = Infinity;
+        this.maxY = -Infinity;
     }
 
     init() {
@@ -1038,23 +1036,8 @@ class Builder {
             if (preferences.isPointCloud())
                 ghosts.createPointCloud();
 
-            mainScene.shadowcatcher.position.y = this.minY;
             helper.setSymmPivot();
             modules.palette.create();
-        });
-    }
-
-    createXform(voxels) {
-        return new Promise(resolve => {
-            if (ui.domOptionsScreenNewScene.checked) {
-                this.voxels = voxels;
-                this.create();
-                project.resetSceneSetup();
-                resolve();
-            } else {
-                xformer.beginNew(voxels);
-                resolve();
-            }
         });
     }
 
@@ -1087,6 +1070,8 @@ class Builder {
                 renderTarget.pickTexture.setMaterialForRendering(this.mesh, material.mat_white);
                 
                 light.addMesh(this.mesh);
+                light.directional.position.y = this.maxY + 100;
+                mainScene.shadowcatcher.position.y = this.minY;
                 light.updateShadowMap();
             }
         });
@@ -1101,6 +1086,7 @@ class Builder {
         this.uniqueColors = [];
         this.invisibleColors = [];
         this.minY = Infinity;
+        this.maxY = -Infinity;
 
         for (let i = 0; i < this.voxels.length; i++) {
             const voxel = this.voxels[i];
@@ -1132,6 +1118,7 @@ class Builder {
                         this.invisibleColors.push(voxel.color);
                 }
                 
+                this.maxY = Math.max(this.maxY, voxel.position.y);
                 this.minY = Math.min(this.minY, voxel.position.y);
             }
 
@@ -1158,6 +1145,19 @@ class Builder {
                 this.uvs = msg.data[3];
                 this.colors = msg.data[4];
                 this.indices = msg.data[5];
+                resolve();
+            }
+        });
+    }
+
+    createXform(voxels) {
+        return new Promise(resolve => {
+            if (ui.domOptionsScreenNewScene.checked) {
+                this.createVoxelsFromArray(voxels);
+                project.resetSceneSetup();
+                resolve();
+            } else {
+                xformer.beginNew(voxels);
                 resolve();
             }
         });
@@ -1191,105 +1191,6 @@ class Builder {
             Math.abs(bounds.minimum.y - bounds.maximum.y),
             Math.abs(bounds.minimum.z - bounds.maximum.z)
         );
-    }
-
-    getDimensions() {
-        const positions = this.voxels.map(voxel => voxel.position);
-        const minX = Math.min(...positions.map(pos => pos.x));
-        const maxX = Math.max(...positions.map(pos => pos.x));
-        const minY = Math.min(...positions.map(pos => pos.y));
-        const maxY = Math.max(...positions.map(pos => pos.y));
-        const minZ = Math.min(...positions.map(pos => pos.z));
-        const maxZ = Math.max(...positions.map(pos => pos.z));
-        return Vector3(
-            maxX - minX + 1,
-            maxY - minY + 1,
-            maxZ - minZ + 1
-        );
-    }
-
-    isPositionInBoundingBox(position) {
-        const bounds = this.mesh.getBoundingInfo();
-        const min = bounds.boundingBox.minimumWorld;
-        const max = bounds.boundingBox.maximumWorld;
-        return (
-            position.x >= min.x && position.x <= max.x &&
-            position.y >= min.y && position.y <= max.y &&
-            position.z >= min.z && position.z <= max.z
-        );
-    }
-
-    normalizePositions(voxels, bounds) {
-        const size = Vector3(
-            Math.abs(bounds.minimum.x - bounds.maximum.x),
-            Math.abs(bounds.minimum.y - bounds.maximum.y),
-            Math.abs(bounds.minimum.z - bounds.maximum.z));
-            
-        const tMatrix = MatrixTranslation(
-            (-bounds.boundingBox.center.x + size.x / 2) - 0.5,
-            (size.y / 2 - bounds.boundingBox.center.y) - 0.5,
-            (-bounds.boundingBox.center.z + size.z / 2) - 0.5
-        );
-
-        const newArr = [];
-
-        for (let i = 0; i < voxels.length; i++) {
-            newArr.push({
-                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
-                color: voxels[i].color,
-                visible: voxels[i].visible
-            });
-        }
-
-        return newArr;
-    }
-
-    normalizePositionsBounds(voxels) {
-        ghosts.createThin(voxels);
-        const bounds = ghosts.thin.getBoundingInfo();
-        ghosts.disposeThin();
-        return this.normalizePositions(voxels, bounds);
-    }
-
-    centralizePositions(voxels, bounds) {
-        const tMatrix = MatrixTranslation(
-            -bounds.boundingBox.center.x - 0.5,
-            -bounds.boundingBox.center.y - 0.5,
-            -bounds.boundingBox.center.z - 0.5
-        );
-
-        const newArr = [];
-
-        for (let i = 0; i < voxels.length; i++) {
-            newArr.push({
-                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
-                color: voxels[i].color,
-                visible: voxels[i].visible
-            });
-        }
-
-        return newArr;
-    }
-
-    async optimizeVoxels(voxels) {
-        const msg = await modules.workerPool.postMessage({
-            id: 'findInnerVoxels',
-            data: [ voxels, this.positionsMap ]
-        });
-
-        if (msg) {
-            const data = [];
-            for (let i = 0; i < msg.data.length; i++) {
-                data.push({
-                    position: Vector3(msg.data[i].position._x, msg.data[i].position._y, msg.data[i].position._z),
-                    color: msg.data[i].color,
-                    visible: msg.data[i].visible
-                });
-            }
-            return data;
-        }
-
-        return undefined;
     }
 
     getIndexAtPointer() {
@@ -1414,15 +1315,15 @@ class Builder {
         return islands;
     }
 
-    findIndexByPosition(pos) { // no dup (pre-thin)
-        return this.voxels.findIndex(i =>
-            i.position.x == pos.x &&
-            i.position.y == pos.y &&
-            i.position.z == pos.z);
-    }
-
-    findIndexByColor(hex) { // no dup, unused (pre-thin)
-        return this.voxels.findIndex(i => i.color === hex);
+    isPositionInBoundingBox(position) {
+        const bounds = this.mesh.getBoundingInfo();
+        const min = bounds.boundingBox.minimumWorld;
+        const max = bounds.boundingBox.maximumWorld;
+        return (
+            position.x >= min.x && position.x <= max.x &&
+            position.y >= min.y && position.y <= max.y &&
+            position.z >= min.z && position.z <= max.z
+        );
     }
 
     add(pos, hex, visible) {
@@ -1431,11 +1332,6 @@ class Builder {
 
     addArray(arr) {
         this.voxels = this.voxels.concat(arr);
-    }
-
-    addNoDup(pos, hex, visible) {
-        if (this.findIndexByPosition(pos) == -1)
-            this.voxels.push({ position: pos, color: hex, visible: visible });
     }
 
     remove(voxel) {
@@ -1514,6 +1410,100 @@ class Builder {
         this.create();
     }
 
+    normalizePositions(voxels, bounds) {
+        const size = Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z));
+            
+        const tMatrix = MatrixTranslation(
+            (-bounds.boundingBox.center.x + size.x / 2) - 0.5,
+            (size.y / 2 - bounds.boundingBox.center.y) - 0.5,
+            (-bounds.boundingBox.center.z + size.z / 2) - 0.5
+        );
+
+        const newArr = [];
+
+        for (let i = 0; i < voxels.length; i++) {
+            newArr.push({
+                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
+                color: voxels[i].color,
+                visible: voxels[i].visible
+            });
+        }
+
+        return newArr;
+    }
+
+    normalizePositionsBounds(voxels) {
+        ghosts.createThin(voxels);
+        const bounds = ghosts.thin.getBoundingInfo();
+        ghosts.disposeThin();
+        return this.normalizePositions(voxels, bounds);
+    }
+
+    centralizePositions(voxels, bounds) {
+        const tMatrix = MatrixTranslation(
+            -bounds.boundingBox.center.x - 0.5,
+            -bounds.boundingBox.center.y - 0.5,
+            -bounds.boundingBox.center.z - 0.5
+        );
+
+        const newArr = [];
+
+        for (let i = 0; i < voxels.length; i++) {
+            newArr.push({
+                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
+                color: voxels[i].color,
+                visible: voxels[i].visible
+            });
+        }
+
+        return newArr;
+    }
+
+    async optimizeVoxels(voxels) {
+        const msg = await modules.workerPool.postMessage({
+            id: 'findInnerVoxels',
+            data: [ voxels, this.positionsMap ]
+        });
+
+        if (msg) {
+            const data = [];
+            for (let i = 0; i < msg.data.length; i++) {
+                data.push({
+                    position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                    color: msg.data[i].color,
+                    visible: true
+                });
+            }
+            return data;
+        }
+
+        return undefined;
+    }
+
+    async upsampleVoxels(voxels) {
+        const msg = await modules.workerPool.postMessage({
+            id: 'upsampleVoxels',
+            voxels: voxels
+        });
+
+        if (msg) {
+            const data = [];
+            for (let i = 0; i < msg.data.length; i++) {
+                data.push({
+                    position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                    color: msg.data[i].color,
+                    visible: true
+                });
+            }
+            return data;
+        }
+
+        return undefined;
+    }
+
     normalizePositionsAction() {
         const bounds = this.mesh.getBoundingInfo();
         const voxels = this.normalizePositions(this.voxels, bounds);
@@ -1541,7 +1531,21 @@ class Builder {
         });
     }
 
-    createGroupsByIslands() {
+    upsampleVoxelsAction() {
+        ui.showProgress(1);
+        setTimeout(async () => {
+            const voxels = await this.upsampleVoxels(this.voxels);
+            if (voxels) {
+                this.createVoxelsFromArray(voxels);
+                ui.notification(`upsampled to ${ this.voxels.length } voxels`);
+            } else {
+                ui.errorMessage('unable to upsampling voxels');
+            }
+            ui.showProgress(0);
+        });
+    }
+
+    groupByIslandAction() {
         for (let i = 0; i < this.voxels.length; i++)
             this.voxels[i].visible = true;
 
@@ -1993,7 +1997,7 @@ class MeshPool {
             const item = document.createElement('div');
             const name = document.createElement('div');
             name.classList.add('item_name');
-            name.innerHTML = "-";
+            name.innerHTML = "N/A";
             item.appendChild(name);
             ui.domMeshList.appendChild(item);
         }
@@ -2899,7 +2903,7 @@ class Tool {
     }
 
     bucketIsland(pos) {
-        const islands = builder.getVoxelsByIslands(pos, false);
+        const islands = builder.getVoxelsByIslands(pos, ui.domBucketIslandConnected.checked);
         if (islands.length > 0) {
             for (let i = 0; i < islands[0].length; i++) {
                 const idx = builder.getIndexAtPosition(islands[0][i]);
@@ -3806,7 +3810,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.7",
+            version: "Voxel Builder 4.7.8",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4045,7 +4049,10 @@ class Project {
                 } else {
                     for (let i = 0; i < msg.data.length; i++) {
                         voxels.push({ 
-                            position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                            position: Vector3(
+                                msg.data[i].x,
+                                msg.data[i].y,
+                                msg.data[i].z),
                             color: msg.data[i].color,
                             visible: true
                         });
@@ -4269,7 +4276,7 @@ class Snapshot {
             }
 
             btn_del.addEventListener("click", async () => {
-                if (img.src !== IMG_SNAPSHOT && !await ui.confirm()) return;
+                if (!await ui.confirm()) return;
                 img.src = IMG_SNAPSHOT;
                 this.delStorage(vbstoreSnapshots + i);
                 this.delStorage(vbstoreSnapshotsImages + i);
@@ -4277,7 +4284,7 @@ class Snapshot {
             }, false);
 
             btn_save.addEventListener("click", async () => {
-                if (!ui.checkMode(0) || img.src !== IMG_SNAPSHOT && !await ui.confirm()) return;
+                if (!ui.checkMode(0) || !btn_del.disabled && !await ui.confirm()) return;
                 project.createScreenshotBasic(img.clientWidth, img.clientHeight, (image) => {
                     const isQuotaAvailable = this.setStorageVoxels(vbstoreSnapshots + i);
                     if (isQuotaAvailable && localStorage.getItem(vbstoreSnapshots + i)) {
@@ -4290,7 +4297,7 @@ class Snapshot {
             }, false);
 
             img.addEventListener("click", async () => {
-                if (img.src !== IMG_SNAPSHOT && (ui.domOptionsScreenNewScene.checked && !await ui.confirm())) return;
+                if (!btn_del.disabled && (ui.domOptionsScreenNewScene.checked && !await ui.confirm())) return;
                 ui.setMode(0);
                 this.getStorageVoxels(vbstoreSnapshots + i);
             }, false);
@@ -4726,6 +4733,7 @@ class UserInterface {
         this.domTransformReactive = document.getElementById('input-transform-reactive');
         this.domTransformClone = document.getElementById('input-transform-clone');
         this.domTransformIslandConnected = document.getElementById('input-transform-island-connected');
+        this.domBucketIslandConnected = document.getElementById('input-tool-bucket-island-connected');
         this.domGroupSliceY = document.getElementById('input-group-slice-y');
         this.domGroupIslandsConnected = document.getElementById('input-groupislands-connected');
         this.domBakeryIslandsConnected = document.getElementById('input-bake-islands-connected');
@@ -4854,6 +4862,9 @@ class UserInterface {
         xformer.apply();
         pool.deselectMesh();
         helper.clearOverlays();
+
+        if (tool.name == 'bake_color')
+            tool.toolSelector('camera', false);
 
         if (mode == 0) {
             modules.sandbox.deactivate();
@@ -5296,7 +5307,6 @@ class UserInterfaceAdvanced {
         this.lightGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
         this.lightGizmoUp.dragBehavior.onDragObservable.add(() => {
             light.updateHeight(light.location.y / this.lightNode.scaling.x);
-            modules.sandbox.updateLights();
             helper.clearOverlays();
         });
         this.lightGizmoUp.dragBehavior.onDragStartObservable.add(() => {
@@ -5309,11 +5319,10 @@ class UserInterfaceAdvanced {
         this.lightGizmoNews = PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
         this.lightGizmoNews.scaleRatio = 0.6;
         this.lightGizmoNews.attachedMesh = null;
-        this.lightGizmoNews._gizmoMesh.scaling.z *= 5;
+        this.lightGizmoNews._gizmoMesh.scaling.z *= 10;
         this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
         this.lightGizmoNews.dragBehavior.onDragObservable.add(() => {
             light.updateAngle(this.lightNode.rotation.y * 180 / Math.PI);
-            modules.sandbox.updateLights();
             helper.clearOverlays();
         });
         this.lightGizmoNews.dragBehavior.onDragStartObservable.add(() => {
@@ -5413,6 +5422,8 @@ class UserInterfaceAdvanced {
     unbindMultiPlane() {
         if (this.multiPlaneGizmos.length > 0) {
             for (let i = 0; i < this.multiPlaneGizmos.length; i++) {
+                if (this.multiPlaneGizmos[i].material)
+                    this.multiPlaneGizmos[i].material.dispose();
                 this.multiPlaneGizmos[i].attachedMesh = null;
                 this.multiPlaneGizmos[i].dispose();
                 this.multiPlaneGizmos[i] = null;
@@ -6643,11 +6654,18 @@ document.getElementById('btn_action_optimize').onclick = async (ev) => {
         builder.optimizeVoxelsAction();
 };
 
+document.getElementById('btn_action_upsample').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target)) {
+        builder.upsampleVoxelsAction();
+        camera.flagFrame = 1;
+    }
+};
+
 // Groups
 
 document.getElementById('btn_action_groupislands').onclick = async (ev) => {
     if (ui.checkMode(0) && await ui.confirm(ev.target))
-        builder.createGroupsByIslands();
+        builder.groupByIslandAction();
 };
 
 document.getElementById('btn_tool_isolate_color').onclick = () => {

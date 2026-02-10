@@ -171,7 +171,7 @@ git reset --hard $HASH
 
 ## History
 ```
-↑ Upgrade in the Renaissance Bubble
+↑ Advancing to the Renaissance Bubble
 ↑ A fundamental overhaul of the core
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
@@ -193,7 +193,7 @@ Version 3.0.0 *(BJS 4)* to 4.2.2 *(BJS 6)*<br>
 ![screenshot](media/devshots.jpg?raw=true "Screenshot")
 
 ## License
-Code released under the [GNU license](https://github.com/nimadez/voxel-builder/blob/main/LICENSE).
+Code released under the [GPL-3.0 license](https://github.com/nimadez/voxel-builder/blob/main/LICENSE).
 
 ## Credits
 - [Babylon.js](https://www.babylonjs.com/)
