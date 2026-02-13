@@ -171,6 +171,7 @@ const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ];
 const PLANE_UVS = [ 0,1, 1,1, 1,0, 0,0 ];
 const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
+const isHosted = window.location.host === 'nimadez.github.io';
 const isMobile = isMobileDevice();
 const MAX_VOXELS_DRAW = isMobile ? 64000 : 256000;
 const MAX_SNAPSHOTS = 100;
@@ -232,6 +233,7 @@ class MainScene {
             this.shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
             this.shadowcatcher.material = ShadowOnlyMaterial('shadowcatcher', scene);
             this.shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
+            this.shadowcatcher.material.disableDepthWrite = true; // required by postFX
             //this.shadowcatcher.material.activeLight = light.directional; // later
             this.shadowcatcher.material.backFaceCulling = true;
             this.shadowcatcher.material.alpha = 0.1;
@@ -602,6 +604,24 @@ class Camera {
                this.lastPos[1] !== this.camera0.beta;
                //this.camera0.hasMoved; // counts animations
     }
+
+    isCameraFacingForward(tolerance = 0.001) {
+        const dir = camera.camera0.getForwardRay().direction.negate().normalize();
+        if (Math.abs(dir.x - 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.x + 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.y - 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.y + 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.z - 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.z + 1.0) < tolerance) {
+            return true;
+        }
+        return false;
+    }
 }
 
 
@@ -820,7 +840,7 @@ class Material {
             }, {
                 attributes: [ "position", "normal", "uv", "color" ],
                 uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
-                              "uLightPos", "uLightCol", "uTextureId", "uTexture" ],
+                              "uCamPos", "uLightDir", "uLightCol", "uTextureId", "uTexture" ],
                 needAlphaBlending: false,
                 needAlphaTesting: false
             }
@@ -831,7 +851,8 @@ class Material {
     
     updateShaderMaterials() {
         if (this.mat_cel) {
-            this.mat_cel.setVector3("uLightPos", light.directional.position);
+            this.mat_cel.setVector3("uCamPos", camera.camera0.position);
+            this.mat_cel.setVector3("uLightDir", light.directional.direction);
             this.mat_cel.setColor3("uLightCol", Color3(
                 (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
                 (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
@@ -852,6 +873,7 @@ class Material {
         mat.specularIntensity = 1;
         mat.directIntensity = 1;
         mat.environmentIntensity = 1;
+        mat.transparencyMode = 0; // required by postFX
         this.mat_pbr_vox = mat;
     }
 
@@ -3810,7 +3832,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.8",
+            version: "Voxel Builder 4.7.9",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4101,13 +4123,13 @@ class Project {
     createScreenshotBasic(width, height, callback) {
         scene.clearColor = COL_CLEAR_RGBA;
         axisView.isRenderAxisView = false;
-        postProcessFx.detach();
+        postFx.detach();
         CreateScreenshot(engine.engine, camera.camera0, width, height).then(data => {
             scene.clearColor = (preferences.isBackgroundColor()) ?
                 color4FromHex(preferences.getBackgroundColor()) :
                 color4FromHex(COL_SCENE_BG);
             axisView.isRenderAxisView = true;
-            postProcessFx.attach();
+            postFx.attach();
             callback(data);
         });
     }
@@ -4634,6 +4656,7 @@ class FaceNormalProbe {
 class PostProcessEffect {
     constructor() {
         this.effect = undefined;
+        this.geomBufferRenderer = undefined;
     }
 
     start() {
@@ -4641,9 +4664,11 @@ class PostProcessEffect {
 
         EffectShadersStore["fxFragmentShader"] = document.getElementById(`${ preferences.getPostProcessValue() }FragmentShader`).textContent;
         
+        this.geomBufferRenderer = scene.enableGeometryBufferRenderer();
+
         this.effect = PostProcess('fx', camera.camera0,
-            [ 'uRes', 'uTime' ],
-            [ 'textureSampler' ]);
+            [ 'uRes', 'uTime', 'uCamDir' ],
+            [ 'textureSampler', 'normalSampler', 'depthSampler' ]);
 
         this.effect.autoClear = true;
         this.effect._samples = parseInt(preferences.getPostProcessSamples());
@@ -4651,6 +4676,9 @@ class PostProcessEffect {
         this.effect.onApply = (effect) => {
             effect.setVector2("uRes", Vector2(engine.engine.getRenderWidth(), engine.engine.getRenderHeight()));
             effect.setFloat("uTime", performance.now() / 1000);
+            effect.setVector3('uCamDir', camera.camera0.getForwardRay().direction.negate().normalize());
+            effect.setTexture("normalSampler", this.geomBufferRenderer.getGBuffer().textures[1]);
+            effect.setTexture("depthSampler", this.geomBufferRenderer.getGBuffer().textures[0]);
         };
     }
 
@@ -4668,7 +4696,7 @@ class PostProcessEffect {
 
     detach() {
         if (this.effect) {
-            this.effect._reusable = true; 
+            this.effect._reusable = true;
             camera.camera0.detachPostProcess(this.effect);
         }
     }
@@ -4678,7 +4706,11 @@ class PostProcessEffect {
             this.detach();
             this.effect.dispose();
             this.effect = null;
+            if (this.geomBufferRenderer)
+                this.geomBufferRenderer.dispose();
+            this.geomBufferRenderer = null;
             EffectShadersStore["fxFragmentShader"] = undefined;
+            scene.disableGeometryBufferRenderer();
         }
     }
 }
@@ -4852,6 +4884,8 @@ class UserInterface {
         if (isMobile) {
             ui.domCameraOffset.value = 1.4;
             ui.domTransformReactive.checked = false;
+
+            preferences.setPostProcessSamples(2);
         }
     }
 
@@ -4871,7 +4905,7 @@ class UserInterface {
             builder.setMeshVisibility(true);
             pool.setPoolVisibility(false);
             light.updateShadowMap();
-            postProcessFx.attach();
+            postFx.attach();
         } else if (mode == 1) {
             setTimeout(() => {
                 modules.sandbox.activate();
@@ -4882,7 +4916,7 @@ class UserInterface {
             pool.setPoolVisibility(true);
             pool.createMeshList();
             light.updateShadowMap();
-            postProcessFx.detach();
+            postFx.detach();
         }
 
         if (!preferences.isMinimal())
@@ -5466,6 +5500,7 @@ class Preferences {
 
         document.getElementById(KEY_MINIMAL).checked = isMobile;
         document.getElementById(KEY_USER_STARTUP).checked = false;
+        document.getElementById(KEY_USER_STARTUP).disabled = isHosted;
         document.getElementById(KEY_STARTBOX_SIZE).value = 20;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
@@ -5479,7 +5514,7 @@ class Preferences {
         document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
         document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
         document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex = 0;
-        document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value = 2;
+        document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value = 4;
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
 
         this.setPrefCheck(KEY_MINIMAL);
@@ -5499,7 +5534,7 @@ class Preferences {
         this.setPrefCheck(KEY_TOOLBAR_ICONS, (chk) => {
             ui.setToolbarMode(chk);
         });
-        
+
         this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
             modules.panels.showHelpLabels(chk);
         });
@@ -5542,11 +5577,11 @@ class Preferences {
         });
 
         this.setPrefSelect(KEY_SCENE_POSTPROCESS, (idx) => {
-            (idx == 0) ? postProcessFx.dispose() : postProcessFx.start();
+            (idx == 0) ? postFx.dispose() : postFx.start();
         });
 
         this.setPref(KEY_SCENE_POSTPROCESS_SAMPLES, (val) => {
-            postProcessFx.setSamples(val);
+            postFx.setSamples(val);
         });
 
         this.setPrefCheck(KEY_SCENE_POINTCLOUD, (chk) => {
@@ -5562,8 +5597,8 @@ class Preferences {
             color4FromHex(COL_SCENE_BG);
 
         hdri.preload(() => {
-            if (this.isUserStartup()) {
-                project.loadFromUrl('user/startup.json', () => {
+            if (!isHosted && this.isUserStartup()) {
+                project.loadFromUrl('../user/startup.json', () => {
                     this.postFinish(startTime);
                 });
             } else {
@@ -5589,13 +5624,7 @@ class Preferences {
         }
 
         if (this.getPostProcessId() !== 0)
-            postProcessFx.start();
-
-        // inject the user module entry point
-        const scriptUserModule = document.createElement('script');
-        scriptUserModule.type = 'module';
-        scriptUserModule.src = 'user/user.js';
-        document.body.appendChild(scriptUserModule);
+            postFx.start();
 
         console.log(`mobile: ${isMobile}`);
         console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
@@ -5604,6 +5633,14 @@ class Preferences {
         document.getElementById('introscreen').style.display = 'none';
         document.getElementById('canvas').style.pointerEvents = 'unset';
         camera.frameStartup();
+
+        // inject the user module entry point
+        if (!isHosted) {
+            const scriptUserModule = document.createElement('script');
+            scriptUserModule.type = 'module';
+            scriptUserModule.src = '../user/module.js';
+            document.body.appendChild(scriptUserModule);
+        }
     }
 
     isMinimal() {
@@ -5670,6 +5707,10 @@ class Preferences {
         return document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value;
     }
 
+    setPostProcessSamples(val) {
+        document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value = val;
+    }
+
     isPointCloud() {
         return document.getElementById(KEY_SCENE_POINTCLOUD).checked;
     }
@@ -5723,7 +5764,7 @@ export const mainScene = new MainScene();
 export const memory = new Memory();
 export const material = new Material();
 export const pool = new MeshPool();
-export const postProcessFx = new PostProcessEffect();
+export const postFx = new PostProcessEffect();
 export const preferences = new Preferences();
 export const project = new Project();
 export const renderTarget = new RenderTarget();

@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 
 VBUILDER = 'https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip'
-EXCLUDE = [ "voxel-builder-main", "electron", ".user_backup" ]
+EXCLUDE = [ "voxel-builder-main", "electron", "user_backup" ]
 
 cwd = os.getcwd()
 
@@ -19,8 +19,8 @@ cwd = os.getcwd()
 def main():
     DIR_SRC = cwd + '/voxel-builder-main'
     DIR_DST = cwd
-    DIR_USR = cwd + '/src/user'
-    DIR_BKP = cwd + '/.user_backup'
+    DIR_USR = cwd + '/user'
+    DIR_BKP = cwd + '/user_backup'
 
     remove_directory(DIR_SRC)
 
@@ -59,8 +59,9 @@ def main():
     # extract repository
     print('\nSetting up voxel-builder...')
     for f in os.listdir(DIR_SRC):
-        shutil.move(os.path.join(DIR_SRC, f), DIR_DST)
-    os.rmdir(DIR_SRC)
+        if f != 'electron':
+            shutil.move(os.path.join(DIR_SRC, f), DIR_DST)
+    shutil.rmtree(DIR_SRC)
 
     print('Done')
 

@@ -6,6 +6,9 @@
 */
 
 
+import { preferences } from "../core.js";
+
+
 class Panels {
     constructor() {
         this.isActive = false;
@@ -159,19 +162,24 @@ class Panels {
     }
 
     switchPanel(panel) {
-        if (panel.elem.style.display === 'unset') {
-            panel.elem.style.display = 'none';
-            panel.elem.firstChild.children[2].firstChild.innerHTML = 'open_in_new';
-            panel.button.classList.remove('panel_select');
-        } else {
-            panel.elem.style.display = 'unset';
-            panel.button.classList.add('panel_select');
-            if (!panel.detach) {
-                panel.elem.firstChild.children[2].firstChild.innerHTML = 'close';
-                this.resetAllPanels(panel.elem);
-                this.panelToFront(panel);
-            }
+        (panel.elem.style.display === 'unset') ?
+            this.closePanel(panel) : this.openPanel(panel);
+    }
+
+    openPanel(panel) {
+        panel.elem.style.display = 'unset';
+        panel.button.classList.add('panel_select');
+        if (!panel.detach) {
+            panel.elem.firstChild.children[2].firstChild.innerHTML = 'close';
+            this.resetAllPanels(panel.elem);
+            this.panelToFront(panel);
         }
+    }
+
+    closePanel(panel) {
+        panel.elem.style.display = 'none';
+        panel.elem.firstChild.children[2].firstChild.innerHTML = 'open_in_new';
+        panel.button.classList.remove('panel_select');
     }
 
     detachPanel(idx, elem) {

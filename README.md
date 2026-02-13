@@ -36,6 +36,7 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 - Three.js Sandbox
 - Three.js GPU path tracer
 - Basic PBR rendering
+- Post-process effects
 
 **Voxelization**
 - Fast BVH method
@@ -59,38 +60,43 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 - Minimum dependency, portable, online and offline
 - Ad-free, no trackers, no logging
 
+## Supported Browsers
+- Electron *(recommended)*
+- Mozilla Firefox
+- Google Chrome
+
+> - PWA A2HS-ready *(add to home screen)*
+> - For the best experience, a tablet with pen or Wacom is recommended
+
 ## Installation
-Install [Electron](https://github.com/electron/electron/releases) *(recommended)*
-```
-electron-v*-linux-x64.zip
-electron-v*-win32-x64.zip
-```
-Clone
+#### Clone or [Download](https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip)
 ```
 git clone https://github.com/nimadez/voxel-builder
 cd voxel-builder
 ```
-Run
+#### [Download Electron](https://github.com/electron/electron/releases)
 ```
-# Start with Electron:
+Linux:   electron-v*-linux-x64.zip
+Windows: electron-v*-win32-x64.zip
+```
+For ease of use, extract the zip file into the "voxel-builder/electron" directory.
+#### Run
+Start with Electron
+```
 electron .
-
-# Start with Node.js:
+$ sh run-electron.sh
+> run-electron.bat
+```
+Start with Node.js
+```
 node server.js
 ```
-Update
+#### Update
+*Makes a backup of the "/user" directory, ignoring the "/electron" directory.*
 ```
 cd voxel-builder
 python3 update.py
 ```
-
-## Supported Browsers
-- Electron *(recommended)*
-- Google Chrome
-- Mozilla Firefox
-
-> - PWA A2HS-ready *(add to home screen)*
-> - For the best experience, a tablet with pen or Wacom is recommended
 
 ## Known Issues
 
@@ -115,9 +121,9 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > We do not support geometry animations.
 
 #### Import PLY: Throw RangeError (voxelization)
-> They are often a piece of a larger model data from the Stanford 3D repository.
+> They are often a piece of a larger model data.
 
-#### Wacom tablet crashes randomly and throws warning on Chrome (Linux:GNOME)
+#### Wacom tablet crashes randomly and throws warning on Chrome (Linux)
 > Warning: BJS - Max number of touches exceeded. Ignoring touches in excess of 2.<br>This problem is related to Babylon.js and nothing can be done.
 
 ## FAQ
@@ -136,30 +142,22 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > GLB has a special use in this application, you can save and retrieve voxel data using baked meshes, exporting raw voxels to GLB leads to interference and errors when loading it using the "Load Bakes" option.
 
 #### What are the methods for saving and loading voxel data?
-```
-There are currently 4 methods to store voxel data:
-
-1- Save to JSON (primary, human-readable, fastest)
-2- Export baked meshes to GLB (and Load Bakes, supports Blender and other 3D apps, slower)
-3- Save snapshots to ZIP archive (easy to share, browser storage limits, speed is variable)
-4- Save to VOX format (supported by many 3D apps and engines, very fast)
-```
+> -- **Save to JSON** *(primary, human-readable, fastest)*<br>
+> -- **Export baked meshes to GLB** *(and 'Load Bakes', supports Blender and other 3D apps, slower)*<br>
+> -- **Save snapshots to ZIP archive** *(easy to share, browser storage limits, speed is variable)*<br>
+> -- **Save to VOX format** *(supported by many 3D apps and engines, very fast)*
 
 #### How to merge vertices after export to GLB?
-```
-1- Open exported GLB file in Blender
-2- Go to "Modeling" tab and choose vertex selection mode
-3- Select all vertices (Ctrl + A)
-4- Mesh > Clean Up > Merge by Distance
-```
+> 1- Open exported GLB file in Blender<br>
+> 2- Go to "Modeling" tab and choose vertex selection mode<br>
+> 3- Select all vertices (Ctrl + A)<br>
+> 4- Mesh > Clean Up > Merge by Distance
 
 #### How to run Blender importer script?
-```
-1- Save project to JSON
-2- Open Blender and go to "Scripting" tab
-3- Click "Open" and select "blender-importer.py"
-4- Run the script and select a JSON file
-```
+> 1- Save project to JSON<br>
+> 2- Open Blender and go to "Scripting" tab<br>
+> 3- Click "Open" and select "blender-importer.py"<br>
+> 4- Run the script and select a JSON file
 
 #### How to go back to the previous version?
 ```

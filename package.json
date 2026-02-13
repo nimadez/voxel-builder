@@ -1,6 +1,6 @@
 {
     "name": "voxel-builder",
-    "version": "4.7.8",
+    "version": "4.7.9",
     "description": "Voxel-based 3D modeling application",
     "main": "electron.js",
     "scripts": {
@@ -8,7 +8,7 @@
     },
     "repository": "https://github.com/nimadez/voxel-builder",
     "author": "@nimadez",
-    "license": "MIT",
+    "license": "GPL-3.0",
     "devDependencies": {
         "electron": "^38.0.0",
         "babylonjs": "8.50.0",

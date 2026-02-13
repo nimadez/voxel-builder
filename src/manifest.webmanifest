@@ -1,12 +1,12 @@
 {
     "name": "Voxel Builder",
-    "short_name": "Voxel Builder",
+    "short_name": "VoxelBuilder",
     "description": "Voxel-based 3D modeling application for desktop and mobile browsers",
     "start_url": "index.html",
     "display": "fullscreen",
     "scope": "/",
-    "theme_color": "#1D2028",
-    "background_color": "#1D2028",
+    "theme_color": "#2E313C",
+    "background_color": "#2E313C",
     "icons": [
       {
         "src": "./assets/appicon.png",

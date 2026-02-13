@@ -1,3 +1,3 @@
 #!/bin/bash
 
-electron .
+./electron/electron .
