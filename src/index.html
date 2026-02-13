@@ -8,17 +8,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <meta name="description" content="Voxel-based 3D modeling application for desktop and mobile browsers">
-    <meta name="keywords" content="voxels, model, render, export, bake, electron, terrain, painting, symmetry, babylon-js, three-js, gltf, magicavoxel, voxel-generator, voxelizer, voxelization, three-mesh-bvh, three-gpu-pathtracer">
+    <meta name="keywords" content="voxel, model, render, export, bake, electron, terrain, paint, symmetry, babylon-js, three-js, gltf, magicavoxel, voxel-generator, voxelizer, voxelization, three-mesh-bvh, three-gpu-pathtracer">
     <meta name="author" content="@nimadez">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:site" content="@nimadez">
-    <meta name="twitter:creator" content="@nimadez">
-    <meta name="twitter:title" content="Voxel Builder">
-    <meta name="twitter:description" content="Voxel-based 3D modeling application for desktop and mobile browsers">
-    <meta name="theme-color" content="#1D2028">
     <title>Voxel Builder</title>
     <link rel="icon" href="./assets/appicon.png">
-    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="manifest" href="./manifest.webmanifest">
     <style>
         @font-face {
             font-family: 'Roboto'; src: url(./assets/font_roboto_medium.ttf) format('truetype');
@@ -183,7 +177,7 @@
         #introscreen .anim { position: absolute; left: 50%; top: 50%; margin-left: -15px; }
         #introscreen .logo { color: orange; font-family: var(--font); font-size: 24px; letter-spacing: 0.08em; width: 200px; height: 30px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: -100px; text-align: center; }
         #introscreen .logo :first-child { font-weight: normal; color: var(--col-white); }
-        #introscreen .progress { color: slategray; font-size: 12px; letter-spacing: 0.2em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
+        #introscreen .progress { color: slategray; font-size: 12px; letter-spacing: 0.15em; width: 200px; height: 20px; position: absolute; left: 50%; top: 50%; margin-left: -100px; margin-top: 90px; text-align: center; }
         #shortcuts { z-index: 3000; display: none; background: #222731EE; padding: 20px; width: calc(100vw - 40px); height: calc(100vh - 40px); position: fixed; overflow-y: scroll; }
         #shortcuts table { display: flex; flex-direction: column; }
         #shortcuts tr { font-size: 14px; }
@@ -310,7 +304,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.7.8 BETA
+                &#8627; 4.7.9 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -322,8 +316,7 @@
             <li class="category">EXAMPLES</li>
             <li>
                 <select id="btn_action_about_examples">
-                    <option value="">Examples</option>
-                    <option value="user/startup.json">User Startup</option>
+                    <option value="" selected>Examples</option>
                     <option value="examples/model_archinterior.json">Arch Interior</option>
                     <option value="examples/model_menger.json">Menger Sponge</option>
                     <option value="examples/test_pt_cornellbox.json">Test PT: Cornell Box</option>
@@ -331,12 +324,13 @@
                     <option value="examples/test_rectadd.json">Test: Rect Add Tool</option>
                     <option value="examples/test_symmetry_odd.json">Test: Symmetry Odd</option>
                     <option value="examples/test_symmetry_even.json">Test: Symmetry Even</option>
+                    <option value="examples/test_voxelizer_3d.json">Test: Voxelizer 3D</option>
                     <option value="examples/test_voxelizer_2d.json">Test: Voxelizer 2D</option>
                     <option value="examples/startup_v4.json">Startup v4</option>
                     <option value="examples/startup_legacy.json">Startup (legacy)</option>
                 </select>
                 <select id="btn_action_about_examples_vox">
-                    <option value="">MagicaVoxel</option>
+                    <option value="" selected>MagicaVoxel</option>
                     <option value="examples/mv_charactercat_ephtracy.json">Character Cat @ephtracy</option>
                     <option value="examples/mv_tankdestroyer_arsgametm.json">Tank Destroyer @arsgametm</option>
                     <option value="examples/mv_skyscraper_kluchek.json">Skyscraper @kluchek</option>
@@ -357,7 +351,7 @@
             </li>
             <li class="category">GENERAL</li>
             <li title="Less battery drain (&#60;100 ms startup)"><input type="checkbox" id="pref_minimal"> <label for="pref_minimal">Minimal UIX</label></li>
-            <li><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
+            <li title="Enabled in self-hosted desktop mode"><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
             <li class="spacer"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
@@ -377,20 +371,21 @@
             <li class="row">
                 <label style="margin-right: 7px">Texture</label> <select id="pref_voxel_texture">
                     <option value="0">None</option>
-                    <option value="1">Grid</option>
+                    <option value="1" selected>Grid</option>
                     <option value="2">Checker</option>
                     <option value="3">Minecraft</option>
                 </select>
             </li>
             <li class="row">
                 <label style="margin-right: 10px">PostFX</label> <select id="pref_scene_postfx">
-                    <option value="none">None</option>
+                    <option value="none" selected>None</option>
                     <option value="fxOutline">Outline</option>
+                    <option value="fxSsao">SSAO</option>
                     <option value="fxCustom">Custom</option>
                 </select>
             </li>
             <li class="spacer"></li>
-            <li class="row_input" title="PostFX Samples"><label>Samples</label> <input type="range" id="pref_scene_postfx_samples" class="ignorekeys" value="2" min="1" max="8" step="1"></li>
+            <li class="row_input" title="PostFX Samples"><label>Samples</label> <input type="range" id="pref_scene_postfx_samples" class="ignorekeys" value="4" min="1" max="8" step="1"></li>
         </ul>
 
         <ul class="menu panel" id="menu-file">
@@ -482,7 +477,7 @@
             <li class="category">ENVIRONMENT</li>
             <li>
                 <select id="btn_action_hdr_dropdown" style="text-align: left;">
-                    <option value="./assets/hdr_overcast_soil_puresky_1k.hdr">Default (local)</option>
+                    <option value="./assets/hdr_overcast_soil_puresky_1k.hdr" selected>Default (local)</option>
                     <option value="./assets/hdr_black.hdr">Black (local)</option>
                     <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/main/footprint_court.hdr">DLC: Footprint Court</option>
                     <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">DLC: Venice Sunset</option>
@@ -710,7 +705,7 @@
             <li class="category">EXPORT BAKES</li>
             <li class="row_input">
                 <label style="width: 60%;">Format</label><select id="input_export_format">
-                    <option value="glb">GLB</option>
+                    <option value="glb" selected>GLB</option>
                     <option value="gltf">GLTF</option>
                     <option value="obj">OBJ</option>
                     <option value="stl">STL</option>
@@ -877,7 +872,6 @@
     attribute vec2 uv;
     attribute vec4 color;
 
-    varying vec3 vPosition;
     varying vec3 vPositionW;
     varying vec3 vNormalW;
     varying vec2 vUv;
@@ -895,8 +889,7 @@
         
         #include<vertexColorMixing>
         
-        vPosition = normalize(gl_Position.xyz);
-        vPositionW = vec3(worldPos);
+        vPositionW = worldPos.xyz;
         vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
         vUv = uv;
     }
@@ -904,36 +897,33 @@
 <script type="x-shader/x-fragment" id="celFragmentShader">
     precision highp float;
 
-    varying vec3 vPosition;
     varying vec3 vPositionW;
     varying vec3 vNormalW;
     varying vec2 vUv;
     varying vec4 vColor;
 
-    uniform vec3 uLightPos;
+    uniform vec3 uCamPos;
+    uniform vec3 uLightDir;
     uniform vec3 uLightCol;
     uniform int uTextureId;
     uniform sampler2D uTexture;
 
     void main() {
         vec3 N = normalize(vNormalW);
-        vec3 L = normalize(uLightPos - vPositionW);
+        vec3 V = normalize(uCamPos - vPositionW);
+        vec3 L = normalize(-uLightDir);
 
         vec2 grid = abs(fract(vUv - 0.5) - 0.5) / fwidth(vUv);
         float line = min(grid.x, grid.y);
         line = 1.0 - min(line, 1.0);
 
-        float amb = clamp(1.0 + 0.25 * N.y, 0.0, 1.0);
-        if (dot(N, L) < 0.0)
-            amb *= 1.5;
+        float amb = 1.0;
+        float dif = max(dot(N, L), 0.0);
 
-        float dif = 1.0 * max(0.5, dot(N, L));
-        dif -= 0.5 * max(0.0, dot(N, -L));
-
-        float ao = pow(max(0.0, dot(N, L)) + 0.05, 4.0);
-        float curvature = abs(dot(N, vPosition));
-        ao = mix(0.5, 1.0, ao);
-        ao = mix(ao, 0.3, curvature * 0.5);
+        float NdotV = max(dot(N, V), 0.0);
+        float ao = pow(NdotV, 0.5);
+        float curvature = abs(NdotV);
+        ao = mix(ao, 0.5, curvature * 0.5);
 
         vec3 brdf = vec3(0);
         brdf += 1.0 * amb * ao;
@@ -990,15 +980,48 @@
     }
 
     void main() {
-        vec2 uv = gl_FragCoord.xy / uRes.xy;
-
-        vec3 sb = sobel(textureSampler, uv);
+        vec3 sb = sobel(textureSampler, vUV);
         float mx = max(max(sb.r, sb.g), sb.b);
         float aa = smoothstep(1.0, 0.0, mx);
     	float edge = step(mx, 0.5);
 
         vec3 col = texture2D(textureSampler, vUV).rgb;
         col = mix(col, col * edge * aa, 1.0);
+
+        gl_FragColor = vec4(col, 1.0);
+    }
+</script>
+<script type="x-shader/x-fragment" id="fxSsaoFragmentShader">
+    #ifdef GL_ES
+        precision highp float;
+    #endif
+
+    varying vec2 vUV;
+
+    uniform sampler2D textureSampler;
+    uniform sampler2D depthSampler;
+
+    #define PI2 6.28318530718
+    #define SAMPLES 4
+    #define RADIUS 0.0015
+
+    void main() {
+        vec3 col = texture2D(textureSampler, vUV).rgb;
+        float depth = texture2D(depthSampler, vUV).r;
+
+        float ao = 0.0;
+
+        for (int i = 0; i < SAMPLES; i++) {
+            float a = sin(float(i) * PI2 / float(SAMPLES));
+            float b = cos(float(i) * PI2 / float(SAMPLES));
+            vec2 offset = vec2(a, b) * RADIUS;
+            float sampleDepth = 1.0 - texture2D(depthSampler, vUV + offset).r;
+            ao += (1.0 - depth - sampleDepth) / 0.1;
+        }
+
+        ao = clamp(ao, 0.0, 1.0);
+        ao = 1.0 - ao / float(SAMPLES);
+        col *= ao;
 
         gl_FragColor = vec4(col, 1.0);
     }
@@ -1012,13 +1035,16 @@
 
     uniform vec2 uRes;
     uniform float uTime;
+    uniform vec3 uCamDir; // negated and normalized
     uniform sampler2D textureSampler;
+    uniform sampler2D normalSampler;
+    uniform sampler2D depthSampler;
 
     void main() {
-        vec2 uv = gl_FragCoord.xy / uRes.xy;
-
         vec3 col = texture2D(textureSampler, vUV).rgb;
-
+        vec3 normal = texture2D(normalSampler, vUV).rgb;
+        float depth = texture2D(depthSampler, vUV).r;
+        
         // Add user content and experiments here
 
         gl_FragColor = vec4(1.0 - col, 1.0);

@@ -1,6 +1,4 @@
-#!/usr/bin/env node
-
-// Aug 2024
+//
 // Voxel Builder Server
 
 
@@ -12,24 +10,47 @@ const fs = require('fs');
 const PORT = 8011;
 
 
+let filePath = undefined;
+const mimeTypes = {
+    'txt': 'text/plain',
+    'html': 'text/html',
+    'xml': 'application/xml',
+    'js': 'text/javascript',
+    'py': 'text/x-python',
+    'css': 'text/css',
+    'json': 'application/json',
+    'png': 'image/png',
+    'jpg': 'image/jpg',
+    'jpeg': 'image/jpeg',
+    'svg': 'image/svg+xml',
+    'gif': 'image/gif',
+    'ico': 'image/x-icon',
+    'ttf': 'font/ttf',
+    'woff': 'font/woff',
+    'woff2': 'font/woff2'
+};
+
+
 http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
-    let filePath = `src${parsedUrl.pathname}`;
+    filePath = `${parsedUrl.pathname}`;
 
-    if (parsedUrl.pathname == '/')
+    if (parsedUrl.pathname == '/') {
         filePath = 'src/index.html';
-
-    if (parsedUrl.pathname.endsWith('js.map'))
-        return res.end();
+    } else if (parsedUrl.pathname.startsWith('/user')) {
+        filePath = `.${parsedUrl.pathname}`;
+    } else {
+        filePath = `src${parsedUrl.pathname}`;
+    }
 
     fs.readFile(filePath, (err, data) => {
         if (err) {
-            console.log(`GET ${filePath} 404 NOT FOUND`)
+            console.log(`GET 404 -- ${parsedUrl.pathname} -> ${filePath}`)
             res.writeHead(404, { 'Content-Type': 'text/html' });
             return res.end("404 Not Found");
         }
 
-        console.log(`GET ${filePath} 200 OK`)
+        console.log(`GET 200 OK ${parsedUrl.pathname} -> ${filePath}`)
         res.writeHead(200, { 'Content-Type': getContentType(filePath) });
         res.write(data);
         return res.end();
@@ -43,23 +64,5 @@ http.createServer((req, res) => {
 
 function getContentType(filePath) {
     const extname = String(filePath).split('.').pop().toLowerCase();
-    const mimeTypes = {
-        'txt': 'text/plain',
-        'html': 'text/html',
-        'xml': 'application/xml',
-        'js': 'text/javascript',
-        'py': 'text/x-python',
-        'css': 'text/css',
-        'json': 'application/json',
-        'png': 'image/png',
-        'jpg': 'image/jpg',
-        'jpeg': 'image/jpeg',
-        'svg': 'image/svg+xml',
-        'gif': 'image/gif',
-        'ico': 'image/x-icon',
-        'ttf': 'font/ttf',
-        'woff': 'font/woff',
-        'woff2': 'font/woff2'
-    };
     return mimeTypes[extname] || 'application/octet-stream';
 }
