@@ -16,7 +16,7 @@ import * as CORE from './modules/core.js';
 const startTime = performance.now();
 CORE.preferences.init();
 
-engine.init().then(eng => {
+engine.init(CORE.preferences.getFpsMax()).then(eng => {
 
     CORE.mainScene.create(eng).then(scn => {
 

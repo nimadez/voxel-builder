@@ -6,9 +6,6 @@
 */
 
 
-import { preferences } from "../core.js";
-
-
 class Panels {
     constructor() {
         this.isActive = false;

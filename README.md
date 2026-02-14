@@ -4,7 +4,7 @@
 
 ### **Voxel-based 3D Modeling Application**
 **Model . Render . Export**<br>
-This application is suitable for rapid prototyping, speed modeling, creating small assets in large numbers, loading and saving MagicaVoxel VOX format, or simply playing around and learning 3D modeling.
+This application is suitable for rapid prototyping, speed modeling, creating small assets in large numbers, loading and saving MagicaVoxel VOX, or simply playing around and learning 3D modeling.
 
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
@@ -167,9 +167,12 @@ git log -2 (copy the hash of the previous commit)
 git reset --hard $HASH
 ```
 
+#### Will WebGPU be supported?
+> It was supported to some extent before, but was removed due to unnecessary complexity. But once it matures enough to be enabled by default in browsers, this upgrade will be possible with a few simple changes. For now, let's address the problem of the lack of gaming GPUs on the market!
+
 ## History
 ```
-↑ Advancing to the Renaissance Bubble
+↑ Advancing in the Renaissance Bubble
 ↑ A fundamental overhaul of the core
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer

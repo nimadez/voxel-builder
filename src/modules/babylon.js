@@ -14,7 +14,7 @@ class Engine {
         this.isRendering = false;
     }
 
-    init() {
+    init(maxFPS) {
         return new Promise(resolve => {
             this.engine = new BABYLON.Engine(this.canvas, true, {});
             this.engine.disablePerformanceMonitorInBackground = true;
@@ -22,7 +22,7 @@ class Engine {
             this.engine.premultipliedAlpha = false;
             this.engine.enableOfflineSupport = false;
             this.engine.doNotHandleContextLost = true;
-            this.engine.maxFPS = 60;
+            this.engine.maxFPS = maxFPS;
 
             resolve(this.engine);
         });
@@ -123,6 +123,14 @@ export function Color3(r, g, b) {
 
 export function Color4(r, g, b, a) {
     return new BABYLON.Color4(r, g, b, a);
+}
+
+export function Color3FromHex(hex) {
+    return BABYLON.Color3.FromHexString(hex);
+}
+
+export function Color4FromHex(hex) {
+    return BABYLON.Color4.FromHexString(hex);
 }
 
 

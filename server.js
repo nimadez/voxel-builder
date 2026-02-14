@@ -12,21 +12,13 @@ const PORT = 8011;
 
 let filePath = undefined;
 const mimeTypes = {
-    'txt': 'text/plain',
     'html': 'text/html',
-    'xml': 'application/xml',
     'js': 'text/javascript',
-    'py': 'text/x-python',
-    'css': 'text/css',
     'json': 'application/json',
     'png': 'image/png',
     'jpg': 'image/jpg',
-    'jpeg': 'image/jpeg',
     'svg': 'image/svg+xml',
-    'gif': 'image/gif',
-    'ico': 'image/x-icon',
     'ttf': 'font/ttf',
-    'woff': 'font/woff',
     'woff2': 'font/woff2'
 };
 
