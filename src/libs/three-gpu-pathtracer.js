@@ -277,7 +277,20 @@ function mergeGeometries( geometries, options = {}, targetGeometry = new BufferG
 			const attr = geometry.getAttribute( key );
  			if ( ! skip ) {
 
-				copyAttributeContents( attr, targetAttribute, offset );
+				if ( key === 'color' && targetAttribute.itemSize !== attr.itemSize ) {
+
+					// make sure the color attribute is aligned with itemSize 3 to 4
+					for ( let index = offset, l = attr.count; index < l; index ++ ) {
+
+						attr.setXYZW( index, targetAttribute.getX( index ), targetAttribute.getY( index ), targetAttribute.getZ( index ), 1.0 );
+
+					}
+
+				} else {
+
+					copyAttributeContents( attr, targetAttribute, offset );
+
+				}
 
 			}
 
@@ -1315,6 +1328,7 @@ class PathTracingSceneGenerator {
 		this._bvhWorker = null;
 		this._pendingGenerate = null;
 		this._buildAsync = false;
+		this._materialUuids = null;
 
 	}
 
@@ -1396,12 +1410,29 @@ class PathTracingSceneGenerator {
 		// generate the geometry
 		const result = staticGeometryGenerator.generate( geometry );
 		const materials = result.materials;
+		let needsMaterialIndexUpdate = result.changeType !== NO_CHANGE || this._materialUuids === null || this._materialUuids.length !== length;
+		if ( ! needsMaterialIndexUpdate ) {
+
+			for ( let i = 0, length = materials.length; i < length; i ++ ) {
+
+				const material = materials[ i ];
+				if ( material.uuid !== this._materialUuids[ i ] ) {
+
+					needsMaterialIndexUpdate = true;
+					break;
+
+				}
+
+			}
+
+		}
+
 		const textures = getTextures$1( materials );
 		const { lights, iesTextures } = getLights$1( objects );
-
-		if ( result.changeType !== NO_CHANGE ) {
+		if ( needsMaterialIndexUpdate ) {
 
 			updateMaterialIndexAttribute( geometry, materials, materials );
+			this._materialUuids = materials.map( material => material.uuid );
 
 		}
 
@@ -1417,8 +1448,7 @@ class PathTracingSceneGenerator {
 			if ( result.changeType === GEOMETRY_REBUILT ) {
 
 				const bvhOptions = {
-					strategy: 0,
-					maxDepth: 40,
+					strategy: SAH,
 					maxLeafSize: 1,
 					indirect: true,
 					onProgress,
@@ -1446,6 +1476,7 @@ class PathTracingSceneGenerator {
 		return {
 			bvhChanged: result.changeType !== NO_CHANGE,
 			bvh: this.bvh,
+			needsMaterialIndexUpdate,
 			lights,
 			iesTextures,
 			geometry,
@@ -2873,7 +2904,7 @@ function getLights( scene ) {
 
 }
 
-const MATERIAL_PIXELS = 45;
+const MATERIAL_PIXELS = 47;
 const MATERIAL_STRIDE = MATERIAL_PIXELS * 4;
 
 class MaterialFeatures {
@@ -3297,6 +3328,9 @@ class MaterialsTexture extends DataTexture {
 
 			// specularIntensityMap transform 43
 			index += writeTextureMatrixToArray( m, 'specularIntensityMap', floatArray, index );
+
+			// alphaMap transform 45
+			index += writeTextureMatrixToArray( m, 'alphaMap', floatArray, index );
 
 		}
 
@@ -4377,6 +4411,7 @@ const material_struct = /* glsl */ `
 		mat3 iridescenceThicknessMapTransform;
 		mat3 specularColorMapTransform;
 		mat3 specularIntensityMapTransform;
+		mat3 alphaMapTransform;
 
 	};
 
@@ -4397,7 +4432,7 @@ const material_struct = /* glsl */ `
 
 	Material readMaterialInfo( sampler2D tex, uint index ) {
 
-		uint i = index * 45u;
+		uint i = index * uint( MATERIAL_PIXELS );
 
 		vec4 s0 = texelFetch1D( tex, i + 0u );
 		vec4 s1 = texelFetch1D( tex, i + 1u );
@@ -4496,6 +4531,7 @@ const material_struct = /* glsl */ `
 		m.iridescenceThicknessMapTransform = m.iridescenceThicknessMap == - 1 ? mat3( 1.0 ) : readTextureTransform( tex, firstTextureTransformIdx + 24u );
 		m.specularColorMapTransform = m.specularColorMap == - 1 ? mat3( 1.0 ) : readTextureTransform( tex, firstTextureTransformIdx + 26u );
 		m.specularIntensityMapTransform = m.specularIntensityMap == - 1 ? mat3( 1.0 ) : readTextureTransform( tex, firstTextureTransformIdx + 28u );
+		m.alphaMapTransform = m.alphaMap == - 1 ? mat3( 1.0 ) : readTextureTransform( tex, firstTextureTransformIdx + 30u );
 
 		return m;
 
@@ -6262,7 +6298,7 @@ const inside_fog_volume_function = /* glsl */`
 // returns whether the given material is a fog material or not
 bool isMaterialFogVolume( sampler2D materials, uint materialIndex ) {
 
-	uint i = materialIndex * 45u;
+	uint i = materialIndex * uint( MATERIAL_PIXELS );
 	vec4 s14 = texelFetch1D( materials, i + 14u );
 	return bool( int( s14.b ) & 4 );
 
@@ -6492,7 +6528,8 @@ const attenuate_hit_function = /* glsl */`
 				// alphaMap
 				if ( material.alphaMap != - 1 ) {
 
-					albedo.a *= texture2D( textures, vec3( uv, material.alphaMap ) ).x;
+					vec3 uvPrime = material.alphaMapTransform * vec3( uv, 1 );
+					albedo.a *= texture2D( textures, vec3( uvPrime.xy, material.alphaMap ) ).x;
 
 				}
 
@@ -6634,7 +6671,7 @@ const camera_util_functions = /* glsl */`
 			vec3 shapeUVW= rand3( 1 );
 			int blades = physicalCamera.apertureBlades;
 			float anamorphicRatio = physicalCamera.anamorphicRatio;
-			vec2 apertureSample = blades == 0 ? sampleCircle( shapeUVW.xy ) : sampleRegularPolygon( blades, shapeUVW );
+			vec2 apertureSample = sampleAperture( blades, shapeUVW );
 			apertureSample *= physicalCamera.bokehSize * 0.5 * 1e-3;
 
 			// rotate the aperture shape
@@ -6804,7 +6841,8 @@ const get_surface_record_function = /* glsl */`
 		// alphaMap
 		if ( material.alphaMap != - 1 ) {
 
-			albedo.a *= texture2D( textures, vec3( uv, material.alphaMap ) ).x;
+			vec3 uvPrime = material.alphaMapTransform * vec3( uv, 1 );
+			albedo.a *= texture2D( textures, vec3( uvPrime.xy, material.alphaMap ) ).x;
 
 		}
 
@@ -7219,6 +7257,7 @@ class PhysicalPathTracingMaterial extends MaterialBase {
 				ATTR_TANGENT: 1,
 				ATTR_UV: 2,
 				ATTR_COLOR: 3,
+				MATERIAL_PIXELS: MATERIAL_PIXELS,
 			},
 
 			uniforms: {
@@ -8795,7 +8834,7 @@ class WebGLPathTracer {
 		}
 
 		// update scene environment
-		material.environmentIntensity = scene.environmentIntensity ?? 1;
+		material.environmentIntensity = scene.environment !== null ? ( scene.environmentIntensity ?? 1 ) : 0;
 		material.environmentRotation.makeRotationFromEuler( scene.environmentRotation ).invert();
 		if ( this._previousEnvironment !== scene.environment ) {
 
@@ -8815,10 +8854,6 @@ class WebGLPathTracer {
 
 				}
 
-			} else {
-
-				material.environmentIntensity = 0;
-
 			}
 
 		}
@@ -8836,6 +8871,7 @@ class WebGLPathTracer {
 			geometry,
 			bvh,
 			bvhChanged,
+			needsMaterialIndexUpdate,
 		} = results;
 
 		this._materials = materials;
@@ -8852,6 +8888,10 @@ class WebGLPathTracer {
 				geometry.attributes.uv,
 				geometry.attributes.color,
 			);
+
+		}
+
+		if ( needsMaterialIndexUpdate ) {
 
 			material.materialIndexAttribute.updateFrom( geometry.attributes.materialIndex );
 
@@ -8983,8 +9023,8 @@ class WebGLPathTracer {
 
 	dispose() {
 
-		this._renderQuad.dispose();
-		this._renderQuad.material.dispose();
+		this._quad.dispose();
+		this._quad.material.dispose();
 		this._pathTracer.dispose();
 
 	}

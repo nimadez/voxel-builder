@@ -59,7 +59,7 @@ import {
     CounterClockWiseSideOrientation,
     
     Vector2, Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
-    Color3, Color4,
+    Color3, Color4, Color3FromHex, Color4FromHex,
     MatrixIdentity, MatrixTranslation, MatrixScaling, QuaternionRotationAxis,
     CreateScene, UtilityLayerRenderer,
     ArcRotateCamera, Viewport,
@@ -83,6 +83,9 @@ import * as modules from './modules.js';
 
 const DEBUG_GPU_PROBE = false;
 
+const isHosted = window.location.host === 'nimadez.github.io';
+const isMobile = isMobileDevice();
+
 const ENVMAP = "./assets/hdr_overcast_soil_puresky_1k.hdr";
 const IMG_SNAPSHOT = "./assets/img_snapshot.png";
 const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAAXNSR0IB2cksfwAAAARnQU1BAACxjwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+oCCgwHIBNDbisAAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=";
@@ -91,25 +94,25 @@ const COL_SCENE_BG = getStyleRoot('--scene');
 const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
 const COL_WHITE_RGBA = Color4(1, 1, 1, 0);
 const COL_ORANGE = '#FFA500';
-const COL_ORANGE_RGB = color3FromHex(COL_ORANGE);
-const COL_ORANGE_RGBA = color4FromHex(COL_ORANGE + 'FF');
+const COL_ORANGE_RGB = Color3FromHex(COL_ORANGE);
+const COL_ORANGE_RGBA = Color4FromHex(COL_ORANGE + 'FF');
 const COL_AQUA = '#00FFFF';
-const COL_AQUA_RGB = color3FromHex(COL_AQUA);
-const COL_AQUA_RGBA = color4FromHex(COL_AQUA + 'FF');
+const COL_AQUA_RGB = Color3FromHex(COL_AQUA);
+const COL_AQUA_RGBA = Color4FromHex(COL_AQUA + 'FF');
 const COL_AXIS_X = '#ED3751';
-const COL_AXIS_X_RGB = color3FromHex(COL_AXIS_X);
-const COL_AXIS_X_RGBA = color4FromHex(COL_AXIS_X + 'FF');
+const COL_AXIS_X_RGB = Color3FromHex(COL_AXIS_X);
+const COL_AXIS_X_RGBA = Color4FromHex(COL_AXIS_X + 'FF');
 const COL_AXIS_Y = '#81C90F';
-const COL_AXIS_Y_RGB = color3FromHex(COL_AXIS_Y);
-const COL_AXIS_Y_RGBA = color4FromHex(COL_AXIS_Y + 'FF');
+const COL_AXIS_Y_RGB = Color3FromHex(COL_AXIS_Y);
+const COL_AXIS_Y_RGBA = Color4FromHex(COL_AXIS_Y + 'FF');
 const COL_AXIS_Z = '#2F85E6';
-const COL_AXIS_Z_RGB = color3FromHex(COL_AXIS_Z);
-const COL_AXIS_Z_RGBA = color4FromHex(COL_AXIS_Z + 'FF');
+const COL_AXIS_Z_RGB = Color3FromHex(COL_AXIS_Z);
+const COL_AXIS_Z_RGBA = Color4FromHex(COL_AXIS_Z + 'FF');
 const COL_ICE = '#90A0B3';
 const COL_RED = '#FF0000';
-const COL_RED_RGB = color3FromHex(COL_RED);
+const COL_RED_RGB = Color3FromHex(COL_RED);
 const COL_PINK = '#FF00FF';
-const COL_PINK_RGB = color3FromHex(COL_PINK);
+const COL_PINK_RGB = Color3FromHex(COL_PINK);
 
 const VEC3_ZERO = Vector3();
 const VEC3_HALF = Vector3(0.5, 0.5, 0.5);
@@ -154,12 +157,12 @@ const VEC20_CORNERS = [
     Vector3(-1, -1, 0)   // edge 6,7
 ];
 
-const axisLines = [
+const AXISLINES = [
     [ VEC3_ZERO, Vector3(1, 0, 0) ],
     [ VEC3_ZERO, Vector3(0, 1, 0) ],
     [ VEC3_ZERO, Vector3(0, 0, 1) ]
 ];
-const axisColors = [
+const AXISCOLORS = [
     [ COL_AXIS_X_RGBA, COL_AXIS_X_RGBA ],
     [ COL_AXIS_Y_RGBA, COL_AXIS_Y_RGBA ],
     [ COL_AXIS_Z_RGBA, COL_AXIS_Z_RGBA ]
@@ -171,8 +174,6 @@ const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ];
 const PLANE_UVS = [ 0,1, 1,1, 1,0, 0,0 ];
 const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
 
-const isHosted = window.location.host === 'nimadez.github.io';
-const isMobile = isMobileDevice();
 const MAX_VOXELS_DRAW = isMobile ? 64000 : 256000;
 const MAX_SNAPSHOTS = 100;
 const MAX_Z = isMobile ? 1500 : 3000;
@@ -711,10 +712,10 @@ class Light {
         this.directional.shadowMinZ = -2500;
         this.setLightPositionByAngle(this.angle, this.location.x);
 
-        const shadowSize = isMobile ? 256 : 1024;
+        const shadowSize = preferences.isMobile ? 256 : 1024;
         const shadowGen = ShadowGenerator(shadowSize, this.directional);
         shadowGen.getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
-        shadowGen.filteringQuality = isMobile ? 
+        shadowGen.filteringQuality = preferences.isMobile ? 
             ShadowGenerator_QUALITY_LOW :
             ShadowGenerator_QUALITY_MEDIUM;
         shadowGen.useExponentialShadowMap = true;       // def true
@@ -755,7 +756,7 @@ class Light {
     }
     
     updateColor(hex) {
-        this.directional.diffuse = color3FromHex(hex).toLinearSpace();
+        this.directional.diffuse = Color3FromHex(hex).toLinearSpace();
         material.updateShaderMaterials();
     }
     
@@ -866,8 +867,8 @@ class Material {
         const mat = PBRMaterial("PBR_V", scene);
         mat.albedoColor = Color3(1, 1, 1);
         mat.albedoTexture = this.tex_voxel;
-        mat.roughness = 0.8;
-        mat.metallic = 0.1;
+        mat.roughness = 1;
+        mat.metallic = 0;
         mat.metallicF0Factor = 0;
         mat.backFaceCulling = true;
         mat.specularIntensity = 1;
@@ -905,6 +906,7 @@ class Material {
         mat.mainColor = Color3(0.1, 0.1, 0.2);
         mat.lineColor = Color3(1, 1, 1);
         mat.backFaceCulling = false;
+        mat.disableDepthWrite = true; // required by postfx
         mat.freeze();
         this.mat_grid = mat;
     }
@@ -1090,11 +1092,12 @@ class Builder {
 
                 renderTarget.pickTexture.renderList = [ this.mesh ];
                 renderTarget.pickTexture.setMaterialForRendering(this.mesh, material.mat_white);
-                
+
                 light.addMesh(this.mesh);
                 light.directional.position.y = this.maxY + 100;
-                mainScene.shadowcatcher.position.y = this.minY;
                 light.updateShadowMap();
+
+                mainScene.shadowcatcher.position.y = this.minY;
             }
         });
     }
@@ -1696,22 +1699,27 @@ class Bakery {
     bake(voxels) {
         this.planes = [];
 
-        voxels.forEach((voxel) => {
-            this.constructFace(voxel, VEC6_HALF[0], VEC6_ONE[0], 0, PIH);     // Left
-            this.constructFace(voxel, VEC6_HALF[1], VEC6_ONE[1], 0, -PIH);    // Right
-            this.constructFace(voxel, VEC6_HALF[2], VEC6_ONE[2], -PIH, 0);    // Top
-            this.constructFace(voxel, VEC6_HALF[3], VEC6_ONE[3], PIH, 0);     // Bottom
-            this.constructFace(voxel, VEC6_HALF[4], VEC6_ONE[4], 0, 0);       // Front
-            this.constructFace(voxel, VEC6_HALF[5], VEC6_ONE[5], 0, Math.PI); // Back
+        voxels.forEach(voxel => {
+            const rgb = {
+                r: builder.bufferColors[voxel.idx * 4],
+                g: builder.bufferColors[voxel.idx * 4 + 1],
+                b: builder.bufferColors[voxel.idx * 4 + 2]
+            };
+            this.constructFace(voxel, rgb, VEC6_HALF[0], VEC6_ONE[0], 0, PIH);     // Left
+            this.constructFace(voxel, rgb, VEC6_HALF[1], VEC6_ONE[1], 0, -PIH);    // Right
+            this.constructFace(voxel, rgb, VEC6_HALF[2], VEC6_ONE[2], -PIH, 0);    // Top
+            this.constructFace(voxel, rgb, VEC6_HALF[3], VEC6_ONE[3], PIH, 0);     // Bottom
+            this.constructFace(voxel, rgb, VEC6_HALF[4], VEC6_ONE[4], 0, 0);       // Front
+            this.constructFace(voxel, rgb, VEC6_HALF[5], VEC6_ONE[5], 0, Math.PI); // Back
         });
 
         return MergeMeshes(this.planes, true, true);
     }
 
-    constructFace(voxel, position, nearby, rotX, rotY) {
+    constructFace(voxel, rgb, position, nearby, rotX, rotY) {
         const idx = builder.getIndexAtPosition(voxel.position.add(nearby));
         if (idx === undefined) {
-            const plane = this.constructPlane(voxel.color);
+            const plane = this.constructPlane(rgb);
             plane.position = voxel.position.add(position);
             plane.rotation.x = rotX;
             plane.rotation.y = rotY;
@@ -1719,7 +1727,7 @@ class Bakery {
         } else {
             // shared faces by color groups
             if (voxel.color !== builder.voxels[idx].color) {
-                const plane = this.constructPlane(voxel.color);
+                const plane = this.constructPlane(rgb);
                 plane.position = voxel.position.add(position);
                 plane.rotation.x = rotX;
                 plane.rotation.y = rotY;
@@ -1728,8 +1736,7 @@ class Bakery {
         }
     }
 
-    constructPlane(hex) {
-        const col = hexToRgbFloat(hex, 2.2);
+    constructPlane(rgb) {
         const mesh = CreateMesh('plane', scene);
         const vertexData = VertexData();
         vertexData.positions = PLANE_POSITIONS;
@@ -1737,10 +1744,10 @@ class Bakery {
         vertexData.uvs = PLANE_UVS;
         vertexData.indices = PLANE_INDICES;
         vertexData.colors = [
-            col.r, col.g, col.b, 1,
-            col.r, col.g, col.b, 1,
-            col.r, col.g, col.b, 1,
-            col.r, col.g, col.b, 1
+            rgb.r, rgb.g, rgb.b, 1,
+            rgb.r, rgb.g, rgb.b, 1,
+            rgb.r, rgb.g, rgb.b, 1,
+            rgb.r, rgb.g, rgb.b, 1
         ];
         vertexData.applyToMesh(mesh);
         return mesh;
@@ -1804,7 +1811,8 @@ class Bakery {
                         arr.push({
                             position: islands[i][j],
                             color: builder.voxels[idx].color,
-                            visible: true
+                            visible: true,
+                            idx: idx
                         });
                     }
                 }
@@ -1914,10 +1922,10 @@ class MeshPool {
         if (this.selected) {
             switch (type) {
                 case 'albedo':
-                    this.selected.material.albedoColor = color3FromHex(this.albedoColor);
+                    this.selected.material.albedoColor = Color3FromHex(this.albedoColor);
                     break;
                 case 'emissive':
-                    this.selected.material.emissiveColor = color3FromHex(ui.domPbrEmissive.value);
+                    this.selected.material.emissiveColor = Color3FromHex(ui.domPbrEmissive.value);
                     break;
                 case 'roughness':
                     this.selected.material.roughness = parseFloat(ui.domPbrRoughness.value);
@@ -2226,7 +2234,7 @@ class Ghosts {
 
         this.cloud.addPoints(voxels.length, (particle, i, s) => {
             particle.position.copyFrom(voxels[s].position);
-            particle.color = color4FromHex(voxels[s].color);
+            particle.color = Color4FromHex(voxels[s].color);
         });
 
         this.cloud.buildMeshAsync().then((mesh) => {
@@ -2290,7 +2298,7 @@ class Helper {
         this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
         this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
         this.bbox = CreateBox("bbox", 1, FRONTSIDE, scene);
-        this.symmPivot = CreateLine("symm_pivot", axisLines, axisColors, uix.utilLayer.utilityLayerScene);
+        this.symmPivot = CreateLine("symm_pivot", AXISLINES, AXISCOLORS, uix.utilLayer.utilityLayerScene);
         this.symmPlane = CreatePlane("symm_plane", 1.2, DOUBLESIDE, axisView.scene);
 
         this.floorPlane.position.x = -0.5;
@@ -3257,7 +3265,7 @@ class Tool {
                 break;
             case 'box_add':
                 if (this.startBox)
-                    this.boxSelectAdd(this.startBox, this.posNorm, color3FromHex(this.currentColor));
+                    this.boxSelectAdd(this.startBox, this.posNorm, Color3FromHex(this.currentColor));
                 break;
             case 'box_remove':
                 if (this.startBox)
@@ -3265,7 +3273,7 @@ class Tool {
                 break;
             case 'box_paint':
                 if (this.startBox)
-                    this.boxSelect(this.startBox, this.pos, this.posNorm, color3FromHex(this.currentColor));
+                    this.boxSelect(this.startBox, this.pos, this.posNorm, Color3FromHex(this.currentColor));
                 break;
             case 'rect_add':
                 if (this.startRect)
@@ -3832,7 +3840,7 @@ class Project {
 
     serializeScene(voxels) {
         return {
-            version: "Voxel Builder 4.7.9",
+            version: "Voxel Builder 4.8.0",
             project: {
                 name: "untitled",
                 voxels: 0
@@ -4126,8 +4134,8 @@ class Project {
         postFx.detach();
         CreateScreenshot(engine.engine, camera.camera0, width, height).then(data => {
             scene.clearColor = (preferences.isBackgroundColor()) ?
-                color4FromHex(preferences.getBackgroundColor()) :
-                color4FromHex(COL_SCENE_BG);
+                Color4FromHex(preferences.getBackgroundColor()) :
+                Color4FromHex(COL_SCENE_BG);
             axisView.isRenderAxisView = true;
             postFx.attach();
             callback(data);
@@ -4881,7 +4889,7 @@ class UserInterface {
             console.log('uix: minimal');
         }
 
-        if (isMobile) {
+        if (preferences.isMobile) {
             ui.domCameraOffset.value = 1.4;
             ui.domTransformReactive.checked = false;
 
@@ -5475,6 +5483,7 @@ class UserInterfaceAdvanced {
 const KEY_MINIMAL = "pref_minimal";
 const KEY_USER_STARTUP = "pref_user_startup";
 const KEY_TOOLBAR_ICONS = "pref_toolbar_icons";
+const KEY_FPS_MAX = "pref_fps_max";
 const KEY_STARTBOX_SIZE = "pref_startbox_size";
 const KEY_PALETTE_SIZE = "pref_palette_size";
 const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
@@ -5493,18 +5502,24 @@ const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
 class Preferences {
     constructor() {
         this.isInitialized = false;
+        this.isHosted = undefined;
+        this.isMobile = undefined;
     }
 
     init() {
+        this.isHosted = isHosted;
+        this.isMobile = isMobile;
+
         resetAllInputElements();
 
-        document.getElementById(KEY_MINIMAL).checked = isMobile;
+        document.getElementById(KEY_MINIMAL).checked = this.isMobile;
         document.getElementById(KEY_USER_STARTUP).checked = false;
-        document.getElementById(KEY_USER_STARTUP).disabled = isHosted;
+        document.getElementById(KEY_USER_STARTUP).disabled = this.isHosted;
+        document.getElementById(KEY_FPS_MAX).value = 60;
         document.getElementById(KEY_STARTBOX_SIZE).value = 20;
         document.getElementById(KEY_PALETTE_SIZE).value = 1;
         document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
-        document.getElementById(KEY_TOOLBAR_ICONS).checked = isMobile;
+        document.getElementById(KEY_TOOLBAR_ICONS).checked = this.isMobile;
         document.getElementById(KEY_HELP_LABELS).checked = true;
         document.getElementById(KEY_IGNORE_CONFIRMS).checked = false;
         document.getElementById(KEY_GLASS_UI).checked = false;
@@ -5518,10 +5533,15 @@ class Preferences {
         document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
 
         this.setPrefCheck(KEY_MINIMAL);
-
         this.setPrefCheck(KEY_USER_STARTUP);
-        
         this.setPref(KEY_STARTBOX_SIZE);
+        this.setPrefCheck(KEY_IGNORE_CONFIRMS);
+
+        this.setPref(KEY_FPS_MAX, (val) => {
+            engine.engine.maxFPS = val;
+            if (modules.sandbox.isActive())
+                modules.sandbox.fps = 1000 / val;
+        });
 
         this.setPref(KEY_PALETTE_SIZE, (val) => {
             modules.palette.expand(val);
@@ -5539,8 +5559,6 @@ class Preferences {
             modules.panels.showHelpLabels(chk);
         });
 
-        this.setPrefCheck(KEY_IGNORE_CONFIRMS);
-
         this.setPrefCheck(KEY_GLASS_UI, (chk) => {
             ui.setFrostedGlassUI(chk);
         });
@@ -5551,13 +5569,13 @@ class Preferences {
         
         this.setPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
             scene.clearColor = (chk) ?
-                color4FromHex(this.getBackgroundColor()) :
-                color4FromHex(COL_SCENE_BG);
+                Color4FromHex(this.getBackgroundColor()) :
+                Color4FromHex(COL_SCENE_BG);
         });
 
         this.setPref(KEY_BACKGROUND_COLOR, (val) => {
             if (this.isBackgroundColor())
-                scene.clearColor = color4FromHex(val);
+                scene.clearColor = Color4FromHex(val);
         });
 
         this.setPref(KEY_RENDER_SHADE, () => {
@@ -5593,11 +5611,11 @@ class Preferences {
         ui.init();
 
         scene.clearColor = (this.isBackgroundColor()) ?
-            color4FromHex(this.getBackgroundColor()) :
-            color4FromHex(COL_SCENE_BG);
+            Color4FromHex(this.getBackgroundColor()) :
+            Color4FromHex(COL_SCENE_BG);
 
         hdri.preload(() => {
-            if (!isHosted && this.isUserStartup()) {
+            if (!this.isHosted && this.isUserStartup()) {
                 project.loadFromUrl('../user/startup.json', () => {
                     this.postFinish(startTime);
                 });
@@ -5626,7 +5644,7 @@ class Preferences {
         if (this.getPostProcessId() !== 0)
             postFx.start();
 
-        console.log(`mobile: ${isMobile}`);
+        console.log(`mobile: ${this.isMobile}`);
         console.log(`startup: ${(performance.now()-startTime).toFixed(0)} ms`);
         this.isInitialized = true;
 
@@ -5635,7 +5653,7 @@ class Preferences {
         camera.frameStartup();
 
         // inject the user module entry point
-        if (!isHosted) {
+        if (!this.isHosted) {
             const scriptUserModule = document.createElement('script');
             scriptUserModule.type = 'module';
             scriptUserModule.src = '../user/module.js';
@@ -5649,6 +5667,10 @@ class Preferences {
 
     isUserStartup() {
         return document.getElementById(KEY_USER_STARTUP).checked;
+    }
+
+    getFpsMax() {
+        return document.getElementById(KEY_FPS_MAX).value;
     }
 
     getPaletteSize() {
@@ -6855,16 +6877,6 @@ function setStyleRoot(key, val) {
     document.documentElement.style.setProperty(key, val);
 }
 
-function color3FromHex(hex) {
-    const rgb = hexToRgbFloat(hex, 1.0);
-    return Color3(rgb.r, rgb.g, rgb.b);
-}
-
-function color4FromHex(hex) {
-    const rgb = hexToRgbFloat(hex, 1.0);
-    return Color4(rgb.r, rgb.g, rgb.b, 1.0);
-}
-
 function hexToRgbFloat(hex, gamma = 2.2) { // 1 / 0.4545
     return {
         r: (parseInt(hex.substring(1, 3), 16) / 255) ** gamma,
@@ -6874,10 +6886,7 @@ function hexToRgbFloat(hex, gamma = 2.2) { // 1 / 0.4545
 }
 
 function rgbFloatToHex(r, g, b, gamma = 0.4545) {
-    r = r ** gamma;
-    g = g ** gamma;
-    b = b ** gamma;
-    [r, g, b] = [r, g, b].map(x => Math.round(x * 255));
+    [r, g, b] = [r, g, b].map(x => Math.round(x ** gamma * 255));
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }
 

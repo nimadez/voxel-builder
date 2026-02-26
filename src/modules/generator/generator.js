@@ -153,8 +153,12 @@ class Generator {
         const color = preferences.getRenderShadeColor();
         
         const simplex = new SimplexNoise();
-        const colArrayHigh = gradientHexArray('#87BC24', '#31A531', Y);
-        const colArrayLow  = gradientHexArray('#217EC4', '#31A531', Y);
+        const colArrayHigh = gradientHexArray(
+            { r: 0.529, g: 0.737, b: 0.141 },
+            { r: 0.192, g: 0.647, b: 0.192 }, Y);
+        const colArrayLow  = gradientHexArray(
+            { r: 0.129, g: 0.494, b: 0.769 },
+            { r: 0.192, g: 0.647, b: 0.192 }, Y);
 
         const data = [];
         const scaleFactor = 0.17;
@@ -190,9 +194,7 @@ class Generator {
 export const generator = new Generator();
 
 
-function gradientHexArray(hexStart, hexEnd, count) {
-    const start = hexToRgbFloat(hexStart, 2.2);
-    const end = hexToRgbFloat(hexEnd, 2.2);
+function gradientHexArray(start, end, count) {
     const arr = [];
     let a = 0;
     for (let i = 0; i < count; i++) {
@@ -200,21 +202,14 @@ function gradientHexArray(hexStart, hexEnd, count) {
         arr.push(rgbFloatToHex(
             start.r * a + (1 - a) * end.r,
             start.g * a + (1 - a) * end.g,
-            start.b * a + (1 - a) * end.b
+            start.b * a + (1 - a) * end.b,
+            2.2
         ));
     }
     return arr;
 }
 
-function hexToRgbFloat(hex, gamma = 2.2) {
-    return {
-        r: (parseInt(hex.substring(1, 3), 16) / 255) ** gamma,
-        g: (parseInt(hex.substring(3, 5), 16) / 255) ** gamma,
-        b: (parseInt(hex.substring(5, 7), 16) / 255) ** gamma
-    }
-}
-
-function rgbFloatToHex(r, g, b) {
-    [r, g, b] = [r, g, b].map(x => Math.round(x * 255));
+function rgbFloatToHex(r, g, b, gamma) {
+    [r, g, b] = [r, g, b].map(x => Math.round(x ** gamma * 255));
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }

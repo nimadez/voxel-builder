@@ -304,7 +304,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.7.9 BETA
+                &#8627; 4.8.0 BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -353,6 +353,7 @@
             <li title="Less battery drain (&#60;100 ms startup)"><input type="checkbox" id="pref_minimal"> <label for="pref_minimal">Minimal UIX</label></li>
             <li title="Enabled in self-hosted desktop mode"><input type="checkbox" id="pref_user_startup"> <label for="pref_user_startup">User Startup</label></li>
             <li class="spacer"></li>
+            <li title="Rendering is also affected" class="row_input"><label>Max FPS</label> <input type="number" id="pref_fps_max" class="ignorekeys" value="60" min="30" max="120" step="1"></li>
             <li class="row_input"><label>Start Box</label> <input type="number" id="pref_startbox_size" class="ignorekeys" value="20" min="1" max="40" step="1"></li>
             <li class="row_input"><label>Palette</label> <input type="number" id="pref_palette_size" class="ignorekeys" value="1" min="1" max="20" step="1"></li>
             <li class="row_input" title="Maximum 100 Storages"><label>Snapshot</label> <input type="number" id="pref_snapshot_num" class="ignorekeys" value="6" min="1" max="100" step="1"></li>
@@ -365,7 +366,7 @@
             <li class="row_input"><label>UI Opacity</label> <input type="range" id="pref_ui_opacity" class="ignorekeys" value="0.8" min="0.6" max="0.9" step="0.05"></li>
             <li class="category">SCENE</li>
             <li class="row_color"><label for="pref_background_check">BG</label> <input type="color" id="pref_background_color" value="#151515"> <input type="checkbox" id="pref_background_check" style="width: 57px;"></li>
-            <li class="row_color" title="General shade color is widely distributed throughout the app."><label>Shade</label><input type="color" id="pref_render_shade" value="#90A0B3"><button style="width: 52px; height: 20px;" title="Reset" onclick="this.previousElementSibling.value = '#90A0B3'; this.previousElementSibling.dispatchEvent(new Event('input', { bubbles: true }));">R</button></li>
+            <li class="row_color" title="General shade color is widely distributed throughout the app"><label>Shade</label><input type="color" id="pref_render_shade" value="#90A0B3"><button style="width: 52px; height: 20px;" title="Reset" onclick="this.previousElementSibling.value = '#90A0B3'; this.previousElementSibling.dispatchEvent(new Event('input', { bubbles: true }));">R</button></li>
             <li><input type="checkbox" id="pref_scene_pointcloud"> <label for="pref_scene_pointcloud">Point Cloud</label></li>
             <li class="category">RENDER</li>
             <li class="row">
@@ -513,7 +514,7 @@
 
         <ul class="menu panel" id="menu-voxelize">
             <li class="category">MODELS</li>
-            <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1"></li>
+            <li class="row"><label style="margin-right: 10px">Scale</label><input type="number" class="ignorekeys" id="input-voxelizer-scale" value="50" min="1" step="1"></li>
             <li class="spacer"></li>
             <li><button onclick="document.getElementById('openfile_voxelizer').click()">Upload Model</button></li>
             <li><label class="help">? GLB | OBJ | STL | PLY</label></li>
@@ -538,9 +539,9 @@
         <ul class="menu panel" id="menu-create">
             <li class="category">BOX</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 4px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_grid_y" type="number" class="ignorekeys" value="20" min="1"></div>
-                <div class="row">&nbsp;<label class="Z">Z</label>&nbsp;<input id="create_grid_z" type="number" class="ignorekeys" value="20" min="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">X</label>&nbsp;<input id="create_grid_x" type="number" class="ignorekeys" value="20" min="1" step="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_grid_y" type="number" class="ignorekeys" value="20" min="1" step="1"></div>
+                <div class="row">&nbsp;<label class="Z">Z</label>&nbsp;<input id="create_grid_z" type="number" class="ignorekeys" value="20" min="1" step="1"></div>
                 <div class="spacer"></div>
                 <input type="checkbox" id="create_grid_fill" checked> <label for="create_grid_fill">Fill Box</label><br>
                 <div class="spacer"></div>
@@ -552,8 +553,8 @@
             </li>
             <li class="category">SPHERE</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 6px">Outer</label>&nbsp;<input id="create_sphere_outer" type="number" class="ignorekeys" value="20" min="3"></div>
-                <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="10" min="0"></div>
+                <div class="row">&nbsp;<label style="margin-right: 6px">Outer</label>&nbsp;<input id="create_sphere_outer" type="number" class="ignorekeys" value="20" min="3" step="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 8px">Inner</label>&nbsp;<input id="create_sphere_inner" type="number" class="ignorekeys" value="10" min="0" step="1"></div>
                 <div class="spacer"></div>
                 <div title="Adds inner voxels and paints them using the selected color"><input type="checkbox" id="create_sphere_inner_color" checked> <label for="create_sphere_inner_color">Colored Inner</label></div>
                 <div class="spacer"></div>
@@ -561,9 +562,9 @@
             </li>
             <li class="category">TERRAIN</li>
             <li>
-                <div class="row">&nbsp;<label style="margin-right: 4px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3"></div>
-                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_terrain_y" type="number" class="ignorekeys" value="5" min="1"></div>
-                <div class="row">&nbsp;<label class="Z">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">X</label>&nbsp;<input id="create_terrain_x" type="number" class="ignorekeys" value="100" min="3" step="1"></div>
+                <div class="row">&nbsp;<label style="margin-right: 4px">Y</label>&nbsp;<input id="create_terrain_y" type="number" class="ignorekeys" value="5" min="1" step="1"></div>
+                <div class="row">&nbsp;<label class="Z">Z</label>&nbsp;<input id="create_terrain_z" type="number" class="ignorekeys" value="100" min="3" step="1"></div>
                 <div class="spacer"></div>
                 <input type="checkbox" id="create_terrain_grad" checked> <label for="create_terrain_grad">Height Gradient</label><br>
                 <div class="spacer"></div>
@@ -919,8 +920,10 @@
 
         float amb = 1.0;
         float dif = max(dot(N, L), 0.0);
+        if (dot(N, L) < 0.0)
+            dif = 0.5 * min(dot(N, -L), 1.0);
 
-        float NdotV = max(dot(N, V), 0.0);
+        float NdotV = max(dot(N, V), 1.0);
         float ao = pow(NdotV, 0.5);
         float curvature = abs(NdotV);
         ao = mix(ao, 0.5, curvature * 0.5);
@@ -982,7 +985,7 @@
         vec3 sb = sobel(textureSampler, vUV);
         float mx = max(max(sb.r, sb.g), sb.b);
         float aa = smoothstep(1.0, 0.0, mx);
-    	float edge = step(mx, 0.5);
+    	float edge = step(mx, 1.0);
 
         vec3 col = texture2D(textureSampler, vUV).rgb;
         col = mix(col, col * edge * aa, 1.0);

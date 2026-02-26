@@ -4,7 +4,6 @@
 
 ### **Voxel-based 3D Modeling Application**
 **Model . Render . Export**<br>
-This application is suitable for rapid prototyping, speed modeling, creating small assets in large numbers, loading and saving MagicaVoxel VOX format, or simply playing around and learning 3D modeling.
 
 [https://nimadez.github.io/voxel-builder/](https://nimadez.github.io/voxel-builder/)
 
@@ -30,7 +29,7 @@ This application is suitable for rapid prototyping, speed modeling, creating sma
 - Interactive modeling toolsets
 - Symmetric drawing and painting
 - Voxel transforms and manipulation
-- Color groups and visibility options
+- Color groups and layering options
 
 **Rendering**
 - Three.js Sandbox
@@ -129,7 +128,7 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 ## FAQ
 
 #### Why isn't there a layering feature and a layer list?
-> There is, you can have 16,777,216 layers (groups or color groups), because the layering system in this app is determined by colors, even a change in the brightness of a color creates a new group that can contain hundreds of voxels.<br>
+> You can have 16,777,216 layers (color groups), the layering system in this app is determined by colors, even a change in the brightness of a color creates a new group that can contain hundreds of voxels.<br>
 > So groups are automatically created, merged, or deleted based on color. You can even hide, delete, select, paint, transform, or duplicate color groups.
 
 #### Why can't I freely transform 3D objects like in other 3D software?
@@ -142,10 +141,10 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > GLB has a special use in this application, you can save and retrieve voxel data using baked meshes, exporting raw voxels to GLB leads to interference and errors when loading it using the "Load Bakes" option.
 
 #### What are the methods for saving and loading voxel data?
-> -- **Save to JSON** *(primary, human-readable, fastest)*<br>
-> -- **Export baked meshes to GLB** *(and 'Load Bakes', supports Blender and other 3D apps, slower)*<br>
+> -- **Save to JSON** *(includes scene configs, human-readable, fastest)*<br>
+> -- **Export baked meshes to GLB** *(uses 'Load Bakes', supports Blender and other 3D software, slower)*<br>
 > -- **Save snapshots to ZIP archive** *(easy to share, browser storage limits, speed is variable)*<br>
-> -- **Save to VOX format** *(supported by many 3D apps and engines, very fast)*
+> -- **Save to VOX format** *(supports MagicaVoxel, very fast)*
 
 #### How to merge vertices after export to GLB?
 > 1- Open exported GLB file in Blender<br>
@@ -167,9 +166,12 @@ git log -2 (copy the hash of the previous commit)
 git reset --hard $HASH
 ```
 
+#### Will WebGPU be supported?
+> It was supported to some extent before, but was removed due to unnecessary complexity. But once it matures enough to be enabled by default in browsers, this upgrade will be possible with a few simple changes.
+
 ## History
 ```
-↑ Advancing to the Renaissance Bubble
+↑ Advancing in the Renaissance Bubble
 ↑ A fundamental overhaul of the core
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer
