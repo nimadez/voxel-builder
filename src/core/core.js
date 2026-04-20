@@ -1,0 +1,6994 @@
+/*
+    Aug 2019
+    @nimadez
+
+    Core
+
+    - Main Scene
+    - Axis View Scene
+
+    - Camera
+    - HDRI
+    - Light
+    - Material
+
+    - Voxel Mesh
+    - Builder
+    - Bakery
+    - Mesh Pool
+
+    - Ghosts
+    - Helper
+
+    - Symmetry
+    - Tool
+    - Tool Mesh
+    - XFormer
+
+    - Project
+    - Memory
+    - Snapshot
+
+    - Render Target
+    - Face Normal Probe
+    - Post Process Effect
+    
+    - UserInterface
+    - UserInterfaceAdvanced
+
+    - Preferences
+
+    - Exports
+    - Events
+    - Events File
+    - Events DOM
+
+    - Utils
+*/
+
+
+import { VERSION } from '../app.js';
+import { config } from '../config.js';
+import { scene } from '../main.js';
+import * as modules from './modules.js';
+import {
+    engine,
+
+    PositionKind, NormalKind, UVKind, ColorKind,
+    DOUBLESIDE, FRONTSIDE, BACKSIDE,
+    ORTHOGRAPHIC_CAMERA, PERSPECTIVE_CAMERA,
+    REFRESHRATE_RENDER_ONCE, ShadowGenerator_QUALITY_LOW, ShadowGenerator_QUALITY_MEDIUM,
+    EffectShadersStore, Texture_CUBIC_MODE, Texture_SKYBOX_MODE, Texture_NEAREST_SAMPLINGMODE, Texture_LINEAR_LINEAR_MIPLINEAR,
+    CounterClockWiseSideOrientation,
+    
+    Vector2, Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
+    Color3, Color4, Color3FromHex, Color4FromHex,
+    MatrixIdentity, MatrixTranslation, MatrixScaling, QuaternionRotationAxis,
+    CreateScene, UtilityLayerRenderer,
+    ArcRotateCamera, Viewport,
+    DirectionalLight, HemisphericLight, ShadowGenerator,
+    StandardMaterial, ShaderMaterial, PBRMaterial, ShadowOnlyMaterial, NormalMaterial, GridMaterial,
+    CreateTexture, HDRCubeTexture, RenderTargetTexture, PostProcess,
+    TransformNode, PositionGizmo, AxisScaleGizmo, PlaneRotationGizmo, AxesViewer,
+    CreateMesh, CreateBox, CreatePlane, CreateDisc, CreateSphere, CreateLine,
+    PointsCloudSystem,
+    VertexData, MergeMeshes,
+    AnimatorCamera, CreateScreenshot, CreateScreenshotWithResizeAsync
+} from './babylon.js';
+
+
+// -------------------------------------------------------
+// Globals
+
+
+const isHosted = window.location.host === 'nimadez.github.io';
+const isMobile = config.debug_force_mobile ? true : isMobileDevice();
+
+const IMG_SNAPSHOT = "./assets/img_snapshot.png";
+const TEX_NULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAAXNSR0IB2cksfwAAAARnQU1BAACxjwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+oCCgwHIBNDbisAAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=";
+
+const COL_SCENE_BG = getStyleRoot('--scene');
+const COL_CLEAR_RGBA = Color4(0, 0, 0, 0);
+const COL_WHITE_RGBA = Color4(1, 1, 1, 0);
+const COL_ORANGE = '#FFA500';
+const COL_ORANGE_RGB = Color3FromHex(COL_ORANGE);
+const COL_ORANGE_RGBA = Color4FromHex(COL_ORANGE + 'FF');
+const COL_AQUA = '#00FFFF';
+const COL_AQUA_RGB = Color3FromHex(COL_AQUA);
+const COL_AQUA_RGBA = Color4FromHex(COL_AQUA + 'FF');
+const COL_AXIS_X = '#ED3751';
+const COL_AXIS_X_RGB = Color3FromHex(COL_AXIS_X);
+const COL_AXIS_X_RGBA = Color4FromHex(COL_AXIS_X + 'FF');
+const COL_AXIS_Y = '#81C90F';
+const COL_AXIS_Y_RGB = Color3FromHex(COL_AXIS_Y);
+const COL_AXIS_Y_RGBA = Color4FromHex(COL_AXIS_Y + 'FF');
+const COL_AXIS_Z = '#2F85E6';
+const COL_AXIS_Z_RGB = Color3FromHex(COL_AXIS_Z);
+const COL_AXIS_Z_RGBA = Color4FromHex(COL_AXIS_Z + 'FF');
+const COL_ICE = '#90A0B3';
+const COL_RED = '#FF0000';
+const COL_RED_RGB = Color3FromHex(COL_RED);
+const COL_PINK = '#FF00FF';
+const COL_PINK_RGB = Color3FromHex(COL_PINK);
+
+const AXIS_X = new Vector3(1, 0, 0);
+const AXIS_Y = new Vector3(0, 1, 0);
+const AXIS_Z = new Vector3(0, 0, 1);
+
+const VEC3_ZERO = Vector3();
+const VEC3_HALF = Vector3(0.5, 0.5, 0.5);
+const VEC3_ONE = Vector3(1, 1, 1);
+const VEC3_TWO = Vector3(2, 2, 2);
+const VEC6_ONE = [
+    Vector3(1, 0, 0),
+    Vector3(-1, 0, 0),
+    Vector3(0, 1, 0),
+    Vector3(0, -1, 0),
+    Vector3(0, 0, 1),
+    Vector3(0, 0, -1)
+];
+const VEC6_HALF = [
+    Vector3(0.5, 0, 0),
+    Vector3(-0.5, 0, 0),
+    Vector3(0, 0.5, 0),
+    Vector3(0, -0.5, 0),
+    Vector3(0, 0, 0.5),
+    Vector3(0, 0, -0.5)
+];
+const VEC20_CORNERS = [
+    Vector3(1, 1, 1),
+    Vector3(1, 1, -1),
+    Vector3(1, -1, 1),
+    Vector3(1, -1, -1),
+    Vector3(-1, 1, 1),
+    Vector3(-1, 1, -1),
+    Vector3(-1, -1, 1),
+    Vector3(-1, -1, -1),
+    Vector3(1, 1, 0),    // edge 0,1
+    Vector3(1, 0, 1),    // edge 0,2
+    Vector3(0, 1, 1),    // edge 0,4
+    Vector3(1, 0, -1),   // edge 1,3
+    Vector3(0, 1, -1),   // edge 1,5
+    Vector3(1, -1, 0),   // edge 2,3
+    Vector3(0, -1, 1),   // edge 2,6
+    Vector3(0, -1, -1),  // edge 3,7
+    Vector3(-1, 1, 0),   // edge 4,5
+    Vector3(-1, 0, 1),   // edge 4,6
+    Vector3(-1, 0, -1),  // edge 5,7
+    Vector3(-1, -1, 0)   // edge 6,7
+];
+
+const AXISLINES = [
+    [ VEC3_ZERO, Vector3(1, 0, 0) ],
+    [ VEC3_ZERO, Vector3(0, 1, 0) ],
+    [ VEC3_ZERO, Vector3(0, 0, 1) ]
+];
+const AXISCOLORS = [
+    [ COL_AXIS_X_RGBA, COL_AXIS_X_RGBA ],
+    [ COL_AXIS_Y_RGBA, COL_AXIS_Y_RGBA ],
+    [ COL_AXIS_Z_RGBA, COL_AXIS_Z_RGBA ]
+];
+
+// right-handed plane
+const PLANE_POSITIONS = [ -0.5,-0.5,0,  0.5,-0.5,0,  0.5,0.5,0,  -0.5,0.5,0 ];
+const PLANE_NORMALS = [ 0,0,1, 0,0,1, 0,0,1, 0,0,1 ];
+const PLANE_UVS = [ 0,1, 1,1, 1,0, 0,0 ];
+const PLANE_INDICES = [ 0,1,2, 0,2,3 ];
+
+const MAX_VOXELS_DRAW = isMobile ? 64000 : 256000;
+const MAX_SNAPSHOTS = 100;
+const MAX_Z = isMobile ? 2000 : 5000;
+const GRIDPLANE_SIZE = MAX_Z + 100;
+const WORKPLANE_SIZE = 120;
+const RECYCLEBIN = Vector3(-2000000, -2000000, -2000000);
+const FPS_TOOL = isMobile ? 1000 / 30 : 1000 / 60;
+const PI2 = Math.PI * 2;
+const PIH = Math.PI / 2;
+
+export let MODE = -1; // model|render|export
+export const pointer = { x: 0, y: 0, isDown: false, isWheel: false, wheelTimeout: undefined };
+
+const workplaneWhiteList = [
+    'add',
+    'box_add', 'box_remove', 'box_paint',
+    'rect_add', 'rect_remove', 'rect_paint',
+    'transform_box', 'transform_rect',
+    'measure_volume', 'frame_voxels'
+];
+
+const workplaneOnlyWhiteList = [
+    'add',
+    'box_add', 'box_remove', 'box_paint'
+];
+
+const pixelReadWhiteList = [
+    'rect_add'
+];
+
+
+// -------------------------------------------------------
+// Main Scene
+
+
+class MainScene {
+    constructor() {
+        this.shadowcatcher = undefined;
+    }
+
+    create(engine) {
+        return new Promise(resolve => {
+            const scene = CreateScene(engine);
+            scene.clearColor = COL_CLEAR_RGBA;
+            scene.autoClear = true;
+            scene.autoClearDepthAndStencil = true;
+            scene.blockMaterialDirtyMechanism = true;
+            scene.collisionsEnabled = false;
+            scene.useRightHandedSystem = true;
+    
+            const ambient = HemisphericLight("ambient", Vector3(0, 0, -1), scene);
+            ambient.diffuse = Color3(0.4, 0.4, 0.4);
+            ambient.groundColor = Color3(0.2, 0.2, 0.2);
+            
+            this.shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
+            this.shadowcatcher.material = ShadowOnlyMaterial('shadowcatcher', scene);
+            this.shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
+            this.shadowcatcher.material.disableDepthWrite = true; // required by postFX
+            //this.shadowcatcher.material.activeLight = light.directional; // later
+            this.shadowcatcher.material.backFaceCulling = true;
+            this.shadowcatcher.material.alpha = 0.1;
+            this.shadowcatcher.position.y = -0.5;
+            this.shadowcatcher.rotation.x = -PIH;
+            this.shadowcatcher.receiveShadows = true;
+            this.shadowcatcher.isPickable = false;
+            this.shadowcatcher.doNotSerialize = true;
+            this.shadowcatcher.bakeCurrentTransformIntoVertices();
+            this.shadowcatcher.freezeNormals();
+
+            resolve(scene);
+        });
+    }
+}
+
+
+// -------------------------------------------------------
+// Axis View Scene
+
+
+class AxisViewScene {
+    constructor() {
+        this.scene = undefined;
+        this.viewCube = undefined;
+        this.viewAxes = new Array(6);
+        this.view = [ 100, 100, -5, -95 ];
+        this.isRenderAxisView = false;
+    }
+
+    init() {
+        this.scene.activeCamera.viewport = this.getViewport(this.view[0], this.view[1], this.view[2], this.view[3]);
+        this.isRenderAxisView = true;
+    }
+
+    create(engine) {
+        this.scene = CreateScene(engine);
+        this.scene.clearColor = COL_CLEAR_RGBA;
+        this.scene.autoClear = false;
+        this.scene.autoClearDepthAndStencil = true;
+        this.scene.blockMaterialDirtyMechanism = true;
+        this.scene.collisionsEnabled = false;
+        this.scene.useRightHandedSystem = true;
+
+        const ambient = HemisphericLight("ambient", Vector3(0, 0, -1), this.scene);
+        ambient.diffuse = Color3(1, 1, 1);
+        ambient.groundColor = Color3(1, 1, 1);
+        ambient.intensity = 1;
+
+        const cam = ArcRotateCamera("camera", 10, VEC3_ZERO, this.scene);
+        cam.viewport = this.getViewport(0, 0, 0, 0);
+        cam.radius = 5.2;
+        cam.fov = 0.5;
+        cam.alpha = 0; // overridden
+        cam.beta = 0;
+
+        this.viewCube = CreateBox("viewcube", 0.52, FRONTSIDE, this.scene);
+        this.viewCube.material = NormalMaterial("viewcube", this.scene);
+        this.viewCube.material.backFaceCulling = true;
+        this.viewCube.material.freeze();
+        this.viewCube.doNotSyncBoundingInfo = true;
+        this.viewCube.doNotSerialize = true;
+        this.viewCube.freezeWorldMatrix();
+        this.viewCube.freezeNormals();
+
+        const axisHelper = AxesViewer(this.scene, 0.65, 6);
+        axisHelper.xAxis.getScene().materials[1].emissiveColor = COL_AXIS_X_RGB;
+        axisHelper.yAxis.getScene().materials[2].emissiveColor = COL_AXIS_Y_RGB;
+        axisHelper.zAxis.getScene().materials[3].emissiveColor = COL_AXIS_Z_RGB;
+        axisHelper.xAxis.parent = this.viewCube;
+        axisHelper.yAxis.parent = this.viewCube;
+        axisHelper.zAxis.parent = this.viewCube;
+
+        this.viewAxes = [];
+        for (let i = 0; i < 6; i++) {
+            this.viewAxes[i] = CreateSphere("viewaxes", 0.6, 6, FRONTSIDE, this.scene);
+            this.viewAxes[i].material = this.viewCube.material;
+            this.viewAxes[i].renderOverlay = true;
+            this.viewAxes[i].renderOutline = true;
+            this.viewAxes[i].outlineWidth = 0.05;
+            this.viewAxes[i].overlayAlpha = 1;
+            this.viewAxes[i].doNotSyncBoundingInfo = true;
+            this.viewAxes[i].doNotSerialize = true;
+            this.viewAxes[i].freezeNormals();
+        }
+
+        this.viewAxes[0].position.x = 0.9;
+        this.viewAxes[0].renderOutline = false;
+        this.viewAxes[0].overlayColor = COL_AXIS_X_RGB;
+        this.viewAxes[1].position.x = -0.9;
+        this.viewAxes[1].scaling.scaleInPlace(-0.9); // exclude border size
+        this.viewAxes[1].overlayAlpha = 0.3;
+        this.viewAxes[1].visibility = 0.01;
+        this.viewAxes[1].overlayColor = this.viewAxes[0].overlayColor;
+        this.viewAxes[1].outlineColor = this.viewAxes[0].overlayColor;
+        this.viewAxes[2].position.y = 0.9;
+        this.viewAxes[2].renderOutline = false;
+        this.viewAxes[2].overlayColor = COL_AXIS_Y_RGB;
+        this.viewAxes[3].position.y = -0.9;
+        this.viewAxes[3].scaling.scaleInPlace(-0.9);
+        this.viewAxes[3].overlayAlpha = 0.3;
+        this.viewAxes[3].visibility = 0.01;
+        this.viewAxes[3].overlayColor = this.viewAxes[2].overlayColor;
+        this.viewAxes[3].outlineColor = this.viewAxes[2].overlayColor;
+        this.viewAxes[4].position.z = 0.9;
+        this.viewAxes[4].renderOutline = false;
+        this.viewAxes[4].overlayColor = COL_AXIS_Z_RGB;
+        this.viewAxes[5].position.z = -0.9;
+        this.viewAxes[5].scaling.scaleInPlace(-0.9);
+        this.viewAxes[5].overlayAlpha = 0.3;
+        this.viewAxes[5].visibility = 0.01;
+        this.viewAxes[5].overlayColor = this.viewAxes[4].overlayColor;
+        this.viewAxes[5].outlineColor = this.viewAxes[4].overlayColor;
+    }
+
+    updateViewport() {
+        this.scene.activeCamera.viewport = this.getViewport(this.view[0], this.view[1], this.view[2], this.view[3]);
+    }
+
+    getViewport(w, h, bottom, right) {
+        const engineWidth = engine.engine.getRenderWidth();
+        const engineHeight = engine.engine.getRenderHeight();
+        return Viewport((w + right) / engineWidth, 1 - (bottom + engineHeight) / engineHeight,   w / engineWidth, h / engineHeight);
+    }
+
+    predicate = (mesh) => {
+        return this.viewAxes.includes(mesh) || mesh == this.viewCube;
+    }
+
+    registerEvent() {
+        const pick = this.scene.pick(this.scene.pointerX, this.scene.pointerY, this.predicate);
+        if (pick.hit) {
+            if (pick.pickedMesh == this.viewCube) {
+                setTimeout(() => {
+                    camera.frame();
+                }, 50);
+            } else {
+                if (pick.pickedMesh == this.viewAxes[0]) camera.setView('x');
+                else if (pick.pickedMesh == this.viewAxes[1]) camera.setView('-x');
+                else if (pick.pickedMesh == this.viewAxes[2]) camera.setView('y');
+                else if (pick.pickedMesh == this.viewAxes[3]) camera.setView('-y');
+                else if (pick.pickedMesh == this.viewAxes[4]) camera.setView('z');
+                else if (pick.pickedMesh == this.viewAxes[5]) camera.setView('-z');
+                scene.activeCamera.detachControl(engine.canvas);
+            }
+        }
+        return pick.hit;
+    }
+}
+
+
+// -------------------------------------------------------
+// Camera
+
+
+class Camera {
+    constructor() {
+        this.camera0 = undefined;
+        this.lastPos = undefined;
+        this.isFramingActive = false;
+        this.flagFrame = 0;
+    }
+
+    init() {
+        this.camera0 = ArcRotateCamera("camera", 10, VEC3_ZERO, scene);
+
+        this.camera0.setPosition(Vector3(1000, 1000, 1000));
+        this.camera0.setTarget(VEC3_ZERO.clone());
+        this.camera0.lowerRadiusLimit = 2;
+        this.camera0.upperRadiusLimit = 1500;
+        this.camera0.lowerBetaLimit = 0.0001;   // fix ortho Y inaccuracy
+        this.camera0.upperBetaLimit = Math.PI - 0.0001;
+        this.camera0.wheelPrecision = 3;        // def 3
+        this.camera0.pinchPrecision = 30;       // def 12
+        this.camera0.panningSensibility = 200;  // def 1000
+        this.camera0.inertia = 0.9;             // def 0.9
+        this.camera0.minZ = 1.0;
+        this.camera0.maxZ = MAX_Z;
+        this.camera0.fov = parseFloat(document.getElementById('input-camera-fov').value); //def: 0.8
+    }
+
+    frameStartup() {
+        const f = this.getFramedMesh(builder.mesh);
+        this.camera0.radius = f.radius;
+        this.camera0.target.copyFrom(f.target);
+    }
+
+    frame() {
+        if (this.isFramingActive || pointer.isWheel) return;
+        
+        if (MODE == 0) {
+            (xformer.isActive) ?
+                this.setFramingBehaviorMesh(this.camera0, ghosts.thin) :
+                this.setFramingBehaviorMesh(this.camera0, builder.mesh);
+
+        } else if (MODE == 1) {
+            modules.sandbox.frameCamera();
+
+        } else if (MODE == 2) {
+            if (pool.meshes.length > 0) {
+                (pool.selected) ?
+                    this.setFramingBehaviorMesh(this.camera0, pool.selected) :
+                    this.setFramingBehaviorAllMeshes(this.camera0);
+            } else {
+                this.setFramingBehaviorMesh(this.camera0, builder.mesh);
+            }
+        }
+    }
+
+    frameColor(hex) {
+        ghosts.createThin(builder.getVoxelsByColor(hex));
+        this.setFramingBehaviorMesh(this.camera0, ghosts.thin);
+        ghosts.disposeThin();
+    }
+
+    frameVoxels(voxels) {
+        ghosts.createThin(voxels);
+        this.setFramingBehaviorMesh(this.camera0, ghosts.thin);
+        ghosts.disposeThin();
+    }
+
+    setFramingBehaviorMesh(cam, mesh) {
+        const f = this.getFramedMesh(mesh);
+        if (f) {
+            this.isFramingActive = true;
+            AnimatorCamera(scene, cam, f.radius, f.target).then(() => {
+                this.isFramingActive = false;
+            });
+        }
+    }
+
+    setFramingBehaviorAllMeshes(cam) {
+        const sum = pool.getBoundingBoxSum();
+        const f = this.getFramedBoundingBox(sum.min, sum.max);
+        this.isFramingActive = true;
+        AnimatorCamera(scene, cam, f.radius, f.target).then(() => {
+            this.isFramingActive = false;
+        });
+    }
+
+    getFramedMesh(mesh) {
+        if (!mesh) return undefined;
+
+        mesh.computeWorldMatrix(true);
+        const bounds = mesh.getBoundingInfo();
+
+        return this.getFramedBoundingBox(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld);
+    }
+
+    getFramedBoundingBox(min, max) {
+        const offset = parseFloat(ui.domCameraOffset.value);
+        
+        const boxCenter = min.add(max).scale(0.5);
+        const boxHalfSize = max.subtract(min).scale(0.5);
+        const radius = boxHalfSize.length() * offset;
+
+        const frustumSlopeY = Math.tan(this.camera0.fov / 2);
+        const frustumSlopeX = frustumSlopeY * scene.getEngine().getAspectRatio(this.camera0);
+        const distanceX = radius / frustumSlopeX;
+        const distanceY = radius / frustumSlopeY;
+        const distance = Math.max(distanceX, distanceY);
+
+        const targetY = min.y + (max.y - min.y) * 0.4;
+        const target = Vector3(boxCenter.x, targetY, boxCenter.z);
+
+        return {
+            radius: distance,
+            target: target
+        };
+    }
+
+    toggleCameraAutoRotation(isEnabled, elem = undefined) {
+        this.camera0.useAutoRotationBehavior = !this.camera0.useAutoRotationBehavior;
+        if (this.camera0.useAutoRotationBehavior) {
+            (isEnabled) ?
+                this.camera0.autoRotationBehavior.idleRotationSpeed = -0.1 : // CCW
+                this.camera0.autoRotationBehavior.idleRotationSpeed = 0.1;   // CW
+            this.camera0.autoRotationBehavior.idleRotationWaitTime = 1;
+            this.camera0.autoRotationBehavior.idleRotationSpinupTime = 1;
+        }
+        if (elem)
+            elem.checked = this.camera0.useAutoRotationBehavior;
+    }
+
+    updateCameraAutoRotation(isEnabled) {
+        if (this.camera0.useAutoRotationBehavior) {
+            (isEnabled) ?
+                this.camera0.autoRotationBehavior.idleRotationSpeed = -0.1 :
+                this.camera0.autoRotationBehavior.idleRotationSpeed = 0.1;
+        }
+    }
+
+    switchOrtho() {
+        (this.camera0.mode == ORTHOGRAPHIC_CAMERA) ?
+            this.setPersp() : this.setOrtho();
+    }
+
+    setPersp() {
+        this.setView('persp');
+        ui.domScreenOrtho.innerHTML = 'P';
+    }
+
+    setOrtho() {
+        this.setView('ortho');
+        ui.domScreenOrtho.innerHTML = 'O';
+    }
+
+    setView(name) {
+        let position = undefined;
+
+        switch (name) {
+            case 'x':
+                position = Vector3(1, 0, 0);
+                break;
+            case '-x':
+                position = Vector3(-1, 0, 0);
+                break;
+            case 'y':
+                position = Vector3(0, 1, 0);
+                break;
+            case '-y':
+                position = Vector3(0, -1, 0);
+                break;
+            case 'z':
+                position = Vector3(0, 0, 1);
+                break;
+            case '-z':
+                position = Vector3(0, 0, -1);
+                break;
+            case 'ortho':
+                this.camera0.mode = ORTHOGRAPHIC_CAMERA;
+                ui.domCameraOrtho.innerHTML = 'Orthographic';
+                break;
+            case 'persp':
+                this.camera0.mode = PERSPECTIVE_CAMERA;
+                ui.domCameraOrtho.innerHTML = 'Perspective';
+                break;
+        }
+
+        if (position) {
+            const center = builder.getCenter();
+            this.camera0.setPosition(position.multiplyByFloats(
+                this.camera0.radius,
+                this.camera0.radius,
+                this.camera0.radius).add(center.clone()));
+            this.camera0.setTarget(center.clone());
+
+            if (modules.sandbox.isActive())
+                modules.sandbox.setView(position, center);
+        }
+    }
+
+    setOrthoMode() {
+        const sizeY = (this.camera0.radius / 2) * this.camera0.fov;
+        const sizeX = sizeY * engine.engine.getAspectRatio(this.camera0);
+        this.camera0.orthoLeft = -sizeX;
+        this.camera0.orthoRight = sizeX;
+        this.camera0.orthoTop = sizeY;
+        this.camera0.orthoBottom = -sizeY;
+    }
+
+    setFov(value) {
+        this.camera0.fov = parseFloat(value);
+    }
+
+    isCameraChange() {
+        return this.lastPos[0] !== this.camera0.alpha &&
+               this.lastPos[1] !== this.camera0.beta;
+               //this.camera0.hasMoved; // counts animations
+    }
+
+    isCameraFacingForward(tolerance = 0.001) {
+        const dir = camera.camera0.getForwardRay().direction.negate().normalize();
+        if (Math.abs(dir.x - 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.x + 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.y - 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.y + 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.z - 1.0) < tolerance) {
+            return true;
+        } else if (Math.abs(dir.z + 1.0) < tolerance) {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+// -------------------------------------------------------
+// HDRI
+
+
+class HDRI {
+    constructor() {
+        this.skybox = undefined;
+        this.hdrMap = undefined;
+        this.hdrMapRender = undefined;
+    }
+
+    preload(onLoad) {
+        if (preferences.isMinimal()) {
+            onLoad();
+            return;
+        }
+
+        // HDRCubeTexture locks the thread, start with smaller texture size
+        this.hdrMap = HDRCubeTexture(config.default_environment_map, scene, 16, () => {
+            this.createSkybox(this.hdrMap);
+            scene.environmentTexture = this.hdrMap;
+            scene.environmentIntensity = 0.6;
+            material.mat_pbr_vox.reflectionTexture = hdri.hdrMap;
+            material.mat_pbr_vox.reflectionTexture.coordinatesMode = Texture_CUBIC_MODE;
+            onLoad();
+        });
+
+        modules.sandbox.loadHDR(config.default_environment_map, (tex) => {
+            this.hdrMapRender = tex;
+        });
+    }
+
+    loadHDR(url) {
+        modules.sandbox.loadHDR(url, (tex) => {
+            this.hdrMapRender = tex;
+            if (modules.sandbox.isActive())
+                modules.sandbox.updateHDR();
+        });
+    }
+
+    unloadHDR() {
+        this.loadHDR(config.default_environment_map);
+    }
+
+    createSkybox(tex) {
+        this.skybox = CreateBox('skybox', MAX_Z, BACKSIDE, scene);
+        this.skybox.material = StandardMaterial("skybox", scene);
+        this.skybox.material.reflectionTexture = tex;
+        this.skybox.material.reflectionTexture.coordinatesMode = Texture_SKYBOX_MODE;
+        this.skybox.material.disableLighting = true;
+        this.skybox.material.twoSidedLighting = true;
+        this.skybox.material.backFaceCulling = false;
+        this.skybox.isPickable = false;
+        this.skybox.isVisible = false;
+        this.skybox.rotation.y = -PIH;
+        this.skybox.infiniteDistance = true;
+        this.skybox.ignoreCameraMaxZ = true;
+        this.skybox.doNotSyncBoundingInfo = true;
+        this.skybox.material.freeze();
+        this.skybox.freezeWorldMatrix();
+        this.skybox.freezeNormals();
+    }
+}
+
+
+// -------------------------------------------------------
+// Light
+
+
+class Light {
+    constructor() {
+        this.directional = undefined;
+        this.location = Vector3(50, 100, 50);
+        this.angle = 75;
+    }
+
+    init() {
+        this.directional = DirectionalLight("directional", Vector3(0, 0, -1), scene);
+        this.directional.autoUpdateExtends = true;  // enable REFRESHRATE_RENDER_ONCE
+        this.directional.position.copyFrom(this.location);
+        this.directional.diffuse = Color3(0.8, 0.8, 0.8);
+        this.directional.intensity = 0.8;
+        this.directional.shadowMaxZ = 2500;
+        this.directional.shadowMinZ = -2500;
+        this.setLightPositionByAngle(this.angle, this.location.x);
+
+        const shadowSize = preferences.isMobile ? 256 : 1024;
+        const shadowGen = ShadowGenerator(shadowSize, this.directional);
+        shadowGen.getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
+        shadowGen.filteringQuality = preferences.isMobile ? 
+            ShadowGenerator_QUALITY_LOW :
+            ShadowGenerator_QUALITY_MEDIUM;
+        shadowGen.useExponentialShadowMap = true;       // def true
+        shadowGen.usePercentageCloserFiltering = true;  // webgl2 only, fallback -> usePoissonSampling
+        shadowGen.forceBackFacesOnly = false;
+        shadowGen.bias = 0.00001; // def 0.00005
+        shadowGen.setDarkness(0);
+
+        mainScene.shadowcatcher.material.activeLight = this.directional;
+    }
+
+    addMesh(mesh) {
+        this.directional.getShadowGenerator().addShadowCaster(mesh);
+    }
+
+    updateShadowMap() {
+        this.directional.getShadowGenerator().getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
+    }
+    
+    updateAngle(angle) {
+        this.setLightPositionByAngle(angle, this.location.x);
+        this.updateShadowMap();
+        material.updateShaderMaterials();
+        modules.sandbox.updateLights();
+    }
+    
+    updateHeight(posY) {
+        this.directional.position.y = posY;
+        this.directional.setDirectionToTarget(VEC3_ZERO);
+        this.updateShadowMap();
+        material.updateShaderMaterials();
+        modules.sandbox.updateLights();
+    }
+    
+    updateIntensity(value) {
+        this.directional.intensity = parseFloat(value);
+        material.updateShaderMaterials();
+    }
+    
+    updateColor(hex) {
+        this.directional.diffuse = Color3FromHex(hex).toLinearSpace();
+        material.updateShaderMaterials();
+    }
+    
+    enableShadows(isEnabled) {
+        mainScene.shadowcatcher.isVisible = isEnabled;
+        this.directional.shadowEnabled = isEnabled;
+    }
+
+    setLightPositionByAngle(angle, dist) {
+        this.directional.position.x = Math.cos(angle * Math.PI / 180) * dist;
+        this.directional.position.z = Math.sin(angle * Math.PI / 180) * dist;
+        this.directional.setDirectionToTarget(VEC3_ZERO);
+    }
+}
+
+
+// -------------------------------------------------------
+// Material
+
+
+class Material {
+    constructor() {
+        this.mode = 'CEL';
+        this.mat_cel = undefined;
+        this.mat_pbr_vox = undefined;
+        this.mat_pbr_msh = undefined;
+        this.mat_grid = undefined;
+        this.mat_white = undefined;
+        this.tex_voxel = undefined;
+        this.textures = [];
+        this.textureMaps = [];
+    }
+
+    init() {
+        this.textureMaps.push(TEX_NULL);
+        this.textureMaps.push(this.createVoxelTexture());
+        this.textureMaps.push("./assets/tex_checker.png");
+        this.textureMaps.push("./assets/tex_minecraft.png");
+
+        this.textures.push(this.loadTexture('tex_null', this.textureMaps[0], Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_grid', this.textureMaps[1], Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_checker', this.textureMaps[2], Texture_LINEAR_LINEAR_MIPLINEAR));
+        this.textures.push(this.loadTexture('tex_minecraft', this.textureMaps[3], Texture_LINEAR_LINEAR_MIPLINEAR));
+
+        this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
+
+        this.createCELMaterial();
+        this.createGridMaterial();
+        this.createWhiteMaterial();
+
+        if (!preferences.isMinimal()) {
+            this.createPBRMaterialVoxel();
+            this.createPBRMaterialMesh(true);
+        }
+    }
+
+    getMaterial() {
+        if (this.mode == 'CEL') {
+            return this.mat_cel;
+        } else if (this.mode == 'PBR') {
+            return this.mat_pbr_vox;
+        }
+    }
+
+    switchMaterial() {
+        if (this.mode == 'CEL') {
+            this.mode = 'PBR';
+            builder.mesh.material = this.mat_pbr_vox;
+        } else if (this.mode == 'PBR') {
+            this.mode = 'CEL';
+            builder.mesh.material = this.mat_cel;
+        }
+        
+        ui.domMaterialSwitch.innerHTML = this.mode;
+    }
+
+    createCELMaterial() {
+        this.mat_cel = ShaderMaterial(
+            'CEL', scene, {
+                vertexElement: 'uniVertexShader',
+                fragmentElement: 'celFragmentShader'
+            }, {
+                attributes: [ "position", "normal", "uv", "color" ],
+                uniforms:   [ "world", "worldView", "worldViewProjection", "view", "projection", "viewProjection",
+                              "uCamPos", "uLightDir", "uLightCol", "uTextureId", "uTexture" ],
+                needAlphaBlending: false,
+                needAlphaTesting: false
+            }
+        );
+
+        this.updateShaderMaterials();
+    }
+    
+    updateShaderMaterials() {
+        if (this.mat_cel) {
+            this.mat_cel.setVector3("uCamPos", camera.camera0.position);
+            this.mat_cel.setVector3("uLightDir", light.directional.direction);
+            this.mat_cel.setColor3("uLightCol", Color3(
+                (light.directional.diffuse.r * light.directional.diffuse.r) * light.directional.intensity,
+                (light.directional.diffuse.g * light.directional.diffuse.g) * light.directional.intensity,
+                (light.directional.diffuse.b * light.directional.diffuse.b) * light.directional.intensity));
+            this.mat_cel.setInt("uTextureId", preferences.getVoxelTextureId());
+            this.mat_cel.setTexture("uTexture", this.textures[preferences.getVoxelTextureId()]);
+        }
+    }
+
+    createPBRMaterialVoxel() {
+        const mat = PBRMaterial("PBR_V", scene);
+        mat.albedoColor = Color3(1, 1, 1);
+        mat.albedoTexture = this.tex_voxel;
+        mat.roughness = 1;
+        mat.metallic = 0;
+        mat.metallicF0Factor = 0;
+        mat.backFaceCulling = true;
+        mat.specularIntensity = 1;
+        mat.directIntensity = 1;
+        mat.environmentIntensity = 1;
+        mat.transparencyMode = 0; // required by postFX
+        this.mat_pbr_vox = mat;
+    }
+
+    createPBRMaterialMesh() {
+        if (this.mat_pbr_msh) {
+            this.mat_pbr_msh.albedoTexture.dispose();
+            this.mat_pbr_msh.dispose();
+        }
+        const mat = PBRMaterial("PBR", scene);
+        mat.albedoColor = Color3(1, 1, 1);
+        mat.albedoTexture = this.tex_voxel.clone();
+        mat.roughness = 1;
+        mat.metallic = 0;
+        mat.metallicF0Factor = 0;
+        mat.alpha = 1;
+        mat.backFaceCulling = true;
+        mat.wireframe = false;
+        mat.specularIntensity = 1;
+        mat.directIntensity = 1;
+        mat.environmentIntensity = 1;
+        this.mat_pbr_msh = mat;
+    }
+
+    createGridMaterial() {
+        const mat = GridMaterial("grid", scene);
+        mat.gridRatio = 1;
+        mat.majorUnitFrequency = 20;
+        mat.minorUnitVisibility = 0.4;
+        mat.mainColor = Color3(0.1, 0.1, 0.2);
+        mat.lineColor = Color3(1, 1, 1);
+        mat.backFaceCulling = false;
+        mat.disableDepthWrite = true; // required by postfx
+        mat.freeze();
+        this.mat_grid = mat;
+    }
+
+    createWhiteMaterial() {
+        const mat = StandardMaterial("white", scene);
+        mat.disableLighting = true;
+        mat.emissiveColor = Color3(1, 1, 1);
+        mat.zOffset = -1;
+        mat.freeze();
+        this.mat_white = mat;
+    }
+
+    createVoxelTexture(size = 128) {
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, size, size);
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = '#000000EE';
+        //ctx.filter = 'blur(1px)';
+        ctx.strokeRect(0, 0, size, size);
+        return c.toDataURL("image/png");
+    }
+
+    setVoxelTexture() {
+        this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
+        this.mat_pbr_vox.albedoTexture = this.tex_voxel;
+        this.createPBRMaterialMesh();
+        this.updateShaderMaterials();
+    }
+
+    setVoxelTextureNoPBR() {
+        this.tex_voxel = this.textures[preferences.getVoxelTextureId()];
+        this.updateShaderMaterials();
+    }
+
+    loadTexture(name, url, sampling = Texture_NEAREST_SAMPLINGMODE) {
+        const tex = CreateTexture(url, scene, sampling);
+        tex.name = name;
+        tex.uScale = 1;
+        tex.vScale = 1;
+        tex.hasAlpha = true;
+        tex.gammaSpace = true;
+        tex.optimizeUVAllocation = true;
+        return tex;
+    }
+}
+
+
+// -------------------------------------------------------
+// Voxel Mesh
+
+
+class VoxelMesh {
+    constructor() {
+        this.mesh = undefined;
+        this.positions = undefined;
+        this.normals = undefined;
+        this.uvs = undefined;
+        this.indices = undefined;
+    }
+
+    init() {
+        this.mesh = CreateBox("voxel", 1, FRONTSIDE, scene);
+        this.mesh.isVisible = false;
+        this.mesh.isPickable = false;
+        this.mesh.receiveShadows = true;
+        this.mesh.doNotSerialize = true;
+        this.mesh.freezeWorldMatrix();
+        this.mesh.freezeNormals();
+
+        this.positions = this.mesh.getVerticesData(PositionKind);
+        this.normals = this.mesh.getVerticesData(NormalKind);
+        this.uvs = this.mesh.getVerticesData(UVKind);
+        this.indices = this.mesh.getIndices();
+    }
+}
+
+
+// -------------------------------------------------------
+// Builder
+//
+// voxel = {
+//    position: VEC3 INTEGER { x, y, z } (no floats)
+//    color: HEX STRING UPPERCASE (#FFFFFF - no opacity)
+//    visible: BOOLEAN true/false
+//    idx: INTEGER (read-only)
+// }
+
+
+class Builder {
+    constructor() {
+        this.isWorking = false;
+        this.flagDuplicate = 0;
+        this.latency = 0;
+
+        this.voxels = [];
+        this.mesh = undefined;
+
+        this.positions = [];
+        this.normals = [];
+        this.uvs = [];
+        this.colors = [];
+        this.indices = [];
+
+        this.tMatrix = MatrixIdentity();
+        this.bufferMatrix = [];
+        this.bufferColors = [];
+
+        this.rttColors = [];
+        this.rttColorsMap = [];
+        this.positionsMap = [];
+
+        this.rgbIndex = [];
+        this.rgbBuffer = undefined;
+
+        this.uniqueColors = [];
+        this.invisibleColors = [];
+
+        this.minY = Infinity;
+        this.maxY = -Infinity;
+    }
+
+    init() {
+        this.mesh = vMesh.mesh.clone();
+    }
+
+    create(isRecord = true) {
+        const startTime = performance.now();
+
+        if (this.voxels.length == 0)
+            modules.generator.newBox(1, preferences.getRenderShadeColor());
+        
+        this.createThinInstances(isRecord).then(() => {
+            this.latency = (performance.now() - startTime).toFixed(0);
+
+            this.fillMeshBuffersWorker().then(() => {
+                //
+            });
+
+            if (camera.flagFrame == 1 || (ui.domCameraAutoFrame.checked && !xformer.isActive)) {
+                camera.flagFrame = 0;
+                setTimeout(() => {
+                    camera.frame();
+                }, 100);
+            }
+
+            if (preferences.isPointCloud())
+                ghosts.createPointCloud();
+
+            helper.setSymmPivot();
+            modules.palette.create();
+        });
+    }
+
+    createThinInstances(isRecord) {
+        this.isWorking = true;
+
+        return new Promise(resolve => {
+
+            this.fillVoxelBuffers();
+            
+            if (this.flagDuplicate == 0) {
+                if (isRecord)
+                    memory.record();
+                
+                this.isWorking = false;
+                resolve();
+
+                //this.mesh.dispose();  // not needed after 7.35.0
+                //this.mesh = vMesh.mesh.clone();
+                this.mesh.makeGeometryUnique();
+                this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
+                this.mesh.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
+                this.mesh.thinInstanceEnablePicking = false;
+                this.mesh.doNotSyncBoundingInfo = false;
+                this.mesh.material = material.getMaterial();
+                this.mesh.isVisible = true;
+                this.mesh.name = "thin";
+
+                renderTarget.pickTexture.renderList = [ this.mesh ];
+                renderTarget.pickTexture.setMaterialForRendering(this.mesh, material.mat_white);
+
+                light.addMesh(this.mesh);
+                light.directional.position.y = this.maxY + 100;
+                light.updateShadowMap();
+
+                mainScene.shadowcatcher.position.y = this.minY;
+            }
+        });
+    }
+
+    fillVoxelBuffers() {
+        this.bufferMatrix = new Float32Array(16 * this.voxels.length);
+        this.bufferColors = new Float32Array(4 * this.voxels.length);
+        this.rttColors = new Float32Array(4 * this.voxels.length);
+        this.rttColorsMap = new Array(this.voxels.length);
+        this.positionsMap = new Array(this.voxels.length);
+        this.uniqueColors = [];
+        this.invisibleColors = [];
+        this.minY = Infinity;
+        this.maxY = -Infinity;
+
+        for (let i = 0; i < this.voxels.length; i++) {
+            const voxel = this.voxels[i];
+
+            this.voxels[i].idx = i;
+            
+            if (this.getIndexAtPosition(voxel.position) !== undefined) {
+                this.voxels[i].position = RECYCLEBIN;
+                this.flagDuplicate = 1;
+            } else {
+                this.tMatrix.m[12] = voxel.position.x;
+                this.tMatrix.m[13] = voxel.position.y;
+                this.tMatrix.m[14] = voxel.position.z;
+                this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxel.visible) ? 1 : 0;
+                this.bufferMatrix.set(this.tMatrix.m, i * 16);
+
+                this.rgbIndex = renderTarget.numToColor(i);
+                this.rttColors[i * 4] = this.rgbIndex.r / 255;
+                this.rttColors[i * 4 + 1] = this.rgbIndex.g / 255;
+                this.rttColors[i * 4 + 2] = this.rgbIndex.b / 255;
+                this.rttColors[i * 4 + 3] = 1;
+                this.rttColorsMap[`${this.rgbIndex.r}_${this.rgbIndex.g}_${this.rgbIndex.b}`] = i;
+
+                this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
+            
+                if (this.uniqueColors.indexOf(voxel.color) == -1) {
+                    this.uniqueColors.push(voxel.color);
+                    if (!voxel.visible)
+                        this.invisibleColors.push(voxel.color);
+                }
+                
+                this.maxY = Math.max(this.maxY, voxel.position.y);
+                this.minY = Math.min(this.minY, voxel.position.y);
+            }
+
+            // prevent flagDuplicate shadowing
+            this.rgbBuffer = hexToRgbFloat(voxel.color, 2.2);
+            this.bufferColors[i * 4] = this.rgbBuffer.r;
+            this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+            this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
+            this.bufferColors[i * 4 + 3] = 1;
+        }
+    }
+
+    fillMeshBuffersWorker() {
+        return new Promise(async resolve => {
+            const msg = await modules.workerPool.postMessage({
+                id: 'fillMeshBuffers',
+                data: [
+                    this.bufferMatrix, this.bufferColors,
+                    vMesh.positions, vMesh.normals, vMesh.uvs, vMesh.indices
+                ]});
+            if (msg) {
+                this.positions = msg.data[1];
+                this.normals = msg.data[2];
+                this.uvs = msg.data[3];
+                this.colors = msg.data[4];
+                this.indices = msg.data[5];
+                resolve();
+            }
+        });
+    }
+
+    createXform(voxels) {
+        return new Promise(resolve => {
+            if (ui.domOptionsScreenNewScene.checked) {
+                this.createVoxelsFromArray(voxels);
+                project.resetSceneSetup();
+                resolve();
+            } else {
+                xformer.beginNew(voxels);
+                resolve();
+            }
+        });
+    }
+
+    setTransformMatrix(idx, position, visible) {
+        const tMatrix = MatrixIdentity();
+        tMatrix.m[12] = position.x;
+        tMatrix.m[13] = position.y;
+        tMatrix.m[14] = position.z;
+        tMatrix.m[0] = tMatrix.m[5] = tMatrix.m[10] = (visible) ? 1 : 0;
+        this.bufferMatrix.set(tMatrix.m, idx * 16);
+    }
+
+    applyBufferMatrix() {
+        this.mesh.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
+    }
+
+    getCenter() {
+        return this.mesh.getBoundingInfo().boundingSphere.centerWorld;
+    }
+
+    getRadius() {
+        return this.mesh.getBoundingInfo().boundingSphere.radius;
+    }
+
+    getSize() {
+        const bounds = this.mesh.getBoundingInfo();
+        return Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z)
+        );
+    }
+
+    getIndexAtPointer() {
+        return this.rttColorsMap[ renderTarget.readPixel() ];
+    }
+
+    getIndexAtPointerFace() {
+        return this.rttColorsMap[ renderTarget.readFace() ];
+    }
+
+    getIndexAtPointerOmni(num, pad) {
+        return this.rttColorsMap[ renderTarget.readOmni(num, pad) ];
+    }
+
+    getIndexesAtTarget(x, y, w, h) {
+        const indexes = [];
+        const pixels = renderTarget.readTarget(x, y, w, h);
+        for (let i = 0; i < pixels.length; i += 4) {
+            if (pixels[i + 3] !== 0) {
+                const idx = this.rttColorsMap[ `${pixels[i]}_${pixels[i + 1]}_${pixels[i + 2]}` ];
+                if (idx !== undefined)
+                    indexes.push(idx);
+            }
+        }
+        return indexes;
+    }
+
+    getIndexAtPosition(pos) {
+        return this.positionsMap[`${pos.x}_${pos.y}_${pos.z}`];
+    }
+
+    getIndexAtXYZ(x, y, z) {
+        return this.positionsMap[`${x}_${y}_${z}`];
+    }
+
+    getVoxelsByPosition(pos) {
+        return this.voxels.filter(i =>
+            i.position.x === pos.x &&
+            i.position.y === pos.y &&
+            i.position.z === pos.z);
+    }
+
+    getVoxelsByColor(hex) {
+        return this.voxels.filter(i => i.color === hex);
+    }
+
+    getVoxelsByVisibility(isVisible) { // dup
+        return this.voxels.filter(i => i.visible === isVisible);
+    }
+
+    getVoxelsByDistance(position, distance) {
+        const arr = [];
+        for (let i = 0; i < this.voxels.length; i++) {
+            if (distanceVectors(this.voxels[i].position, position) <= distance)
+                arr.push(this.voxels[i]);
+        }
+        return arr;
+    }
+
+    getVoxelsByIslands(pos = undefined, isAddConnected = false) {
+        const positions = this.voxels.map(i => i.position);
+        const adjIndexes = Array(positions.length).fill().map(() => []);
+        const directions = (isAddConnected) ? VEC6_ONE.concat(VEC20_CORNERS) : VEC6_ONE;
+
+        for (let i = 0; i < positions.length; i++) {
+            for (const dir of directions) {
+                const j = this.positionsMap[`${positions[i].x + dir.x}_${positions[i].y + dir.y}_${positions[i].z + dir.z}`];
+                if (j === undefined || !this.voxels[j].visible || j <= i) continue;
+                adjIndexes[i].push(j);
+                adjIndexes[j].push(i);
+            }
+        }
+
+        const visited = new Uint8Array(adjIndexes.length);
+
+        function bfs(id) {
+            const island = [];
+            const queue = new Array(adjIndexes.length);
+            let head = 0;
+            let tail = 0;
+
+            queue[tail++] = id;
+            visited[id] = 1;
+
+            while (head < tail) {
+                const node = queue[head++];
+                island.push(positions[node]);
+
+                for (const neighbor of adjIndexes[node]) {
+                    if (!visited[neighbor]) {
+                        visited[neighbor] = 1;
+                        queue[tail++] = neighbor;
+                    }
+                }
+            }
+
+            return island;
+        }
+
+        const islands = [];
+
+        if (pos === undefined) {
+            for (let i = 0; i < positions.length; i++) {
+                if (visited[i] == 0) {
+                    const island = bfs(i);
+                    if (island.length > 0)
+                        islands.push(island);
+                }
+            }
+        } else {
+            for (let i = 0; i < positions.length; i++) {
+                if (visited[i] == 0 && positions[i].equals(pos)) {
+                    const island = bfs(i);
+                    if (island.length > 0) {
+                        islands.push(island);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return islands;
+    }
+
+    isPositionInBoundingBox(position) {
+        const bounds = this.mesh.getBoundingInfo();
+        const min = bounds.boundingBox.minimumWorld;
+        const max = bounds.boundingBox.maximumWorld;
+        return (
+            position.x >= min.x && position.x <= max.x &&
+            position.y >= min.y && position.y <= max.y &&
+            position.z >= min.z && position.z <= max.z
+        );
+    }
+
+    add(pos, hex, visible) {
+        this.voxels.push({ position: pos, color: hex, visible: visible });
+    }
+
+    addArray(arr) {
+        this.voxels = this.voxels.concat(arr);
+    }
+
+    remove(voxel) {
+        const idx = this.voxels.indexOf(voxel);
+        if (idx > -1)
+            this.voxels.splice(idx, 1);
+    }
+
+    removeArray(arr) {
+        this.voxels = this.voxels.filter(i => !arr.includes(i));
+    }
+
+    removeByPosition(pos) {
+        this.removeArray(this.getVoxelsByPosition(pos));
+    }
+
+    removeByColor(hex) {
+        const group = this.getVoxelsByColor(hex);
+        if (group.length == 0) return;
+        this.removeArray(group);
+    }
+
+    removeDuplicatesAndUpdate() {
+        this.removeByPosition(RECYCLEBIN);
+        this.create();
+    }
+
+    paintByArray(arr, hex) {
+        for (let i = 0; i < arr.length; i++)
+            this.voxels[arr[i].idx].color = hex;
+    }
+
+    setMeshVisibility(isVisible) {
+        this.mesh.isVisible = isVisible;
+    }
+
+    setVoxelsVisibility(isVisible) {
+        for (let i = 0; i < this.voxels.length; i++)
+            this.voxels[i].visible = isVisible;
+    }
+
+    setVoxelsVisibilityByColor(hex, isVisible) {
+        const voxels = this.getVoxelsByColor(hex);
+        for (let i = 0; i < voxels.length; i++)
+            this.voxels[voxels[i].idx].visible = isVisible;
+    }
+
+    setVoxelsVisibilityBySliceY(sliceY) {
+        if (sliceY === 0) {
+            builder.setVoxelsVisibility(true);
+        } else {
+            const posY = (sliceY > 0) ? sliceY - 1 : sliceY;
+            for (let i = 0; i < builder.voxels.length; i++)
+                builder.voxels[i].visible = builder.voxels[i].position.y === posY;
+        }
+    }
+
+    invertVisibility() {
+        for (let i = 0; i < this.voxels.length; i++)
+            this.voxels[i].visible = !this.voxels[i].visible;
+    }
+
+    deleteHiddenAndUpdate() {
+        const hiddens = this.getVoxelsByVisibility(false);
+        if (hiddens.length == 0) return;
+        
+        this.removeArray(hiddens);
+        this.create();
+    }
+
+    setColorsAndUpdate(hex) {
+        for (let i = 0; i < this.voxels.length; i++) {
+            this.voxels[i].visible = true;
+            this.voxels[i].color = hex;
+        }
+        this.create();
+    }
+
+    normalizePositions(voxels, bounds) {
+        const size = Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z));
+            
+        const tMatrix = MatrixTranslation(
+            (-bounds.boundingBox.center.x + size.x / 2) - 0.5,
+            (size.y / 2 - bounds.boundingBox.center.y) - 0.5,
+            (-bounds.boundingBox.center.z + size.z / 2) - 0.5
+        );
+
+        const newArr = [];
+
+        for (let i = 0; i < voxels.length; i++) {
+            newArr.push({
+                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
+                color: voxels[i].color,
+                visible: voxels[i].visible
+            });
+        }
+
+        return newArr;
+    }
+
+    normalizePositionsBounds(voxels) {
+        ghosts.createThin(voxels);
+        const bounds = ghosts.thin.getBoundingInfo();
+        ghosts.disposeThin();
+        return this.normalizePositions(voxels, bounds);
+    }
+
+    centralizePositions(voxels, bounds) {
+        const tMatrix = MatrixTranslation(
+            -bounds.boundingBox.center.x - 0.5,
+            -bounds.boundingBox.center.y - 0.5,
+            -bounds.boundingBox.center.z - 0.5
+        );
+
+        const newArr = [];
+
+        for (let i = 0; i < voxels.length; i++) {
+            newArr.push({
+                position: Vector3TransformCoordinates(voxels[i].position, tMatrix),
+                color: voxels[i].color,
+                visible: voxels[i].visible
+            });
+        }
+
+        return newArr;
+    }
+
+    async optimizeVoxels(voxels) {
+        const msg = await modules.workerPool.postMessage({
+            id: 'findInnerVoxels',
+            data: [ voxels, this.positionsMap ]
+        });
+
+        if (msg) {
+            const data = [];
+            for (let i = 0; i < msg.data.length; i++) {
+                data.push({
+                    position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                    color: msg.data[i].color,
+                    visible: true
+                });
+            }
+            return data;
+        }
+
+        return undefined;
+    }
+
+    async upsampleVoxels(voxels) {
+        const msg = await modules.workerPool.postMessage({
+            id: 'upsampleVoxels',
+            voxels: voxels
+        });
+
+        if (msg) {
+            const data = [];
+            for (let i = 0; i < msg.data.length; i++) {
+                data.push({
+                    position: Vector3(msg.data[i].x, msg.data[i].y, msg.data[i].z),
+                    color: msg.data[i].color,
+                    visible: true
+                });
+            }
+            return data;
+        }
+
+        return undefined;
+    }
+
+    normalizePositionsAction() {
+        const bounds = this.mesh.getBoundingInfo();
+        const voxels = this.normalizePositions(this.voxels, bounds);
+        this.createVoxelsFromArray(voxels);
+    }
+
+    centralizePositionsAction() {
+        const bounds = this.mesh.getBoundingInfo();
+        const voxels = this.centralizePositions(this.voxels, bounds);
+        this.createVoxelsFromArray(voxels);
+    }
+
+    optimizeVoxelsAction() {
+        ui.showProgress(1);
+        setTimeout(async () => {
+            const last = this.voxels.length;
+            const voxels = await this.optimizeVoxels(this.voxels);
+            if (voxels) {
+                this.createVoxelsFromArray(voxels);
+                ui.notification(`${ last - this.voxels.length } removed`);
+            } else {
+                ui.errorMessage('unable to optimize voxels');
+            }
+            ui.showProgress(0);
+        });
+    }
+
+    upsampleVoxelsAction() {
+        ui.showProgress(1);
+        setTimeout(async () => {
+            const voxels = await this.upsampleVoxels(this.voxels);
+            if (voxels) {
+                this.createVoxelsFromArray(voxels);
+                ui.notification(`upsampled to ${ this.voxels.length } voxels`);
+            } else {
+                ui.errorMessage('unable to upsampling voxels');
+            }
+            ui.showProgress(0);
+        });
+    }
+
+    groupByIslandAction() {
+        for (let i = 0; i < this.voxels.length; i++)
+            this.voxels[i].visible = true;
+
+        const islands = this.getVoxelsByIslands(undefined, ui.domGroupIslandsConnected.checked);
+        const colors = [];
+        let hex = undefined;
+
+        for (let i = 0; i < islands.length; i++) {
+            hex = undefined;
+            do {
+                hex = generateRandomHexColor();
+            } while (hex === "#000000" || hex === "#FFFFFF" || colors.includes(hex));
+
+            for (let j = 0; j < islands[i].length; j++) {
+                const idx = this.getIndexAtPosition(islands[i][j]);
+                if (idx !== undefined) {
+                    this.voxels[idx].color = hex;
+                    colors.push(hex);
+                }
+            }
+        }
+        this.create();
+        ui.notification(`${islands.length} Island(s)`);
+    }
+
+    // Voxel Array Generators
+
+    createVoxelsFromArray(arr) {
+        this.voxels = arr;
+        this.create();
+    }
+
+    createArrayFromStringData(str) {
+        const arr = [];
+        const voxels = str.split(';').slice(0, -1);
+
+        for (let i = 0; i < voxels.length; i++) {
+            const [x, y, z, color, visible] = voxels[i].split(',');
+            arr.push({
+                position: Vector3(Math.trunc(x), Math.trunc(y), Math.trunc(z)),
+                color: color.startsWith('#') ? color.toUpperCase() : '#' + color.toUpperCase(),
+                visible: visible === "1" || visible === "true" // backward compability for "true"
+            });
+        }
+        return arr;
+    }
+
+    createArrayFromPositions(positions, isSymmetry) {
+        const arr = [];
+
+        for (let i = 0; i < positions.length; i++) {
+            const idx = this.getIndexAtPosition(positions[i]);
+            if (idx !== undefined && this.voxels[idx].visible) {
+                arr.push(this.voxels[idx]);
+
+                if (isSymmetry) {
+                    const idx = this.getIndexAtPosition(symmetry.invertPos(positions[i]));
+                    if (idx !== undefined && this.voxels[idx].visible)
+                        arr.push(this.voxels[idx]);
+                }
+            }
+        }
+        return arr;
+    }
+
+    createArrayFromNewPositions(positions, hex, isSymmetry) {
+        const arr = [];
+
+        for (let i = 0; i < positions.length; i++) {
+            arr.push({
+                position: positions[i],
+                color: hex,
+                visible: true
+            });
+
+            if (isSymmetry) {
+                arr.push({
+                    position: symmetry.invertPos(positions[i]),
+                    color: hex,
+                    visible: true
+                });
+            }
+        }
+        return arr;
+    }
+
+    // Voxel Data IO
+
+    getStringData() {
+        let data = '';
+        for (let i = 0; i < this.voxels.length; i++) {
+            const v = this.voxels[i];
+            data += `${ Math.trunc(v.position.x) },${ Math.trunc(v.position.y) },${ Math.trunc(v.position.z) },${ v.color.slice(1) },${ v.visible ? 1 : 0 };`;
+        }
+        return data;
+    }
+
+    setStringData(data) {
+        this.voxels = this.createArrayFromStringData(data);
+        this.create();
+    }
+
+    createMesh() { // unused
+        const mesh = CreateMesh('mesh', scene);
+        const vertexData = VertexData();
+        vertexData.positions = this.positions;
+        vertexData.normals = this.normals;
+        vertexData.uvs = this.uvs;
+        vertexData.colors = this.colors;
+        vertexData.indices = this.indices;
+        vertexData.applyToMesh(mesh);
+        return mesh;
+    }
+}
+
+
+// -------------------------------------------------------
+// Bakery
+
+
+class Bakery {
+    constructor() {
+        this.planes = [];
+    }
+
+    bake(voxels) {
+        this.planes = [];
+
+        voxels.forEach(voxel => {
+            const rgb = {
+                r: builder.bufferColors[voxel.idx * 4],
+                g: builder.bufferColors[voxel.idx * 4 + 1],
+                b: builder.bufferColors[voxel.idx * 4 + 2]
+            };
+            this.constructFace(voxel, rgb, VEC6_HALF[0], VEC6_ONE[0], 0, PIH);     // Left
+            this.constructFace(voxel, rgb, VEC6_HALF[1], VEC6_ONE[1], 0, -PIH);    // Right
+            this.constructFace(voxel, rgb, VEC6_HALF[2], VEC6_ONE[2], -PIH, 0);    // Top
+            this.constructFace(voxel, rgb, VEC6_HALF[3], VEC6_ONE[3], PIH, 0);     // Bottom
+            this.constructFace(voxel, rgb, VEC6_HALF[4], VEC6_ONE[4], 0, 0);       // Front
+            this.constructFace(voxel, rgb, VEC6_HALF[5], VEC6_ONE[5], 0, Math.PI); // Back
+        });
+
+        return MergeMeshes(this.planes, true, true);
+    }
+
+    constructFace(voxel, rgb, position, nearby, rotX, rotY) {
+        const idx = builder.getIndexAtPosition(voxel.position.add(nearby));
+        if (idx === undefined) {
+            const plane = this.constructPlane(rgb);
+            plane.position = voxel.position.add(position);
+            plane.rotation.x = rotX;
+            plane.rotation.y = rotY;
+            this.planes.push(plane);
+        } else {
+            // shared faces by color groups
+            if (voxel.color !== builder.voxels[idx].color) {
+                const plane = this.constructPlane(rgb);
+                plane.position = voxel.position.add(position);
+                plane.rotation.x = rotX;
+                plane.rotation.y = rotY;
+                this.planes.push(plane);
+            }
+        }
+    }
+
+    constructPlane(rgb) {
+        const mesh = CreateMesh('plane', scene);
+        const vertexData = VertexData();
+        vertexData.positions = PLANE_POSITIONS;
+        vertexData.normals = PLANE_NORMALS;
+        vertexData.uvs = PLANE_UVS;
+        vertexData.indices = PLANE_INDICES;
+        vertexData.colors = [
+            rgb.r, rgb.g, rgb.b, 1,
+            rgb.r, rgb.g, rgb.b, 1,
+            rgb.r, rgb.g, rgb.b, 1,
+            rgb.r, rgb.g, rgb.b, 1
+        ];
+        vertexData.applyToMesh(mesh);
+        return mesh;
+    }
+
+    bakeToMesh(voxels = builder.voxels) {
+        setTimeout(() => {
+            const baked = this.bake(voxels);
+            pool.resetPivot(baked);
+
+            baked.name = `m${ pool.meshes.length + 1 }`;
+            baked.material = material.mat_pbr_msh.clone('mat_' + baked.name);
+            baked.material.albedoTexture.name = 'tex_' + baked.name;
+            baked.material.wireframe = ui.domPbrWireframe.checked;
+            baked.checkCollisions = false;
+            baked.receiveShadows = true;
+            baked.sideOrientation = CounterClockWiseSideOrientation;
+
+            pool.meshes.push(baked);
+        });
+    }
+
+    bakeColors() {
+        ui.showProgress(1);
+        pool.dispose();
+
+        for (let i = 0; i < builder.uniqueColors.length; i++)
+            this.bakeToMesh(builder.getVoxelsByColor(builder.uniqueColors[i]));
+
+        setTimeout(() => {
+            for (const mesh of pool.meshes)
+                light.addMesh(mesh);
+
+            light.updateShadowMap();
+            pool.createMeshList();
+
+            if (MODE !== 2) {
+                pool.setPoolVisibility(false);
+                ui.notification('baked', 1000);
+            }
+            
+            ui.showProgress(0);
+        }, 100);
+    }
+
+    bakeIslands() {
+        ui.showProgress(1);
+        pool.dispose();
+
+        const islands = builder.getVoxelsByIslands(undefined, ui.domBakeryIslandsConnected.checked);
+
+        if (islands.length > 0) {
+            let arr = [];
+
+            for (let i = 0; i < islands.length; i++) {
+                arr = [];
+
+                for (let j = 0; j < islands[i].length; j++) {
+                    const idx = builder.getIndexAtPosition(islands[i][j]);
+                    if (idx !== undefined) {
+                        arr.push({
+                            position: islands[i][j],
+                            color: builder.voxels[idx].color,
+                            visible: true,
+                            idx: idx
+                        });
+                    }
+                }
+
+                this.bakeToMesh(arr);
+            }
+
+            setTimeout(() => {
+                for (const mesh of pool.meshes)
+                    light.addMesh(mesh);
+
+                light.updateShadowMap();
+                pool.createMeshList();
+
+                if (MODE !== 2) {
+                    pool.setPoolVisibility(false);
+                    ui.notification('baked', 1000);
+                }
+
+                ui.showProgress(0);
+            }, 100);
+
+            arr = undefined;
+        }
+    }
+
+    bakeColor(hex) {
+        ui.showProgress(1);
+        this.bakeToMesh(builder.getVoxelsByColor(hex));
+
+        setTimeout(() => {
+            for (const mesh of pool.meshes)
+                light.addMesh(mesh);
+
+            light.updateShadowMap();
+            pool.createMeshList();
+            
+            if (MODE !== 2) {
+                pool.setPoolVisibility(false);
+                ui.notification('baked', 1000);
+            }
+
+            ui.showProgress(0);
+        }, 100);
+    }
+}
+
+
+// -------------------------------------------------------
+// Mesh Pool
+
+
+class MeshPool {
+    constructor() {
+        this.meshes = [];
+        this.selected = undefined;
+        this.pick = undefined;
+        this.albedoColor = undefined;
+    }
+
+    init() {
+        this.albedoColor = ui.domPbrAlbedo.value.toUpperCase();
+    }
+
+    selectMesh(mesh) {
+        this.deselectMesh();
+        this.selected = mesh;
+        this.meshListSelect(mesh);
+        this.getMaterial();
+        helper.showBoundingBox(this.selected);
+    }
+
+    deselectMesh() {
+        if (this.selected) {
+            this.selected = undefined;
+            this.meshListDeselect();
+            helper.hideBoundingBox();
+        }
+    }
+
+    onGizmoAttached(mesh) {
+        this.selectMesh(mesh);
+        this.getMaterial();
+    }
+
+    setPoolVisibility(isVisible) {
+        for (let i = 0; i < this.meshes.length; i++)
+            this.meshes[i].isVisible = isVisible;
+        helper.hideBoundingBox();
+    }
+    
+    getMaterial() {
+        if (this.selected) {
+            this.albedoColor = this.selected.material.albedoColor.toHexString();
+            ui.domPbrAlbedo.value = this.selected.material.albedoColor.toHexString();
+            ui.domPbrEmissive.value = this.selected.material.emissiveColor.toHexString();
+            ui.domPbrRoughness.value = this.selected.material.roughness;
+            ui.domPbrMetallic.value = this.selected.material.metallic;
+            ui.domPbrAlpha.value = this.selected.material.alpha;
+
+            const color = this.selected.getVerticesData(ColorKind);
+            ui.domPbrVertexColor.value = rgbFloatToHex(color[0], color[1], color[2]);
+        }
+    }
+
+    setMaterial(type) {
+        if (this.selected) {
+            switch (type) {
+                case 'albedo':
+                    this.selected.material.albedoColor = Color3FromHex(this.albedoColor);
+                    break;
+                case 'emissive':
+                    this.selected.material.emissiveColor = Color3FromHex(ui.domPbrEmissive.value);
+                    break;
+                case 'roughness':
+                    this.selected.material.roughness = parseFloat(ui.domPbrRoughness.value);
+                    break;
+                case 'metallic':
+                    this.selected.material.metallic = parseFloat(ui.domPbrMetallic.value);
+                    break;
+                case 'alpha':
+                    this.selected.material.alpha = parseFloat(ui.domPbrAlpha.value);
+                    this.selected.visibility = this.selected.material.alpha;
+                    break;
+            }
+        }
+    }
+
+    setWireframe(isEnabled) {
+        for (let i = 0; i < this.meshes.length; i++)
+            this.meshes[i].material.wireframe = isEnabled;
+    }
+
+    toggleWireframe() {
+        ui.domPbrWireframe.checked = !ui.domPbrWireframe.checked;
+        for (let i = 0; i < this.meshes.length; i++)
+            this.meshes[i].material.wireframe = !this.meshes[i].material.wireframe;
+    }
+
+    replaceTextures() {
+        for (let i = 0; i < this.meshes.length; i++) {
+            if (this.meshes[i].material.albedoTexture)
+                this.meshes[i].material.albedoTexture.dispose();
+            this.meshes[i].material.albedoTexture = material.textures[preferences.getVoxelTextureId()].clone();
+            this.meshes[i].material.albedoTexture.name = 'tex_' + this.meshes[i].name;
+        }
+    }
+
+    updateVertexColors(hex) {
+        if (this.selected) {
+            this.setVertexColors(this.selected, hex, 2.2);
+            this.createMeshList(false);
+        }
+    }
+
+    setVertexColors(mesh, hex, gamma) {
+        const rgb = hexToRgbFloat(hex, gamma);
+        const colors = mesh.getVerticesData(ColorKind);
+        for (let i = 0; i < colors.length; i+=4) {
+            colors[i] = rgb.r;
+            colors[i + 1] = rgb.g;
+            colors[i + 2] = rgb.b;
+        }
+        mesh.setVerticesData(ColorKind, colors);
+    }
+
+    normalizeMesh(mesh, scale) {
+        const bounds = mesh.getBoundingInfo();
+        const size = Vector3(
+            Math.abs(bounds.minimum.x - bounds.maximum.x),
+            Math.abs(bounds.minimum.y - bounds.maximum.y),
+            Math.abs(bounds.minimum.z - bounds.maximum.z));
+    
+        const scaleFactor = Math.min(scale / size.x, scale / size.y, scale / size.z);
+        const scaleMatrix = MatrixScaling(scaleFactor, scaleFactor, scaleFactor);
+    
+        const centerX = -bounds.boundingBox.center.x + size.x / 2;
+        const centerY = size.y / 2 - bounds.boundingBox.center.y;
+        const centerZ = -bounds.boundingBox.center.z + size.z / 2;
+        const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
+    
+        mesh.bakeTransformIntoVertices(tMatrix.multiply(scaleMatrix));
+    }
+
+    resetPivot(mesh) {
+        const center = mesh.getBoundingInfo().boundingSphere.centerWorld;
+        mesh.setPivotMatrix(MatrixTranslation(-center.x, -center.y, -center.z), false);
+        mesh.bakeCurrentTransformIntoVertices();
+        mesh.setPivotMatrix(MatrixIdentity());
+        mesh.position = center;
+    }
+
+    getBoundingBoxSum() {
+        const boxSum = {
+            min: Vector3(Infinity, Infinity, Infinity),
+            max: Vector3(-Infinity, -Infinity, -Infinity)
+        };
+
+        this.meshes.forEach((mesh) => {
+            const boundingBox = mesh.getBoundingInfo().boundingBox;
+            boxSum.min = Vector3Minimize(boxSum.min, boundingBox.minimumWorld);
+            boxSum.max = Vector3Maximize(boxSum.max, boundingBox.maximumWorld);
+        });
+
+        return boxSum;
+    }
+
+    createMeshList(hideBbox = true) {
+        ui.domMeshList.innerHTML = "";
+
+        if (this.meshes.length == 0) {
+            const item = document.createElement('div');
+            const name = document.createElement('div');
+            name.classList.add('item_name');
+            name.innerHTML = "N/A";
+            item.appendChild(name);
+            ui.domMeshList.appendChild(item);
+        }
+
+        for (let i = 0; i < this.meshes.length; i++) {
+            const color = this.meshes[i].getVerticesData(ColorKind);
+
+            const item = document.createElement('div');
+            const name = document.createElement('div');
+            name.classList.add('item_name');
+            name.style.borderLeftColor = rgbFloatToHex(color[0], color[1], color[2]);
+            name.innerHTML = this.meshes[i].name;
+            
+            item.onclick = () => {
+                this.selectMesh(this.meshes[i]);
+            };
+
+            if (this.selected && this.selected === this.meshes[i])
+                name.classList.add('mesh_select');
+
+            item.appendChild(name);
+            ui.domMeshList.appendChild(item);
+        }
+
+        if (hideBbox)
+            helper.hideBoundingBox();
+    }
+
+    meshListSelect(mesh) {
+        let idx = -1;
+        for (let i = 0; i < this.meshes.length; i++)
+            if (this.meshes[i] === mesh)
+                idx = i;
+        
+        if (ui.domMeshList.children[idx]) {
+            for (const i of ui.domMeshList.children)
+                i.firstChild.classList.remove("mesh_select");
+            ui.domMeshList.children[idx].firstChild.classList.add('mesh_select');
+        }
+    }
+
+    meshListDeselect() {
+        for (const i of ui.domMeshList.children)
+            i.firstChild.classList.remove("mesh_select");
+    }
+
+    deleteSelected() {
+        if (this.selected) {
+            this.disposeSelected();
+            this.createMeshList();
+            light.updateShadowMap();
+        }
+    }
+
+    disposeMeshes() { // save unnecessary dispose() computation
+        scene.blockfreeActiveMeshesAndRenderingGroups = true;
+
+        for (let i = 0; i < this.meshes.length; i++) {
+            if (this.meshes[i].material) {
+                if (this.meshes[i].material.albedoTexture)
+                    this.meshes[i].material.albedoTexture.dispose();
+                this.meshes[i].material.dispose();
+            }
+            this.meshes[i].dispose();
+            this.meshes[i] = undefined;
+        }
+
+        scene.blockfreeActiveMeshesAndRenderingGroups = false;
+        this.meshes = [];
+    }
+
+    disposeSelected() {
+        if (this.selected) {
+            this.meshes.splice(this.meshes.indexOf(this.selected), 1);
+            if (this.selected.material) {
+                if (this.selected.material.albedoTexture)
+                    this.selected.material.albedoTexture.dispose();
+                this.selected.material.dispose();
+            }
+            this.selected.dispose();
+            this.selected = undefined;
+        }
+    }
+
+    dispose() {
+        if (this.meshes.length > 0) {
+            this.disposeSelected();
+            this.disposeMeshes();
+            this.createMeshList();
+            light.updateShadowMap();
+        }
+    }
+}
+
+
+// -------------------------------------------------------
+// Ghosts
+
+
+class Ghosts {
+    constructor() {
+        this.thin = undefined;
+        this.thinOne = undefined;
+        this.cloud = undefined;
+        this.tMatrix = MatrixIdentity();
+        this.bufferMatrix = [];
+        this.bufferColors = [];
+        this.rgbBuffer = undefined;
+    }
+
+    init() {
+        this.thin = vMesh.mesh.clone('ghost_thin');
+        this.initThinOne();
+    }
+
+    createThin(voxels, color = undefined) {
+        if (voxels.length == 0) return;
+
+        this.bufferMatrix = new Float32Array(16 * voxels.length);
+        this.bufferColors = new Float32Array(4 * voxels.length);
+
+        for (let i = 0; i < voxels.length; i++) {
+            this.tMatrix.m[12] = voxels[i].position.x;
+            this.tMatrix.m[13] = voxels[i].position.y;
+            this.tMatrix.m[14] = voxels[i].position.z;
+            this.tMatrix.m[0] = this.tMatrix.m[5] = this.tMatrix.m[10] = (voxels[i].visible) ? 1 : 0;
+            this.bufferMatrix.set(this.tMatrix.m, i * 16);
+
+            this.rgbBuffer = hexToRgbFloat((color) ? color : voxels[i].color, 2.2);
+            this.bufferColors[i * 4] = this.rgbBuffer.r;
+            this.bufferColors[i * 4 + 1] = this.rgbBuffer.g;
+            this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
+            this.bufferColors[i * 4 + 3] = 1;
+        }
+    
+        this.thin.makeGeometryUnique();
+        this.thin.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
+        this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
+        this.thin.isVisible = true;
+        this.thin.thinInstanceEnablePicking = false;
+        this.thin.material = material.getMaterial();
+
+        light.addMesh(this.thin);
+        light.updateShadowMap();
+
+        this.bufferMatrix = [];
+    }
+
+    setThinColor(hex) {
+        if (this.bufferColors.length > 0) {
+            this.thin.renderOverlay = false;
+
+            const rgb = hexToRgbFloat(hex, 2.2);
+            for (let i = 0; i < this.bufferColors.length / 4; i++) {
+                this.bufferColors[i * 4] = rgb.r;
+                this.bufferColors[i * 4 + 1] = rgb.g;
+                this.bufferColors[i * 4 + 2] = rgb.b;
+                this.bufferColors[i * 4 + 3] = 1;
+            }
+
+            this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
+        }
+    }
+
+    setThinHighlight(alpha, color = COL_ORANGE_RGB) {
+        helper.highlightOverlayMesh(this.thin, color, alpha);
+    }
+
+    disposeThin() {
+        if (xformer.isActive) return;
+
+        if (this.thin)
+            this.thin.dispose();
+
+        this.thin = vMesh.mesh.clone('ghost_thin');
+    }
+
+    initThinOne() {
+        if (this.thinOne)
+            this.thinOne.dispose();
+
+        this.thinOne = vMesh.mesh.clone();
+        this.thinOne.isVisible = false;
+        this.thinOne.name = "ghost_thin_one";
+        this.thinOne.material = material.getMaterial();
+        this.thinOne.thinInstanceRegisterAttribute("color", 4);
+    }
+
+    addThinOne(pos, hex) {
+        this.thinOne.isVisible = true;
+        const idx = this.thinOne.thinInstanceAdd(MatrixTranslation(pos.x, pos.y, pos.z));
+        const rgb = hexToRgbFloat(hex, 2.2);
+        this.thinOne.thinInstanceSetAttributeAt("color", idx, [rgb.r, rgb.g, rgb.b, 1]);
+    }
+
+    createPointCloud(voxels = builder.voxels) {
+        if (voxels.length == 0) return;
+
+        this.disposePointCloud();
+        
+        this.cloud = PointsCloudSystem('ghost_cloud', 2, scene, false);
+        this.cloud.computeBoundingBox = false;
+        this.cloud.computeParticleColor = false;
+
+        this.cloud.addPoints(voxels.length, (particle, i, s) => {
+            particle.position.copyFrom(voxels[s].position);
+            particle.color = Color4FromHex(voxels[s].color);
+        });
+
+        this.cloud.buildMeshAsync().then((mesh) => {
+            mesh.visibility = 0.3;
+            mesh.isPickable = false;
+            mesh.doNotSerialize = true;
+            mesh.doNotSyncBoundingInfo = true;
+            mesh.freezeWorldMatrix();
+            mesh.freezeNormals();
+        });
+    }
+
+    disposePointCloud() {
+        if (this.cloud) {
+            if (this.cloud.mesh) {
+                this.cloud.mesh.material.dispose();
+                this.cloud.mesh.dispose();
+            }
+            this.cloud.dispose();
+        }
+        this.cloud = undefined;
+    }
+
+    getCenter() {
+        return this.thin.getBoundingInfo().boundingSphere.centerWorld;
+    }
+}
+
+
+// -------------------------------------------------------
+// Helper
+
+
+class Helper {
+    constructor() {
+        this.floorPlane = undefined;
+        this.volumePlaneX = undefined;
+        this.volumePlaneY = undefined;
+        this.volumePlaneZ = undefined;
+        this.multiPlane = undefined;
+        this.overlayPlane = undefined;
+        this.overlayCube = undefined;
+        this.boxShape = undefined;
+        this.boxShapeSymm = undefined;
+        this.bbox = undefined;
+        this.symmPivot = undefined;
+        this.symmPlane = undefined;
+        this.isFloorPlaneActive = false;
+        this.isVolumePlaneActive = false;
+        this.isMultiPlaneActive = false;
+    }
+
+    init() {
+        this.floorPlane = CreateDisc("floorplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
+        this.volumePlaneX = CreatePlane("volumeplaneX", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.volumePlaneY = CreatePlane("volumeplaneY", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.volumePlaneZ = CreatePlane("volumeplaneZ", WORKPLANE_SIZE, BACKSIDE, scene);
+        this.multiPlane = CreateDisc("multiplane", GRIDPLANE_SIZE, 20, BACKSIDE, scene);
+        this.overlayPlane = CreatePlane("overlay_plane", 1, BACKSIDE, scene);
+        this.overlayCube = CreateBox("overlay_cube", 1, FRONTSIDE, scene);
+        this.boxShape = CreateBox("boxshape", 1, FRONTSIDE, scene);
+        this.boxShapeSymm = CreateBox("boxshapesymm", 1, FRONTSIDE, scene);
+        this.bbox = CreateBox("bbox", 1, FRONTSIDE, scene);
+        this.symmPivot = CreateLine("symm_pivot", AXISLINES, AXISCOLORS, uix.utilLayer.utilityLayerScene);
+        this.symmPlane = CreatePlane("symm_plane", 1.2, DOUBLESIDE, axisView.scene);
+
+        this.floorPlane.position.x = -0.5;
+        this.floorPlane.position.y = -0.5;
+        this.floorPlane.position.z = -0.5;
+        this.floorPlane.rotation.x = -PIH;
+        this.floorPlane.material = material.mat_grid;
+        this.floorPlane.isVisible = false;
+        this.floorPlane.isPickable = true;
+        this.floorPlane.visibility = 0.1;
+        this.floorPlane.doNotSerialize = true;
+        this.floorPlane.freezeNormals();
+
+        const wpHalf = WORKPLANE_SIZE / 2;
+
+        this.volumePlaneX.material = material.mat_grid;
+        this.volumePlaneX.isVisible = false;
+        this.volumePlaneX.isPickable = true;
+        this.volumePlaneX.position.x = wpHalf - 0.5;
+        this.volumePlaneX.position.y = -0.5;
+        this.volumePlaneX.position.z = wpHalf - 0.5;
+        this.volumePlaneX.rotation.x = -PIH;
+        this.volumePlaneX.visibility = 0.08;
+        this.volumePlaneX.doNotSerialize = true;
+        this.volumePlaneX.freezeNormals();
+
+        this.volumePlaneY.material = material.mat_grid;
+        this.volumePlaneY.isVisible = false;
+        this.volumePlaneY.isPickable = true;
+        this.volumePlaneY.position.x = -0.5;
+        this.volumePlaneY.position.y = wpHalf - 0.5;
+        this.volumePlaneY.position.z = wpHalf - 0.5;
+        this.volumePlaneY.rotation.y = PIH;
+        this.volumePlaneY.visibility = 0.08;
+        this.volumePlaneY.doNotSerialize = true;
+        this.volumePlaneY.freezeNormals();
+
+        this.volumePlaneZ.material = material.mat_grid;
+        this.volumePlaneZ.isVisible = false;
+        this.volumePlaneZ.isPickable = true;
+        this.volumePlaneZ.position.x = wpHalf - 0.5;
+        this.volumePlaneZ.position.y = wpHalf - 0.5;
+        this.volumePlaneZ.position.z = -0.5;
+        this.volumePlaneZ.rotation.z = PIH;
+        this.volumePlaneZ.visibility = 0.08;
+        this.volumePlaneZ.doNotSerialize = true;
+        this.volumePlaneZ.freezeNormals();
+
+        this.multiPlane.position.x = -0.5;
+        this.multiPlane.position.y = -0.5;
+        this.multiPlane.position.z = -0.5;
+        this.multiPlane.rotation.x = -PIH;
+        this.multiPlane.bakeCurrentTransformIntoVertices();
+        const center = this.multiPlane.getBoundingInfo().boundingSphere.centerWorld;
+        this.multiPlane.setPivotMatrix(MatrixTranslation(-center.x, -center.y, -center.z), false);
+        this.multiPlane.bakeCurrentTransformIntoVertices();
+        this.multiPlane.setPivotMatrix(MatrixIdentity());
+        this.multiPlane.position = center;
+        this.multiPlane.material = material.mat_grid;
+        this.multiPlane.isVisible = false;
+        this.multiPlane.isPickable = true;
+        this.multiPlane.visibility = 0.1;
+        this.multiPlane.doNotSerialize = true;
+        this.multiPlane.freezeNormals();
+
+        this.overlayPlane.isVisible = false;
+        this.overlayPlane.isPickable = false;
+        this.overlayPlane.visibility = 0.01;
+        this.overlayPlane.doNotSerialize = true;
+        this.highlightOverlayMesh(this.overlayPlane, COL_ORANGE_RGB, 1);
+        (config.debug_gpu_probe) ?
+            helper.overlayPlane.renderingGroupId = 2 :
+            helper.overlayPlane.renderingGroupId = 0;
+
+        this.overlayCube.isVisible = false;
+        this.overlayCube.isPickable = false;
+        this.overlayCube.visibility = 0.01;
+        this.overlayCube.doNotSerialize = true;
+        this.highlightOverlayMesh(this.overlayCube, COL_AQUA_RGB, 0.25);
+        this.overlayCube.freezeNormals();
+
+        this.boxShape.isVisible = false;
+        this.boxShape.isPickable = false;
+        this.boxShape.visibility = 0.1;
+        this.boxShape.renderOverlay = true;
+        this.boxShape.doNotSerialize = true;
+        this.highlightOverlayMesh(this.boxShape, COL_ORANGE_RGB, 0.4);
+        this.highlightEdgesMesh(this.boxShape, COL_ORANGE_RGBA);
+        this.boxShape.freezeNormals();
+
+        this.boxShapeSymm.renderingGroupId = 1;
+        this.boxShapeSymm.isVisible = false;
+        this.boxShapeSymm.isPickable = false;
+        this.boxShapeSymm.visibility = 0.1;
+        this.boxShapeSymm.doNotSerialize = true;
+        this.highlightEdgesMesh(this.boxShapeSymm, COL_AQUA_RGBA);
+        this.boxShapeSymm.edgesColor.a = 0.2;
+        this.boxShapeSymm.freezeNormals();
+
+        this.bbox.isVisible = false;
+        this.bbox.isPickable = false;
+        this.bbox.visibility = 0.01;
+        this.bbox.renderingGroupId = 1;
+        this.highlightEdgesMesh(this.bbox, COL_ORANGE_RGBA);
+        this.bbox.doNotSerialize = true;
+        this.bbox.freezeNormals();
+
+        this.symmPivot.isVisible = false;
+        this.symmPivot.isPickable = false;
+        this.symmPivot.doNotSerialize = true;
+        this.symmPivot.scaling.set(8, 8, 8);
+
+        this.symmPlane.isVisible = false; // indicate symmetry-axis plane in AxisView scene
+        this.symmPlane.isPickable = false;
+        this.symmPlane.visibility = 0.01;
+        this.symmPlane.doNotSerialize = true;
+        this.highlightOverlayMesh(this.symmPlane, COL_AQUA_RGB, 0.35); // overridden
+        this.symmPlane.edgesWidth = 8;
+        this.symmPlane.edgesColor = COL_AQUA_RGBA;
+        this.symmPlane.enableEdgesRendering();
+        this.symmPlane.freezeNormals();
+    }
+
+    enableFloorPlane(isEnabled) {
+        this.isFloorPlaneActive = isEnabled;
+        this.displayFloorPlane(isEnabled);
+        if (isEnabled) {
+            this.enableVolumePlane(false);
+            this.enableMultiPlane(false);
+        }
+    }
+
+    enableVolumePlane(isEnabled) {
+        this.isVolumePlaneActive = isEnabled;
+        this.displayVolumePlane(isEnabled);
+        if (isEnabled) {
+            this.enableFloorPlane(false);
+            this.enableMultiPlane(false);
+        }
+    }
+
+    enableMultiPlane(isEnabled) {
+        this.isMultiPlaneActive = isEnabled;
+        this.displayMultiPlane(isEnabled);
+        if (isEnabled) {
+            this.enableFloorPlane(false);
+            this.enableVolumePlane(false);
+        }
+    }
+
+    displayFloorPlane(isEnabled) {
+        this.floorPlane.isVisible = isEnabled;
+        if (isEnabled) {
+            ui.domScreenFloorPlane.firstChild.style.color = COL_ORANGE;
+        } else {
+            ui.domScreenFloorPlane.firstChild.style.color = COL_AQUA;
+        }
+    }
+
+    displayVolumePlane(isEnabled) {
+        this.volumePlaneX.isVisible = isEnabled;
+        this.volumePlaneY.isVisible = isEnabled;
+        this.volumePlaneZ.isVisible = isEnabled;
+        if (isEnabled) {
+            ui.domScreenVolumePlane.firstChild.style.color = COL_ORANGE;
+        } else {
+            ui.domScreenVolumePlane.firstChild.style.color = COL_AQUA;
+        }
+    }
+
+    displayMultiPlane(isEnabled) {
+        this.multiPlane.isVisible = isEnabled;
+        if (isEnabled) {
+            uix.bindMultiPlane();
+            ui.domScreenMultiPlane.firstChild.style.color = COL_ORANGE;
+        } else {
+            uix.unbindMultiPlane();
+            ui.domScreenMultiPlane.firstChild.style.color = COL_AQUA;
+        }
+    }
+
+    rotateMultiPlane(axis) {
+        this.multiPlane.rotation.copyFrom(VEC3_ZERO);
+        if (axis == AXIS_X) this.multiPlane.rotation.z = PIH;
+        if (axis == AXIS_Y) this.multiPlane.rotation.y = PIH;
+        if (axis == AXIS_Z) this.multiPlane.rotation.x = PIH;
+    }
+
+    resetMultiPlane() {
+        this.multiPlane.position.x = -0.5;
+        this.multiPlane.position.y = -0.5;
+        this.multiPlane.position.z = -0.5;
+        this.multiPlane.rotation.x = 0;
+        this.multiPlane.rotation.y = PIH;
+        this.multiPlane.rotation.z = 0;
+    }
+
+    toggleWorkplanes(id) {
+        if (id == 0) {
+            this.isFloorPlaneActive = !this.isFloorPlaneActive;
+            this.displayFloorPlane();
+            this.enableFloorPlane(this.isFloorPlaneActive);
+        } else if (id == 1) {
+            this.isVolumePlaneActive = !this.isVolumePlaneActive;
+            this.displayVolumePlane();
+            this.enableVolumePlane(this.isVolumePlaneActive);
+        } else if (id == 2) {
+            this.isMultiPlaneActive = !this.isMultiPlaneActive;
+            this.displayMultiPlane();
+            this.enableMultiPlane(this.isMultiPlaneActive);
+        }
+    }
+
+    setSymmPivot() {
+        this.symmPivot.isVisible = (symmetry.axis !== -1);
+        if (this.symmPivot.isVisible) {
+            if (ui.domSymmWorldCenter.checked) {
+                this.symmPivot.position.copyFrom(VEC3_ZERO);
+                this.symmPivot.position.x -= 0.5;
+                this.symmPivot.position.y -= 0.5;
+                this.symmPivot.position.z -= 0.5;
+            } else {
+                this.symmPivot.position.copyFrom(builder.getCenter());
+            }
+        }
+    }
+
+    setSymmPlane(axis) {
+        this.symmPlane.isVisible = true;
+        this.symmPlane.rotation.copyFrom(VEC3_ZERO);
+        if (axis.x == 1) {
+            this.symmPlane.rotation.y = PIH;
+            this.symmPlane.overlayColor = COL_AXIS_X_RGB;
+            this.symmPlane.edgesColor = COL_AXIS_X_RGBA;
+        }
+        else if (axis.y == 1) {
+            this.symmPlane.rotation.x = PIH;
+            this.symmPlane.overlayColor = COL_AXIS_Y_RGB;
+            this.symmPlane.edgesColor = COL_AXIS_Y_RGBA;
+        }
+        else if (axis.z == 1) {
+            this.symmPlane.rotation.z = PIH;
+            this.symmPlane.overlayColor = COL_AXIS_Z_RGB;
+            this.symmPlane.edgesColor = COL_AXIS_Z_RGBA;
+        }
+        this.symmPlane.edgesColor.a = 0.6;
+    }
+
+    toggleSymmHelpers(isVisible) {
+        this.symmPivot.isVisible = isVisible;
+        this.symmPlane.isVisible = isVisible;
+    }
+
+    setOverlayPlane(pos, norm, scale) {
+        this.overlayPlane.isVisible = true;
+        this.overlayPlane.position.copyFrom(pos.add(norm.scale(scale)));
+
+        if ((norm.x == 0 && norm.y == 0 && norm.z == 1) ||
+            (norm.x == 0 && norm.y == 0 && norm.z == -1)) {
+            this.overlayPlane.rotationQuaternion = QuaternionRotationAxis(
+                AXIS_X,
+                Math.acos(Vector3Dot(norm, AXIS_Z)));
+        } else {
+            this.overlayPlane.rotationQuaternion = QuaternionRotationAxis(
+                Vector3Cross(AXIS_Z, norm), // axis
+                Math.acos(Vector3Dot(norm, AXIS_Z))); // angle
+        }
+    }
+
+    setOverlayCube(pos) {
+        this.overlayCube.isVisible = true;
+        this.overlayCube.position.copyFrom(pos);
+    }
+
+    clearOverlays() {
+        this.overlayPlane.isVisible = false;
+        this.overlayCube.isVisible = false;
+    }
+
+    setBoxShape(pos, scale, color, isOverlay) {
+        this.boxShape.isVisible = true;
+        this.boxShape.position = pos;
+        this.boxShape.scaling = scale;
+        this.boxShape.renderOverlay = isOverlay;
+        this.boxShape.overlayColor = color;
+        this.fixEdgesWidth(this.boxShape);
+    }
+
+    setBoxShapeSymmetry(pos, scale, color) {
+        this.boxShapeSymm.isVisible = ui.domSymmPreview.checked;
+        this.boxShapeSymm.position = pos;
+        this.boxShapeSymm.scaling = scale;
+        this.boxShapeSymm.overlayColor = color;
+        this.fixEdgesWidth(this.boxShapeSymm);
+    }
+
+    clearBoxShape() {
+        this.boxShape.isVisible = false;
+        this.boxShape.position.copyFrom(VEC3_ZERO);
+        this.boxShape.scaling.copyFrom(VEC3_ZERO);
+        this.boxShapeSymm.isVisible = false;
+        this.boxShapeSymm.position.copyFrom(VEC3_ZERO);
+        this.boxShapeSymm.scaling.copyFrom(VEC3_ZERO);
+    }
+
+    showBoundingBox(mesh) {
+        const halfSize = mesh.getBoundingInfo().boundingBox.extendSize;
+        const size = halfSize.scale(2);
+        this.bbox.isVisible = true;
+        this.bbox.scaling = Vector3(
+            size.x + 0.001,
+            size.y + 0.001,
+            size.z + 0.001);
+        this.bbox.position.copyFrom(mesh.position);
+        this.fixEdgesWidth(this.bbox);
+    }
+
+    hideBoundingBox() {
+        this.bbox.isVisible = false;
+    }
+
+    highlightOverlayMesh(mesh, color3, alpha = 0.5) {
+        mesh.renderOverlay = true;
+        mesh.overlayAlpha = alpha;
+        mesh.overlayColor = color3;
+    }
+    
+    highlightOutlineMesh(mesh, color3, width = 0.05) {
+        mesh.renderOutline = true;
+        mesh.outlineColor = color3;
+        mesh.outlineWidth = width;
+    }
+    
+    highlightEdgesMesh(mesh, color4, width = 6) { // do not use in a loop
+        mesh.edgesWidth = width;
+        mesh.edgesColor = color4;
+        mesh.enableEdgesRendering();
+    }
+    
+    fixEdgesWidth(mesh) { // TODO
+        mesh.edgesWidth = camera.camera0.radius / 8;
+        if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
+            mesh.edgesWidth /= 6;
+    }
+}
+
+
+// -------------------------------------------------------
+// Symmetry
+
+
+class Symmetry {
+    constructor() {
+        this.axis = -1; // AXIS_X
+    }
+
+    setAxis(axis) {
+        this.axis = axis;
+        helper.toggleSymmHelpers(false);
+        helper.setSymmPivot();
+
+        const btnCol = getStyleRoot('--btn-color');
+
+        if (axis == AXIS_X) {
+            helper.setSymmPlane(AXIS_X);
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = COL_AXIS_X;
+            ui.domSymmAxisY.style.color = btnCol;
+            ui.domSymmAxisZ.style.color = btnCol;
+            ui.domScreenSymmAxis.innerHTML = 'X';
+            ui.domScreenSymmAxis.style.color = COL_AXIS_X;
+        } else if (axis == AXIS_Y) {
+            helper.setSymmPlane(AXIS_Y);
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = btnCol;
+            ui.domSymmAxisY.style.color = COL_AXIS_Y;
+            ui.domSymmAxisZ.style.color = btnCol;
+            ui.domScreenSymmAxis.innerHTML = 'Y';
+            ui.domScreenSymmAxis.style.color = COL_AXIS_Y;
+        } else if (axis == AXIS_Z) {
+            helper.setSymmPlane(AXIS_Z);
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = btnCol;
+            ui.domSymmAxisY.style.color = btnCol;
+            ui.domSymmAxisZ.style.color = COL_AXIS_Z;
+            ui.domScreenSymmAxis.innerHTML = 'Z';
+            ui.domScreenSymmAxis.style.color = COL_AXIS_Z;
+        } else {
+            ui.domSymmAxisS.style.color = btnCol;
+            ui.domSymmAxisX.style.color = btnCol;
+            ui.domSymmAxisY.style.color = btnCol;
+            ui.domSymmAxisZ.style.color = btnCol;
+            ui.domScreenSymmAxis.innerHTML = 'S';
+            ui.domScreenSymmAxis.style.color = COL_AQUA;
+        }
+    }
+
+    switchAxis() {
+        if (this.axis == -1) {
+            this.setAxis(AXIS_X);
+        } else if (this.axis == AXIS_X) {
+            this.setAxis(AXIS_Y);
+        } else if (this.axis == AXIS_Y) {
+            this.setAxis(AXIS_Z);
+        } else if (this.axis == AXIS_Z) {
+            this.resetAxis();
+        }
+    }
+
+    switchAxisByNum(axis) {
+        if (axis == -1) {
+            this.resetAxis();
+        } else if (axis == 0) {
+            this.setAxis(AXIS_X);
+        } else if (axis == 1) {
+            this.setAxis(AXIS_Y);
+        } else if (axis == 2) {
+            this.setAxis(AXIS_Z);
+        }
+    }
+
+    resetAxis() {
+        this.setAxis(-1);
+    }
+
+    symmetrizeVoxels(side) {
+        if (this.axis == -1) {
+            ui.notification('select symmetry axis', 1000);
+            return;
+        }
+        builder.setVoxelsVisibility(true);
+        this.deleteHalf(side);
+        this.invertVoxelsClone();
+        builder.create();
+    }
+
+    mirrorVoxels() {
+        if (this.axis == -1) {
+            ui.notification('select symmetry axis', 1000);
+            return;
+        }
+        builder.setVoxelsVisibility(true);
+        this.invertVoxels();
+        builder.create();
+    }
+
+    deleteHalfVoxels(side) {
+        if (this.axis == -1) {
+            ui.notification('select symmetry axis', 1000);
+            return;
+        }
+        builder.setVoxelsVisibility(true);
+        this.deleteHalf(side);
+        builder.create();
+    }
+
+    invertVoxels() {
+        for (let i = 0; i < builder.voxels.length; i++)
+            builder.voxels[i].position = this.invertPos(builder.voxels[i].position);
+    }
+
+    invertVoxelsClone() {
+        const toAdd = [];
+        for (let i = 0; i < builder.voxels.length; i++) {
+            toAdd.push({
+                position: this.invertPos(builder.voxels[i].position),
+                color: builder.voxels[i].color,
+                visible: true
+            });
+        }
+        builder.addArray(toAdd);
+    }
+
+    deleteHalf(side) { // preserve 0 borders, prevent duplicates at the middle
+        const toDelete = [];
+
+        for (let i = 0; i < builder.voxels.length; i++) { // reminder 0.00000001 vertex
+            const p = builder.voxels[i].position;
+            if (this.axis == AXIS_X) {
+                if (side == -1 && this.center(p.x) <= -0.1) toDelete.push(builder.voxels[i]);
+                if (side == 1  && this.center(p.x) >= 0.1)  toDelete.push(builder.voxels[i]);
+            }
+            else if (this.axis == AXIS_Y) {
+                if (side == -1 && this.center(p.y) <= -0.1) toDelete.push(builder.voxels[i]);
+                if (side == 1  && this.center(p.y) >= 0.1)  toDelete.push(builder.voxels[i]);
+            }
+            else if (this.axis == AXIS_Z) {
+                if (side == -1 && this.center(p.z) <= -0.1) toDelete.push(builder.voxels[i]);
+                if (side == 1  && this.center(p.z) >= 0.1)  toDelete.push(builder.voxels[i]);
+            }
+        }
+
+        builder.removeArray(toDelete);
+    }
+
+    invertPos(p) { // invert positive to negative and reverse
+        if (this.axis == AXIS_X) p = Vector3(this.center2(p.x), p.y, p.z);
+        if (this.axis == AXIS_Y) p = Vector3(p.x, this.center2(p.y), p.z);
+        if (this.axis == AXIS_Z) p = Vector3(p.x, p.y, this.center2(p.z));
+        return p;
+    }
+
+    center(p) { // calculate position from center
+        if (ui.domSymmWorldCenter.checked) {
+            if (this.axis == AXIS_X) return -0.5 - p;
+            if (this.axis == AXIS_Y) return -0.5 - p;
+            if (this.axis == AXIS_Z) return -0.5 - p;
+        } else {
+            const center = builder.getCenter();
+            if (this.axis == AXIS_X) return center.x - p;
+            if (this.axis == AXIS_Y) return center.y - p;
+            if (this.axis == AXIS_Z) return center.z - p;
+        }
+    }
+
+    center2(p) { // calculate position from center*2
+        if (ui.domSymmWorldCenter.checked) {
+            if (this.axis == AXIS_X) return -1 - p;
+            if (this.axis == AXIS_Y) return -1 - p;
+            if (this.axis == AXIS_Z) return -1 - p;
+        } else {
+            const center = builder.getCenter();
+            if (this.axis == AXIS_X) return (center.x * 2) - p;
+            if (this.axis == AXIS_Y) return (center.y * 2) - p;
+            if (this.axis == AXIS_Z) return (center.z * 2) - p;
+        }
+    }
+
+    findIndexInvert(p) {
+        return builder.getIndexAtPosition(this.invertPos(p));
+    }
+}
+
+
+// -------------------------------------------------------
+// Tool
+
+
+class Tool {
+    constructor() {
+        this.name = 'camera';
+        this.last = undefined;
+        this.currentColor = undefined;
+
+        this.pick = undefined;
+        this.pickIndx = undefined;
+        this.pickNorm = undefined;
+
+        this.isSymmetry = false;
+        this.isWorkplane = false;
+        this.isWorkplaneOnly = false;
+        this.startBox = undefined;
+        this.startRect = undefined;
+        this.pos = undefined;
+        this.posNorm = undefined;
+        this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
+        this.boxCount = 0;
+        this.fixedHeight = 0;
+
+        this.selected = [];
+        this.indexes = [];
+        this.tmp = [];
+
+        this.then = performance.now();
+        this.now = 0;
+        this.elapsed = 0;
+    }
+
+    init() {
+        this.currentColor = ui.domColorPicker.value.toUpperCase();
+        this.toolSelector(this.name, false);
+    }
+
+    add(pos) {
+        if (this.selected.indexOf(pos) == -1) {
+            this.selected.push(pos);
+            ghosts.addThinOne(pos, this.currentColor);
+
+            if (this.isSymmetry) {
+                pos = symmetry.invertPos(pos);
+                this.selected.push(pos);
+                ghosts.addThinOne(pos, this.currentColor);
+            }
+        }
+    }
+
+    addNoHelper(pos) {
+        this.selected.push(pos);
+
+        if (this.isSymmetry)
+            this.selected.push(symmetry.invertPos(pos));
+    }
+
+    remove(pos) {
+        if (this.selected.indexOf(pos) == -1) {
+            this.selected.push(pos);
+            ghosts.addThinOne(pos, COL_RED);
+
+            if (this.isSymmetry) {
+                pos = symmetry.invertPos(pos);
+                this.selected.push(pos);
+                ghosts.addThinOne(pos, COL_RED);
+            }
+        }
+    }
+
+    removeNoHelper(pos) {
+        this.selected.push(pos);
+
+        if (this.isSymmetry)
+            this.selected.push(symmetry.invertPos(pos));
+    }
+
+    paint(index, pos) {
+        builder.voxels[index].color = this.currentColor;
+        ghosts.addThinOne(pos, this.currentColor);
+
+        if (this.isSymmetry) {
+            const index = symmetry.findIndexInvert(pos);
+            if (index !== undefined) {
+                builder.voxels[index].color = this.currentColor;
+                ghosts.addThinOne(builder.voxels[index].position, this.currentColor);
+            }
+        }
+    }
+
+    bucketGroup(hex) {
+        for (let i = 0; i < builder.voxels.length; i++) {
+            if (builder.voxels[i].color === hex)
+                builder.voxels[i].color = this.currentColor;
+        }
+    }
+
+    bucketIsland(pos) {
+        const islands = builder.getVoxelsByIslands(pos, ui.domBucketIslandConnected.checked);
+        if (islands.length > 0) {
+            for (let i = 0; i < islands[0].length; i++) {
+                const idx = builder.getIndexAtPosition(islands[0][i]);
+                if (idx !== undefined)
+                    builder.voxels[idx].color = this.currentColor;
+            }
+        }
+    }
+
+    eyedropper(hex) {
+        this.currentColor = hex;
+        ui.colorWheel.hex = this.currentColor;
+    }
+
+    calculateBoundingBox(start, end) {
+        this.box.sX = Math.min(start.x, end.x);
+        this.box.eX = Math.max(start.x, end.x);
+        this.box.sY = Math.min(start.y, end.y);
+        this.box.eY = Math.max(start.y, end.y);
+        this.box.sZ = Math.min(start.z, end.z);
+        this.box.eZ = Math.max(start.z, end.z);
+    }
+
+    boxShape(start, end, color) {
+        this.calculateBoundingBox(start, end);
+
+        const scale = Vector3(
+            1 + this.box.eX - this.box.sX,
+            1 + this.box.eY - this.box.sY,
+            1 + this.box.eZ - this.box.sZ);
+
+        helper.setBoxShape(start.add(end).divide(VEC3_TWO), scale, color, this.boxCount < MAX_VOXELS_DRAW);
+        this.boxCount = helper.boxShape.scaling.x * helper.boxShape.scaling.y * helper.boxShape.scaling.z;
+
+        if (this.isSymmetry) {
+            helper.setBoxShapeSymmetry(
+                symmetry.invertPos(start).add(symmetry.invertPos(end)).divide(VEC3_TWO),
+                scale, color);
+        }
+    }
+
+    boxSelectAdd(start, end, color) {
+        if (this.fixedHeight > 1) // enable wall drawing
+            end.y = start.y + this.fixedHeight - 1;
+
+        this.boxShape(start, end, color);
+
+        this.selected = [];
+        if (this.boxCount > MAX_VOXELS_DRAW || this.boxCount == 0)
+            return;
+
+        for (let x = this.box.sX; x <= this.box.eX; x++) {
+            for (let y = this.box.sY; y <= this.box.eY; y++) {
+                for (let z = this.box.sZ; z <= this.box.eZ; z++) {
+                    if (!builder.getIndexAtXYZ(x, y, z)) 
+                        this.selected.push(Vector3(x, y, z));
+                }
+            }
+        }
+    }
+
+    boxSelect(start, end, endNorm, color) {
+        if (this.isWorkplane)
+            end = endNorm;
+
+        this.boxShape(start, end, color);
+
+        this.selected = [];
+        if (this.boxCount > MAX_VOXELS_DRAW || this.boxCount == 0)
+            return;
+
+        for (let x = this.box.sX; x <= this.box.eX; x++) {
+            for (let y = this.box.sY; y <= this.box.eY; y++) {
+                for (let z = this.box.sZ; z <= this.box.eZ; z++) {
+                    if (builder.getIndexAtXYZ(x, y, z) > -1)
+                        this.selected.push(Vector3(x, y, z));
+                }
+            }
+        }
+    }
+
+    isTargetIn = (startPos, endPos, target, camera, scene) => {
+        const screenPosition = Vector3Project(target, scene, camera, engine.engine.getRenderWidth(), engine.engine.getRenderHeight());
+        const rect = {
+            x: Math.min(startPos.x, endPos.x),
+            y: Math.min(startPos.y, endPos.y),
+            w: Math.abs(endPos.x - startPos.x),
+            h: Math.abs(endPos.y - startPos.y)
+        };
+        return screenPosition.x >= rect.x &&
+               screenPosition.x <= rect.x + rect.w &&
+               screenPosition.y >= rect.y &&
+               screenPosition.y <= rect.y + rect.h;
+    }
+
+    getVoxelsFromRectangleSelection(start) {
+        const bounds = {
+            left: Math.min(start.x, pointer.x),
+            top: Math.min(start.y, pointer.y),
+            right: Math.max(start.x, pointer.x),
+            bottom: Math.max(start.y, pointer.y)
+        };
+
+        ui.domMarquee.style.top = `${bounds.top}px`;
+        ui.domMarquee.style.left = `${bounds.left}px`;
+        ui.domMarquee.style.width = `${bounds.right - bounds.left}px`;
+        ui.domMarquee.style.height = `${bounds.bottom - bounds.top}px`;
+        
+        return builder.voxels.filter((i) =>
+            i.visible &&
+            this.isTargetIn(start, pointer, i.position, camera.camera0, scene));
+    }
+
+    rectSelect(start) {
+        this.selected = this.getVoxelsFromRectangleSelection(start);
+        ghosts.createThin(this.selected);
+        ghosts.setThinHighlight(0.4);
+    }
+
+    rectSelectPaint(start) {
+        this.selected = this.getVoxelsFromRectangleSelection(start);
+        ghosts.createThin(this.selected);
+        ghosts.setThinColor(this.currentColor);
+    }
+
+    rectSelectAdd(start, norm) {
+        this.tmp = this.getVoxelsFromRectangleSelection(start);
+        
+        this.selected = [];
+        for (let i = 0; i < this.tmp.length; i++) {
+            this.selected.push({
+                position: this.tmp[i].position.add(norm),
+                color: this.currentColor,
+                visible: true,
+                idx: this.tmp[i].idx
+            });
+        }
+
+        ghosts.createThin(this.selected);
+    }
+
+    addBridge(pos, norm) {
+        const dims = builder.getSize();
+        const p = pos.clone();
+
+        if (norm.x !== 0 && norm.y == 0 && norm.z == 0) {
+            for (let i = 0; i <= dims.x; i++) {
+                p.x += norm.x;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        } else if (norm.x == 0 && norm.y !== 0 && norm.z == 0) {
+            for (let i = 0; i <= dims.y; i++) {
+                p.y += norm.y;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        } else if (norm.x == 0 && norm.y == 0 && norm.z !== 0) {
+            for (let i = 0; i <= dims.z; i++) {
+                p.z += norm.z;
+                if (!ui.domToolBridgeBypass.checked &&
+                    builder.getIndexAtPosition(p) !== undefined || !builder.isPositionInBoundingBox(p))
+                    break;
+                this.selected.push(p.clone());
+            }
+        }
+    }
+
+    onToolDown(pick) {
+        const index = pick.INDEX;
+        const norm = pick.NORMAL;
+        this.isWorkplane = pick.WORKPLANE !== undefined;
+        this.isSymmetry = symmetry.axis !== -1;
+
+        if (!this.isWorkplane) {
+            this.pos = builder.voxels[index].position;
+        } else {
+            if (!workplaneWhiteList.includes(this.name)) return;
+            this.pos = pick.WORKPLANE;
+        }
+
+        this.posNorm = this.pos.add(norm);
+
+        switch (this.name) {
+            case 'add':
+                this.add(this.posNorm);
+                break;
+            case 'remove':
+                this.remove(this.pos);
+                break;
+            case 'paint':
+                this.paint(index, this.pos);
+                break;
+            case 'eyedropper':
+                this.eyedropper(builder.voxels[index].color);
+                break;
+            case 'bucket_group':
+                this.bucketGroup(builder.voxels[index].color);
+                break;
+            case 'bucket_island':
+                this.bucketIsland(this.pos);
+                break;
+            case 'hide_color':
+                builder.setVoxelsVisibilityByColor(builder.voxels[index].color, false);
+                builder.create();
+                break;
+            case 'isolate_color':
+                builder.setVoxelsVisibility(false);
+                builder.setVoxelsVisibilityByColor(builder.voxels[index].color, true);
+                builder.create();
+                break;
+            case 'delete_color':
+                builder.removeByColor(builder.voxels[index].color);
+                builder.create();
+                break;
+            case 'box_add':
+                this.addNoHelper(this.posNorm); // allow 1 voxel
+                this.startBox = this.posNorm;
+                this.fixedHeight = parseInt(ui.domToolBoxHeight.value);
+                break;
+            case 'box_remove':
+                this.removeNoHelper(this.pos);
+                this.startBox = this.pos;
+                if (this.isWorkplane)
+                    this.startBox = this.posNorm;
+                break;
+            case 'box_paint':
+                this.selected.push(this.pos);
+                this.startBox = this.pos;
+                if (this.isWorkplane)
+                    this.startBox = this.posNorm;
+                break;
+            case 'rect_add':
+                this.startRect = { x: pointer.x, y: pointer.y };
+                ui.domMarquee.style.display = 'unset';
+                break;
+            case 'rect_remove':
+                this.startRect = { x: pointer.x, y: pointer.y };
+                ui.domMarquee.style.display = 'unset';
+                break;
+            case 'rect_paint':
+                this.startRect = { x: pointer.x, y: pointer.y };
+                ui.domMarquee.style.display = 'unset';
+                break;
+            case 'transform_box':
+                this.selected.push(this.pos);
+                this.startBox = this.pos;
+                if (this.isWorkplane)
+                    this.startBox = this.posNorm;
+                break;
+            case 'transform_rect':
+                this.startRect = { x: pointer.x, y: pointer.y };
+                ui.domMarquee.style.display = 'unset';
+                break;
+            case 'transform_group':
+                xformer.begin(builder.getVoxelsByColor(builder.voxels[index].color));
+                break;
+            case 'transform_island':
+                const islands = builder.getVoxelsByIslands(this.pos, ui.domTransformIslandConnected.checked);
+                if (islands.length > 0)
+                    xformer.begin(builder.createArrayFromPositions(islands[0], false));
+                break;
+            case 'transform_visible':
+                xformer.begin(builder.getVoxelsByVisibility(true));
+                break;
+            case 'bridge':
+                ghosts.addThinOne(this.pos, this.currentColor);
+                this.addBridge(this.pos, norm);
+                if (this.isSymmetry)
+                    ghosts.addThinOne(symmetry.invertPos(this.pos), this.currentColor);
+                break;
+            case 'measure_volume':
+                this.addNoHelper(this.pos); // allow 1 voxel
+                this.startBox = this.pos;
+                break;
+            case 'frame_color':
+                camera.frameColor(builder.voxels[index].color);
+                break;
+            case 'frame_voxels':
+                this.addNoHelper(this.pos); // allow 1 voxel
+                this.startBox = this.pos;
+                break;
+            case 'frame_island':
+                this.selected = builder.getVoxelsByIslands(this.pos, false);
+                break;
+            case 'bake_color':
+                bakery.bakeColor(builder.voxels[index].color);
+                break;
+        }
+    }
+
+    onToolMove(pick) {
+        const index = pick.INDEX;
+        const norm = pick.NORMAL;
+        this.isWorkplane = pick.WORKPLANE !== undefined;
+
+        if (!this.isWorkplane) {
+            this.pos = builder.voxels[index].position;
+            //helper.setOverlayCube(this.pos); // enable for debug
+        } else {
+            if (!workplaneWhiteList.includes(this.name)) return;
+            this.pos = pick.WORKPLANE;
+        }
+        
+        this.posNorm = this.pos.add(norm);
+
+        (this.pick.BADNORMAL) ?
+            helper.clearOverlays() :
+            helper.setOverlayPlane(this.pos, norm, 0.5);
+
+        if (!pointer.isDown) return;
+
+        switch (this.name) {
+            case 'add':
+                this.add(this.posNorm);
+                break;
+            case 'remove':
+                this.remove(this.pos);
+                break;
+            case 'paint':
+                this.paint(index, this.pos);
+                break;
+            case 'eyedropper':
+                this.eyedropper(builder.voxels[index].color);
+                break;
+            case 'box_add':
+                if (this.startBox)
+                    this.boxSelectAdd(this.startBox, this.posNorm, Color3FromHex(this.currentColor));
+                break;
+            case 'box_remove':
+                if (this.startBox)
+                    this.boxSelect(this.startBox, this.pos, this.posNorm, COL_RED_RGB);
+                break;
+            case 'box_paint':
+                if (this.startBox)
+                    this.boxSelect(this.startBox, this.pos, this.posNorm, Color3FromHex(this.currentColor));
+                break;
+            case 'rect_add':
+                if (this.startRect)
+                    this.rectSelectAdd(this.startRect, norm);
+                break;
+            case 'rect_remove':
+                if (this.startRect)
+                    this.rectSelect(this.startRect);
+                break;
+            case 'rect_paint':
+                if (this.startRect)
+                    this.rectSelectPaint(this.startRect);
+                break;
+            case 'transform_box':
+                if (this.startBox)
+                    this.boxSelect(this.startBox, this.pos, this.posNorm, COL_ORANGE_RGB);
+                break;
+            case 'transform_rect':
+                if (this.startRect)
+                    this.rectSelect(this.startRect);
+                break;
+            case 'bridge':
+                ghosts.addThinOne(this.pos, this.currentColor);
+                this.addBridge(this.pos, norm);
+                if (this.isSymmetry)
+                    ghosts.addThinOne(symmetry.invertPos(this.pos), this.currentColor);
+                break;
+            case 'measure_volume':
+                if (this.startBox)
+                    this.boxSelect(this.startBox, this.pos, this.posNorm, COL_ORANGE_RGB);
+                break;
+            case 'frame_voxels':
+                if (this.startBox)
+                    this.boxSelect(this.startBox, this.pos, this.posNorm, COL_ORANGE_RGB);
+                break;
+        }
+    }
+
+    onToolUp() {        
+        switch (this.name) {
+            case 'add':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, this.currentColor, this.isSymmetry);
+                    builder.addArray(this.tmp);
+                    builder.create();
+                }
+                break;
+            case 'remove':
+                if (this.selected.length > 0) {
+                    for (let i = 0; i < this.selected.length; i++)
+                        builder.removeByPosition(this.selected[i]);
+                    builder.create();
+                }
+                break;
+            case 'paint':
+                builder.create();
+                break;
+            case 'bucket_group':
+                builder.create();
+                break;
+            case 'bucket_island':
+                builder.create();
+                break;
+            case 'box_add':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, this.currentColor, this.isSymmetry);
+                    builder.addArray(this.tmp);
+                    builder.create();
+                }
+                break;
+            case 'box_remove':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromPositions(this.selected, this.isSymmetry);
+                    builder.removeArray(this.tmp);
+                    builder.create();
+                }
+                break;
+            case 'box_paint':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromPositions(this.selected, this.isSymmetry);
+                    builder.paintByArray(this.tmp, this.currentColor);
+                    builder.create();
+                }
+                break;
+            case 'rect_add':
+                if (this.selected.length > 0) {
+                    if (!ui.domToolRectAddBypass.checked)
+                        this.selected = this.selected.filter((i) => this.indexes.includes(i.idx));
+                    builder.addArray(this.selected);
+                    builder.create();
+                }
+                break;
+            case 'rect_remove':
+                if (this.selected.length > 0) {
+                    builder.removeArray(this.selected);
+                    builder.create();
+                }
+                break;
+            case 'rect_paint':
+                if (this.selected.length > 0) {
+                    builder.paintByArray(this.selected, this.currentColor);
+                    builder.create();
+                }
+                break;
+            case 'transform_box':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromPositions(this.selected, false);
+                    xformer.begin(this.tmp);
+                }
+                break;
+            case 'transform_rect':
+                if (this.selected.length > 0) {
+                    xformer.begin(this.selected);
+                }
+                break;
+            case 'transform_visible':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromPositions(this.selected, false);
+                    xformer.begin(this.tmp);
+                }
+                break;
+            case 'bridge':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromNewPositions(this.selected, this.currentColor, true);
+                    builder.addArray(this.tmp);
+                    builder.create();
+                }
+                break;
+            case 'measure_volume':
+                if (this.selected.length > 0)
+                    (this.selected.length == 1) ? 
+                        ui.notification(`${ this.selected[0]._x }, ${ this.selected[0]._y }, ${ this.selected[0]._z }, ${ builder.voxels[builder.getIndexAtPosition(this.selected[0])].color }`, 8000):
+                        ui.notification(`${ this.selected.length } Voxels`, 8000);
+                break;
+            case 'frame_voxels':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromPositions(this.selected, false);
+                    camera.frameVoxels(this.tmp);
+                }
+                break;
+            case 'frame_island':
+                if (this.selected.length > 0) {
+                    this.tmp = builder.createArrayFromPositions(this.selected[0], false);
+                    camera.frameVoxels(this.tmp);
+                }
+                break;
+        }
+    }
+
+    handleToolDown() {
+        if (this.name !== 'camera') {
+            this.setPickInfo().then(pick => {
+                if (xformer.isActive) {
+                    if (ui.domTransformReactive.checked && !this.pick.WORKPLANE) {
+                        xformer.apply();
+                        pointer.isDown = false;
+                        scene.stopAnimation(camera.camera0);
+                        camera.camera0.detachControl(engine.canvas);
+                    }
+                    return;
+                }
+                
+                scene.stopAnimation(camera.camera0);
+                camera.camera0.detachControl(engine.canvas);
+
+                if (pixelReadWhiteList.includes(this.name))
+                    this.indexes = builder.getIndexesAtTarget(0, 0, engine.engine.getRenderWidth(), engine.engine.getRenderHeight());
+
+                this.onToolDown(pick);
+            });
+        }
+    }
+
+    handleToolMove() {
+        if (this.name !== 'camera' && !xformer.isActive) {
+            this.now = performance.now();
+            this.elapsed = this.now - this.then;
+            if (this.elapsed > FPS_TOOL) {
+                this.then = this.now - (this.elapsed % FPS_TOOL);
+
+                this.setPickInfo().then(pick => {
+                    if (!camera.isCameraChange())
+                        this.onToolMove(pick);
+                });
+            }
+        }
+    }
+
+    handleToolUp() {
+        if (this.name !== 'camera') {
+            this.onToolUp();
+
+            this.pick = undefined;
+            this.pickIndx = undefined;
+            this.pickNorm = undefined;
+
+            this.box = { sX: 0, sY: 0, sZ: 0, eX: 0, eY: 0, eZ: 0 };
+            this.boxCount = 0;
+            this.startBox = undefined;
+            this.startRect = undefined;
+            this.pos = undefined;
+            this.posNorm = undefined;
+
+            this.selected = [];
+            this.indexes = [];
+            this.tmp = [];
+
+            ghosts.disposeThin();
+            ghosts.initThinOne();
+            helper.clearBoxShape();
+            faceNormalProbe.dispose();
+            setTimeout(() => {
+                helper.clearOverlays();
+            }, 10); // prevent last overlay in touchscreen
+
+            ui.domMarquee.style = "display: none; left: 0; top: 0; width: 0; height: 0;";
+        }
+    }
+
+    predicateNull() {
+        return undefined;
+    }
+
+    predicateWorkplane(mesh) {
+        if (helper.isFloorPlaneActive && helper.floorPlane.isVisible)
+            return mesh === helper.floorPlane;
+        if (helper.isVolumePlaneActive)
+            if (helper.volumePlaneX.isVisible || helper.volumePlaneY.isVisible || helper.volumePlaneZ.isVisible)
+                return mesh === helper.volumePlaneX || mesh === helper.volumePlaneY || mesh === helper.volumePlaneZ;
+        if (helper.isMultiPlaneActive && helper.multiPlane.isVisible)
+            return mesh === helper.multiPlane;
+        return undefined;
+    }
+
+    pickWorkplane(pick, norm) {
+        const pos = pick.pickedPoint.add(VEC3_ONE).subtract(VEC3_HALF).floor();
+        if (helper.isMultiPlaneActive && helper.multiPlane.isVisible) {
+            if (norm.x > 0) pos.x = helper.multiPlane.position.x - 0.5;
+            if (norm.y > 0) pos.y = helper.multiPlane.position.y - 0.5;
+            if (norm.z > 0) pos.z = helper.multiPlane.position.z - 0.5;
+            if (norm.x < 0) pos.x = helper.multiPlane.position.x + 0.5;
+            if (norm.y < 0) pos.y = helper.multiPlane.position.y + 0.5;
+            if (norm.z < 0) pos.z = helper.multiPlane.position.z + 0.5;
+        } else {
+            if (norm.x > 0) pos.x = -1;
+            if (norm.y > 0) pos.y = -1;
+            if (norm.z > 0) pos.z = -1;
+            if (norm.x < 0) pos.x = 0;
+            if (norm.y < 0) pos.y = 0;
+            if (norm.z < 0) pos.z = 0;
+        }
+        return pos;
+    }
+
+    setPickInfo() {
+        return new Promise(resolve => {
+
+            this.isWorkplaneOnly = ui.domOptionsScreenWorkplaneOnly.checked &&
+                                   (helper.isFloorPlaneActive || helper.isVolumePlaneActive || helper.isMultiPlaneActive) &&
+                                   workplaneOnlyWhiteList.includes(this.name);
+
+            if (this.isWorkplaneOnly) {
+                helper.overlayPlane.renderingGroupId = 2;
+                helper.boxShape.renderingGroupId = 2;
+            } else {
+                helper.overlayPlane.renderingGroupId = 0;
+                helper.boxShape.renderingGroupId = 0;
+            }
+
+            const index = builder.getIndexAtPointer();
+            if (index !== undefined && !this.isWorkplaneOnly) {
+
+                // direct face hits
+
+                this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                this.pickIndx = index;
+                this.pickNorm = faceNormalProbe.getNormal(this.pick, index);
+
+                // dodging gaps (proof that you can dodge bullets)
+
+                if (!this.pickNorm) {
+                    for (let i = 0; i < 4; i++) {
+                        const _index = builder.getIndexAtPointerOmni(i, 1);
+                        if (_index !== undefined) {
+                            this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                            this.pickNorm = faceNormalProbe.getNormal(this.pick, _index);
+                            if (this.pickNorm) {
+                                this.pickIndx = _index;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!this.pickNorm) {
+                    for (let i = 0; i < 4; i++) {
+                        const _index = builder.getIndexAtPointerOmni(i, 2);
+                        if (_index !== undefined) {
+                            this.pick = scene.pick(pointer.x, pointer.y, this.predicateNull);
+                            this.pickNorm = faceNormalProbe.getNormal(this.pick, _index);
+                            if (this.pickNorm) {
+                                this.pickIndx = _index;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // unreachable distances/angles where accuracy is not important
+                if (!this.pickNorm) {
+                    const dir = camera.camera0.getForwardRay().direction.negate().normalize();
+                    this.pickNorm = dir.clone();
+                    this.pickNorm.x = this.pickNorm.x == 0 ? 0 : Math.sign(this.pickNorm.x);
+                    this.pickNorm.y = this.pickNorm.y == 0 ? 0 : Math.sign(this.pickNorm.y);
+                    this.pickNorm.z = this.pickNorm.z == 0 ? 0 : Math.sign(this.pickNorm.z);
+                    (!faceNormalProbe.isNormalValid(builder.voxels[index].position, this.pickNorm)) ?
+                        this.pickNorm = undefined :
+                        this.pick.BADNORMAL = true;
+                }
+
+                // results
+    
+                if (this.pickNorm && builder.voxels[this.pickIndx]) {
+                    this.pick.INDEX = this.pickIndx;
+                    this.pick.NORMAL = this.pickNorm;
+                    this.pick.WORKPLANE = undefined;
+                    resolve(this.pick);
+                } else {
+                    helper.clearOverlays();
+                    if (!camera.isCameraChange())
+                        camera.camera0.detachControl(engine.canvas);
+                }
+    
+            } else {
+                helper.clearOverlays();
+                
+                this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
+    
+                if (this.pick.hit) {
+                    const norm = this.pick.getNormal(true);
+                    norm.x = Math.round(norm.x * 10) / 10;
+                    norm.y = Math.round(norm.y * 10) / 10;
+                    norm.z = Math.round(norm.z * 10) / 10;
+                    
+                    const point = this.pickWorkplane(this.pick, norm);
+                    const idx = builder.getIndexAtPosition(point.add(norm));
+                    if (idx === undefined || this.isWorkplaneOnly) {
+                        this.pick.INDEX = this.pick.faceId;
+                        this.pick.NORMAL = norm;
+                        this.pick.WORKPLANE = point;
+                        resolve(this.pick);
+                    } else {
+                        helper.clearOverlays();
+                        if (!camera.isCameraChange())
+                            camera.camera0.detachControl(engine.canvas);
+                    }
+                }
+            }
+        });
+    }
+
+    toolSelector(toolName, applyTransforms = true) {
+        this.name = toolName;
+
+        const elems = document.getElementsByClassName('tool_' + this.name);
+        for (const i of document.querySelectorAll('li'))
+            if (i.classList.contains("tool_selector"))
+                i.classList.remove("tool_selector");
+        for (const i of document.querySelectorAll('button'))
+            if (i.classList.contains("tool_selector"))
+                i.classList.remove("tool_selector");
+        for (let i = 0; i < elems.length; i++)
+            elems[i].classList.add("tool_selector");
+
+        if (applyTransforms)
+            xformer.apply();
+
+        helper.clearOverlays();
+
+        ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ') }`;
+        ui.domOptionsScreenWorkplaneOnly.disabled = !workplaneOnlyWhiteList.includes(this.name);
+    }
+}
+
+
+// -------------------------------------------------------
+// Tool Mesh
+
+
+class ToolMesh {
+    constructor() {
+        this.name = 'select';
+        this.selected = [];
+    }
+
+    handleToolDown() {
+        const pick = scene.pick(pointer.x, pointer.y, (mesh) => {
+            return pool.meshes.includes(mesh);
+        });
+
+        if (pick.hit) {
+            switch (this.name) {
+                case 'select':
+                    pool.selectMesh(pick.pickedMesh);
+                    break;
+            }
+        } else {
+            pool.deselectMesh();
+        }
+    }
+
+    toolSelector(toolName) {
+        this.name = toolName;
+        pool.deselectMesh();
+        ui.domInfoTool.innerHTML = `${ this.name.replace('_', ' ') }`;
+    }
+}
+
+
+// -------------------------------------------------------
+// XFormer
+
+
+class XFormer {
+    constructor() {
+        this.root = undefined;
+        this.startPos = undefined;
+        this.xforms = [];
+        this.isActive = false;
+        this.isNewObject = false;
+        this.isColorChanged = false;
+        this.isShiftKeyMode = false;
+    }
+
+    init() {
+        this.root = TransformNode('xformer');
+    }
+
+    begin(voxels) {
+        if (voxels.length == 0) return;
+
+        if (ui.domTransformClone.checked || this.isShiftKeyMode) {
+            this.beginNew(voxels, true);
+            return;
+        }
+
+        this.xforms = voxels.slice(0);
+
+        ghosts.createThin(voxels);
+        ghosts.setThinHighlight(0.4);
+
+        this.root.position.copyFrom(ghosts.getCenter());
+        ghosts.thin.setParent(this.root);
+
+        uix.bindVoxelGizmo(this.root);
+        this.startPos = this.root.position.clone();
+
+        for (let i = 0; i < this.xforms.length; i++)
+            builder.setTransformMatrix(this.xforms[i].idx, this.xforms[i].position, false);
+
+        builder.applyBufferMatrix(); // creates the illusion of transform
+
+        this.isActive = true;
+    }
+
+    beginNew(voxels, isClone = false) {
+        if (voxels.length == 0) return;
+
+        this.xforms = voxels.slice(0);
+
+        if (!isClone)
+            tool.toolSelector('camera', false);
+
+        ghosts.createThin(voxels);
+        ghosts.setThinHighlight(0.4);
+        
+        this.root.position.copyFrom(ghosts.getCenter());
+        ghosts.thin.setParent(this.root);
+
+        uix.bindVoxelGizmo(this.root);
+        this.startPos = this.root.position.clone();
+
+        this.isActive = true;
+        this.isNewObject = true;
+    }
+
+    finish() {
+        const p = this.root.position.subtract(this.startPos);
+
+        if (!this.isNewObject) {
+            if (!p.equals(VEC3_ZERO)) { // change on move
+
+                for (let i = 0; i < this.xforms.length; i++)
+                    builder.voxels[ this.xforms[i].idx ].position.addInPlace(p);
+            }
+        } else {
+            if (this.isColorChanged) {
+                for (let i = 0; i < this.xforms.length; i++)
+                    builder.add(this.xforms[i].position.add(p), tool.currentColor, true);
+            } else {
+                for (let i = 0; i < this.xforms.length; i++)
+                    builder.add(this.xforms[i].position.add(p), this.xforms[i].color, true);
+            }
+        }
+    }
+
+    apply() {
+        if (this.isActive) {
+            this.finish();
+            this.dispose();
+            builder.create();
+        }
+    }
+
+    cancel() {
+        if (this.isActive) {
+            this.dispose();
+            builder.create();
+        }
+    }
+
+    dispose() { // private
+        this.xforms = [];
+        this.isActive = false;
+        this.isNewObject = false;
+        this.isColorChanged = false;
+        this.isShiftKeyMode = false;
+
+        uix.unbindVoxelGizmo();
+        
+        ghosts.thin.setParent(null);
+        ghosts.disposeThin();
+    }
+
+    deleteSelected() {
+        if (this.isActive) {
+            if (!ui.domTransformClone.checked && !this.isShiftKeyMode)
+                builder.removeArray(this.xforms);
+            
+            this.cancel();
+        }
+    }
+
+    colorSelected() {
+        if (this.isActive) {
+            ghosts.setThinColor(tool.currentColor);
+
+            if (!ui.domTransformClone.checked && !this.isShiftKeyMode)
+                for (let i = 0; i < this.xforms.length; i++)
+                    this.xforms[i].color = tool.currentColor;
+
+            this.isColorChanged = true;
+        }
+    }
+}
+
+
+// -------------------------------------------------------
+// Project
+
+
+class Project {
+    constructor() {}
+
+    serializeScene(voxels) {
+        return {
+            version: `Voxel Builder ${VERSION}`,
+            project: {
+                name: "untitled",
+                voxels: 0
+            },
+            camera: {
+                offset: parseFloat(ui.domCameraOffset.value),
+                fov: parseFloat(ui.domCameraFov.value),
+                fstop: parseFloat(ui.domCameraFStop.value),
+                focal: parseFloat(ui.domCameraFocalLength.value)
+            },
+            render: {
+                dpr: parseFloat(ui.domRenderDPR.value),
+                samples: parseInt(ui.domRenderMaxSamples.value),
+                bounces: parseInt(ui.domRenderBounces.value),
+                tiles: parseInt(ui.domRenderTiles.value),
+                tonemap: ui.domRenderTonemap.selectedIndex,
+                environment: {
+                    background: ui.domRenderHdriBackground.checked,
+                    power: parseFloat(ui.domRenderEnvPower.value),
+                    blur: parseFloat(ui.domRenderHdriBlur.value),
+                },
+                lights: {
+                    directional: {
+                        color: ui.domRenderLightColor.value.toUpperCase(),
+                        intensity: parseFloat(ui.domRenderLightIntensity.value),
+                    }
+                },
+                materials: {
+                    default: {
+                        roughness: parseFloat(ui.domRenderMaterialRoughness.value),
+                        metalness: parseFloat(ui.domRenderMaterialMetalness.value),
+                        transmission: parseFloat(ui.domRenderMaterialTransmission.value),
+                        emissive: ui.domRenderMaterialEmissive.value.toUpperCase(),
+                        emissive_intensity: parseFloat(ui.domRenderMaterialEmissiveIntensity.value)
+                    }
+                }
+            },
+            data: {
+                voxels: voxels
+            }
+        };
+    }
+    
+    resetSceneSetup(isFrameCamera = true) {
+        ui.setMode(0);
+
+        tool.toolSelector('camera');
+        pool.dispose();
+        memory.clear();
+        symmetry.resetAxis();
+        uix.hideLightLocator();
+        helper.resetMultiPlane();
+
+        if (isFrameCamera)
+            camera.flagFrame = 1;
+    }
+
+    newProjectStartup(color, size = 20) {
+        color = color.toUpperCase();
+        
+        builder.voxels = [];
+        for (let x = 0; x < size; x++) {
+            for (let y = 0; y < size; y++) {
+                for (let z = 0; z < size; z++) {
+                    const blue = (x % 2 == 0 && z % 2 == 0 || x % 2 == 1 && z % 2 == 1) ? '#5F89BE' : '#3B76BF';
+                    builder.add(Vector3(x, y, z), y == 0 ? (size < 5) ? color : blue : color, true);
+                }
+            }
+        }
+        
+        builder.create();
+        this.resetSceneSetup(false);
+        ui.domProjectName.value = 'untitled';
+    }
+
+    newProject() {
+        modules.generator.newBox(2, preferences.getRenderShadeColor());
+        builder.create();
+        this.resetSceneSetup();
+        ui.domProjectName.value = 'untitled';
+    }
+
+    save() {
+        const json = this.serializeScene(builder.getStringData());
+        json.project.name = ui.domProjectName.value;
+        json.project.voxels = builder.voxels.length;
+        downloadJson(JSON.stringify(json, null, 4), `${ui.domProjectName.value}.json`);
+    }
+
+    saveSnapshot(string, screenshot) {
+        const json = this.serializeScene(string);
+        json.project.voxels = json.data.voxels.split(';').length;
+        json.data.shot = screenshot;
+        delete json.camera;
+        delete json.render;
+        return JSON.stringify(json, null, 4);
+    }
+
+    load(data) {
+        data = JSON.parse(data);
+        
+        // project
+        ui.domProjectName.value = data.project.name;
+
+        // camera
+        if (data.camera) {
+            ui.domCameraOffset.value = parseFloat(data.camera.offset);
+            ui.domCameraFov.value = parseFloat(data.camera.fov);
+            ui.domCameraFStop.value = parseFloat(data.camera.fstop);
+            ui.domCameraFocalLength.value = parseFloat(data.camera.focal);
+        }
+
+        // render
+        if (data.render) {
+            ui.domRenderDPR.value = parseFloat(data.render.dpr);
+            ui.domRenderMaxSamples.value = parseInt(data.render.samples);
+            ui.domRenderBounces.value = parseInt(data.render.bounces);
+            ui.domRenderTiles.value = parseInt(data.render.tiles);
+            ui.domRenderTonemap.value = ui.domRenderTonemap.options[parseInt(data.render.tonemap)].value;
+            ui.domRenderHdriBackground.checked = parseBool(data.render.environment.background);
+            ui.domRenderEnvPower.value = parseFloat(data.render.environment.power);
+            ui.domRenderHdriBlur.value = parseFloat(data.render.environment.blur);
+            ui.domRenderLightColor.value = data.render.lights.directional.color.toUpperCase();
+            ui.domRenderLightIntensity.value = parseFloat(data.render.lights.directional.intensity);
+            ui.domRenderMaterialRoughness.value = parseFloat(data.render.materials.default.roughness);
+            ui.domRenderMaterialMetalness.value = parseFloat(data.render.materials.default.metalness);
+            ui.domRenderMaterialTransmission.value = parseFloat(data.render.materials.default.transmission);
+            ui.domRenderMaterialEmissive.value = data.render.materials.default.emissive.toUpperCase();
+            (data.render.materials.default.emissive_intensity) ? // backward compatibility
+                ui.domRenderMaterialEmissiveIntensity.value = parseFloat(data.render.materials.default.emissive_intensity) :
+                ui.domRenderMaterialEmissiveIntensity.value = 2;
+        }
+
+        // data.voxels
+        builder.setStringData(data.data.voxels);
+        this.resetSceneSetup();
+    }
+
+    importVoxels(data) {        
+        ui.setMode(0);
+        builder.createXform(builder.createArrayFromStringData(JSON.parse(data).data.voxels));
+    }
+
+    importBakes(url) {
+        ui.setMode(0);
+        modules.voxelizer.importBakedVoxels(url, scene);
+    }
+
+    exportMeshes(name, format) {
+        if (![ 'obj_raw', 'stl_raw', 'ply_raw' ].includes(format)) {
+            if (pool.meshes.length == 0) {
+                ui.notification('no bake meshes', 1000);
+                return;
+            }
+            if (ui.domExportSelectedBake.checked && !pool.selected) {
+                ui.notification('select a mesh', 1000);
+                return;
+            }
+        }
+
+        const isSelected = ui.domExportSelectedBake.checked && pool.selected;
+
+        switch (format) {
+            case 'glb':
+                modules.exporters.exportGLTF(true, isSelected).then(res => {
+                    downloadData(res, `${name}.glb`);
+                }).catch(err => {
+                    ui.errorMessage('glb export failed');
+                    console.log(err);
+                });
+                break;
+            case 'gltf':
+                modules.exporters.exportGLTF(false, isSelected).then(res => {
+                    downloadJson(JSON.stringify(res, null, 2), `${name}.gltf`);
+                }).catch(err => {
+                    ui.errorMessage('gltf export failed');
+                    console.log(err);
+                });
+                break;
+            case 'obj_raw':
+                modules.exporters.exportVoxelsOBJ().then(res => {
+                    downloadData(res, `${name}_raw.obj`);
+                });
+                break;
+            case 'obj':
+                modules.exporters.exportMeshesOBJ(isSelected).then(res => {
+                    downloadData(res, `${name}.obj`);
+                });
+                break;
+            case 'stl_raw':
+                modules.exporters.exportVoxelsSTL().then(res => {
+                    downloadData(res, `${name}_raw.stl`);
+                });
+                break;
+            case 'stl':
+                modules.exporters.exportMeshesSTL(isSelected).then(res => {
+                    downloadData(res, `${name}.stl`);
+                });
+                break;
+            case 'ply_raw':
+                modules.exporters.exportVoxelsPLY().then(res => {
+                    downloadData(res, `${name}_raw.ply`);
+                });
+                break;
+            case 'ply':
+                modules.exporters.exportMeshesPLY(isSelected).then(res => {
+                    downloadData(res, `${name}.ply`);
+                });
+                break;
+        }
+    }
+
+    loadMagicaVoxel(url) {
+        ui.showProgress(1);
+
+        modules.loaders.loadVOX(url).then(async data => {
+            const msg = await modules.workerPool.postMessage({
+                id: 'parseMagicaVoxel',
+                chunks: data.chunks
+            });
+
+            if (msg) {
+                const voxels = [];
+
+                if (data.scene) {
+                    for (let i = 0; i < msg.data.length; i++) {
+                        voxels.push({ 
+                            position: Vector3(
+                                msg.data[i].x + data.scene.children[ msg.data[i].id ].position.x,
+                                msg.data[i].y + data.scene.children[ msg.data[i].id ].position.y,
+                                msg.data[i].z + data.scene.children[ msg.data[i].id ].position.z),
+                            color: msg.data[i].color,
+                            visible: true
+                        });
+                    }
+                } else {
+                    for (let i = 0; i < msg.data.length; i++) {
+                        voxels.push({ 
+                            position: Vector3(
+                                msg.data[i].x,
+                                msg.data[i].y,
+                                msg.data[i].z),
+                            color: msg.data[i].color,
+                            visible: true
+                        });
+                    }
+                }
+                
+                builder.createVoxelsFromArray(builder.normalizePositionsBounds(voxels));
+                this.resetSceneSetup();
+                ui.domProjectName.value = 'untitled';
+                ui.showProgress(0);
+            } else {
+                ui.errorMessage('incompatible vox file');
+                ui.showProgress(0);
+            }
+            
+            ui.showProgress(0);
+        }).catch(err => {
+            ui.errorMessage('unable to load geometry');
+            ui.showProgress(0);
+            console.error(err);
+        });
+    }
+
+    saveMagicaVoxel(name) {
+        const buffer = modules.exportersVox.exportVOX(builder.voxels, builder.getSize());
+        downloadData(buffer, name + '.vox');
+    }
+
+    createScreenshot(scale = 4) {
+        if (modules.sandbox.isActive()) {
+            modules.sandbox.shot();
+        } else {
+            scene.autoClear = preferences.isBackgroundColor();
+            const w = engine.engine.getRenderWidth();
+            const h = engine.engine.getRenderHeight();
+            engine.engine.setSize(w * scale, h * scale);
+            axisView.isRenderAxisView = false;
+            CreateScreenshotWithResizeAsync(engine.engine, camera.camera0, w * scale, h * scale).then(() => {
+                axisView.isRenderAxisView = true;
+                engine.engine.setSize(w, h);
+                scene.autoClear = true;
+            });
+        }
+    }
+    
+    createScreenshotBasic(width, height, callback) {
+        scene.clearColor = COL_CLEAR_RGBA;
+        axisView.isRenderAxisView = false;
+        postFx.detach();
+        CreateScreenshot(engine.engine, camera.camera0, width, height).then(data => {
+            scene.clearColor = (preferences.isBackgroundColor()) ?
+                Color4FromHex(preferences.getBackgroundColor()) :
+                Color4FromHex(COL_SCENE_BG);
+            axisView.isRenderAxisView = true;
+            postFx.attach();
+            callback(data);
+        });
+    }
+
+    loadFromUrl(url, onLoad = undefined) {
+        if (url === '') return;
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                res.text().then(data => {
+                    this.load(data);
+                    if (onLoad) onLoad();
+                });
+            }
+        }).catch(err => {
+            console.error(err);
+        });
+    }
+}
+
+
+// -------------------------------------------------------
+// Memory
+
+
+class Memory {
+    constructor() {
+        this.stack = [];
+        this.block = -1;
+    }
+
+    record() {
+        const current = builder.getStringData();
+        if (this.stack[this.block] !== current) {   // not detect all changes
+            this.stack[++this.block] = current;
+            this.stack.splice(this.block + 1);      // delete anything forward
+        }
+    }
+
+    undo() {
+        --this.block;
+        if (this.stack[this.block]) {
+            xformer.cancel();
+            builder.setStringData(this.stack[this.block]);
+        } else {
+            ++this.block;
+        }
+    }
+
+    redo() {
+        ++this.block;
+        if (this.stack[this.block]) {
+            builder.setStringData(this.stack[this.block]);
+        } else {
+            --this.block;
+        }
+    }
+
+    reset() {
+        this.stack[++this.block] = builder.getStringData();
+        this.stack.splice(this.block + 1);
+    }
+
+    clear() {
+        this.stack = [];
+        this.block = -1;
+        this.reset(); // init memory block 0
+    }
+}
+
+
+// -------------------------------------------------------
+// Snapshot
+
+
+const vbstoreVoxels = 'vbstore_voxels';
+const vbstoreSnapshots = 'vbstore_voxels_snap' + 'shot';
+const vbstoreSnapshotsImages = 'vbstore_voxels_snap_img' + 'shot';
+
+class Snapshot {
+    constructor() {
+        this.usedBytes = -1;
+    }
+
+    setStorageVoxelsQuick() {
+        try {
+            localStorage.setItem(vbstoreVoxels, builder.getStringData());
+            ui.notification('saved', 1000);
+            ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
+        } catch (err) {
+            ui.errorMessage('quota exceeded');
+        }
+    }
+
+    getStorageVoxelsQuick() {
+        const data = localStorage.getItem(vbstoreVoxels);
+        if (!data) {
+            ui.notification('empty storage', 1000);
+            return;
+        }
+
+        builder.createXform(builder.createArrayFromStringData(data));
+    }
+
+    setStorageVoxels(name) {
+        try {
+            localStorage.setItem(name, builder.getStringData());
+            ui.notification('saved', 1000);
+            ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
+            return true;
+        } catch (err) {
+            ui.errorMessage('quota exceeded');
+        }
+        return false;
+    }
+
+    getStorageVoxels(name) {
+        const data = localStorage.getItem(name);
+        if (!data) return;
+
+        builder.createXform(builder.createArrayFromStringData(data));
+    }
+
+    delStorage(name) {
+        if (localStorage.getItem(name))
+            localStorage.removeItem(name);
+        
+        ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
+    }
+
+    createElements(num) {
+        const parent = document.getElementById("snapshots");
+        parent.innerHTML = "";
+
+        for (let i = 0; i < num; i++) {
+            const li = document.createElement("li");
+            li.classList.add("storage");
+            li.innerHTML = `<img src="${IMG_SNAPSHOT}" id="shot${i}"><div><button>DEL</button><button>SAVE</button></div>`;
+            parent.appendChild(li);
+        }
+
+        if (num > 10) {
+            parent.style.overflowY = "scroll";
+            parent.style.paddingRight = "8px";
+        } else {
+            parent.style.overflowY = "unset";
+            parent.style.paddingRight = "0";
+        }
+    }
+
+    createSnapshots() {
+        this.createElements(preferences.getSnapshotNum());
+
+        const shots = document.querySelectorAll('li.storage');
+
+        for (let i = 0; i < shots.length; i++) {
+            const img = shots[i].children[0];
+            const btn_del = shots[i].children[1].firstChild;
+            const btn_save = shots[i].children[1].lastChild;
+
+            // restore data
+            const data = localStorage.getItem(vbstoreSnapshots + i);
+            if (data) {
+                img.src = localStorage.getItem(vbstoreSnapshotsImages + i);
+            } else {
+                btn_del.disabled = true;
+            }
+
+            btn_del.addEventListener("click", async () => {
+                if (!await ui.confirm()) return;
+                img.src = IMG_SNAPSHOT;
+                this.delStorage(vbstoreSnapshots + i);
+                this.delStorage(vbstoreSnapshotsImages + i);
+                btn_del.disabled = true;
+            }, false);
+
+            btn_save.addEventListener("click", async () => {
+                if (!ui.checkMode(0) || !btn_del.disabled && !await ui.confirm()) return;
+                project.createScreenshotBasic(img.clientWidth, img.clientHeight, (image) => {
+                    const isQuotaAvailable = this.setStorageVoxels(vbstoreSnapshots + i);
+                    if (isQuotaAvailable && localStorage.getItem(vbstoreSnapshots + i)) {
+                        localStorage.setItem(vbstoreSnapshotsImages + i, image);
+                        img.src = image;
+                        btn_del.disabled = false;
+                        ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
+                    }
+                });
+            }, false);
+
+            img.addEventListener("click", async () => {
+                if (!btn_del.disabled && (ui.domOptionsScreenNewScene.checked && !await ui.confirm())) return;
+                ui.setMode(0);
+                this.getStorageVoxels(vbstoreSnapshots + i);
+            }, false);
+
+            img.addEventListener("dragstart", (ev) => {
+                ev.preventDefault();
+            }, false);
+        }
+
+        ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
+    }
+
+    saveSnapshots() {
+        const zip = new JSZip();
+
+        let count = 0;
+        for (let i = 0; i < MAX_SNAPSHOTS; i++) {
+            const data = localStorage.getItem(vbstoreSnapshots + i);
+            if (data) {
+                const img = localStorage.getItem(vbstoreSnapshotsImages + i);
+                if (img) {
+                    zip.file(`${i}.json`, project.saveSnapshot(data, img));
+                    count++;
+                }
+            }
+        }
+
+        if (count > 0) {
+            zip.generateAsync({ type: "blob" }).then(data => {
+                downloadData(data, `snapshots_${getFormattedDate(false)}.zip`);
+            });
+        }
+    }
+
+    loadSnapshots(archive) {
+        let backup = [];
+        function createBackup() {
+            for (let i = 0; i < MAX_SNAPSHOTS; i++) {
+                const data = localStorage.getItem(vbstoreSnapshots + i);
+                if (data) {
+                    const img = localStorage.getItem(vbstoreSnapshotsImages + i);
+                    if (img) {
+                        backup.push({ id: i, data: data, shot: img });
+                    }
+                }
+                localStorage.removeItem(vbstoreSnapshots + i);
+                localStorage.removeItem(vbstoreSnapshotsImages + i);
+            }
+        }
+
+        function restoreBackup() {
+            for (let i = 0; i < backup.length; i++) {
+                localStorage.setItem(vbstoreSnapshots + backup[i].id, backup[i].data);
+                localStorage.setItem(vbstoreSnapshotsImages + backup[i].id, backup[i].shot);
+            }
+
+            setTimeout(() => {
+                snapshot.createSnapshots();
+                backup = null;
+            }, 100);
+        }
+
+        // need to wipe current items before Async
+        // to avoid a quota error caused by waste, need to free up localstorage.
+        // so testing the archive is not enough, the only way is to backup and restore.
+        createBackup();
+
+        const zip = new JSZip();
+        zip.loadAsync(archive).then(zipData => {
+            const arr = Object.keys(zipData.files);
+            arr.forEach(fname => {
+
+                if (fname.endsWith('.json')) {
+                    zip.file(fname).async('string').then(data => {
+
+                        try {
+                            const id = parseInt(fname.split('.')[0]);
+                            ui.showProgress(id + 1, arr.length);
+
+                            const json = JSON.parse(data);
+                            localStorage.setItem(vbstoreSnapshots + id, json.data.voxels);
+                            localStorage.setItem(vbstoreSnapshotsImages + id, json.data.shot);
+                            
+                            if (fname === arr[arr.length - 1]) { // last file
+                                setTimeout(() => {
+                                    snapshot.createSnapshots();
+                                    ui.notification(`${arr.length} snapshots`);
+                                    ui.showProgress(0);
+                                }, 100);
+                                backup = null;
+                            }
+                        } catch (err) {
+                            ui.errorMessage('quota exceeded');
+                            ui.showProgress(0);
+                            restoreBackup();
+                        }
+                    });
+                } else {
+                    ui.errorMessage('invalid zip file');
+                    ui.showProgress(0);
+                    restoreBackup();
+                }
+            });
+        });
+    }
+
+    getLocalStorageQuota() {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+
+        this.usedBytes = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key))
+                this.usedBytes += ((key.length + localStorage[key].length) * 2); // UTF-16 encoding
+        }
+
+        if (this.usedBytes === 0) return 'Quota: N/A';
+        const i = parseInt(Math.floor(Math.log(this.usedBytes) / Math.log(1024)), 10);
+        if (i === 0) return `Quota: ${this.usedBytes} ${sizes[i]}`;
+
+        return `Quota: ${(this.usedBytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`;
+    }
+}
+
+
+// -------------------------------------------------------
+// Render Target
+
+
+class RenderTarget {
+    constructor() {
+        this.pickTexture = undefined;
+        this.frameBuffer = undefined;
+        this.pixels = undefined;
+        this.point = { x: 0, y: 0 };
+        this.quad = new Array(4);
+    }
+
+    init() {
+        const w = engine.engine.getRenderWidth();
+        const h = engine.engine.getRenderHeight();
+
+        this.pickTexture = RenderTargetTexture('pick_texture', w, h, scene);
+
+        this.pickTexture.clearColor = COL_WHITE_RGBA;
+        scene.customRenderTargets.push(this.pickTexture);
+
+        this.pickTexture.onBeforeRender = () => {
+            if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
+                builder.mesh.thinInstanceSetBuffer("color", builder.rttColors, 4, true);
+        }
+        
+        if (!config.debug_gpu_probe) {
+            this.pickTexture.onAfterRender = () => {
+                if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
+                    builder.mesh.thinInstanceSetBuffer("color", builder.bufferColors, 4, true);
+            }
+        }
+
+        this.frameBuffer = engine.engine._gl.createFramebuffer();
+        this.pixels = new Uint8Array(4 * w * h);
+    }
+
+    readTarget(x, y, w, h) {
+        this.readTexturePixels(x, y, w, h);
+        return this.pixels;
+    }
+
+    readPixel() {
+        this.readTexturePixels(this.point.x, this.point.y, 1, 1);
+        return `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+    }
+
+    readFace() {
+        this.readTexturePixels(this.point.x - 1, this.point.y - 1, 2, 2);
+        
+        this.quad[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+        this.quad[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
+        this.quad[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
+        this.quad[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
+        
+        if (new Set(this.quad).size === 1)
+            return this.quad[0];
+    }
+
+    readOmni(num, pad) {
+        switch (num) {
+            case 0:
+                this.readTexturePixels(this.point.x + pad, this.point.y + pad, 2, 2);
+                break;
+            case 1:
+                this.readTexturePixels(this.point.x - pad, this.point.y - pad, 2, 2);
+                break;
+            case 2:
+                this.readTexturePixels(this.point.x + pad, this.point.y - pad, 2, 2);
+                break;
+            case 3:
+                this.readTexturePixels(this.point.x - pad, this.point.y + pad, 2, 2);
+                break;
+        }
+
+        this.quad[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
+        this.quad[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
+        this.quad[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
+        this.quad[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
+
+        if (new Set(this.quad).size === 1)
+            return this.quad[0];
+        
+        return mostDuplicatedItem(this.quad);
+    }
+    
+    readTexturePixels(x, y, w, h) {
+        //await engine.engine._readTexturePixels(this.pickTexture._texture, w, h, -1, 0, this.pixels, true, true, x, y);
+        
+        if (this.frameBuffer) {
+            const gl = engine.engine._gl;
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.pickTexture._texture._hardwareTexture.underlyingResource, 0);
+            gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, null, 0);
+        } else {
+            engine.engine.flushFramebuffer();
+            engine.engine._textureHelper.readPixels(this.pickTexture._texture._hardwareTexture.underlyingResource, x, y, w, h, this.pickTexture._texture._hardwareTexture.format, -1, 0, this.pixels, false);
+        }
+    }
+
+    numToColor(num) {
+        return {
+            r: (num & 0xff0000) >> 16,
+            g: (num & 0x00ff00) >>  8,
+            b: (num & 0x0000ff) >>  0
+        }
+    }
+
+    resize() {
+        const w = engine.engine.getRenderWidth();
+        const h = engine.engine.getRenderHeight();
+        this.pickTexture.resize({ width: w, height: h });
+        this.pixels = new Uint8Array(4 * w * h);
+    }
+}
+
+
+// -------------------------------------------------------
+// Face Normal Probe
+
+
+class FaceNormalProbe {
+    constructor() {
+        this.probe = undefined;
+        this.normal = undefined;
+    }
+
+    init() {
+        this.probe = CreateBox('probe_facenorm', 1, FRONTSIDE, scene);
+        this.probe.isVisible = true;
+        this.probe.isPickable = true;
+        this.probe.doNotSerialize = true;
+        this.probe.layerMask = 0x00000000;
+        this.probe.renderingGroupId = 1;
+        helper.highlightOverlayMesh(this.probe, COL_AXIS_X_RGB);
+    }
+
+    predicate(mesh) {
+        return mesh.name === 'probe_facenorm';
+    }
+
+    getNormal(pick, index) {
+        this.normal = undefined;
+        
+        this.probe.position = builder.voxels[index].position.clone();
+        this.probe.layerMask = (config.debug_gpu_probe) ? 0x0FFFFFFF : 0x00000000;
+
+        const res = scene.pickWithRay(pick.ray, this.predicate);
+        if (res && res.hit)
+            this.normal = this.getFaceNormal(this.probe.position, res.pickedPoint);
+
+        return this.normal;
+    }
+
+    getFaceNormal(position, pickedPoint) {
+        this.normal = this.calculateFaceNormal(position, pickedPoint);
+        
+        if (this.isNormalValid(position, this.normal))
+            return this.normal.clone();
+
+        return undefined;
+    }
+
+    calculateFaceNormal(position, pickedPoint) {
+        const point = pickedPoint.subtract(position);
+
+        const projections = [
+            Math.abs(point.x),
+            Math.abs(point.y),
+            Math.abs(point.z)
+        ];
+    
+        const maxIndex = projections.indexOf(Math.max(...projections));
+    
+        switch (maxIndex) {
+            case 0:
+                return point.x >= 0 ? VEC6_ONE[0] : VEC6_ONE[1];
+            case 1:
+                return point.y >= 0 ? VEC6_ONE[2] : VEC6_ONE[3];
+            case 2:
+                return point.z >= 0 ? VEC6_ONE[4] : VEC6_ONE[5];
+        }
+        
+        return undefined;
+    }
+
+    isNormalValid(position, normal) {
+        const idx = builder.getIndexAtPosition(position.add(normal));
+        if (idx === undefined) {
+            return true;
+        } else if (!builder.voxels[idx].visible) {
+            return true;
+        }
+        return false;
+    }
+
+    dispose() {
+        this.probe.position.copyFrom(RECYCLEBIN);
+        this.probe.layerMask = 0x00000000;
+    }
+}
+
+
+// -------------------------------------------------------
+// Post Process Effect
+
+
+class PostProcessEffect {
+    constructor() {
+        this.effect = undefined;
+        this.geomBufferRenderer = undefined;
+    }
+
+    start() {
+        this.dispose();
+
+        EffectShadersStore["fxFragmentShader"] = document.getElementById(`${ preferences.getPostProcessValue() }FragmentShader`).textContent;
+        
+        this.geomBufferRenderer = scene.enableGeometryBufferRenderer();
+
+        this.effect = PostProcess('fx', camera.camera0,
+            [ 'uRes', 'uTime', 'uCamDir' ],
+            [ 'textureSampler', 'normalSampler', 'depthSampler' ]);
+
+        this.effect.autoClear = true;
+        this.effect._samples = parseInt(preferences.getPostProcessSamples());
+
+        this.effect.onApply = (effect) => {
+            effect.setVector2("uRes", Vector2(engine.engine.getRenderWidth(), engine.engine.getRenderHeight()));
+            effect.setFloat("uTime", performance.now() / 1000);
+            effect.setVector3('uCamDir', camera.camera0.getForwardRay().direction.negate().normalize());
+            effect.setTexture("normalSampler", this.geomBufferRenderer.getGBuffer().textures[1]);
+            effect.setTexture("depthSampler", this.geomBufferRenderer.getGBuffer().textures[0]);
+        };
+    }
+
+    setSamples(num) {
+        if (this.effect)
+            this.effect._samples = parseInt(num);
+    }
+
+    attach() {
+        if (this.effect && this.effect._reusable) {
+            camera.camera0.attachPostProcess(this.effect);
+            this.effect._reusable = false;
+        }
+    }
+
+    detach() {
+        if (this.effect) {
+            this.effect._reusable = true;
+            camera.camera0.detachPostProcess(this.effect);
+        }
+    }
+
+    dispose() {
+        if (this.effect) {
+            this.detach();
+            this.effect.dispose();
+            this.effect = null;
+            if (this.geomBufferRenderer)
+                this.geomBufferRenderer.dispose();
+            this.geomBufferRenderer = null;
+            EffectShadersStore["fxFragmentShader"] = undefined;
+            scene.disableGeometryBufferRenderer();
+        }
+    }
+}
+
+
+// -------------------------------------------------------
+// UserInterface
+
+
+class UserInterface {
+    constructor() {
+        this.domModes = document.querySelectorAll('#toolbar-screen-top-mode li.mode');
+        this.domMenus = document.getElementById('menus');
+        this.domToolbar = document.getElementById('toolbar');
+        this.domToolbarScreenTopMode = document.getElementById('toolbar-screen-top-mode');
+        this.domToolbarScreenTopMem = document.getElementById('toolbar-screen-top-mem');
+        this.domToolbarScreenStorage = document.getElementById('toolbar-screen-storage');
+        this.domToolbarScreenMaterial = document.getElementById('toolbar-screen-material');
+        this.domToolbarScreenToggles = document.getElementById('toolbar-screen-toggles');
+        this.domToolbarScreenRender = document.getElementById('toolbar-screen-render');
+        this.domToolbarScreenExport = document.getElementById('toolbar-screen-export');
+        this.domScreenSymmAxis = document.getElementById('btn-screen-symmetry');
+        this.domScreenOrtho = document.getElementById('btn-screen-ortho');
+        this.domScreenFloorPlane = document.getElementById('btn-screen-floorplane');
+        this.domScreenVolumePlane = document.getElementById('btn-screen-volumeplane');
+        this.domScreenMultiPlane = document.getElementById('btn-screen-multiplane');
+        this.domScreenLightLocator = document.getElementById('btn-screen-lightlocator');
+        this.domHover = document.getElementById('hover');
+        this.domHoverItems = document.querySelectorAll('#hover ul li');
+        this.domColorPicker = document.getElementById('input-color');
+        this.domColorWheel = document.getElementById('color-wheel');
+        this.domPalette = document.getElementById('palette');
+        this.domMeshList = document.getElementById('meshlist');
+        this.domCameraAutoFrame = document.getElementById('input-camera-autoframe');
+        this.domCameraOffset = document.getElementById('input-camera-offset');
+        this.domCameraFov = document.getElementById('input-camera-fov');
+        this.domCameraFStop = document.getElementById('input-camera-fstop');
+        this.domCameraFocalLength = document.getElementById('input-camera-focal');
+        this.domCameraAutoRotation = document.getElementById('input-autorotate');
+        this.domCameraAutoRotationCCW = document.getElementById('input-autorotate-ccw');
+        this.domCameraOrtho = document.getElementById('btn-ortho');
+        this.domSymmAxisS = document.getElementById('btn-symm-axis-s');
+        this.domSymmAxisX = document.getElementById('btn-symm-axis-x');
+        this.domSymmAxisY = document.getElementById('btn-symm-axis-y');
+        this.domSymmAxisZ = document.getElementById('btn-symm-axis-z');
+        this.domSymmWorldCenter = document.getElementById('input-symm-worldcenter');
+        this.domSymmPreview = document.getElementById('input-symm-preview');
+        this.domToolBoxHeight = document.getElementById('input-tool-boxheight');
+        this.domToolBoxSlice = document.getElementById('input-tool-boxslice');
+        this.domToolBridgeBypass = document.getElementById('input-tool-bridge-bypass');
+        this.domToolRectAddBypass = document.getElementById('input-tool-rectadd-bypass');
+        this.domTransformReactive = document.getElementById('input-transform-reactive');
+        this.domTransformClone = document.getElementById('input-transform-clone');
+        this.domTransformIslandConnected = document.getElementById('input-transform-island-connected');
+        this.domBucketIslandConnected = document.getElementById('input-tool-bucket-island-connected');
+        this.domGroupSliceY = document.getElementById('input-group-slice-y');
+        this.domGroupIslandsConnected = document.getElementById('input-groupislands-connected');
+        this.domBakeryIslandsConnected = document.getElementById('input-bake-islands-connected');
+        this.domVoxelizerScale = document.getElementById('input-voxelizer-scale');
+        this.domVoxelizerRatio = document.getElementById('input-voxelizer-ratio');
+        this.domVoxelizerVertical = document.getElementById('input-voxelizer-vertical');
+        this.domVoxelizerTextFont = document.getElementById('input-voxelizer-font');
+        this.domVoxelizerText = document.getElementById('input-voxelizer-text');
+        this.domVoxelizerTextExtrude = document.getElementById('input-voxelizer-text-extrude');
+        this.domVoxelizerTextVertical = document.getElementById('input-voxelizer-text-vertical');
+        this.domVoxelizerTextEmoji = document.getElementById('input-voxelizer-text-emoji');
+        this.domPbrAlbedo = document.getElementById('input-pbr-albedo');
+        this.domPbrEmissive = document.getElementById('input-pbr-emissive');
+        this.domPbrRoughness = document.getElementById('input-pbr-roughness');
+        this.domPbrMetallic = document.getElementById('input-pbr-metallic');
+        this.domPbrAlpha = document.getElementById('input-pbr-alpha');
+        this.domPbrVertexColor = document.getElementById('input-pbr-vertexcolor');
+        this.domPbrWireframe = document.getElementById('input-pbr-wireframe');
+        this.domMaterialSwitch = document.getElementById('material-switch');
+        this.domProjectName = document.getElementById('project_name');
+        this.domRawExportFormat = document.getElementById('input_raw_export_format');
+        this.domExportFormat = document.getElementById('input_export_format');
+        this.domExportSelectedBake = document.getElementById('export_selected_bake');
+        this.domRenderMaxSamples = document.getElementById('input-pt-maxsamples');
+        this.domRenderBounces = document.getElementById('input-pt-bounces');
+        this.domRenderDPR = document.getElementById('input-pt-dpr');
+        this.domRenderTiles = document.getElementById('input-pt-tiles');
+        this.domRenderTonemap = document.getElementById('input-pt-tonemap');
+        this.domRenderHdriMaps = document.getElementById("input-pt-hdri-maps");
+        this.domRenderHdriBackground = document.getElementById('input-pt-hdri-background');
+        this.domRenderHdriBlur = document.getElementById('input-pt-hdri-blur');
+        this.domRenderEnvPower = document.getElementById('input-pt-envpower');
+        this.domRenderLightColor = document.getElementById('input-pt-light-color');
+        this.domRenderLightIntensity = document.getElementById('input-pt-light-intensity');
+        this.domRenderMaterialRoughness = document.getElementById('input-pt-roughness');
+        this.domRenderMaterialMetalness = document.getElementById('input-pt-metalness');
+        this.domRenderMaterialTransmission = document.getElementById('input-pt-transmission');
+        this.domRenderMaterialEmissive = document.getElementById('input-pt-emissive');
+        this.domRenderMaterialEmissiveIntensity = document.getElementById('input-pt-emissive-intensity');
+        this.domRenderAutoStart = document.getElementById('input-pt-autostart');
+        this.domRenderShade = document.getElementById('input-pt-shade');
+        this.domRenderPlane = document.getElementById('input-pt-plane');
+        this.domRenderPlaneColor = document.getElementById('input-pt-plane-color');
+        this.domOptionsScreen = document.getElementById('options_screen');
+        this.domOptionsScreenNewScene = document.getElementById('check_screen_newscene');
+        this.domOptionsScreenWorkplaneOnly = document.getElementById('check_workplane_only');
+        this.domMarquee = document.getElementById("marquee");
+        this.domConfirm = document.getElementById('confirm');
+        this.domConfirmBlocker = document.getElementById('confirmblocker');
+        this.domNotifier = document.getElementById('notifier');
+        this.domInfo = document.getElementById('info').children;
+        this.domInfoParent = document.getElementById('info');
+        this.domInfoTool = document.getElementById('info_tool');
+        this.domInfoRender = document.getElementById('info_render');
+        this.domProgressBar = document.getElementById('progressbar');
+        this.domUsedStorage = document.getElementById('used_storage');
+
+        this.colorWheel = undefined;
+        this.notificationTimer = undefined;
+        this.inspectorModule = undefined;
+    }
+
+    init() {
+        this.colorWheel = modules.createColorPickerInScreen();
+        this.setToolbarMode(preferences.isToolbarIcons());
+        this.setFrostedGlassUI(preferences.isFrostedGlassUI());
+        this.setOpacity(preferences.getUiOpacity());
+        this.appendCustomEnvironmentMaps();
+
+        if (!preferences.isMinimal()) {
+            this.domMenus.style.display = 'unset';
+            this.domHover.style.display = 'unset';
+            this.domPalette.style.display = 'unset';
+            this.domToolbarScreenTopMode.style.display = 'flex';
+            this.domToolbarScreenMaterial.style.display = 'flex';
+            this.domToolbarScreenToggles.style.display = 'flex';
+            this.domInfoTool.style.display = 'unset';
+            this.domInfoParent.style.display = 'unset';
+            this.domColorWheel.style.display = 'unset';
+            this.domOptionsScreen.style.display = 'flex';
+        } else {
+            this.domMenus.style.display = 'unset';
+            this.domHover.style.display = 'unset';
+            this.domPalette.style.display = 'unset';
+            this.domInfoParent.style.display = 'unset';
+            this.domInfoTool.style.display = 'unset';
+            this.domColorWheel.style.display = 'unset';
+
+            this.domToolbarScreenTopMode.style.display = 'none';
+            this.domToolbarScreenTopMem.style.top = '10px';
+            this.domInfoTool.style.top = '17px';
+            this.domOptionsScreen.style.display = 'flex';
+            this.domOptionsScreen.style.top = '43px';
+            this.domNotifier.style.top = '70px';
+
+            this.domToolbar.children[3].style.borderBottomRightRadius = getStyleRoot('--border-radius');
+            this.domToolbar.children[3].firstChild.style.borderBottomRightRadius = getStyleRoot('--border-radius');
+            this.domToolbar.children[4].style.display = 'none';
+            this.domToolbar.children[12].style.display = 'none';
+            this.domToolbar.children[13].style.display = 'none';
+            this.domToolbar.children[14].style.display = 'none';
+
+            this.domToolbarScreenStorage.style.display = 'flex';
+            this.domToolbarScreenMaterial.style.display = 'flex';
+            this.domToolbarScreenMaterial.children[3].style.opacity = '0.5';
+            this.domToolbarScreenMaterial.children[3].style.pointerEvents = 'none';
+            this.domToolbarScreenToggles.style.display = 'flex';
+            this.domToolbarScreenToggles.children[2].style.display = 'none';
+            this.domToolbarScreenToggles.children[5].style.display = 'none';
+
+            this.domInfo[3].style.display = 'none';
+            this.domInfoParent.innerHTML = '&nbsp;' + this.domInfoParent.innerHTML;
+        }
+
+        if (preferences.isMobile) {
+            ui.domCameraOffset.value = 1.4;
+            ui.domTransformReactive.checked = false;
+
+            preferences.setPostProcessSamples(2);
+        }
+    }
+
+    setMode(mode) {
+        if (MODE == mode) return;
+        MODE = mode;
+
+        xformer.apply();
+        pool.deselectMesh();
+        helper.clearOverlays();
+
+        if (tool.name == 'bake_color')
+            tool.toolSelector('camera', false);
+
+        if (mode == 0) {
+            modules.sandbox.deactivate();
+            builder.setMeshVisibility(true);
+            pool.setPoolVisibility(false);
+            light.updateShadowMap();
+            postFx.attach();
+        } else if (mode == 1) {
+            setTimeout(() => {
+                modules.sandbox.activate();
+            }, 100);
+        } else if (mode == 2) {
+            modules.sandbox.deactivate();
+            builder.setMeshVisibility(false);
+            pool.setPoolVisibility(true);
+            pool.createMeshList();
+            light.updateShadowMap();
+            postFx.detach();
+        }
+
+        if (!preferences.isMinimal())
+            this.setInterfaceMode(mode);
+    }
+
+    setInterfaceMode(mode) {
+        this.domToolbarScreenTopMem.style.display = 'none';
+        this.domToolbarScreenStorage.style.display = 'none';
+        this.domToolbarScreenMaterial.style.display = 'none';
+        this.domToolbarScreenRender.style.display = 'none';
+        this.domToolbarScreenExport.style.display = 'none';
+        this.domPalette.style.display = 'none';
+        this.domMeshList.style.display = 'none';
+        this.domHover.style.display = 'unset';
+        this.domOptionsScreen.style.display = 'none';
+
+        for (const i of this.domToolbar.children)
+            i.style.display = 'unset';
+            
+        if (mode == 0) {
+            this.domToolbarScreenTopMem.style.display = 'unset';
+            this.domToolbarScreenStorage.style.display = 'flex';
+            this.domToolbarScreenMaterial.style.display = 'flex';
+            this.domPalette.style.display = 'unset';
+            this.domInfoTool.innerHTML = `${ tool.name.replace('_', ' ') }`;
+            this.domColorWheel.style.display = 'unset';
+            this.domOptionsScreen.style.display = 'flex';
+        } else if (mode == 1) {
+            this.domToolbar.children[5].style.display = 'none';    // CREATE
+            this.domToolbar.children[6].style.display = 'none';    // VOXELIZE
+            this.domToolbar.children[7].style.display = 'none';    // SYMM
+            this.domToolbar.children[8].style.display = 'none';    // DRAW
+            this.domToolbar.children[9].style.display = 'none';    // PAINT
+            this.domToolbar.children[10].style.display = 'none';   // XFORM
+            this.domToolbar.children[11].style.display = 'none';   // GROUPS
+            this.domToolbar.children[12].style.display = 'none';   // BAKERY
+            this.domToolbar.children[13].style.display = 'none';   // PBR
+            this.domToolbar.children[14].style.display = 'none';   // EXPORT
+            this.domToolbarScreenRender.style.display = 'flex';
+            this.domHover.style.display = 'none';
+            this.domInfoTool.innerHTML = '';
+            this.domColorWheel.style.display = 'none';
+        } else if (mode == 2) {
+            this.domToolbar.children[5].style.display = 'none';    // CREATE
+            this.domToolbar.children[6].style.display = 'none';    // VOXELIZE
+            this.domToolbar.children[7].style.display = 'none';    // SYMM
+            this.domToolbar.children[8].style.display = 'none';    // DRAW
+            this.domToolbar.children[9].style.display = 'none';    // PAINT
+            this.domToolbar.children[10].style.display = 'none';   // XFORM
+            this.domToolbar.children[11].style.display = 'none';   // GROUPS
+            this.domToolbarScreenExport.style.display = 'flex';
+            this.domMeshList.style.display = 'unset';
+            this.domHover.style.display = 'none';
+            this.domInfoTool.innerHTML = '';
+            this.domColorWheel.style.display = 'none';
+        }
+
+        for (const i of this.domModes)
+            i.classList.remove("mode_select");
+        this.domModes[mode].classList.add("mode_select");
+    }
+
+    setToolbarMode(isIcons) {
+        if (isIcons) {
+            modules.panels.setPositionLeft(55);
+
+            this.domToolbar.children[0].children[0].style.display = 'none';
+            this.domToolbar.children[0].children[1].style.width = '50px';
+            this.domToolbar.style.width = '50px';
+            for (let i = 1; i < this.domToolbar.children.length; i++)
+                this.domToolbar.children[i].style.width = '50px';
+
+            document.getElementById('toolbar_btn_file').innerHTML = '<i class="material-icons">insert_drive_file</i>';
+            document.getElementById('toolbar_btn_storage').innerHTML = '<i class="material-icons">grade</i>';
+            document.getElementById('toolbar_btn_camera').innerHTML = '<i class="material-icons">camera_alt</i>';
+            document.getElementById('toolbar_btn_render').innerHTML = '<i class="material-icons">camera</i>';
+            document.getElementById('toolbar_btn_create').innerHTML = '<i class="material-icons">add</i>';
+            document.getElementById('toolbar_btn_voxelize').innerHTML = '<i class="material-icons">grain</i>';
+            document.getElementById('toolbar_btn_symm').innerHTML = '<i class="material-icons">flip</i>';
+            document.getElementById('toolbar_btn_draw').innerHTML = '<i class="material-icons">draw</i>';
+            document.getElementById('toolbar_btn_paint').innerHTML = '<i class="material-icons">brush</i>';
+            document.getElementById('toolbar_btn_xform').innerHTML = '<i class="material-icons">select_all</i>';
+            document.getElementById('toolbar_btn_groups').innerHTML = '<i class="material-icons">category</i>';
+            document.getElementById('toolbar_btn_bakery').innerHTML = '<i class="material-icons">auto_awesome</i>';
+            document.getElementById('toolbar_btn_pbr').innerHTML = '<i class="material-icons">texture</i>';
+            document.getElementById('toolbar_btn_export').innerHTML = '<i class="material-icons">get_app</i>';
+        } else {
+            modules.panels.setPositionLeft(80);
+
+            this.domToolbar.children[0].children[0].style.display = 'unset';
+            this.domToolbar.children[0].children[1].style.width = '38px';
+            this.domToolbar.style.width = '75px';
+            for (let i = 1; i < this.domToolbar.children.length; i++)
+                this.domToolbar.children[i].style.width = '75px';
+
+            document.getElementById('toolbar_btn_file').innerHTML = 'FILE';
+            document.getElementById('toolbar_btn_storage').innerHTML = 'STORAGE';
+            document.getElementById('toolbar_btn_camera').innerHTML = 'CAMERA';
+            document.getElementById('toolbar_btn_render').innerHTML = 'RENDER';
+            document.getElementById('toolbar_btn_create').innerHTML = 'CREATE';
+            document.getElementById('toolbar_btn_voxelize').innerHTML = 'VOXELIZE';
+            document.getElementById('toolbar_btn_symm').innerHTML = 'SYMM.';
+            document.getElementById('toolbar_btn_draw').innerHTML = 'DRAW';
+            document.getElementById('toolbar_btn_paint').innerHTML = 'PAINT';
+            document.getElementById('toolbar_btn_xform').innerHTML = 'XFORM';
+            document.getElementById('toolbar_btn_groups').innerHTML = 'GROUPS';
+            document.getElementById('toolbar_btn_bakery').innerHTML = 'BAKERY';
+            document.getElementById('toolbar_btn_pbr').innerHTML = 'PBR';
+            document.getElementById('toolbar_btn_export').innerHTML = 'EXPORT';
+        }
+    }
+
+    setFrostedGlassUI(isEnabled) {
+        const blur = 'blur(15px)';
+
+        if (isEnabled) {
+            this.domToolbarScreenTopMode.style.backdropFilter = blur;
+            modules.colorPicker.parent.style.backdropFilter = blur;
+
+            for (const child of this.domHoverItems)
+                child.style.backdropFilter = blur;
+            for (const child of this.domToolbar.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domToolbarScreenStorage.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domToolbarScreenMaterial.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domToolbarScreenRender.children)
+                child.style.backdropFilter = blur;
+            for (const child of this.domToolbarScreenExport.children)
+                child.style.backdropFilter = blur;
+            for (const panel of modules.panels.panels)
+                panel.elem.style.backdropFilter = blur;
+
+        } else {
+            this.domToolbarScreenTopMode.style.backdropFilter = 'none';
+            modules.colorPicker.parent.style.backdropFilter = 'none';
+
+            for (const child of this.domHoverItems)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domToolbar.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domToolbarScreenStorage.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domToolbarScreenMaterial.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domToolbarScreenRender.children)
+                child.style.backdropFilter = 'none';
+            for (const child of this.domToolbarScreenExport.children)
+                child.style.backdropFilter = 'none';
+            for (const panel of modules.panels.panels)
+                panel.elem.style.backdropFilter = 'none';
+        }
+    }
+
+    setOpacity(value) {
+        const opacity = floatHexOpacity(value);
+        setStyleRoot('--menu-bg', getStyleRoot('--menu-bg').slice(0, -2) + opacity);
+        setStyleRoot('--btn-bg', getStyleRoot('--btn-bg').slice(0, -2) + opacity);
+        setStyleRoot('--input-bg', getStyleRoot('--input-bg').slice(0, -2) + opacity);
+    }
+
+    appendCustomEnvironmentMaps() {
+        for (let i = 0; i < config.custom_environment_maps.length; i++) {
+            const option = document.createElement("option");
+            option.innerHTML = config.custom_environment_maps[i].split('/').pop();
+            option.value = config.custom_environment_maps[i];
+            this.domRenderHdriMaps.appendChild(option);
+        }
+    }
+
+    showProgress(val, max = undefined) {
+        if (max === undefined) max = val;
+        setTimeout(() => {
+            this.domProgressBar.style.width = ~~Math.abs((val / max) * 100) + '%';
+        });
+    }
+
+    updateStatus() {
+        (MODE === 0) ?
+            this.domInfo[0].innerHTML = `${ engine.getFps() } FPS (${ builder.latency } ms)` :
+            this.domInfo[0].innerHTML = `${ engine.getFps() } FPS`;
+        this.domInfo[1].innerHTML = builder.voxels.length + ' VOX';
+        this.domInfo[2].innerHTML = `${ builder.invisibleColors.length }/${ builder.uniqueColors.length } COL`;
+        this.domInfo[3].innerHTML = pool.meshes.length + ' MSH';
+    }
+
+    notification(str, timeout = 3000) {
+        if (this.notificationTimer)
+            clearTimeout(this.notificationTimer);
+        this.domNotifier.innerHTML = str.toUpperCase();
+        this.domNotifier.style.background = getStyleRoot('--notifier-bg');
+        this.domNotifier.style.display = 'unset';
+        this.notificationTimer = setTimeout(() => {
+            this.domNotifier.style.display = 'none';
+        }, timeout);
+    }
+
+    warningMessage(str, timeout = 3000) {
+        if (this.notificationTimer)
+            clearTimeout(this.notificationTimer);
+        this.domNotifier.innerHTML = `WARNING: ${str.toUpperCase()}`;
+        this.domNotifier.style.background = 'darkkhaki';
+        this.domNotifier.style.display = 'unset';
+        this.notificationTimer = setTimeout(() => {
+            this.domNotifier.style.display = 'none';
+        }, timeout);
+    }
+
+    errorMessage(str, timeout = 3000) {
+        if (this.notificationTimer)
+            clearTimeout(this.notificationTimer);
+        this.domNotifier.innerHTML = `ERROR: ${str.toUpperCase()}`;
+        this.domNotifier.style.background = 'indianred';
+        this.domNotifier.style.display = 'unset';
+        this.notificationTimer = setTimeout(() => {
+            this.domNotifier.style.display = 'none';
+        }, timeout);
+    }
+
+    async confirm(target = undefined) {
+        if (!target)
+            target = document.elementFromPoint(pointer.x, pointer.y);
+
+        if (['BUTTON', 'INPUT', 'IMG'].includes(target.tagName)) {
+            this.domConfirm.style.display = 'flex';
+            this.domConfirmBlocker.style.display = 'unset';
+
+            const rect = target.getBoundingClientRect();
+            this.domConfirm.style.width = `${rect.width - 6}px`;
+            this.domConfirm.style.height = `${rect.height - 6}px`;
+            this.domConfirm.style.top = `${rect.top + (rect.height / 2)}px`;
+            this.domConfirm.style.left = `${rect.left + (rect.width / 2)}px`;
+
+            return new Promise(resolve => {
+                if (preferences.isIgnoreConfirms()) {
+                    resolve(true);
+                    this.domConfirm.style.display = 'none';
+                    this.domConfirmBlocker.style.display = 'none';
+                }
+
+                modules.confirm.confirm().then(() => {
+                    resolve(true);
+                    this.domConfirm.style.display = 'none';
+                    this.domConfirmBlocker.style.display = 'none';
+                });
+
+                this.domConfirmBlocker.onclick = () => {
+                    resolve(false);
+                    this.domConfirm.style.display = 'none';
+                    this.domConfirmBlocker.style.display = 'none';
+                };
+            });
+        }
+
+        return undefined;
+    }
+
+    offscreenCheckPanel() {
+        modules.panels.panels.forEach((panel) => {
+            if (this.isOffScreen(panel.elem, 60))
+                modules.panels.resetPanel(panel.idx);
+        });
+    }
+
+    offscreenCheckHover() {
+        if (this.isOffScreen(this.domHover))
+            modules.hover.resetTranslate();
+    }
+
+    isOffScreen(elem, minPad = 20) {
+        const rect = elem.getBoundingClientRect();
+        return ((rect.x + (rect.width/2) - minPad) < 0 || (rect.x + minPad) > window.innerWidth ||
+                (rect.y + minPad) < 0 || (rect.y + minPad) > window.innerHeight);
+    }
+
+    toggleElem(elem) {
+        (elem.style.display === 'unset') ?
+            elem.style.display = 'none' :
+            elem.style.display = 'unset';
+    }
+
+    checkMode(mode) {
+        if (MODE !== mode) {
+            if (mode == 0) {
+                ui.notification('select model tab', 1000);
+            } else if (mode == 1) {
+                ui.notification('select render tab', 1000);
+            } else if (mode == 2) {
+                ui.notification('select export tab', 1000);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    toggleInspector() {
+        if (!this.inspectorModule) {
+            this.inspectorModule = document.createElement('script');
+            this.inspectorModule.type = 'module';
+            this.inspectorModule.src = config.cdn_babylonjs_inspector;
+            document.body.appendChild(this.inspectorModule);
+
+            console.log('load babylon-inspector');
+        }
+
+        if (scene.debugLayer.isVisible()) {
+            scene.debugLayer.hide();
+            document.body.removeChild(this.inspectorModule);
+            this.inspectorModule = undefined;
+            
+            console.log('unload babylon-inspector');
+        } else {
+            scene.debugLayer.show({
+                embedMode: false,
+                additionalNodes: [
+                    {
+                        name: "Bake Meshes",
+                        getContent: () => pool.meshes
+                    }
+                ]
+            }).then(() => {
+                document.getElementById('scene-explorer-host').style.position = 'fixed';
+                document.getElementById('scene-explorer-host').style.zIndex = '5000';
+                document.getElementById('inspector-host').style.zIndex = '5000';
+            });
+        }
+    }
+}
+
+
+// -------------------------------------------------------
+// UserInterfaceAdvanced
+
+
+class UserInterfaceAdvanced {
+    constructor() {
+        this.utilLayer = undefined;
+        this.gizmoVoxel = undefined;
+        this.lightNode = undefined;
+        this.lightGizmoUp = undefined;
+        this.lightGizmoNews = undefined;
+        this.isGizmoVoxelActive = false;
+        this.isLightLocatorActive = false;
+        this.isMultiPlaneGizmoActive = false;
+        this.multiPlaneGizmos = [];
+    }
+
+    init() {
+        this.utilLayer = UtilityLayerRenderer(scene);
+        this.utilLayer.utilityLayerScene.autoClearDepthAndStencil = true;
+
+        this.createLightLocator();
+    }
+
+    isActive() {
+        return this.isLightLocatorActive ||
+               this.isGizmoVoxelActive ||
+               this.isMultiPlaneGizmoActive;
+    }
+
+    bindVoxelGizmo(mesh) {
+        this.unbindVoxelGizmo();
+        this.gizmoVoxel = PositionGizmo(this.utilLayer, 2.5);
+
+        this.gizmoVoxel.scaleRatio = 1;
+        this.gizmoVoxel.snapDistance = 1;
+        this.gizmoVoxel.planarGizmoEnabled = false;
+        this.gizmoVoxel.updateGizmoPositionToMatchAttachedMesh = true;
+        this.gizmoVoxel.updateGizmoRotationToMatchAttachedMesh = true;
+        [ this.gizmoVoxel.xGizmo,
+          this.gizmoVoxel.yGizmo,
+          this.gizmoVoxel.zGizmo ].forEach((gizmo) => {
+                gizmo.dragBehavior.onDragObservable.add(() => {
+                    light.updateShadowMap();
+                });
+                gizmo.dragBehavior.onDragStartObservable.add(() => {
+                    this.isGizmoVoxelActive = true;
+                });
+                gizmo.dragBehavior.onDragEndObservable.add(() => {
+                    this.isGizmoVoxelActive = false;
+                });
+            });
+
+        this.gizmoVoxel.attachedMesh = mesh;
+    }
+
+    unbindVoxelGizmo() {
+        if (this.gizmoVoxel)
+            this.gizmoVoxel.dispose();
+        this.gizmoVoxel = undefined;
+    }
+
+    createLightLocator() {
+        this.lightNode = TransformNode('light_locator');
+        this.lightNode.position.x -= 0.5;
+        this.lightNode.position.y -= 0.5;
+        this.lightNode.position.z -= 0.5;
+        this.lightNode.rotation.x = PIH;
+        this.lightNode.rotation.y = light.angle * Math.PI / 180;
+        this.lightNode.isVisible = false;
+        this.lightNode.doNotSerialize = true;
+
+        this.lightGizmoUp = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 2);
+        this.lightGizmoUp.scaleRatio = 0.8;
+        this.lightGizmoUp.sensitivity = 5.0;
+        this.lightGizmoUp.attachedMesh = null;
+        this.lightGizmoUp.uniformScaling = true;
+        this.lightGizmoUp.updateGizmoRotationToMatchAttachedMesh = false;
+        this.lightGizmoUp.dragBehavior.onDragObservable.add(() => {
+            light.updateHeight(light.location.y / this.lightNode.scaling.x);
+            helper.clearOverlays();
+        });
+        this.lightGizmoUp.dragBehavior.onDragStartObservable.add(() => {
+            this.isLightLocatorActive = true;
+        });
+        this.lightGizmoUp.dragBehavior.onDragEndObservable.add(() => {
+            this.isLightLocatorActive = false;
+        });
+
+        this.lightGizmoNews = PlaneRotationGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer);
+        this.lightGizmoNews.scaleRatio = 0.6;
+        this.lightGizmoNews.attachedMesh = null;
+        this.lightGizmoNews._gizmoMesh.scaling.z *= 10;
+        this.lightGizmoNews.updateGizmoRotationToMatchAttachedMesh = false;
+        this.lightGizmoNews.dragBehavior.onDragObservable.add(() => {
+            light.updateAngle(this.lightNode.rotation.y * 180 / Math.PI);
+            helper.clearOverlays();
+        });
+        this.lightGizmoNews.dragBehavior.onDragStartObservable.add(() => {
+            this.isLightLocatorActive = true;
+        });
+        this.lightGizmoNews.dragBehavior.onDragEndObservable.add(() => {
+            this.isLightLocatorActive = false;
+        });
+    }
+
+    showLightLocator() {        
+        this.lightGizmoUp.attachedMesh = this.lightNode;
+        this.lightGizmoNews.attachedMesh = this.lightNode;
+        ui.domScreenLightLocator.firstChild.style.color = COL_ORANGE;
+    }
+
+    hideLightLocator() {
+        this.lightGizmoUp.attachedMesh = null;
+        this.lightGizmoNews.attachedMesh = null;
+        ui.domScreenLightLocator.firstChild.style.color = COL_AQUA;
+    }
+
+    toggleLightLocator() {
+        (this.lightGizmoUp.attachedMesh) ?
+            this.hideLightLocator() : this.showLightLocator();
+    }
+
+    bindMultiPlane() {
+        this.multiPlaneGizmos[0] = PositionGizmo(this.utilLayer, 2.5);
+        this.multiPlaneGizmos[0].scaleRatio = 0.8;
+        this.multiPlaneGizmos[0].snapDistance = 1;
+        this.multiPlaneGizmos[0].planarGizmoEnabled = false;
+        this.multiPlaneGizmos[0].updateGizmoPositionToMatchAttachedMesh = true;
+        this.multiPlaneGizmos[0].updateGizmoRotationToMatchAttachedMesh = false;
+        [ this.multiPlaneGizmos[0].xGizmo,
+          this.multiPlaneGizmos[0].yGizmo,
+          this.multiPlaneGizmos[0].zGizmo ].forEach((gizmo) => {
+                gizmo.dragBehavior.onDragStartObservable.add(() => {
+                    this.isMultiPlaneGizmoActive = true;
+                });
+                gizmo.dragBehavior.onDragEndObservable.add(() => {
+                    this.isMultiPlaneGizmoActive = false;
+                });
+            });
+        this.multiPlaneGizmos[0].attachedMesh = helper.multiPlane;
+
+        this.multiPlaneGizmos[1] = AxisScaleGizmo(AXIS_X, COL_AQUA_RGB, this.utilLayer, 5);
+        this.multiPlaneGizmos[1].scaleRatio = -0.4;
+        this.multiPlaneGizmos[1].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[1].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[1].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[1].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
+            helper.rotateMultiPlane(AXIS_X);
+        });
+
+        this.multiPlaneGizmos[2] = AxisScaleGizmo(AXIS_Y, COL_AQUA_RGB, this.utilLayer, 5);
+        this.multiPlaneGizmos[2].scaleRatio = -0.4;
+        this.multiPlaneGizmos[2].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[2].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[2].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[2].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
+            helper.rotateMultiPlane(AXIS_Y);
+        });
+
+        this.multiPlaneGizmos[3] = AxisScaleGizmo(AXIS_Z, COL_AQUA_RGB, this.utilLayer, 5);
+        this.multiPlaneGizmos[3].scaleRatio = -0.4;
+        this.multiPlaneGizmos[3].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[3].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[3].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[3].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
+            helper.rotateMultiPlane(AXIS_Z);
+        });
+
+        this.multiPlaneGizmos[4] = AxisScaleGizmo(AXIS_Y, COL_PINK_RGB, this.utilLayer, 8);
+        this.multiPlaneGizmos[4].scaleRatio = -0.3;
+        this.multiPlaneGizmos[4].attachedMesh = helper.multiPlane;
+        this.multiPlaneGizmos[4].updateGizmoRotationToMatchAttachedMesh = false;
+        this.multiPlaneGizmos[4].dragBehavior.onDragStartObservable.add(() => {
+            this.multiPlaneGizmos[4].dragBehavior.releaseDrag();
+            this.isMultiPlaneGizmoActive = true;
+            setTimeout(() => { uix.isMultiPlaneGizmoActive = false }, 500);
+            helper.resetMultiPlane();
+        });
+
+        this.multiPlaneGizmos[4+1] = CreateBox("gizmo_handle_remove_multiplane", 0.04, FRONTSIDE, this.utilLayer.utilityLayerScene);
+        this.multiPlaneGizmos[4+1].material = material.mat_white.clone();
+        helper.highlightOverlayMesh(this.multiPlaneGizmos[4+1], COL_PINK_RGB, 1);
+        this.multiPlaneGizmos[4].setCustomMesh(this.multiPlaneGizmos[4+1])
+    }
+
+    unbindMultiPlane() {
+        if (this.multiPlaneGizmos.length > 0) {
+            for (let i = 0; i < this.multiPlaneGizmos.length; i++) {
+                if (this.multiPlaneGizmos[i].material)
+                    this.multiPlaneGizmos[i].material.dispose();
+                this.multiPlaneGizmos[i].attachedMesh = null;
+                this.multiPlaneGizmos[i].dispose();
+                this.multiPlaneGizmos[i] = null;
+            }
+        }
+        this.multiPlaneGizmos = [];
+    }
+}
+
+
+// -------------------------------------------------------
+// Preferences
+
+
+const KEY_MINIMAL = "pref_minimal";
+const KEY_USER_STARTUP = "pref_user_startup";
+const KEY_TOOLBAR_ICONS = "pref_toolbar_icons";
+const KEY_FPS_MAX = "pref_fps_max";
+const KEY_STARTBOX_SIZE = "pref_startbox_size";
+const KEY_PALETTE_SIZE = "pref_palette_size";
+const KEY_SNAPSHOT_NUM = "pref_snapshot_num";
+const KEY_HELP_LABELS = "pref_help_labels";
+const KEY_IGNORE_CONFIRMS = "pref_ignore_confirms";
+const KEY_GLASS_UI = "pref_glass_ui";
+const KEY_UI_OPACITY = "pref_ui_opacity";
+const KEY_BACKGROUND_CHECK = "pref_background_check";
+const KEY_BACKGROUND_COLOR = "pref_background_color";
+const KEY_RENDER_SHADE = "pref_render_shade";
+const KEY_VOXEL_TEXTURE = "pref_voxel_texture";
+const KEY_SCENE_POSTPROCESS = "pref_scene_postfx";
+const KEY_SCENE_POSTPROCESS_SAMPLES = "pref_scene_postfx_samples";
+const KEY_SCENE_POINTCLOUD = "pref_scene_pointcloud";
+
+class Preferences {
+    constructor() {
+        this.isInitialized = false;
+        this.isHosted = undefined;
+        this.isMobile = undefined;
+    }
+
+    init() {
+        this.isHosted = isHosted;
+        this.isMobile = isMobile;
+
+        resetAllInputElements();
+
+        if (config.debug_clear_localstorage)
+            localStorage.clear();
+
+        document.getElementById(KEY_MINIMAL).checked = this.isMobile;
+        document.getElementById(KEY_USER_STARTUP).checked = false;
+        document.getElementById(KEY_USER_STARTUP).disabled = this.isHosted;
+        document.getElementById(KEY_FPS_MAX).value = 60;
+        document.getElementById(KEY_STARTBOX_SIZE).value = 20;
+        document.getElementById(KEY_PALETTE_SIZE).value = 1;
+        document.getElementById(KEY_SNAPSHOT_NUM).value = 6;
+        document.getElementById(KEY_TOOLBAR_ICONS).checked = this.isMobile;
+        document.getElementById(KEY_HELP_LABELS).checked = true;
+        document.getElementById(KEY_IGNORE_CONFIRMS).checked = false;
+        document.getElementById(KEY_GLASS_UI).checked = false;
+        document.getElementById(KEY_UI_OPACITY).value = 0.8;
+        document.getElementById(KEY_BACKGROUND_CHECK).checked = false;
+        document.getElementById(KEY_BACKGROUND_COLOR).value = getStyleRoot('--scene');
+        document.getElementById(KEY_RENDER_SHADE).value = COL_ICE;
+        document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex = 1;
+        document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex = 0;
+        document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value = 4;
+        document.getElementById(KEY_SCENE_POINTCLOUD).checked = true;
+
+        this.setPrefCheck(KEY_MINIMAL);
+        this.setPrefCheck(KEY_USER_STARTUP);
+        this.setPref(KEY_STARTBOX_SIZE);
+        this.setPrefCheck(KEY_IGNORE_CONFIRMS);
+
+        this.setPref(KEY_FPS_MAX, (val) => {
+            engine.engine.maxFPS = val;
+            if (modules.sandbox.isActive())
+                modules.sandbox.fps = 1000 / val;
+        });
+
+        this.setPref(KEY_PALETTE_SIZE, (val) => {
+            modules.palette.expand(val);
+        });
+
+        this.setPref(KEY_SNAPSHOT_NUM, () => {
+            snapshot.createSnapshots();
+        });
+
+        this.setPrefCheck(KEY_TOOLBAR_ICONS, (chk) => {
+            ui.setToolbarMode(chk);
+        });
+
+        this.setPrefCheck(KEY_HELP_LABELS, (chk) => {
+            modules.panels.showHelpLabels(chk);
+        });
+
+        this.setPrefCheck(KEY_GLASS_UI, (chk) => {
+            ui.setFrostedGlassUI(chk);
+        });
+
+        this.setPref(KEY_UI_OPACITY, (val) => {
+            ui.setOpacity(val);
+        });
+        
+        this.setPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
+            scene.clearColor = (chk) ?
+                Color4FromHex(this.getBackgroundColor()) :
+                Color4FromHex(COL_SCENE_BG);
+        });
+
+        this.setPref(KEY_BACKGROUND_COLOR, (val) => {
+            if (this.isBackgroundColor())
+                scene.clearColor = Color4FromHex(val);
+        });
+
+        this.setPref(KEY_RENDER_SHADE, () => {
+            if (modules.sandbox.isActive())
+                modules.sandbox.updateMaterials();
+        });
+
+        this.setPrefSelect(KEY_VOXEL_TEXTURE, () => {
+            if (!this.isMinimal()) {
+                material.setVoxelTexture();
+                pool.replaceTextures();
+                if (modules.sandbox.isActive())
+                    modules.sandbox.updateMeshes();
+            } else {
+                material.setVoxelTextureNoPBR();
+            }
+        });
+
+        this.setPrefSelect(KEY_SCENE_POSTPROCESS, (idx) => {
+            (idx == 0) ? postFx.dispose() : postFx.start();
+        });
+
+        this.setPref(KEY_SCENE_POSTPROCESS_SAMPLES, (val) => {
+            postFx.setSamples(val);
+        });
+
+        this.setPrefCheck(KEY_SCENE_POINTCLOUD, (chk) => {
+            (chk) ? ghosts.createPointCloud() : ghosts.disposePointCloud();
+        });
+    }
+
+    finish(startTime) {
+        ui.init();
+
+        scene.clearColor = (this.isBackgroundColor()) ?
+            Color4FromHex(this.getBackgroundColor()) :
+            Color4FromHex(COL_SCENE_BG);
+
+        hdri.preload(() => {
+            if (!this.isHosted && this.isUserStartup()) {
+                project.loadFromUrl('../user/startup.json', () => {
+                    this.postFinish(startTime);
+                });
+            } else {
+                project.newProjectStartup(document.getElementById(KEY_RENDER_SHADE).value, document.getElementById(KEY_STARTBOX_SIZE).value);
+                this.postFinish(startTime);
+            }
+        });
+    }
+
+    postFinish(startTime) {
+        pool.init();
+        axisView.init();
+        snapshot.createSnapshots();
+        
+        modules.panels.showHelpLabels(this.isShowHelpLabels());
+        modules.palette.expand(this.getPaletteSize());
+        modules.colorPicker.init();
+        modules.translator.init();
+        modules.confirm.init();
+        
+        if (!this.isMinimal()) {
+            modules.sandbox.init();
+        }
+
+        if (this.getPostProcessId() !== 0)
+            postFx.start();
+
+        console.log(`mobile mode: ${this.isMobile}`);
+        console.log(`startup time: ${(performance.now()-startTime).toFixed(0)} ms`);
+        this.isInitialized = true;
+
+        document.getElementById('introscreen').style.display = 'none';
+        document.getElementById('canvas').style.pointerEvents = 'unset';
+        document.getElementById("version").innerHTML = VERSION;
+        camera.frameStartup();
+
+        // inject the user module entry point
+        if (!this.isHosted) {
+            const scriptUserModule = document.createElement('script');
+            scriptUserModule.type = 'module';
+            scriptUserModule.src = '../user/module.js';
+            document.body.appendChild(scriptUserModule);
+        }
+    }
+
+    isMinimal() {
+        return document.getElementById(KEY_MINIMAL).checked;
+    }
+
+    isUserStartup() {
+        return document.getElementById(KEY_USER_STARTUP).checked;
+    }
+
+    getFpsMax() {
+        return document.getElementById(KEY_FPS_MAX).value;
+    }
+
+    getPaletteSize() {
+        return document.getElementById(KEY_PALETTE_SIZE).value;
+    }
+
+    getSnapshotNum() {
+        return document.getElementById(KEY_SNAPSHOT_NUM).value;
+    }
+
+    isToolbarIcons() {
+        return document.getElementById(KEY_TOOLBAR_ICONS).checked;
+    }
+
+    isShowHelpLabels() {
+        return document.getElementById(KEY_HELP_LABELS).checked;
+    }
+
+    isIgnoreConfirms() {
+        return document.getElementById(KEY_IGNORE_CONFIRMS).checked;
+    }
+
+    isFrostedGlassUI() {
+        return document.getElementById(KEY_GLASS_UI).checked;
+    }
+
+    getUiOpacity() {
+        return parseFloat(document.getElementById(KEY_UI_OPACITY).value);
+    }
+
+    isBackgroundColor() {
+        return document.getElementById(KEY_BACKGROUND_CHECK).checked;
+    }
+
+    getBackgroundColor() {
+        return document.getElementById(KEY_BACKGROUND_COLOR).value;
+    }
+
+    getRenderShadeColor() {
+        return document.getElementById(KEY_RENDER_SHADE).value.toUpperCase();
+    }
+
+    getVoxelTextureId() {
+        return document.getElementById(KEY_VOXEL_TEXTURE).selectedIndex;
+    }
+
+    getPostProcessId() {
+        return document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex;
+    }
+
+    getPostProcessValue() {
+        return document.getElementById(KEY_SCENE_POSTPROCESS).options[document.getElementById(KEY_SCENE_POSTPROCESS).selectedIndex].value;
+    }
+
+    getPostProcessSamples() {
+        return document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value;
+    }
+
+    setPostProcessSamples(val) {
+        document.getElementById(KEY_SCENE_POSTPROCESS_SAMPLES).value = val;
+    }
+
+    isPointCloud() {
+        return document.getElementById(KEY_SCENE_POINTCLOUD).checked;
+    }
+
+    setPref(key, callback = undefined) {
+        if (localStorage.getItem(key))
+            document.getElementById(key).value = localStorage.getItem(key);
+
+        document.getElementById(key).addEventListener("input", (ev) => {
+            localStorage.setItem(key, ev.target.value);
+            if (callback) callback(ev.target.value);
+        }, false);
+    }
+
+    setPrefCheck(key, callback = undefined) {
+        if (localStorage.getItem(key))
+            document.getElementById(key).checked = parseBool(localStorage.getItem(key));
+        
+        document.getElementById(key).addEventListener("input", (ev) => {
+            localStorage.setItem(key, ev.target.checked);
+            if (callback) callback(ev.target.checked);
+        }, false);
+    }
+
+    setPrefSelect(key, callback = undefined) {
+        if (localStorage.getItem(key))
+            document.getElementById(key).selectedIndex = localStorage.getItem(key);
+
+        document.getElementById(key).addEventListener("input", (ev) => {
+            localStorage.setItem(key, ev.target.selectedIndex);
+            if (callback) callback(ev.target.selectedIndex);
+        }, false);
+    }
+}
+
+
+// -------------------------------------------------------
+// Exports
+
+
+export const axisView = new AxisViewScene();
+export const bakery = new Bakery();
+export const builder = new Builder();
+export const camera = new Camera();
+export const faceNormalProbe = new FaceNormalProbe();
+export const ghosts = new Ghosts();
+export const hdri = new HDRI();
+export const helper = new Helper();
+export const light = new Light();
+export const mainScene = new MainScene();
+export const memory = new Memory();
+export const material = new Material();
+export const pool = new MeshPool();
+export const postFx = new PostProcessEffect();
+export const preferences = new Preferences();
+export const project = new Project();
+export const renderTarget = new RenderTarget();
+export const snapshot = new Snapshot();
+export const symmetry = new Symmetry();
+export const tool = new Tool();
+export const toolMesh = new ToolMesh();
+export const ui = new UserInterface();
+export const uix = new UserInterfaceAdvanced();
+export const vMesh = new VoxelMesh();
+export const xformer = new XFormer();
+
+
+// -------------------------------------------------------
+// Events
+
+
+export function registerRenderLoops() {
+
+    engine.engine.runRenderLoop(() => {
+        if (engine.isRendering)
+            scene.render();
+    });
+
+    scene.registerAfterRender(() => {
+        if (engine.isRendering) {
+            if (axisView.isRenderAxisView) {
+                axisView.scene.render();
+                axisView.scene.activeCamera.alpha = camera.camera0.alpha;
+                axisView.scene.activeCamera.beta = camera.camera0.beta;
+            }
+
+            if (!pointer.isDown) {
+                camera.lastPos = [ camera.camera0.alpha, camera.camera0.beta ];
+
+                if (builder.flagDuplicate == 1) {
+                    builder.flagDuplicate = 0;
+                    builder.removeDuplicatesAndUpdate();
+                }
+
+                if (!builder.isWorking)
+                    camera.camera0.attachControl(engine.canvas, true);
+            }
+
+            if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
+                camera.setOrthoMode();
+
+            ui.updateStatus();
+        }
+    });
+}
+
+
+window.addEventListener("resize", () => {
+    scene.getEngine().resize(true);
+    renderTarget.resize();
+    
+    axisView.updateViewport();
+    material.updateShaderMaterials();
+
+    if (MODE == 0) modules.palette.create();
+    if (MODE == 2) pool.createMeshList();
+    
+    ui.offscreenCheckPanel();
+    ui.offscreenCheckHover();
+
+    if (modules.sandbox.isActive())
+        modules.sandbox.resize();
+}, false);
+
+
+window.addEventListener('pointerdown', (ev) => {
+    pointer.x = ev.clientX;
+    pointer.y = ev.clientY;
+    pointer.isDown = true;
+    pointer.isWheel = false;
+    clearTimeout(pointer.wheelTimeout);
+    if (ev.buttons == 1 && ev.target === engine.canvas && !axisView.registerEvent() && !uix.isActive()) {
+        ev.preventDefault();
+        if (MODE == 0) {
+            renderTarget.point.x = Math.floor(pointer.x);
+            renderTarget.point.y = engine.engine.getRenderHeight() - Math.floor(pointer.y);
+            tool.handleToolDown();
+        } else if (MODE == 2) {
+            toolMesh.handleToolDown();
+        }
+    }
+}, false);
+
+
+window.addEventListener('pointermove', (ev) => {
+    pointer.x = ev.clientX;
+    pointer.y = ev.clientY;
+    if (ev.target === engine.canvas && MODE == 0 && !uix.isActive()) {
+        ev.preventDefault();
+        renderTarget.point.x = Math.floor(pointer.x);
+        renderTarget.point.y = engine.engine.getRenderHeight() - Math.floor(pointer.y);
+        tool.handleToolMove();
+    }
+}, false);
+
+
+window.addEventListener('pointerup', (ev) => {
+    pointer.isDown = false;
+    pointer.isWheel = false;
+    clearTimeout(pointer.wheelTimeout);
+    if (ev.target === engine.canvas && MODE == 0) {
+        ev.preventDefault();
+        tool.handleToolUp();
+    }
+}, false);
+
+
+window.addEventListener('wheel', (ev) => {
+    if (ev.target === engine.canvas)
+        ev.preventDefault();
+    pointer.isWheel = true;
+    clearTimeout(pointer.wheelTimeout);
+    pointer.wheelTimeout = setTimeout(() => {
+        pointer.isWheel = false;
+    }, 300);
+}, { passive: false });
+
+
+document.addEventListener("keydown", (ev) => {
+    if (ev.target.matches(".ignorekeys")) return;
+
+    if (ev.ctrlKey && ev.key == '/') {
+        ui.toggleInspector();
+        return;
+    }
+
+    if (modules.colorPicker.isActive) return;
+
+    if (ev.shiftKey) // true or no-action
+        xformer.isShiftKeyMode = true;
+
+    if (MODE == 0 && !tool.last && !pointer.isDown) {
+        if (ev.altKey || ev.key == ' ') {
+            ev.preventDefault();
+            tool.last = tool.name;
+            tool.toolSelector('camera', false);
+            return;
+        }
+    }
+    
+    switch (ev.key.toLowerCase()) {
+        case 'enter':
+            if (ev.target instanceof HTMLButtonElement) return;
+            xformer.apply();
+            break;
+        case '`':
+            tool.toolSelector('camera');
+            break;
+        case '1':
+            tool.toolSelector('add');
+            break;
+        case '2':
+            tool.toolSelector('remove');
+            break;
+        case '3':
+            tool.toolSelector('box_add');
+            break;
+        case '4':
+            tool.toolSelector('box_remove');
+            break;
+        case '5':
+            tool.toolSelector('paint');
+            break;
+        case '6':
+            tool.toolSelector('box_paint');
+            break;
+        case '7':
+            tool.toolSelector('bucket_group');
+            break;
+        case '8':
+            tool.toolSelector('eyedropper');
+            break;
+        case 't':
+            tool.toolSelector('transform_box');
+            break;
+        case 's':
+            symmetry.switchAxis();
+            break;
+        case 'c':
+            tool.toolSelector('camera');
+            break;
+        case 'delete':
+            if (MODE == 0) {
+                xformer.deleteSelected();
+            } else if (MODE == 2) {
+                pool.deleteSelected();
+            }
+            break;
+        case 'f':
+            camera.frame();
+            break;
+        case 'o':
+            camera.switchOrtho();
+            break;
+        case 'r':
+            (modules.sandbox.isActive()) ? ui.setMode(0) : ui.setMode(1);
+            break;
+    }
+    
+    if (MODE == 0) {
+        if (ev.ctrlKey && ev.key.toLowerCase() === 'z') {
+            ev.preventDefault();
+            memory.undo();
+        }
+        if (ev.ctrlKey && ev.key.toLowerCase() === 'x') {
+            ev.preventDefault();
+            memory.redo();
+        }
+    }
+}, false);
+
+document.addEventListener("keyup", () => {
+    if (tool.last) {
+        tool.toolSelector(tool.last, false);
+        tool.last = undefined;
+    }
+}, false);
+
+
+// -------------------------------------------------------
+// Events File
+
+
+function fileHandler(file) {
+    xformer.cancel();
+    const ext = file.name.split('.').pop().toLowerCase(); //ext|exts
+    const url = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+        if (ext == 'json') project.load(reader.result);
+        if (ext == 'zip')  snapshot.loadSnapshots(reader.result);
+        if (ext == 'glb' && MODE == 0) modules.voxelizer.importMeshGLB(url, scene);
+        if (ext == 'obj' && MODE == 0) modules.voxelizer.importMeshOBJ(url, scene);
+        if (ext == 'stl' && MODE == 0) modules.voxelizer.importMeshSTL(url, scene);
+        if (ext == 'ply' && MODE == 0) modules.voxelizer.importMeshPLY(url, scene);
+        if (ext == 'vox' && MODE == 0) project.loadMagicaVoxel(url);
+        if (ext == 'hdr') hdri.loadHDR(url);
+        if (MODE == 0) {
+            if (['jpg','png','svg'].includes(ext))
+                modules.voxelizer.voxelize2D(reader.result);
+        }
+        URL.revokeObjectURL(url);
+    }
+    if (ext == 'json') {
+        reader.readAsText(file);
+    } else if (ext == 'zip') {
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.readAsDataURL(file);
+    }
+}
+
+function fileHandlerNoDrop(file, type) {
+    const url = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+        if (type == 'import_voxels')
+            project.importVoxels(reader.result);
+        if (type == 'load_baked_glb')
+            project.importBakes(url);
+        URL.revokeObjectURL(url);
+    }
+    reader.readAsText(file);
+}
+
+function dropHandler(ev) {
+    ev.preventDefault();
+    if (ev.dataTransfer.files[0] && ev.dataTransfer.files[0].path !== "")
+        fileHandler(ev.dataTransfer.files[0]);
+}
+
+function dragHandler(ev) {
+    ev.preventDefault();
+}
+
+function dragLeaveHandler(ev) {
+    ev.preventDefault();
+}
+
+document.getElementById('openfile_json').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
+}, false);
+
+document.getElementById('openfile_import_voxels').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandlerNoDrop(ev.target.files[0], 'import_voxels');
+}, false);
+
+document.getElementById('openfile_vox').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
+}, false);
+
+document.getElementById('openfile_voxelizer').addEventListener("change", (ev) => {
+    if (ui.checkMode(0) && ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
+}, false);
+
+document.getElementById('openfile_voxelizer_img').addEventListener("change", (ev) => {
+    if (ui.checkMode(0) && ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
+}, false);
+
+document.getElementById('openfile_hdr').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
+}, false);
+
+document.getElementById('openfile_baked_glb').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandlerNoDrop(ev.target.files[0], 'load_baked_glb');
+}, false);
+
+document.getElementById('openfile_snapshot_zip').addEventListener("change", (ev) => {
+    if (ev.target.files.length > 0)
+        fileHandler(ev.target.files[0]);
+}, false);
+
+document.ondrop = (ev) => { dropHandler(ev) };
+document.ondragover = (ev) => { dragHandler(ev) };
+document.ondragleave = (ev) => { dragLeaveHandler(ev) };
+
+
+// -------------------------------------------------------
+// Events DOM
+
+
+ui.domMenus.onpointerdown = () => {
+    if (MODE == 0)
+        xformer.apply();
+};
+
+document.getElementById('tab-model').onclick = () => {
+    ui.setMode(0);
+};
+
+document.getElementById('tab-render').onclick = () => {
+    ui.setMode(1);
+};
+
+document.getElementById('tab-export').onclick = () => {
+    ui.setMode(2);
+};
+
+// Screen Toolbars
+
+ui.domToolbarScreenTopMem.children[0].onclick = () => {
+    memory.undo();
+};
+
+ui.domToolbarScreenTopMem.children[1].onclick = () => {
+    memory.redo();
+};
+
+ui.domToolbarScreenStorage.children[0].onclick = () => {
+    xformer.apply();
+    snapshot.getStorageVoxelsQuick();
+};
+
+ui.domToolbarScreenStorage.children[1].onclick = () => {
+    xformer.apply();
+    snapshot.setStorageVoxelsQuick();
+};
+
+ui.domToolbarScreenExport.children[0].onclick = () => {
+    bakery.bakeColors();
+};
+
+ui.domToolbarScreenMaterial.children[0].oninput = (ev) => {
+    tool.currentColor = ev.target.value.toUpperCase();
+    ui.colorWheel.hex = tool.currentColor;
+};
+
+ui.domToolbarScreenMaterial.children[1].onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('bucket_group');
+};
+
+ui.domToolbarScreenMaterial.children[2].onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('eyedropper');
+};
+
+ui.domToolbarScreenMaterial.children[3].onclick = () => {
+    material.switchMaterial();
+};
+
+ui.domToolbarScreenRender.children[0].onclick = () => {
+    if (!ui.domRenderAutoStart.checked)
+        modules.sandbox.toggleRender();
+};
+
+ui.domToolbarScreenRender.children[1].onclick = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.togglePause();
+};
+
+ui.domToolbarScreenRender.children[2].onclick = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.shot();
+};
+
+ui.domToolbarScreenExport.children[1].onclick = () => {
+    project.exportMeshes(ui.domProjectName.value, 'glb');
+};
+
+ui.domScreenFloorPlane.onclick = () => {
+    helper.toggleWorkplanes(0);
+};
+
+ui.domScreenVolumePlane.onclick = () => {
+    helper.toggleWorkplanes(1);
+};
+
+ui.domScreenMultiPlane.onclick = () => {
+    helper.toggleWorkplanes(2);
+};
+
+ui.domScreenLightLocator.onclick = () => {
+    uix.toggleLightLocator();
+};
+
+ui.domScreenSymmAxis.onclick = () => {
+    symmetry.switchAxis();
+};
+
+ui.domScreenOrtho.onclick = () => {
+    camera.switchOrtho();
+};
+
+// Hover menu
+
+ui.domHoverItems[0].onclick = () => {
+    tool.toolSelector('box_add');
+};
+
+ui.domHoverItems[1].onclick = () => {
+    tool.toolSelector('box_remove');
+};
+
+ui.domHoverItems[2].onclick = () => {
+    tool.toolSelector('transform_box');
+};
+
+ui.domHoverItems[3].onclick = () => {
+    tool.toolSelector('box_paint');
+};
+
+// About
+
+document.getElementById('btn_action_about_shortcuts').onclick = () => {
+    ui.toggleElem(document.getElementById('shortcuts'));
+};
+
+document.getElementById('btn_action_about_examples').onchange = (ev) => {
+    project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value);
+};
+
+document.getElementById('btn_action_about_examples_vox').onchange = (ev) => {
+    project.loadFromUrl(ev.target.options[ev.target.selectedIndex].value);
+};
+
+// Preferences
+
+document.getElementById('btn_action_fullscreen').onclick = () => {
+    toggleFullscreen();
+};
+
+document.getElementById('btn_action_reloadapp').onclick = async (ev) => {
+    if (await ui.confirm(ev.target))
+        window.location.reload();
+};
+
+// File
+
+document.getElementById('btn_action_project_new').onclick = async (ev) => {
+    if (await ui.confirm(ev.target))
+        project.newProject();
+};
+
+document.getElementById('btn_action_project_save').onclick = () => {
+    project.save();
+};
+
+document.getElementById('btn_action_snapshots_save').onclick = () => {
+    snapshot.saveSnapshots();
+};
+
+document.getElementById('btn_action_raw_export').onclick = () => {
+    project.exportMeshes(ui.domProjectName.value, ui.domRawExportFormat.value);
+};
+
+document.getElementById('btn_action_export_meshes').onclick = () => {
+    project.exportMeshes(ui.domProjectName.value, ui.domExportFormat.value);
+};
+
+document.getElementById('btn_action_save_vox').onclick = () => {
+    project.saveMagicaVoxel(ui.domProjectName.value);
+};
+
+document.getElementById('btn_action_screenshot').onclick = () => {
+    project.createScreenshot();
+};
+
+// Camera
+
+ui.domCameraOrtho.onclick = () => {
+    camera.switchOrtho();
+};
+
+ui.domCameraOffset.onchange = () => {
+    camera.frame();
+    if (modules.sandbox.isActive())
+        modules.sandbox.frameCamera();
+};
+
+ui.domCameraFov.onchange = (ev) => {
+    if (ev.target.value > 0) {
+        camera.setFov(ev.target.value);
+        if (modules.sandbox.isActive())
+            modules.sandbox.updateCamera(false);
+    }
+};
+
+ui.domCameraFStop.onchange = (ev) => {
+    if (modules.sandbox.isActive() && ev.target.value > 0)
+        modules.sandbox.updateCamera(false);
+};
+
+ui.domCameraFocalLength.onchange = (ev) => {
+    if (modules.sandbox.isActive() && ev.target.value > 0)
+        modules.sandbox.updateCamera(false);
+};
+
+ui.domCameraAutoFrame.onchange = (ev) => {
+    if (ev.target.checked)
+        camera.frame();
+};
+
+ui.domCameraAutoRotation.onchange = (ev) => {
+    camera.toggleCameraAutoRotation(ui.domCameraAutoRotationCCW.checked, ev.target);
+};
+
+ui.domCameraAutoRotationCCW.onchange = (ev) => {
+    camera.updateCameraAutoRotation(ev.target.checked);
+};
+
+document.getElementById('btn_action_camera_preset_right').onclick = () => {
+    camera.setView('x');
+};
+
+document.getElementById('btn_action_camera_preset_left').onclick = () => {
+    camera.setView('-x');
+};
+
+document.getElementById('btn_action_camera_preset_top').onclick = () => {
+    camera.setView('y');
+};
+
+document.getElementById('btn_action_camera_preset_bottom').onclick = () => {
+    camera.setView('-y');
+};
+
+document.getElementById('btn_action_camera_preset_front').onclick = () => {
+    camera.setView('z');
+};
+
+document.getElementById('btn_action_camera_preset_back').onclick = () => {
+    camera.setView('-z');
+};
+
+document.getElementById('btn_action_camera_frame').onclick = () => {
+    camera.frame();
+};
+
+document.getElementById('btn_tool_frame_color').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('frame_color');
+};
+
+document.getElementById('btn_tool_frame_voxels').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('frame_voxels');
+};
+
+document.getElementById('btn_tool_frame_island').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('frame_island');
+};
+
+// Render
+
+ui.domRenderMaxSamples.onchange = (ev) => {
+    if (ev.target.value < 8) ev.target.value = 8;
+    if (modules.sandbox.isActive())
+        modules.sandbox.pt.updateMaxSamples(ev.target.value);
+};
+
+ui.domRenderBounces.onchange = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.pt.updateBounces(ev.target.value);
+};
+
+ui.domRenderDPR.onchange = (ev) => {
+    modules.sandbox.pt.updateRenderScale(ev.target.value);
+};
+
+ui.domRenderTiles.onchange = (ev) => {
+    modules.sandbox.pt.updateTiles(parseInt(ev.target.value));
+};
+
+ui.domRenderTonemap.onchange = (ev) => {
+    modules.sandbox.setTonemap(parseInt(ev.target.value));
+};
+
+ui.domRenderHdriMaps.onchange = (ev) => {
+    hdri.loadHDR(ev.target.options[ev.target.selectedIndex].value);
+};
+
+ui.domRenderHdriBackground.onclick = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateBackground(ev.target.checked);
+};
+
+ui.domRenderHdriBlur.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateBackground(ui.domRenderHdriBackground.checked);
+};
+
+ui.domRenderEnvPower.onchange = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateEnvIntensity(ev.target.value);
+};
+
+ui.domRenderLightColor.oninput = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateLights();
+};
+
+ui.domRenderLightIntensity.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateLights();
+};
+
+ui.domRenderMaterialRoughness.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
+};
+
+ui.domRenderMaterialMetalness.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
+};
+
+ui.domRenderMaterialTransmission.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
+};
+
+ui.domRenderMaterialEmissive.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
+};
+
+ui.domRenderMaterialEmissiveIntensity.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.updateMaterials();
+};
+
+ui.domRenderAutoStart.onchange = (ev) => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.setAutoStart(ev.target.checked);
+};
+
+ui.domRenderShade.onchange = () => {
+    if (modules.sandbox.isActive())
+        modules.sandbox.toggleShadeMode();
+};
+
+ui.domRenderPlane.onchange = () => {
+    modules.sandbox.updatePlane();
+    modules.sandbox.updateMaterials();
+    modules.sandbox.updateSceneOnce();
+};
+
+ui.domRenderPlaneColor.onchange = () => {
+    modules.sandbox.updatePlane();
+    modules.sandbox.updateMaterials();
+    modules.sandbox.updateSceneOnce();
+};
+
+document.getElementById('btn_action_hdr_unload').onclick = () => {
+    hdri.unloadHDR(true);
+};
+
+// Create
+
+document.getElementById('btn_action_create_box').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
+    if (ui.checkMode(0))
+        modules.generator.createBox();
+};
+
+document.getElementById('btn_action_create_plane').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
+    if (ui.checkMode(0))
+        modules.generator.createBox(true);
+};
+
+document.getElementById('btn_action_create_isometric').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
+    if (ui.checkMode(0))
+        modules.generator.createIsometric();
+};
+
+document.getElementById('btn_action_create_sphere').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
+    if (ui.checkMode(0))
+        modules.generator.createSphere();
+};
+
+document.getElementById('btn_action_create_terrain').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
+    if (ui.checkMode(0))
+        modules.generator.createTerrain();
+};
+
+// Voxelize
+
+document.getElementById('btn_action_voxelize_text').onclick = async (ev) => {
+    if (ui.domOptionsScreenNewScene.checked && !await ui.confirm(ev.target)) return;
+    if (ui.checkMode(0))
+        modules.voxelizer.voxelize2DText();
+};
+
+// Symmetry
+
+ui.domSymmAxisS.onclick = () => {
+    symmetry.switchAxisByNum(-1);
+};
+
+ui.domSymmAxisX.onclick = () => {
+    symmetry.switchAxisByNum(0);
+};
+
+ui.domSymmAxisY.onclick = () => {
+    symmetry.switchAxisByNum(1);
+};
+
+ui.domSymmAxisZ.onclick = () => {
+    symmetry.switchAxisByNum(2);
+};
+
+ui.domSymmWorldCenter.onclick = () => {
+    helper.setSymmPivot();
+};
+
+document.getElementById('btn_action_symm_p2n').onclick = () => {
+    if (ui.checkMode(0))
+        symmetry.symmetrizeVoxels(1);
+};
+
+document.getElementById('btn_action_symm_n2p').onclick = () => {
+    if (ui.checkMode(0))
+        symmetry.symmetrizeVoxels(-1);
+};
+
+document.getElementById('btn_action_symm_mirror').onclick = () => {
+    if (ui.checkMode(0))
+        symmetry.mirrorVoxels();
+};
+
+document.getElementById('btn_action_symm_half_p').onclick = () => {
+    if (ui.checkMode(0))
+        symmetry.deleteHalfVoxels(-1);
+};
+
+document.getElementById('btn_action_symm_half_n').onclick = () => {
+    if (ui.checkMode(0))
+        symmetry.deleteHalfVoxels(1);
+};
+
+// Draw
+
+document.getElementById('btn_tool_add').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('add');
+};
+
+document.getElementById('btn_tool_remove').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('remove');
+};
+
+document.getElementById('btn_tool_bridge').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('bridge');
+};
+
+document.getElementById('btn_tool_box_add').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('box_add');
+};
+
+document.getElementById('btn_tool_box_remove').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('box_remove');
+};
+
+document.getElementById('btn_tool_rect_add').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('rect_add');
+};
+
+document.getElementById('btn_tool_rect_remove').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('rect_remove');
+};
+
+document.getElementById('input-newbox-coord').onkeydown = (ev) => {
+    if (ui.checkMode(0) && ev.key == 'Enter') {
+        const str = ev.target.value.split(',');
+        if (str.length == 3 &&
+            (str[0] !== '' && str[1] !== '' && str[2] !== '') &&
+            (parseInt(str[0]) !== NaN && parseInt(str[1]) !== NaN && parseInt(str[2]) !== NaN)) {
+            builder.add(Vector3(parseInt(str[0]), parseInt(str[1]), parseInt(str[2])), tool.currentColor, true);
+            builder.create();
+        } else {
+            ui.errorMessage("invalid coord (e.g. 20,20,20)");
+        }
+    }
+};
+
+// Paint
+
+document.getElementById('btn_tool_paint').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('paint');
+};
+
+document.getElementById('btn_tool_box_paint').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('box_paint');
+};
+
+document.getElementById('btn_tool_rect_paint').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('rect_paint');
+};
+
+document.getElementById('btn_tool_bucket_group').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('bucket_group');
+};
+
+document.getElementById('btn_tool_bucket_island').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('bucket_island');
+};
+
+document.getElementById('btn_action_paint_all').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
+        builder.setColorsAndUpdate(tool.currentColor);
+};
+
+document.getElementById('btn_tool_eyedropper').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('eyedropper');
+};
+
+// XForm
+
+document.getElementById('btn_tool_transform_box').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('transform_box');
+};
+
+document.getElementById('btn_tool_transform_rect').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('transform_rect');
+};
+
+document.getElementById('btn_tool_transform_group').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('transform_group');
+};
+
+document.getElementById('btn_tool_transform_island').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('transform_island');
+};
+
+document.getElementById('btn_tool_transform_visible').onclick = ()=> {
+    if (ui.checkMode(0))
+        tool.toolSelector('transform_visible');
+};
+
+document.getElementById('btn_tool_measure_volume').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('measure_volume');
+};
+
+document.getElementById('btn_action_normalize').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target)) {
+        builder.normalizePositionsAction();
+        camera.flagFrame = 1;
+        ui.notification('normalized', 1000);
+    }
+};
+
+document.getElementById('btn_action_centralize').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target)) {
+        builder.centralizePositionsAction();
+        camera.flagFrame = 1;
+        ui.notification('centralized', 1000);
+    }
+};
+
+document.getElementById('btn_action_optimize').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
+        builder.optimizeVoxelsAction();
+};
+
+document.getElementById('btn_action_upsample').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target)) {
+        builder.upsampleVoxelsAction();
+        camera.flagFrame = 1;
+    }
+};
+
+// Groups
+
+document.getElementById('btn_action_groupislands').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
+        builder.groupByIslandAction();
+};
+
+document.getElementById('btn_tool_isolate_color').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('isolate_color');
+};
+
+document.getElementById('btn_tool_hide_color').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('hide_color');
+};
+
+document.getElementById('btn_action_invertvisibility').onclick = () => {
+    if (ui.checkMode(0)) {
+        builder.invertVisibility();
+        builder.create();
+    }
+};
+
+document.getElementById('btn_action_unhideall').onclick = () => {
+    if (ui.checkMode(0)) {
+        builder.setVoxelsVisibility(true);
+        builder.create();
+    }
+};
+
+ui.domGroupSliceY.oninput = (ev) => {
+    if (ui.checkMode(0)) {
+        builder.setVoxelsVisibilityBySliceY(parseInt(ev.target.value));
+        builder.create();
+    }
+};
+
+document.getElementById('btn_action_getmultiplane').onclick = () => {
+    if (ui.checkMode(0)) {
+        (helper.multiPlane.position.y > 0) ?
+            ui.domGroupSliceY.value = helper.multiPlane.position.y + 1.5 :
+            ui.domGroupSliceY.value = helper.multiPlane.position.y + 0.5;
+        ui.domGroupSliceY.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+};
+
+document.getElementById('btn_action_setmultiplane').onclick = () => {
+    if (ui.checkMode(0)) {
+        const slice = parseInt(ui.domGroupSliceY.value);
+        (slice > 0) ?
+            helper.multiPlane.position.y = slice - 1.5 :
+            helper.multiPlane.position.y = slice - 0.5;
+    }
+};
+
+document.getElementById('btn_tool_delete_color').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('delete_color');
+};
+
+document.getElementById('btn_action_deletehidden').onclick = async (ev) => {
+    if (ui.checkMode(0) && await ui.confirm(ev.target))
+        builder.deleteHiddenAndUpdate();
+};
+
+// Bakery
+
+document.getElementById('btn_action_bakery_bake_colors').onclick = async (ev) => {
+    if (pool.meshes.length > 0) {
+        if (await ui.confirm(ev.target))
+            bakery.bakeColors();
+    } else {
+        bakery.bakeColors();
+    }
+};
+
+document.getElementById('btn_action_bakery_bake_islands').onclick = async (ev) => {
+    if (pool.meshes.length > 0) {
+        if (await ui.confirm(ev.target))
+            bakery.bakeIslands();
+    } else {
+        bakery.bakeIslands();
+    }
+};
+
+document.getElementById('btn_tool_bake_color').onclick = () => {
+    if (ui.checkMode(0))
+        tool.toolSelector('bake_color');
+};
+
+document.getElementById('btn_action_bakery_delete_all').onclick = async (ev) => {
+    if (await ui.confirm(ev.target))
+        pool.dispose();
+};
+
+document.getElementById('btn_action_bakery_delete').onclick = async (ev) => {
+    if (!pool.selected) {
+        ui.notification('select a mesh', 1000);
+        return;
+    }
+    if (ui.checkMode(2) && await ui.confirm(ev.target))
+        pool.deleteSelected();
+};
+
+// PBR
+
+ui.domPbrVertexColor.oninput = (ev) => {
+    pool.updateVertexColors(ev.target.value);
+};
+
+ui.domPbrAlbedo.oninput = (ev) => {
+    pool.albedoColor = ev.target.value.toUpperCase();
+    pool.setMaterial('albedo'); // update material
+};
+
+ui.domPbrEmissive.oninput = () => {
+    pool.setMaterial('emissive');
+};
+
+ui.domPbrRoughness.onchange = () => {
+    pool.setMaterial('roughness');
+};
+
+ui.domPbrMetallic.onchange = () => {
+    pool.setMaterial('metallic');
+};
+
+ui.domPbrAlpha.onchange = () => {
+    pool.setMaterial('alpha');
+};
+
+ui.domPbrWireframe.onchange = (ev) => {
+    pool.setWireframe(ev.target.checked);
+};
+
+
+// -------------------------------------------------------
+// Utils
+
+
+function toggleFullscreen() {
+    (document.fullscreenElement) ? document.exitFullscreen() : document.body.requestFullscreen();
+}
+
+function getStyleRoot(key) {
+    return getComputedStyle(document.querySelector(':root')).getPropertyValue(key);
+}
+
+function setStyleRoot(key, val) {
+    document.documentElement.style.setProperty(key, val);
+}
+
+function hexToRgbFloat(hex, gamma = 2.2) { // 1 / 0.4545
+    return {
+        r: (parseInt(hex.substring(1, 3), 16) / 255) ** gamma,
+        g: (parseInt(hex.substring(3, 5), 16) / 255) ** gamma,
+        b: (parseInt(hex.substring(5, 7), 16) / 255) ** gamma
+    }
+}
+
+function rgbFloatToHex(r, g, b, gamma = 0.4545) {
+    [r, g, b] = [r, g, b].map(x => Math.round(x ** gamma * 255));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
+}
+
+function rgbIntToHex(r, g, b) {
+    return '#' + (0x1000000 + b | (g << 8) | (r << 16)).toString(16).slice(1).toUpperCase();
+}
+
+function generateRandomHexColor() {
+    return "#" + ("000000" + Math.floor(Math.random() * 16777215).toString(16)).slice(-6).toUpperCase();
+}
+
+function floatHexOpacity(opacity) {
+    opacity = Math.min(Math.max(opacity, 0), 1);
+    const hexOpacity = Math.round(opacity * 255);
+    return hexOpacity.toString(16).toUpperCase().padStart(2, '0');
+}
+
+function aspectRatioFit(srcW, srcH, maxW, maxH) {
+    const ratio = Math.min(maxW / srcW, maxH / srcH);
+    return { width: srcW * ratio, height: srcH * ratio };
+}
+
+function parseBool(val) {
+    return val === true || val === "true";
+}
+
+function distanceVectors(v1, v2) {
+    const dx = v2.x - v1.x;
+    const dy = v2.y - v1.y;
+    const dz = v2.z - v1.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+function mostDuplicatedItem(arr) {
+    const countMap = {};
+    let maxCount = 0;
+    let mostDuplicated;
+
+    for (const item of arr) {
+        (countMap[item]) ?
+            countMap[item]++ :
+            countMap[item] = 1;
+
+        if (countMap[item] > maxCount) {
+            maxCount = countMap[item];
+            mostDuplicated = item;
+        }
+    }
+
+    return mostDuplicated;
+}
+
+// Reset input elements values in Firefox
+function resetAllInputElements() {
+    const inputs = document.querySelectorAll('input, select');
+
+    inputs.forEach(elem => {
+        if (elem.type === 'checkbox' || elem.type === 'radio') {
+            elem.checked = elem.defaultChecked;
+        } else if (elem.tagName === 'SELECT') {
+            Array.from(elem.options).forEach(option => {
+                option.selected = option.defaultSelected;
+            });
+        } else {
+            elem.value = elem.defaultValue;
+        }
+    });
+}
+
+function getFormattedDate(addTime) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    return addTime ? `${year}${month}${day}_${hours}${minutes}${seconds}` : `${year}${month}${day}`;
+}
+
+function downloadJson(data, filename) {
+    const blob = new Blob([ data ], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function downloadData(data, filename) {
+    const blob = new Blob([ data ], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function isMobileDevice() {
+    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(navigator.userAgent) 
+        || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(navigator.userAgent.substr(0,4))) { 
+        return true;
+    }
+    return false;
+}

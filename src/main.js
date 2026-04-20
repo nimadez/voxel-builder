@@ -9,8 +9,8 @@
 setAppId();
 
 
-import { engine } from './modules/babylon.js';
-import * as CORE from './modules/core.js';
+import * as CORE from './core/core.js';
+import { engine } from './core/babylon.js';
 
 
 const startTime = performance.now();
@@ -53,7 +53,21 @@ export let scene = undefined;
 
 
 function setAppId() {
-    const THRESHOLD = 3.6e+6; // ms == 60 min
+    const THRESHOLD = 3.6e+6; // 60-min ms
+    const now = Date.now();
+
+    if (getQueryParam('id')) {
+        const appId = localStorage.getItem('appid');
+        if (!appId || (now - parseInt(appId, 10) > THRESHOLD)) {
+            // update url, no reload needed
+            localStorage.setItem('appid', now.toString());
+            updateQueryParam('id', now.toString());
+        }
+    } else {
+        // fresh url, assign a new id
+        localStorage.setItem('appid', now.toString());
+        updateQueryParam('id', now.toString());
+    }
 
     function getQueryParam(name) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -65,22 +79,5 @@ function setAppId() {
         const url = new URL(window.location);
         url.searchParams.set(name, value);
         window.history.replaceState(null, '', url.toString());
-    }
-
-    const appId = localStorage.getItem('appid');
-    const now = Date.now();
-
-    if (getQueryParam('id')) {
-        if (!appId || (now - parseInt(appId, 10) > THRESHOLD)) {
-            // update url, no reload needed
-            localStorage.setItem('appid', now.toString());
-            updateQueryParam('id', now.toString());
-        } else {
-            // recent url, no action needed
-        }
-    } else {
-        // fresh url, assign a new id
-        localStorage.setItem('appid', now.toString());
-        updateQueryParam('id', now.toString());
     }
 }

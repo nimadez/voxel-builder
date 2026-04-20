@@ -1,8 +1,11 @@
-console.log('init user-module');
+//
+// Notice: Backup before updating, or use the "update.py" script.
+
+console.log('registered user module');
 
 /*
-Using Electron:     import { builder } from "../src/modules/core.js";
-Using server.js:    import { builder } from "../modules/core.js";
+Using Electron:  import { builder } from "../src/core/core.js";
+Using server.js: import { builder } from "../core/core.js";
 
 
 // Exports

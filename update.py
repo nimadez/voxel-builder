@@ -1,75 +1,83 @@
+#!/usr/bin/env python3
 #
 # Voxel Builder Updater
 
 
-import os
-import sys
-import shutil
+import os, sys, shutil
 from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
 
 
-VBUILDER = 'https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip'
-EXCLUDE = [ "voxel-builder-main", "electron", "user_backup" ]
-
-cwd = os.getcwd()
+ARCHIVE = "https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip"
+EXCLUDE = [ "voxel-builder-main", "electron", "voxel-builder-backup.zip" ]
 
 
 def main():
-    DIR_SRC = cwd + '/voxel-builder-main'
-    DIR_DST = cwd
-    DIR_USR = cwd + '/user'
-    DIR_BKP = cwd + '/user_backup'
+    DIR_ROOT = os.getcwd()
+    DIR_SRC = DIR_ROOT + '/voxel-builder-main'
+    FILE_BKP = DIR_ROOT + '/voxel-builder-backup.zip'
 
-    remove_directory(DIR_SRC)
+    print('-----------------------')
+    print(' Voxel Builder Updater ')    
+    print('-----------------------\n')
 
+    # backup repository
+    zip_directory(DIR_ROOT, FILE_BKP)
+    print("- Backup archive created.")
+    print("- The /electron directory is ignored.\n")
+
+    # download archive
     try:
-        print("Connecting to GitHub...")
-        downloadZip(VBUILDER, DIR_DST)
-    except:
-        input("Error: Unable to fetch GitHub repository, check your internet connection.")
-        sys.exit(0)
-
-    print(' --------------------------------')
-    print('  Voxel Builder Updater')    
-    print(' --------------------------------')
-    print(' A backup copy of the "user"')
-    print(' directory will be created.\n')
-
-    if input(" Begin Update (Y/N)? ").upper() != "Y":
         remove_directory(DIR_SRC)
+        print("Connecting to GitHub...")
+        downloadZip(ARCHIVE, DIR_ROOT)
+        print("Downloaded.")
+    except:
+        input("Error: Unable to download repository, check your internet connection.")
         sys.exit(0)
 
-    # clear previous installation
-    if os.path.exists(DIR_DST):
-        if os.path.exists(DIR_USR):
-            if os.path.exists(DIR_BKP):
-                remove_directory(DIR_BKP)
-            os.rename(DIR_USR, DIR_BKP)
+    if input("\nBegin Update (Y)? ").upper() == "Y":
+        # clear directory
+        if os.path.exists(DIR_ROOT):
+            os.chdir(DIR_ROOT)
+            for item in os.listdir(DIR_ROOT):
+                if item not in EXCLUDE:
+                    if os.path.isfile(item):
+                        os.remove(item)
+                    elif os.path.isdir(item):
+                        shutil.rmtree(item, ignore_errors=True)
 
-        os.chdir(DIR_DST)
-        for item in os.listdir(os.getcwd()):
-            if item not in EXCLUDE:
-                if os.path.isfile(item):
-                    os.remove(item)
-                elif os.path.isdir(item):
-                    shutil.rmtree(item, ignore_errors=True)
+        # extract repository
+        print('\nExtracting voxel-builder archive...')
+        for i in os.listdir(DIR_SRC):
+            if i != 'electron':
+                shutil.move(os.path.join(DIR_SRC, i), DIR_ROOT)
+        shutil.rmtree(DIR_SRC)
+        print('Done')
 
-    # extract repository
-    print('\nSetting up voxel-builder...')
-    for f in os.listdir(DIR_SRC):
-        if f != 'electron':
-            shutil.move(os.path.join(DIR_SRC, f), DIR_DST)
-    shutil.rmtree(DIR_SRC)
-
-    print('Done')
+        print("\nUpdate complete.")
+    else:
+        remove_directory(DIR_SRC)
+        print("\nUpdate canceled.")
 
 
 def downloadZip(url, destdir):
     with urlopen(url) as zip:
         with ZipFile(BytesIO(zip.read())) as zf:
             zf.extractall(destdir)
+
+
+def zip_directory(directory, output_zip):
+    with ZipFile(output_zip, 'w') as zipf:
+        for root, dirs, files in os.walk(directory):
+            if "electron" in dirs:
+                dirs.remove("electron")
+            for f in files:
+                if f not in EXCLUDE:
+                    file_path = os.path.join(root, f)
+                    arcname = os.path.relpath(file_path, directory)
+                    zipf.write(file_path, arcname)
 
 
 def remove_directory(dir):
@@ -80,10 +88,12 @@ def remove_directory(dir):
                 os.remove(item)
             elif os.path.isdir(item):
                 shutil.rmtree(item, ignore_errors=True)
-        os.chdir(cwd)
+        os.chdir(os.getcwd())
         os.rmdir(dir)
 
 
 if __name__== "__main__":
-    main()
-    print("\nUpdate complete.")
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass

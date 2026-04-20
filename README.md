@@ -20,7 +20,7 @@
 - Save and load JSON
 - Save and load MagicaVoxel VOX
 - Export to GLB, GLTF, OBJ, STL, PLY
-- Localstorage, snapshots, quicksave, undo
+- Localstorage, snapshots, quicksave, undo/redo
 - Backup and share snapshots in a ZIP archive
 
 **Model and Paint**
@@ -61,14 +61,14 @@
 
 ## Supported Browsers
 - Electron *(recommended)*
-- Mozilla Firefox
-- Google Chrome
+- Mozilla Firefox *(desktop/mobile)*
+- Google Chrome *(desktop/mobile)*
 
 > - PWA A2HS-ready *(add to home screen)*
-> - For the best experience, a tablet with pen or Wacom is recommended
+> - For the best experience, a tablet with pen or Wacom is recommended.
 
 ## Installation
-#### Clone or [Download](https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip)
+#### Clone or [Download](https://github.com/nimadez/voxel-builder/archive/refs/heads/main.zip) the repository
 ```
 git clone https://github.com/nimadez/voxel-builder
 cd voxel-builder
@@ -78,20 +78,23 @@ cd voxel-builder
 Linux:   electron-v*-linux-x64.zip
 Windows: electron-v*-win32-x64.zip
 ```
-For ease of use, extract the zip file into the "voxel-builder/electron" directory.
+For ease of use, extract the zip file into the "**voxel-builder/electron**" directory.
 #### Run
 Start with Electron
 ```
+cd voxel-builder
 electron .
+
 $ sh run-electron.sh
 > run-electron.bat
 ```
 Start with Node.js
 ```
+cd voxel-builder
 node server.js
 ```
 #### Update
-*Makes a backup of the "/user" directory, ignoring the "/electron" directory.*
+*Makes a backup archive, and ignoring the "/electron" directory.*
 ```
 cd voxel-builder
 python3 update.py
@@ -102,10 +105,10 @@ python3 update.py
 #### Low FPS at higher voxel volumes
 > Electron is recommended for working with a large number of voxels.<br>
 Also, the FPS depends on many factors, such as the material (CEL is faster) and the distance between the camera and the model. Rendering a dense Thin volume at close range greatly increases GPU load.
->- Use "Minimal UIX" to save battery on mobile devices.
->- Do not enable "Frosted Glass UI"
->- Use XFORM > "Optimize" to reduce the volume of voxels.
->- Note that this app runs on a web browser and you shouldn't expect much.
+>- Use "Minimal UIX" to save battery on mobile devices. (PBR-free)
+>- Do not enable the "Frosted Glass UI" option.
+>- Use XFORM > Optimize to reduce the volume of voxels.
+>- Note that this application runs on a web browser and you shouldn't expect much.
 
 #### Delay in drawing strokes
 > If you draw and it doesn't, it means the builder is working, you are drawing faster than your hardware and browser will allow. (latency >150 ms)
@@ -146,6 +149,9 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > -- **Save snapshots to ZIP archive** *(easy to share, browser storage limits, speed is variable)*<br>
 > -- **Save to VOX format** *(supports MagicaVoxel, very fast)*
 
+#### Will WebGPU be supported?
+> It was supported to some extent before, but was removed due to unnecessary complexity. But once it matures enough to be enabled by default in browsers, this upgrade will be possible with a few simple changes.
+
 #### How to merge vertices after export to GLB?
 > 1- Open exported GLB file in Blender<br>
 > 2- Go to "Modeling" tab and choose vertex selection mode<br>
@@ -165,9 +171,6 @@ cd voxel-builder
 git log -2 (copy the hash of the previous commit)
 git reset --hard $HASH
 ```
-
-#### Will WebGPU be supported?
-> It was supported to some extent before, but was removed due to unnecessary complexity. But once it matures enough to be enabled by default in browsers, this upgrade will be possible with a few simple changes.
 
 ## History
 ```

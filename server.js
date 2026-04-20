@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 //
 // Voxel Builder Server
 

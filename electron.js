@@ -14,8 +14,8 @@ const { app, BrowserWindow, Menu } = require('electron');
 function createWindow() {
     const mainWindow = new BrowserWindow({
         icon: './src/assets/appicon.png',
-        width: isWayland ? 1240 : 1200,
-        height: isWayland ? 880 : 800,
+        width: 1200,
+        height: isWayland ? 830 : 800,
         autoHideMenuBar: true,
         resizable: true,
         alwaysOnTop: false,

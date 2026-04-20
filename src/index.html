@@ -19,7 +19,7 @@
         }
         @font-face {
             font-family: 'Material Icons'; font-style: normal; font-weight: 400;
-            src: url(./assets/font_materialicons.woff2) format('woff2');
+            src: url(./modules/material-icons/iconfont/material-icons.woff2) format('woff2');
         }
         :root { /* orange, steelblue, indianred */
             --font: Roboto;
@@ -152,12 +152,12 @@
         #snapshots li div :last-child { height: auto; padding: 9px 0 9px 0; }
         #btn-symm-axis-s, #btn-symm-axis-x, #btn-symm-axis-y, #btn-symm-axis-z { font-size: 13px; font-weight: bold; }
         #color-wheel { z-index: 301; display: none; right: 10px; bottom: 8px; position: fixed; }
-        #color-picker { z-index: 2500; display: none; padding: 5px; background: var(--colorpicker-bg); width: 130px; height: fit-content; border: solid 1px #171b22; border-radius: var(--border-radius); position: fixed; }
+        #color-picker { z-index: 2500; display: none; padding: 5px; background: var(--colorpicker-bg); width: 140px; height: fit-content; border: solid 1px #171b22; border-radius: var(--border-radius); position: fixed; }
         #color-picker li, #color-picker li:hover { background: none; box-shadow: none; }
         #color-picker label { width: 40px; }
         #color-picker-wheel { margin: 5px 0 6px 0; }
         #color-picker-selected { display: flex; flex-direction: row; margin-bottom: 5px; }
-        #color-picker-selected div { width: 100%; height: 15px; background: black; }
+        #color-picker-selected div { width: 100%; height: 20px; background: black; }
         #color-picker-selected :first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; cursor: pointer; }
         #color-picker-selected :last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
         #options_screen { z-index: 501; display: none; background: #ffffff08; padding: 0 5px 0 5px; border-radius: var(--border-radius); flex-direction: row; gap: 10px; position: absolute; top: 73px; left: 50%; transform: translateX(-50%); }
@@ -304,7 +304,7 @@
             <li class="category">ABOUT</li>
             <li class="about">
                 <div><span style="color: orange">V</span>OXEL BUILDER</div>
-                &#8627; 4.8.0 BETA
+                &#8627; <span id="version">0.0.0</span> BETA
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/" target="_blank">GitHub</a>
                 <br>&#8627; <a href="https://github.com/nimadez/voxel-builder/releases" target="_blank">Changelog</a>
                 <br>DEVELOPER
@@ -477,14 +477,9 @@
             </li>
             <li class="category">ENVIRONMENT</li>
             <li>
-                <select id="btn_action_hdr_dropdown" style="text-align: left;">
-                    <option value="./assets/hdr_overcast_soil_puresky_1k.hdr" selected>Default (local)</option>
-                    <option value="./assets/hdr_black.hdr">Black (local)</option>
-                    <option value="https://media.githubusercontent.com/media/KhronosGroup/glTF-Sample-Environments/main/footprint_court.hdr">DLC: Footprint Court</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr">DLC: Venice Sunset</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/pedestrian_overpass_1k.hdr">DLC: Pedestrian Overpass</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/blouberg_sunrise_2_1k.hdr">DLC: Blouberg Sunrise</option>
-                    <option value="https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/quarry_01_1k.hdr">DLC: Quarry</option>
+                <select id="input-pt-hdri-maps" style="text-align: left;">
+                    <option value="./assets/hdr_overcast_soil_puresky_1k.hdr" selected>Default</option>
+                    <option value="./assets/hdr_black.hdr">Black</option>
                 </select>
             </li>
             <li class="row">
@@ -791,7 +786,13 @@
         <li id="color-picker-wheel"></li>
         <li id="color-picker-selected"><div title="Previous"></div><div title="Current"></div></li>
         <li class="row_input"><label>HEX</label> <input type="text" id="color-picker-hex" class="ignorekeys" value="#FFFFFF" spellcheck="false"></li>
-        <li class="row_input"><label>RGB</label> <input type="text" id="color-picker-rgb" class="ignorekeys" value="255, 255, 255" spellcheck="false"></li>
+        <li class="row_input"><label>RGB</label>
+            <div class="row">
+                <input type="text" id="color-picker-rgb-r" class="ignorekeys" value="255" spellcheck="false">
+                <input type="text" id="color-picker-rgb-g" class="ignorekeys" value="255" spellcheck="false">
+                <input type="text" id="color-picker-rgb-b" class="ignorekeys" value="255" spellcheck="false">
+            </div>
+        </li>
     </ul>
 
     <!-- dynamic -->
@@ -853,17 +854,51 @@
         </table>
     </div>
 
-<script src="libs/babylon.js"></script>
-<script src="libs/babylonjs.materials.min.js"></script>
+<!--
+
+    Scripts
+ 
+-->
+
+<script src="modules/babylonjs/babylon.js"></script>
+<script src="modules/babylonjs-materials/babylonjs.materials.min.js"></script>
+<script src="modules/jszip/dist/jszip.min.js"></script>
 <script type="importmap">
 {
     "imports": {
-        "three": "./libs/three.module.min.js"
+        "three": "./modules/three/build/three.module.min.js",
+        "three/examples/jsm/controls/OrbitControls.js": "./modules/three/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/exporters/GLTFExporter.js": "./modules/three/examples/jsm/exporters/GLTFExporter.js",
+        "three/examples/jsm/exporters/OBJExporter.js": "./modules/three/examples/jsm/exporters/OBJExporter.js",
+        "three/examples/jsm/exporters/PLYExporter.js": "./modules/three/examples/jsm/exporters/PLYExporter.js",
+        "three/examples/jsm/exporters/STLExporter.js": "./modules/three/examples/jsm/exporters/STLExporter.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "./modules/three/examples/jsm/loaders/GLTFLoader.js",
+        "three/examples/jsm/loaders/HDRLoader.js": "./modules/three/examples/jsm/loaders/HDRLoader.js",
+        "three/examples/jsm/loaders/OBJLoader.js": "./modules/three/examples/jsm/loaders/OBJLoader.js",
+        "three/examples/jsm/loaders/PLYLoader.js": "./modules/three/examples/jsm/loaders/PLYLoader.js",
+        "three/examples/jsm/loaders/STLLoader.js": "./modules/three/examples/jsm/loaders/STLLoader.js",
+        "three/examples/jsm/loaders/VOXLoader.js": "./modules/three/examples/jsm/loaders/VOXLoader.js",
+        "three/examples/jsm/math/SimplexNoise.js": "./modules/three/examples/jsm/math/SimplexNoise.js",
+        "three/examples/jsm/postprocessing/Pass.js": "./modules/three/examples/jsm/postprocessing/Pass.js",
+        "three/examples/jsm/utils/BufferGeometryUtils.js": "./modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+        "three/examples/jsm/utils/SkeletonUtils.js": "./modules/three/examples/jsm/utils/SkeletonUtils.js",
+        "three/examples/jsm/utils/WorkerPool.js": "./modules/three/examples/jsm/utils/WorkerPool.js",
+        "three-mesh-bvh": "./modules/three-mesh-bvh/build/index.module.js",
+        "three-gpu-pathtracer": "./modules/three-gpu-pathtracer/build/index.module.js",
+        "reinvented-color-wheel": "./modules/reinvented-color-wheel/es/reinvented-color-wheel.bundle.js",
+        "tweenjs": "./modules/@tweenjs/tween.js/dist/tween.esm.js"
     }
 }
 </script>
+<script src="app.js" type="module"></script>
+<script src="config.js" type="module"></script>
 <script src="main.js" type="module"></script>
-<script src="libs/utils/jszip.min.js"></script>
+
+<!--
+
+    Shaders
+ 
+-->
 
 <script type="x-shader/x-vertex" id="uniVertexShader">
     precision highp float;
