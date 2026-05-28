@@ -1,4 +1,4 @@
-/* 
+/*
     Jul 2025
     @nimadez
 
@@ -62,7 +62,7 @@ class Confirm {
             ui.domConfirm.children[0].style.transition = 'left 0.3s ease-out';
 
             const completionThreshold = confirm.maxSwipe * confirm.completion;
-            
+
             if (confirm.currentLeft >= completionThreshold) {
                 ui.domConfirm.children[0].style.left = `${ confirm.maxSwipe }px`;
                 ui.domConfirm.children[0].style.transition = 'none';

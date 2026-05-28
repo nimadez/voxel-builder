@@ -48,7 +48,7 @@ http.createServer((req, res) => {
         res.write(data);
         return res.end();
     });
-    
+
 }).listen(PORT, () => {
     console.log('Voxel Builder')
     console.log(`Server running at http://localhost:${PORT}`);

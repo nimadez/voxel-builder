@@ -1,4 +1,4 @@
-/* 
+/*
     Dec 2023
     @nimadez
 
@@ -35,7 +35,7 @@ onmessage = (ev) => {
             const p = { x: 0, y: 0, z: 0 };
 
             for (let i = 0; i < len; i++) {
-                
+
                 // mat.fromArray(this.bufferMatrix, i * 16).m;
                 for (let j = 0; j < 16; j++)
                     m[j] = bufferMatrix[i * 16 + j];
@@ -51,7 +51,7 @@ onmessage = (ev) => {
                     positions[i * vPositions.length + v] = p.x * rw;
                     positions[i * vPositions.length + v + 1] = p.y * rw;
                     positions[i * vPositions.length + v + 2] = p.z * rw;
-    
+
                     p.x = vNormals[v];
                     p.y = vNormals[v + 1];
                     p.z = vNormals[v + 2];
@@ -62,7 +62,7 @@ onmessage = (ev) => {
                     normals[i * vNormals.length + v + 1] = p.y;
                     normals[i * vNormals.length + v + 2] = p.z;
                 }
-    
+
                 for (let v = 0; v < vUvs.length; v += 2) {
                     uvs[i * vUvs.length + v] = vUvs[v];
                     uvs[i * vUvs.length + v + 1] = vUvs[v + 1];
@@ -71,12 +71,12 @@ onmessage = (ev) => {
                     colors[i * vUvs.length * 2 + v * 2 + 2] = bufferColors[i * 4 + 2];
                     colors[i * vUvs.length * 2 + v * 2 + 3] = 1;
                 }
-    
+
                 for (let v = 0; v < vIndices.length; v++) {
                     indices[i * vIndices.length + v] = vIndices[v] + i * vPositions.length / 3;
                 }
             }
-            
+
             // return bufferMatrix to resolve DataCloneError after 1 million voxels
             postMessage([ bufferMatrix, positions, normals, uvs, colors, indices ]);
             break;
@@ -130,7 +130,7 @@ onmessage = (ev) => {
             break;
 
 
-        case 'parseMagicaVoxel':            
+        case 'parseMagicaVoxel':
             arr = [];
             for (let i = 0; i < ev.data.chunks.length; i++) {
                 for (let j = 0; j < ev.data.chunks[i].data.length; j+=4) {

@@ -36,7 +36,7 @@ engine.init(CORE.preferences.getFpsMax()).then(eng => {
         CORE.ghosts.init();
 
         CORE.tool.init();
-        
+
         CORE.renderTarget.init();
         CORE.faceNormalProbe.init();
 

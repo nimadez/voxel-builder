@@ -80,7 +80,7 @@ def create(filePath):
         # add to collection
         bpy.data.collections["Voxels"].objects.link(obj)
 
-    # delete original cube    
+    # delete original cube
     bpy.ops.object.delete()
 
 

@@ -242,7 +242,7 @@
             <li><label>Ratio</label> <input id="input-pixelate-ratio" type="number" value="2.0" min="0.1" max="10.0" step="0.1" disabled title="Lower value equals to more details and more time to process" onmousewheel=""></li>
             <li><label>Pixel Size: 10</label> <input id="input-pixelate-size" type="range" min="0" max="11" value="4" step="1" oninput="this.previousElementSibling.innerHTML='Pixel Size: '+toolSizeList[this.value]"></li>
         </ul>
-        <button onclick="document.getElementById('openfile_img').click()">Upload Image</button>        
+        <button onclick="document.getElementById('openfile_img').click()">Upload Image</button>
         <button onclick="pasteBase64Image()">Paste Base64</button>
         <div class="category">HELP</div>
         <button onclick="document.getElementById('about').style.display='unset'">About</button>
@@ -365,7 +365,7 @@
     const PI2 = Math.PI * 2;
     const mouse = { x: 0, y: 0, lastX: 0, lastY: 0, pivotX: 0, pivotY: 0, isDown: false };
     const toolSizeList = [2,4,6,8,10,12,14,16,18,20,22,24]; // using the slider-input as the indexer for the inputPixelSize
-    
+
     let canvasOffset = { x: 0, y: 0 };
     let currentColor = inputColor.value.toUpperCase();
     let isDebugBoard = false;
@@ -378,7 +378,7 @@
     let memory = new Memory();
     let dynamicPalette = new DynamicPalette();
     let palette = new Palette();
-    
+
     renderLoop();
     drawGridCanvas();
 
@@ -452,7 +452,7 @@
                     this.pixels[i].update();
             }
             ctx.globalAlpha = 1;
-            
+
             if (isDebugBoard)
                 debugBoard();
         }
@@ -566,7 +566,7 @@
             }
             return selected;
         }
-        
+
         this.findIndexByPixel = function(pixel) {
             return this.pixels.findIndex(i =>
                 i.x === pixel.x &&
@@ -956,7 +956,7 @@
 
     // -------------------------------------------------------
     // Helper
-    
+
 
     function Helper() {
         this.color = '#00ffff'; // aqua
@@ -1144,7 +1144,7 @@
         let colors = [];
         let uls = [];
         let currentIndex = 0;
-    
+
         this.init = function() {
             for (let i = 0; i < 8; i++) // generate shades
                 colors.push(shadeColor(inputColor.value, i * 15));
@@ -1398,7 +1398,7 @@
         setData(JSON.parse(str), true);
         memory.clear();
     }
-    
+
     function createStorages() {
         for (let i = 0; i < storages.length; i++) {
             const img = storages[i].children[0];
@@ -1492,7 +1492,7 @@
     cb.addEventListener('contextmenu', function(ev) {
         ev.preventDefault();
     }, false);
-    
+
     cb.addEventListener('touchmove', function(ev) {
         mouse.x = ev.touches[0].clientX;
         mouse.y = ev.touches[0].clientY;
@@ -1912,8 +1912,8 @@
             document.getElementById('info').style.pointerEvents = 'none';
         }
     }
-    
-    
+
+
     // -------------------------------------------------------
     // Utils
 
@@ -1992,9 +1992,9 @@
         R = parseInt(R * (100 + percent) / 100);
         G = parseInt(G * (100 + percent) / 100);
         B = parseInt(B * (100 + percent) / 100);
-        R = (R<255)?R:255;  
-        G = (G<255)?G:255;  
-        B = (B<255)?B:255;  
+        R = (R<255)?R:255;
+        G = (G<255)?G:255;
+        B = (B<255)?B:255;
 
         let RR = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
         let GG = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));

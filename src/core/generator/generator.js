@@ -1,4 +1,4 @@
-/* 
+/*
     Sep 2024
     @nimadez
 
@@ -31,7 +31,7 @@ class Generator {
         const Z = parseInt(document.getElementById('create_grid_z').value);
         const isFill = document.getElementById('create_grid_fill').checked;
         const color = preferences.getRenderShadeColor();
-        
+
         const data = [];
         if (isFill) {
             for (let x = 0; x < X; x++) {
@@ -141,7 +141,7 @@ class Generator {
                 }
             }
         }
-        
+
         builder.createXform(data);
     }
 
@@ -151,7 +151,7 @@ class Generator {
         const Z = parseInt(document.getElementById('create_terrain_z').value);
         const isHeightGrad = document.getElementById('create_terrain_grad').checked;
         const color = preferences.getRenderShadeColor();
-        
+
         const simplex = new SimplexNoise();
         const colArrayHigh = gradientHexArray(
             { r: 0.529, g: 0.737, b: 0.141 },

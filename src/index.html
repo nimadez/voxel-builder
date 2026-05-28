@@ -857,7 +857,7 @@
 <!--
 
     Scripts
- 
+
 -->
 
 <script src="modules/babylonjs/babylon.js"></script>
@@ -897,7 +897,7 @@
 <!--
 
     Shaders
- 
+
 -->
 
 <script type="x-shader/x-vertex" id="uniVertexShader">
@@ -919,12 +919,12 @@
 
     void main() {
         #include<instancesVertex>
-        
+
         vec4 worldPos = finalWorld * vec4(position, 1.0);
         gl_Position = viewProjection * worldPos;
-        
+
         #include<vertexColorMixing>
-        
+
         vPositionW = worldPos.xyz;
         vNormalW = normalize(vec3(finalWorld * vec4(normal, 0.0)));
         vUv = uv;
@@ -970,7 +970,7 @@
         vec3 col = vColor.rgb;
         col *= brdf;
 
-        if (uTextureId == 1) 
+        if (uTextureId == 1)
             col = mix(col, vec3(0), line * 0.22);
 
         col = pow(col, vec3(0.4545));
@@ -990,13 +990,13 @@
 
     uniform vec2 uRes;
     uniform sampler2D textureSampler;
-    
+
     vec3 sobel(sampler2D tex, vec2 uv) {
         vec3 Gx = vec3(0);
         vec3 Gy = vec3(0);
         vec3 e = vec3(0.0, 1.0, -1.0);
         vec2 tx = 1.0 / uRes.xy;
-        
+
         Gx += texture(tex, uv + tx * e.zz).rgb * 1.0;
         Gx += texture(tex, uv + tx * e.zx).rgb * 2.0;
         Gx += texture(tex, uv + tx * e.zy).rgb * 1.0;
@@ -1004,7 +1004,7 @@
         Gx += texture(tex, uv + tx * e.yy).rgb * -1.0;
         Gx += texture(tex, uv + tx * e.yx).rgb * -2.0;
         Gx += texture(tex, uv + tx * e.yz).rgb * -1.0;
-        
+
         Gy += texture(tex, uv + tx * e.zy).rgb * 1.0;
         Gy += texture(tex, uv + tx * e.xy).rgb * 2.0;
         Gy += texture(tex, uv + tx * e.yy).rgb * 1.0;
@@ -1012,7 +1012,7 @@
         Gy += texture(tex, uv + tx * e.zz).rgb * -1.0;
         Gy += texture(tex, uv + tx * e.xz).rgb * -2.0;
         Gy += texture(tex, uv + tx * e.yz).rgb * -1.0;
-        
+
         return sqrt(Gx*Gx + Gy*Gy);
     }
 
@@ -1081,7 +1081,7 @@
         vec3 col = texture2D(textureSampler, vUV).rgb;
         vec3 normal = texture2D(normalSampler, vUV).rgb;
         float depth = texture2D(depthSampler, vUV).r;
-        
+
         // Add user content and experiments here
 
         gl_FragColor = vec4(1.0 - col, 1.0);

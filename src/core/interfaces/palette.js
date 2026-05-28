@@ -1,4 +1,4 @@
-/* 
+/*
     Jul 2025
     @nimadez
 
@@ -13,15 +13,15 @@ class Palette {
     constructor() {
         this.canvas = document.getElementById('canvas_palette');
         this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
-        
+
         this.width = 39;
         this.height = 25;
         this.pad = 2;
         this.wPad = this.width + this.pad;
-        
+
         this.init();
     }
-    
+
     init() {
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
@@ -29,7 +29,7 @@ class Palette {
         this.canvas.addEventListener("pointerdown", (ev) => {
             this.selectColor(ev.offsetX, ev.offsetY);
         }, false);
-                
+
         this.canvas.addEventListener("contextmenu", (ev) => {
             ev.preventDefault();
             this.hideColor(ev.offsetX, ev.offsetY);
@@ -69,7 +69,7 @@ class Palette {
         ui.domPalette.style.width = 8 + ((this.width + this.pad) * num) + "px";
         this.canvas.width = ui.domPalette.clientWidth;
     }
-    
+
     addColor(x, y, hex) {
         this.ctx.strokeStyle = 'transparent';
         if (builder.invisibleColors.indexOf(hex) > -1) {

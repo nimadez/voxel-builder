@@ -1,4 +1,4 @@
-/* 
+/*
     Jul 2025
     @nimadez
 
@@ -32,7 +32,7 @@ class Translator {
 
         this.mat_nul = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.FrontSide });
         this.mat_pbr = new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.FrontSide });
-        
+
         for (const tex of material.textureMaps) {
             const t = new THREE.TextureLoader().load(tex);
             t.minFilter = THREE.NearestMipmapLinearFilter;
@@ -67,7 +67,7 @@ class Translator {
 
     // Babylon to Three
 
-    
+
     convertMaterialPBR(mat, mesh) {
         mat.map = this.textures[preferences.getVoxelTextureId()];
         mat.color = new THREE.Color(
@@ -89,9 +89,9 @@ class Translator {
         this.dispose();
 
         const meshes = new Array(builder.uniqueColors.length);
-        
+
         for (let c = 0; c < builder.uniqueColors.length; c++) {
-            
+
             this.voxels = builder.getVoxelsByColor(builder.uniqueColors[c]);
             this.positions = new Float32Array(vMesh.positions.length * this.voxels.length);
             this.normals = new Float32Array(vMesh.positions.length * this.voxels.length);
@@ -101,7 +101,7 @@ class Translator {
 
             for (let i = 0; i < this.voxels.length; i++) {
                 const idx = this.voxels[i].idx;
-                
+
                 for (let v = 0; v < vMesh.positions.length; v += 3) {
                     this.positions[i * vMesh.positions.length + v] = builder.positions[idx * vMesh.positions.length + v];
                     this.positions[i * vMesh.positions.length + v + 1] = builder.positions[idx * vMesh.positions.length + v + 1];
@@ -139,7 +139,7 @@ class Translator {
 
             this.scene.add(meshes[c]);
         }
-        
+
         return meshes;
     }
 
@@ -168,7 +168,7 @@ class Translator {
         batchedMesh.perObjectFrustumCulled = true;
         batchedMesh.material.vertexColors = false;
         batchedMesh.material.side = THREE.FrontSide;
-        
+
         return batchedMesh;
     }
 
@@ -231,7 +231,7 @@ class Translator {
                 geom = mergeVertices(geom);
 
             geom.computeVertexNormals();
-            
+
             const mesh = CreateMesh('mesh', scene);
             const vertexData = VertexData();
             vertexData.positions = Array.from(geom.attributes.position.array);

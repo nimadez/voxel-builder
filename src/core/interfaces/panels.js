@@ -1,4 +1,4 @@
-/* 
+/*
     Sep 2024
     @nimadez
 
@@ -13,7 +13,7 @@ class Panels {
         this.panels = [];
         this.index = -1;
         this.zIndex = 1000;
-        
+
         this.initialX = 0;
         this.initialY = 0;
         this.currentX = 0;
@@ -90,7 +90,7 @@ class Panels {
 
     addPanel(idx, button, elem, isDetach) {
         this.addToolbar(idx, elem);
-        
+
         this.panels.push({
             idx: idx,
             button: button,
@@ -102,7 +102,7 @@ class Panels {
         if (isDetach)
             this.detachPanel(idx, elem);
     }
-    
+
     addToolbar(idx, elem) {
         const li = document.createElement('li');
         li.classList.add('row_panel');
@@ -136,11 +136,11 @@ class Panels {
             });
             this.resetPanel(idx);
         };
-        
+
         li.appendChild(div_move);
         li.appendChild(div_hide);
         li.appendChild(div_reset);
-        
+
         elem.classList.add('panel');
         elem.insertBefore(li, elem.firstChild);
         elem.onpointerdown = () => {

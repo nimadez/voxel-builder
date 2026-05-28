@@ -174,7 +174,6 @@ git reset --hard $HASH
 
 ## History
 ```
-↑ Advancing in the Renaissance Bubble
 ↑ A fundamental overhaul of the core
 ↑ Core initialization!
 ↑ Rendering was left to Three and three-gpu-pathtracer

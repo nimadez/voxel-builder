@@ -1,4 +1,4 @@
-/* 
+/*
     Nov 2023
     @nimadez
 
@@ -111,7 +111,7 @@ class RaycastVoxelize {
 
     voxelizeMesh(mesh, color) {
         const rcm = new RaycastMesh();
-        
+
         rcm.createFromData(
             mesh.getVerticesData(PositionKind),
             mesh.getIndices()
@@ -120,9 +120,9 @@ class RaycastVoxelize {
         const size = new THREE.Vector3();
         rcm.mesh.geometry.boundingBox.getSize(size);
         size.addScalar(0.5);
-    
+
         const data = [];
-    
+
         for (let x = 0; x < size.x; x++) {
             for (let y = 0; y < size.y; y++) {
                 for (let z = 0; z < size.z; z++) {
@@ -138,39 +138,39 @@ class RaycastVoxelize {
                 }
             }
         }
-        
+
         rcm.dispose();
         return data;
     }
-    
+
     voxelizeBake(mesh) {
         const rcm = new RaycastMesh();
-    
+
         rcm.createFromDataWithColor(
             mesh.getVerticesData(PositionKind),
             mesh.getVerticesData(ColorKind),
             mesh.getIndices()
         );
-    
+
         const size = new THREE.Vector3();
         rcm.mesh.geometry.boundingBox.getSize(size);
         size.x = (size.x / 2) - 0.5;
         size.y = (size.y / 2) - 0.5;
         size.z = (size.z / 2) - 0.5;
-    
+
         const color = new THREE.Color();
         const data = [];
-    
+
         for (let x = -size.x; x <= size.x; x++) {
             for (let y = -size.y; y <= size.y; y++) {
                 for (let z = -size.z; z <= size.z; z++) {
-                    
+
                     const res = rcm.raycastOmni(x, y, z);
                     if (res) {
                         const hex = color.fromBufferAttribute(
                             rcm.mesh.geometry.attributes.color, res.face.a)
                                 .getHexString(THREE.SRGBColorSpace).toUpperCase();
-    
+
                         data.push({
                             position: Vector3(
                                 mesh.position.x + x,
@@ -183,10 +183,10 @@ class RaycastVoxelize {
                 }
             }
         }
-        
+
         rcm.dispose();
         return data;
-    }    
+    }
 }
 
 

@@ -33,7 +33,7 @@ function createWindow() {
     mainWindow.loadFile('src/index.html');
 
     Menu.setApplicationMenu(Menu.buildFromTemplate([
-        { 
+        {
             label: "Reload",
             accelerator: "f5",
             click() {

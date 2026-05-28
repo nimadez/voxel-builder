@@ -1,4 +1,4 @@
-/* 
+/*
     Jul 2025
     @nimadez
 
@@ -69,13 +69,13 @@ class Loaders {
                 });
 
                 if (geometries.length > 0) {
-                    
+
                     const mesh = translator.getMeshFromThree(geometries, scene);
                     (mesh) ? resolve(mesh) : reject('Error: Bad Geometry Attributes');
 
                     for (const geom of geometries)
                         geom.dispose();
-                    
+
                 } else {
                     reject('Error: No Geometries');
                 }
@@ -91,7 +91,7 @@ class Loaders {
     loadPLY(url, scene) {
         return new Promise((resolve, reject) => {
             new PLYLoader().load(url, (geometry) => {
-                
+
                 const mesh = translator.getMeshFromThree([ geometry ], scene);
                 (mesh) ? resolve(mesh) : reject('Error: Bad Geometry Attributes');
 
@@ -102,7 +102,7 @@ class Loaders {
             });
         });
     }
-            
+
     loadSTL(url, scene) {
         return new Promise((resolve, reject) => {
             new STLLoader().load(url, (geometry) => {

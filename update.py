@@ -19,7 +19,7 @@ def main():
     FILE_BKP = DIR_ROOT + '/voxel-builder-backup.zip'
 
     print('-----------------------')
-    print(' Voxel Builder Updater ')    
+    print(' Voxel Builder Updater ')
     print('-----------------------\n')
 
     # backup repository
@@ -80,16 +80,16 @@ def zip_directory(directory, output_zip):
                     zipf.write(file_path, arcname)
 
 
-def remove_directory(dir):
-    if os.path.exists(dir):
-        os.chdir(dir)
+def remove_directory(directory):
+    if os.path.exists(directory):
+        os.chdir(directory)
         for item in os.listdir(os.getcwd()):
             if os.path.isfile(item):
                 os.remove(item)
             elif os.path.isdir(item):
                 shutil.rmtree(item, ignore_errors=True)
         os.chdir(os.getcwd())
-        os.rmdir(dir)
+        os.rmdir(directory)
 
 
 if __name__== "__main__":

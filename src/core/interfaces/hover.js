@@ -1,4 +1,4 @@
-/* 
+/*
     Sep 2024
     @nimadez
 
@@ -36,7 +36,7 @@ class Hover {
         this.elemDrag.addEventListener("touchstart", this.dragStart, false);
         document.body.addEventListener("touchend", this.dragEnd, false);
         document.body.addEventListener("touchmove", this.drag, false);
-    
+
         this.showMenu();
     }
 

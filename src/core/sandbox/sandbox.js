@@ -1,7 +1,7 @@
-/* 
+/*
     Sep 2024
     @nimadez
-    
+
     Three.js Sandbox
 */
 
@@ -50,7 +50,7 @@ class Sandbox {
         this.tween1 = undefined;
         this.tween2 = undefined;
         this.tweens = new Group();
-        
+
         this.mouse = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         this.intersects = undefined;
@@ -68,10 +68,10 @@ class Sandbox {
         this.mat_pbr = undefined;
         this.mat_shade = undefined;
         this.mat_emissive = undefined;
-        
+
         this.isShadeMode = false;
 
-        this.pt = undefined;        
+        this.pt = undefined;
         this.flagUpdateScene = 0;
 
         this.fps = -1;
@@ -159,7 +159,7 @@ class Sandbox {
         const axis = new THREE.AxesHelper(10);
         axis.position.setScalar(-0.5);
         this.scene.add(axis);
-        
+
         this.mat_shadow = new THREE.ShadowMaterial({ opacity: 0.15 });
         this.mat_pbr = new THREE.MeshPhysicalMaterial({ vertexColors: true, side: THREE.BackSide });
         this.mat_pbr.specularIntensity = 1;
@@ -214,7 +214,7 @@ class Sandbox {
             this.meshes[i].frustumCulled = true;
             this.meshes[i].castShadow = true;
             this.meshes[i].receiveShadow = true;
-            
+
             this.scene.add(this.meshes[i]);
         }
     }
@@ -243,7 +243,7 @@ class Sandbox {
             this.camera.position.set(camera.camera0.position.x, camera.camera0.position.y, camera.camera0.position.z);
             this.controls.target = new THREE.Vector3(camera.camera0.target.x, camera.camera0.target.y, camera.camera0.target.z);
         }
-        
+
         this.camera.fov = camera.camera0.fov * 180 / Math.PI;
         this.camera.fStop = ui.domCameraFStop.value;
         this.camera.focusDistance = ui.domCameraFocalLength.value;
@@ -316,7 +316,7 @@ class Sandbox {
 
         this.plane.visible = ui.domRenderPlane.value > 0;
         this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
-        
+
         this.plane.position.set(center.x, builder.minY - 0.5, center.z);
         this.plane.scale.set(ui.domRenderPlane.value, ui.domRenderPlane.value, 1);
         this.plane.updateMatrix();
@@ -341,7 +341,7 @@ class Sandbox {
 
                 if (sandbox.isRendering) {
                     if (sandbox.isProgressing && sandbox.pt.gpt.samples < sandbox.pt.maxSamples) {
-                        
+
                         sandbox.pt.render();
 
                         ui.showProgress(sandbox.pt.gpt.samples, sandbox.pt.maxSamples);
@@ -530,7 +530,7 @@ class Sandbox {
 
     // Activation
 
-    
+
     startPathTracer(isEnabled) {
         this.isRendering = isEnabled;
         this.controls.enableDamping = !isEnabled;
@@ -578,7 +578,7 @@ class Sandbox {
 
         this.resize();
         this.animate();
-        
+
         document.getElementById('canvas').style.pointerEvents = 'none';
         this.renderer.domElement.style.display = 'unset';
     }
@@ -598,7 +598,7 @@ class Sandbox {
 
         this.renderer.domElement.style.display = 'none';
         document.getElementById('canvas').style.pointerEvents = 'unset';
-        
+
         ui.domToolbarScreenRender.children[1].children[0].firstChild.innerHTML = 'pause';
         ui.domInfoRender.style.display = 'none';
         ui.showProgress(0);

@@ -47,7 +47,7 @@
     renderer.shadowMap.type = THREE.PCFShadowMap;
 
     const scene = new THREE.Scene();
-    
+
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
     camera.position.set(5, 5, 5);
     camera.lookAt(0, 0, 0);
@@ -187,7 +187,7 @@
     function removeCube() {
         const obj = intersects[0].object;
         const index = cubeArray.indexOf(obj);
-        
+
         if (index > -1 && index !== 0) {
             group.remove(obj);
             cubeArray.splice(index, 1);

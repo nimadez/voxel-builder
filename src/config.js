@@ -16,7 +16,7 @@ export const config = {
         // "file:///path/to/envmap.hdr"
     ],
 
-    cdn_babylonjs_inspector: "https://cdn.babylonjs.com/v9.3.1/inspector/babylon.inspector.bundle.js",
+    cdn_babylonjs_inspector: "https://cdn.babylonjs.com/v9.10.0/inspector/babylon.inspector.bundle.js",
 
     debug_clear_localstorage: false,
     debug_force_mobile: false,

@@ -1,4 +1,4 @@
-<!-- 
+<!--
     Jan 2022
     @nimadez
 
@@ -135,7 +135,7 @@
     const DRACO_URL = 'https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/libs/draco/';
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath(DRACO_URL);
-    
+
     const canvas = document.getElementsByTagName('canvas')[0];
     const loading = document.getElementById('loading');
     const btnPlayback = document.getElementById('btn_playback');
@@ -243,7 +243,7 @@
             }
         }
     }
-    
+
     function playAnimation(id) {
         if (actions.length > 0 && !isAnimationPlay) {
             actions[id].setLoop(THREE.LoopRepeat);
@@ -721,7 +721,7 @@
             scene.add(sizeHelper);
             helpers.push(sizeHelper);
         }
-        
+
         isShowHelpers = !isShowHelpers;
     }
 

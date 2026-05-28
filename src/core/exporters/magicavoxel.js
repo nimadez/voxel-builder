@@ -1,4 +1,4 @@
-/* 
+/*
     Feb 2026
     @nimadez
 
@@ -67,7 +67,7 @@ class ExportersVox {
             const adjustedX = pos.x - centerX;
             const adjustedY = pos.y - centerY;
             const adjustedZ = pos.z - centerZ;
-            
+
             view.setUint8(offset++, adjustedX + (dim.x / 2));
             view.setUint8(offset++, -adjustedZ + (dim.z / 2));
             view.setUint8(offset++, adjustedY + (dim.y / 2));

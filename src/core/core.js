@@ -32,7 +32,7 @@
     - Render Target
     - Face Normal Probe
     - Post Process Effect
-    
+
     - UserInterface
     - UserInterfaceAdvanced
 
@@ -60,7 +60,7 @@ import {
     REFRESHRATE_RENDER_ONCE, ShadowGenerator_QUALITY_LOW, ShadowGenerator_QUALITY_MEDIUM,
     EffectShadersStore, Texture_CUBIC_MODE, Texture_SKYBOX_MODE, Texture_NEAREST_SAMPLINGMODE, Texture_LINEAR_LINEAR_MIPLINEAR,
     CounterClockWiseSideOrientation,
-    
+
     Vector2, Vector3, Vector3Minimize, Vector3Maximize, Vector3Dot, Vector3Cross, Vector3TransformCoordinates, Vector3Project,
     Color3, Color4, Color3FromHex, Color4FromHex,
     MatrixIdentity, MatrixTranslation, MatrixScaling, QuaternionRotationAxis,
@@ -224,11 +224,11 @@ class MainScene {
             scene.blockMaterialDirtyMechanism = true;
             scene.collisionsEnabled = false;
             scene.useRightHandedSystem = true;
-    
+
             const ambient = HemisphericLight("ambient", Vector3(0, 0, -1), scene);
             ambient.diffuse = Color3(0.4, 0.4, 0.4);
             ambient.groundColor = Color3(0.2, 0.2, 0.2);
-            
+
             this.shadowcatcher = CreatePlane("shadowcatcher", GRIDPLANE_SIZE, BACKSIDE, scene);
             this.shadowcatcher.material = ShadowOnlyMaterial('shadowcatcher', scene);
             this.shadowcatcher.material.shadowColor = Color3(0.051, 0.067, 0.090);
@@ -422,7 +422,7 @@ class Camera {
 
     frame() {
         if (this.isFramingActive || pointer.isWheel) return;
-        
+
         if (MODE == 0) {
             (xformer.isActive) ?
                 this.setFramingBehaviorMesh(this.camera0, ghosts.thin) :
@@ -484,7 +484,7 @@ class Camera {
 
     getFramedBoundingBox(min, max) {
         const offset = parseFloat(ui.domCameraOffset.value);
-        
+
         const boxCenter = min.add(max).scale(0.5);
         const boxHalfSize = max.subtract(min).scale(0.5);
         const radius = boxHalfSize.length() * offset;
@@ -713,7 +713,7 @@ class Light {
         const shadowSize = preferences.isMobile ? 256 : 1024;
         const shadowGen = ShadowGenerator(shadowSize, this.directional);
         shadowGen.getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
-        shadowGen.filteringQuality = preferences.isMobile ? 
+        shadowGen.filteringQuality = preferences.isMobile ?
             ShadowGenerator_QUALITY_LOW :
             ShadowGenerator_QUALITY_MEDIUM;
         shadowGen.useExponentialShadowMap = true;       // def true
@@ -732,14 +732,14 @@ class Light {
     updateShadowMap() {
         this.directional.getShadowGenerator().getShadowMap().refreshRate = REFRESHRATE_RENDER_ONCE;
     }
-    
+
     updateAngle(angle) {
         this.setLightPositionByAngle(angle, this.location.x);
         this.updateShadowMap();
         material.updateShaderMaterials();
         modules.sandbox.updateLights();
     }
-    
+
     updateHeight(posY) {
         this.directional.position.y = posY;
         this.directional.setDirectionToTarget(VEC3_ZERO);
@@ -747,17 +747,17 @@ class Light {
         material.updateShaderMaterials();
         modules.sandbox.updateLights();
     }
-    
+
     updateIntensity(value) {
         this.directional.intensity = parseFloat(value);
         material.updateShaderMaterials();
     }
-    
+
     updateColor(hex) {
         this.directional.diffuse = Color3FromHex(hex).toLinearSpace();
         material.updateShaderMaterials();
     }
-    
+
     enableShadows(isEnabled) {
         mainScene.shadowcatcher.isVisible = isEnabled;
         this.directional.shadowEnabled = isEnabled;
@@ -827,7 +827,7 @@ class Material {
             this.mode = 'CEL';
             builder.mesh.material = this.mat_cel;
         }
-        
+
         ui.domMaterialSwitch.innerHTML = this.mode;
     }
 
@@ -847,7 +847,7 @@ class Material {
 
         this.updateShaderMaterials();
     }
-    
+
     updateShaderMaterials() {
         if (this.mat_cel) {
             this.mat_cel.setVector3("uCamPos", camera.camera0.position);
@@ -1040,7 +1040,7 @@ class Builder {
 
         if (this.voxels.length == 0)
             modules.generator.newBox(1, preferences.getRenderShadeColor());
-        
+
         this.createThinInstances(isRecord).then(() => {
             this.latency = (performance.now() - startTime).toFixed(0);
 
@@ -1069,11 +1069,11 @@ class Builder {
         return new Promise(resolve => {
 
             this.fillVoxelBuffers();
-            
+
             if (this.flagDuplicate == 0) {
                 if (isRecord)
                     memory.record();
-                
+
                 this.isWorking = false;
                 resolve();
 
@@ -1115,7 +1115,7 @@ class Builder {
             const voxel = this.voxels[i];
 
             this.voxels[i].idx = i;
-            
+
             if (this.getIndexAtPosition(voxel.position) !== undefined) {
                 this.voxels[i].position = RECYCLEBIN;
                 this.flagDuplicate = 1;
@@ -1134,13 +1134,13 @@ class Builder {
                 this.rttColorsMap[`${this.rgbIndex.r}_${this.rgbIndex.g}_${this.rgbIndex.b}`] = i;
 
                 this.positionsMap[`${voxel.position.x}_${voxel.position.y}_${voxel.position.z}`] = i;
-            
+
                 if (this.uniqueColors.indexOf(voxel.color) == -1) {
                     this.uniqueColors.push(voxel.color);
                     if (!voxel.visible)
                         this.invisibleColors.push(voxel.color);
                 }
-                
+
                 this.maxY = Math.max(this.maxY, voxel.position.y);
                 this.minY = Math.min(this.minY, voxel.position.y);
             }
@@ -1420,7 +1420,7 @@ class Builder {
     deleteHiddenAndUpdate() {
         const hiddens = this.getVoxelsByVisibility(false);
         if (hiddens.length == 0) return;
-        
+
         this.removeArray(hiddens);
         this.create();
     }
@@ -1438,7 +1438,7 @@ class Builder {
             Math.abs(bounds.minimum.x - bounds.maximum.x),
             Math.abs(bounds.minimum.y - bounds.maximum.y),
             Math.abs(bounds.minimum.z - bounds.maximum.z));
-            
+
         const tMatrix = MatrixTranslation(
             (-bounds.boundingBox.center.x + size.x / 2) - 0.5,
             (size.y / 2 - bounds.boundingBox.center.y) - 0.5,
@@ -1786,7 +1786,7 @@ class Bakery {
                 pool.setPoolVisibility(false);
                 ui.notification('baked', 1000);
             }
-            
+
             ui.showProgress(0);
         }, 100);
     }
@@ -1847,7 +1847,7 @@ class Bakery {
 
             light.updateShadowMap();
             pool.createMeshList();
-            
+
             if (MODE !== 2) {
                 pool.setPoolVisibility(false);
                 ui.notification('baked', 1000);
@@ -1901,7 +1901,7 @@ class MeshPool {
             this.meshes[i].isVisible = isVisible;
         helper.hideBoundingBox();
     }
-    
+
     getMaterial() {
         if (this.selected) {
             this.albedoColor = this.selected.material.albedoColor.toHexString();
@@ -1983,15 +1983,15 @@ class MeshPool {
             Math.abs(bounds.minimum.x - bounds.maximum.x),
             Math.abs(bounds.minimum.y - bounds.maximum.y),
             Math.abs(bounds.minimum.z - bounds.maximum.z));
-    
+
         const scaleFactor = Math.min(scale / size.x, scale / size.y, scale / size.z);
         const scaleMatrix = MatrixScaling(scaleFactor, scaleFactor, scaleFactor);
-    
+
         const centerX = -bounds.boundingBox.center.x + size.x / 2;
         const centerY = size.y / 2 - bounds.boundingBox.center.y;
         const centerZ = -bounds.boundingBox.center.z + size.z / 2;
         const tMatrix = MatrixTranslation(centerX, centerY, centerZ);
-    
+
         mesh.bakeTransformIntoVertices(tMatrix.multiply(scaleMatrix));
     }
 
@@ -2038,7 +2038,7 @@ class MeshPool {
             name.classList.add('item_name');
             name.style.borderLeftColor = rgbFloatToHex(color[0], color[1], color[2]);
             name.innerHTML = this.meshes[i].name;
-            
+
             item.onclick = () => {
                 this.selectMesh(this.meshes[i]);
             };
@@ -2059,7 +2059,7 @@ class MeshPool {
         for (let i = 0; i < this.meshes.length; i++)
             if (this.meshes[i] === mesh)
                 idx = i;
-        
+
         if (ui.domMeshList.children[idx]) {
             for (const i of ui.domMeshList.children)
                 i.firstChild.classList.remove("mesh_select");
@@ -2160,7 +2160,7 @@ class Ghosts {
             this.bufferColors[i * 4 + 2] = this.rgbBuffer.b;
             this.bufferColors[i * 4 + 3] = 1;
         }
-    
+
         this.thin.makeGeometryUnique();
         this.thin.thinInstanceSetBuffer("matrix", this.bufferMatrix, 16, true);
         this.thin.thinInstanceSetBuffer("color", this.bufferColors, 4, true);
@@ -2225,7 +2225,7 @@ class Ghosts {
         if (voxels.length == 0) return;
 
         this.disposePointCloud();
-        
+
         this.cloud = PointsCloudSystem('ghost_cloud', 2, scene, false);
         this.cloud.computeBoundingBox = false;
         this.cloud.computeParticleColor = false;
@@ -2623,19 +2623,19 @@ class Helper {
         mesh.overlayAlpha = alpha;
         mesh.overlayColor = color3;
     }
-    
+
     highlightOutlineMesh(mesh, color3, width = 0.05) {
         mesh.renderOutline = true;
         mesh.outlineColor = color3;
         mesh.outlineWidth = width;
     }
-    
+
     highlightEdgesMesh(mesh, color4, width = 6) { // do not use in a loop
         mesh.edgesWidth = width;
         mesh.edgesColor = color4;
         mesh.enableEdgesRendering();
     }
-    
+
     fixEdgesWidth(mesh) { // TODO
         mesh.edgesWidth = camera.camera0.radius / 8;
         if (camera.camera0.mode == ORTHOGRAPHIC_CAMERA)
@@ -2986,7 +2986,7 @@ class Tool {
         for (let x = this.box.sX; x <= this.box.eX; x++) {
             for (let y = this.box.sY; y <= this.box.eY; y++) {
                 for (let z = this.box.sZ; z <= this.box.eZ; z++) {
-                    if (!builder.getIndexAtXYZ(x, y, z)) 
+                    if (!builder.getIndexAtXYZ(x, y, z))
                         this.selected.push(Vector3(x, y, z));
                 }
             }
@@ -3039,7 +3039,7 @@ class Tool {
         ui.domMarquee.style.left = `${bounds.left}px`;
         ui.domMarquee.style.width = `${bounds.right - bounds.left}px`;
         ui.domMarquee.style.height = `${bounds.bottom - bounds.top}px`;
-        
+
         return builder.voxels.filter((i) =>
             i.visible &&
             this.isTargetIn(start, pointer, i.position, camera.camera0, scene));
@@ -3059,7 +3059,7 @@ class Tool {
 
     rectSelectAdd(start, norm) {
         this.tmp = this.getVoxelsFromRectangleSelection(start);
-        
+
         this.selected = [];
         for (let i = 0; i < this.tmp.length; i++) {
             this.selected.push({
@@ -3239,7 +3239,7 @@ class Tool {
             if (!workplaneWhiteList.includes(this.name)) return;
             this.pos = pick.WORKPLANE;
         }
-        
+
         this.posNorm = this.pos.add(norm);
 
         (this.pick.BADNORMAL) ?
@@ -3310,7 +3310,7 @@ class Tool {
         }
     }
 
-    onToolUp() {        
+    onToolUp() {
         switch (this.name) {
             case 'add':
                 if (this.selected.length > 0) {
@@ -3402,7 +3402,7 @@ class Tool {
                 break;
             case 'measure_volume':
                 if (this.selected.length > 0)
-                    (this.selected.length == 1) ? 
+                    (this.selected.length == 1) ?
                         ui.notification(`${ this.selected[0]._x }, ${ this.selected[0]._y }, ${ this.selected[0]._z }, ${ builder.voxels[builder.getIndexAtPosition(this.selected[0])].color }`, 8000):
                         ui.notification(`${ this.selected.length } Voxels`, 8000);
                 break;
@@ -3433,7 +3433,7 @@ class Tool {
                     }
                     return;
                 }
-                
+
                 scene.stopAnimation(camera.camera0);
                 camera.camera0.detachControl(engine.canvas);
 
@@ -3593,7 +3593,7 @@ class Tool {
                 }
 
                 // results
-    
+
                 if (this.pickNorm && builder.voxels[this.pickIndx]) {
                     this.pick.INDEX = this.pickIndx;
                     this.pick.NORMAL = this.pickNorm;
@@ -3604,18 +3604,18 @@ class Tool {
                     if (!camera.isCameraChange())
                         camera.camera0.detachControl(engine.canvas);
                 }
-    
+
             } else {
                 helper.clearOverlays();
-                
+
                 this.pick = scene.pick(pointer.x, pointer.y, this.predicateWorkplane);
-    
+
                 if (this.pick.hit) {
                     const norm = this.pick.getNormal(true);
                     norm.x = Math.round(norm.x * 10) / 10;
                     norm.y = Math.round(norm.y * 10) / 10;
                     norm.z = Math.round(norm.z * 10) / 10;
-                    
+
                     const point = this.pickWorkplane(this.pick, norm);
                     const idx = builder.getIndexAtPosition(point.add(norm));
                     if (idx === undefined || this.isWorkplaneOnly) {
@@ -3747,7 +3747,7 @@ class XFormer {
 
         ghosts.createThin(voxels);
         ghosts.setThinHighlight(0.4);
-        
+
         this.root.position.copyFrom(ghosts.getCenter());
         ghosts.thin.setParent(this.root);
 
@@ -3801,7 +3801,7 @@ class XFormer {
         this.isShiftKeyMode = false;
 
         uix.unbindVoxelGizmo();
-        
+
         ghosts.thin.setParent(null);
         ghosts.disposeThin();
     }
@@ -3810,7 +3810,7 @@ class XFormer {
         if (this.isActive) {
             if (!ui.domTransformClone.checked && !this.isShiftKeyMode)
                 builder.removeArray(this.xforms);
-            
+
             this.cancel();
         }
     }
@@ -3881,7 +3881,7 @@ class Project {
             }
         };
     }
-    
+
     resetSceneSetup(isFrameCamera = true) {
         ui.setMode(0);
 
@@ -3898,7 +3898,7 @@ class Project {
 
     newProjectStartup(color, size = 20) {
         color = color.toUpperCase();
-        
+
         builder.voxels = [];
         for (let x = 0; x < size; x++) {
             for (let y = 0; y < size; y++) {
@@ -3908,7 +3908,7 @@ class Project {
                 }
             }
         }
-        
+
         builder.create();
         this.resetSceneSetup(false);
         ui.domProjectName.value = 'untitled';
@@ -3939,7 +3939,7 @@ class Project {
 
     load(data) {
         data = JSON.parse(data);
-        
+
         // project
         ui.domProjectName.value = data.project.name;
 
@@ -3977,7 +3977,7 @@ class Project {
         this.resetSceneSetup();
     }
 
-    importVoxels(data) {        
+    importVoxels(data) {
         ui.setMode(0);
         builder.createXform(builder.createArrayFromStringData(JSON.parse(data).data.voxels));
     }
@@ -4065,7 +4065,7 @@ class Project {
 
                 if (data.scene) {
                     for (let i = 0; i < msg.data.length; i++) {
-                        voxels.push({ 
+                        voxels.push({
                             position: Vector3(
                                 msg.data[i].x + data.scene.children[ msg.data[i].id ].position.x,
                                 msg.data[i].y + data.scene.children[ msg.data[i].id ].position.y,
@@ -4076,7 +4076,7 @@ class Project {
                     }
                 } else {
                     for (let i = 0; i < msg.data.length; i++) {
-                        voxels.push({ 
+                        voxels.push({
                             position: Vector3(
                                 msg.data[i].x,
                                 msg.data[i].y,
@@ -4086,7 +4086,7 @@ class Project {
                         });
                     }
                 }
-                
+
                 builder.createVoxelsFromArray(builder.normalizePositionsBounds(voxels));
                 this.resetSceneSetup();
                 ui.domProjectName.value = 'untitled';
@@ -4095,7 +4095,7 @@ class Project {
                 ui.errorMessage('incompatible vox file');
                 ui.showProgress(0);
             }
-            
+
             ui.showProgress(0);
         }).catch(err => {
             ui.errorMessage('unable to load geometry');
@@ -4125,7 +4125,7 @@ class Project {
             });
         }
     }
-    
+
     createScreenshotBasic(width, height, callback) {
         scene.clearColor = COL_CLEAR_RGBA;
         axisView.isRenderAxisView = false;
@@ -4261,7 +4261,7 @@ class Snapshot {
     delStorage(name) {
         if (localStorage.getItem(name))
             localStorage.removeItem(name);
-        
+
         ui.domUsedStorage.innerHTML = this.getLocalStorageQuota();
     }
 
@@ -4408,7 +4408,7 @@ class Snapshot {
                             const json = JSON.parse(data);
                             localStorage.setItem(vbstoreSnapshots + id, json.data.voxels);
                             localStorage.setItem(vbstoreSnapshotsImages + id, json.data.shot);
-                            
+
                             if (fname === arr[arr.length - 1]) { // last file
                                 setTimeout(() => {
                                     snapshot.createSnapshots();
@@ -4476,7 +4476,7 @@ class RenderTarget {
             if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
                 builder.mesh.thinInstanceSetBuffer("color", builder.rttColors, 4, true);
         }
-        
+
         if (!config.debug_gpu_probe) {
             this.pickTexture.onAfterRender = () => {
                 if (engine.isRendering && MODE == 0 && tool.name !== 'camera')
@@ -4500,12 +4500,12 @@ class RenderTarget {
 
     readFace() {
         this.readTexturePixels(this.point.x - 1, this.point.y - 1, 2, 2);
-        
+
         this.quad[0] = `${this.pixels[0]}_${this.pixels[1]}_${this.pixels[2]}`;
         this.quad[1] = `${this.pixels[4]}_${this.pixels[5]}_${this.pixels[6]}`;
         this.quad[2] = `${this.pixels[8]}_${this.pixels[9]}_${this.pixels[10]}`;
         this.quad[3] = `${this.pixels[12]}_${this.pixels[13]}_${this.pixels[14]}`;
-        
+
         if (new Set(this.quad).size === 1)
             return this.quad[0];
     }
@@ -4533,13 +4533,13 @@ class RenderTarget {
 
         if (new Set(this.quad).size === 1)
             return this.quad[0];
-        
+
         return mostDuplicatedItem(this.quad);
     }
-    
+
     readTexturePixels(x, y, w, h) {
         //await engine.engine._readTexturePixels(this.pickTexture._texture, w, h, -1, 0, this.pixels, true, true, x, y);
-        
+
         if (this.frameBuffer) {
             const gl = engine.engine._gl;
             gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
@@ -4595,7 +4595,7 @@ class FaceNormalProbe {
 
     getNormal(pick, index) {
         this.normal = undefined;
-        
+
         this.probe.position = builder.voxels[index].position.clone();
         this.probe.layerMask = (config.debug_gpu_probe) ? 0x0FFFFFFF : 0x00000000;
 
@@ -4608,7 +4608,7 @@ class FaceNormalProbe {
 
     getFaceNormal(position, pickedPoint) {
         this.normal = this.calculateFaceNormal(position, pickedPoint);
-        
+
         if (this.isNormalValid(position, this.normal))
             return this.normal.clone();
 
@@ -4623,9 +4623,9 @@ class FaceNormalProbe {
             Math.abs(point.y),
             Math.abs(point.z)
         ];
-    
+
         const maxIndex = projections.indexOf(Math.max(...projections));
-    
+
         switch (maxIndex) {
             case 0:
                 return point.x >= 0 ? VEC6_ONE[0] : VEC6_ONE[1];
@@ -4634,7 +4634,7 @@ class FaceNormalProbe {
             case 2:
                 return point.z >= 0 ? VEC6_ONE[4] : VEC6_ONE[5];
         }
-        
+
         return undefined;
     }
 
@@ -4669,7 +4669,7 @@ class PostProcessEffect {
         this.dispose();
 
         EffectShadersStore["fxFragmentShader"] = document.getElementById(`${ preferences.getPostProcessValue() }FragmentShader`).textContent;
-        
+
         this.geomBufferRenderer = scene.enableGeometryBufferRenderer();
 
         this.effect = PostProcess('fx', camera.camera0,
@@ -4941,7 +4941,7 @@ class UserInterface {
 
         for (const i of this.domToolbar.children)
             i.style.display = 'unset';
-            
+
         if (mode == 0) {
             this.domToolbarScreenTopMem.style.display = 'unset';
             this.domToolbarScreenStorage.style.display = 'flex';
@@ -5233,7 +5233,7 @@ class UserInterface {
             scene.debugLayer.hide();
             document.body.removeChild(this.inspectorModule);
             this.inspectorModule = undefined;
-            
+
             console.log('unload babylon-inspector');
         } else {
             scene.debugLayer.show({
@@ -5360,7 +5360,7 @@ class UserInterfaceAdvanced {
         });
     }
 
-    showLightLocator() {        
+    showLightLocator() {
         this.lightGizmoUp.attachedMesh = this.lightNode;
         this.lightGizmoNews.attachedMesh = this.lightNode;
         ui.domScreenLightLocator.firstChild.style.color = COL_ORANGE;
@@ -5554,7 +5554,7 @@ class Preferences {
         this.setPref(KEY_UI_OPACITY, (val) => {
             ui.setOpacity(val);
         });
-        
+
         this.setPrefCheck(KEY_BACKGROUND_CHECK, (chk) => {
             scene.clearColor = (chk) ?
                 Color4FromHex(this.getBackgroundColor()) :
@@ -5618,13 +5618,13 @@ class Preferences {
         pool.init();
         axisView.init();
         snapshot.createSnapshots();
-        
+
         modules.panels.showHelpLabels(this.isShowHelpLabels());
         modules.palette.expand(this.getPaletteSize());
         modules.colorPicker.init();
         modules.translator.init();
         modules.confirm.init();
-        
+
         if (!this.isMinimal()) {
             modules.sandbox.init();
         }
@@ -5739,7 +5739,7 @@ class Preferences {
     setPrefCheck(key, callback = undefined) {
         if (localStorage.getItem(key))
             document.getElementById(key).checked = parseBool(localStorage.getItem(key));
-        
+
         document.getElementById(key).addEventListener("input", (ev) => {
             localStorage.setItem(key, ev.target.checked);
             if (callback) callback(ev.target.checked);
@@ -5832,13 +5832,13 @@ export function registerRenderLoops() {
 window.addEventListener("resize", () => {
     scene.getEngine().resize(true);
     renderTarget.resize();
-    
+
     axisView.updateViewport();
     material.updateShaderMaterials();
 
     if (MODE == 0) modules.palette.create();
     if (MODE == 2) pool.createMeshList();
-    
+
     ui.offscreenCheckPanel();
     ui.offscreenCheckHover();
 
@@ -5921,7 +5921,7 @@ document.addEventListener("keydown", (ev) => {
             return;
         }
     }
-    
+
     switch (ev.key.toLowerCase()) {
         case 'enter':
             if (ev.target instanceof HTMLButtonElement) return;
@@ -5980,7 +5980,7 @@ document.addEventListener("keydown", (ev) => {
             (modules.sandbox.isActive()) ? ui.setMode(0) : ui.setMode(1);
             break;
     }
-    
+
     if (MODE == 0) {
         if (ev.ctrlKey && ev.key.toLowerCase() === 'z') {
             ev.preventDefault();
@@ -6986,8 +6986,8 @@ function downloadData(data, filename) {
 }
 
 function isMobileDevice() {
-    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(navigator.userAgent) 
-        || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(navigator.userAgent.substr(0,4))) { 
+    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(navigator.userAgent)
+        || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(navigator.userAgent.substr(0,4))) {
         return true;
     }
     return false;

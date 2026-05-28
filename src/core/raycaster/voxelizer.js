@@ -1,4 +1,4 @@
-/* 
+/*
     Nov 2023
     @nimadez
 
@@ -59,7 +59,7 @@ class Voxelizer {
             cx.mozImageSmoothingEnabled = false;
             cx.webkitImageSmoothingEnabled = false;
             cx.imageSmoothingEnabled = false;
-            
+
             cx.drawImage(img, 0, 0, c.width, c.height);
 
             const data = [];

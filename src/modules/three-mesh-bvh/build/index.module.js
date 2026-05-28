@@ -1,14 +1,47 @@
 import { Box3, Matrix4, BufferAttribute, Vector3, Vector2, Plane, Line3, Triangle, REVISION, BackSide, DoubleSide, Ray, FrontSide, BufferGeometry, Sphere, Mesh, Object3D, Group, LineBasicMaterial, MeshBasicMaterial, Line, LineSegments, LineLoop, Points, BatchedMesh, RGBAFormat, RGFormat, RedFormat, RGBAIntegerFormat, RGIntegerFormat, RedIntegerFormat, DataTexture, NearestFilter, IntType, UnsignedIntType, FloatType, UnsignedByteType, UnsignedShortType, ByteType, ShortType, Vector4, Matrix3 } from 'three';
-import { BVH as BVH$1, NOT_INTERSECTED as NOT_INTERSECTED$1, INTERSECTED as INTERSECTED$1, GeometryBVH as GeometryBVH$1, SKIP_GENERATION as SKIP_GENERATION$1, ExtendedTriangle as ExtendedTriangle$1 } from 'three-mesh-bvh';
 
 // Split strategy constants
+
+/**
+ * Option for splitting each BVH node down the center of the longest axis of the bounds.
+ *
+ * This is the fastest construction option and will yield a good, performant bounds.
+ */
 const CENTER = 0;
+
+/**
+ * Option for splitting each BVH node at the average point along the longest axis for
+ * all triangle centroids in the bounds.
+ *
+ * This strategy may be better than `CENTER` with some geometry.
+ */
 const AVERAGE = 1;
+
+/**
+ * Option to use a Surface Area Heuristic to split the bounds more optimally. This SAH
+ * implementation tests 32 discrete splits in each node along each axis to determine
+ * which split is the lowest cost.
+ *
+ * This is the slowest construction option but will yield the best bounds of the three
+ * options and use the least memory.
+ */
 const SAH = 2;
 
 // Traversal constants
+
+/**
+ * Indicates the shape did not intersect the given bounding box.
+ */
 const NOT_INTERSECTED = 0;
+
+/**
+ * Indicates the shape did intersect the given bounding box.
+ */
 const INTERSECTED = 1;
+
+/**
+ * Indicate the shape entirely contains the given bounding box.
+ */
 const CONTAINED = 2;
 
 // SAH cost constants
@@ -1480,9 +1513,56 @@ function _traverse(
 
 }
 
+/** @import { Matrix4 } from 'three' */
+
 const _tempBox = /* @__PURE__ */ new Box3();
 const _tempBuffer = /* @__PURE__ */ new Float32Array( 6 );
 
+/**
+ * @callback BoundsTraverseOrderCallback
+ * @param {Box3} box
+ * @returns {number}
+ */
+
+/**
+ * @callback IntersectsBoundsCallback
+ * @param {Box3} box
+ * @param {boolean} isLeaf
+ * @param {number|undefined} score
+ * @param {number} depth
+ * @param {number} nodeIndex
+ * @returns {number}
+ */
+
+/**
+ * @callback IntersectsRangeCallback
+ * @param {number} offset
+ * @param {number} count
+ * @param {boolean} contained
+ * @param {number} depth
+ * @param {number} nodeIndex
+ * @param {Box3} box
+ * @returns {boolean}
+ */
+
+/**
+ * @callback IntersectsRangesCallback
+ * @param {number} offset1
+ * @param {number} count1
+ * @param {number} offset2
+ * @param {number} count2
+ * @param {number} depth1
+ * @param {number} nodeIndex1
+ * @param {number} depth2
+ * @param {number} nodeIndex2
+ * @returns {boolean}
+ */
+
+/**
+ * Abstract base class for BVH implementations. Provides core tree traversal and spatial query
+ * methods. Subclasses implement primitive-specific logic by overriding `writePrimitiveBounds`
+ * and related internal methods.
+ */
 class BVH {
 
 	constructor() {
@@ -1591,6 +1671,11 @@ class BVH {
 
 	}
 
+	/**
+	 * Adjusts all primitive offsets stored in the BVH leaf nodes by the given value. Useful when
+	 * geometry buffers have been shifted or compacted (e.g. when merging geometries).
+	 * @param {number} offset
+	 */
 	shiftPrimitiveOffsets( offset ) {
 
 		const indirectBuffer = this._indirectBuffer;
@@ -1632,6 +1717,16 @@ class BVH {
 
 	}
 
+	/**
+	 * Traverses all nodes of the BVH, invoking a callback for each node.
+	 *
+	 * For leaf nodes the callback receives `( depth, isLeaf, boundingData, offset, count )`.
+	 * For internal nodes it receives `( depth, isLeaf, boundingData, splitAxis )` and may
+	 * return `true` to stop descending into that node's children.
+	 *
+	 * @param {Function} callback
+	 * @param {number} [rootIndex=0]
+	 */
 	traverse( callback, rootIndex = 0 ) {
 
 		const buffer = this._roots[ rootIndex ];
@@ -1669,6 +1764,10 @@ class BVH {
 
 	}
 
+	/**
+	 * Refits all BVH node bounds to reflect the current primitive positions. Faster than
+	 * rebuilding the BVH but produces a less optimal tree after large vertex deformations.
+	 */
 	refit( /* nodeIndices = null */ ) {
 
 		// TODO: add support for "nodeIndices"
@@ -1730,6 +1829,11 @@ class BVH {
 
 	}
 
+	/**
+	 * Computes the axis-aligned bounding box of all primitives in the BVH.
+	 * @param {Box3} target - Target box to write the result into.
+	 * @returns {Box3}
+	 */
 	getBoundingBox( target ) {
 
 		target.makeEmpty();
@@ -1746,7 +1850,19 @@ class BVH {
 
 	}
 
-	// Base shapecast implementation that can be used by subclasses
+	/**
+	 * A generalized traversal function for performing spatial queries against the BVH. Returns
+	 * `true` as soon as a primitive has been reported as intersected. The tree is traversed
+	 * depth-first; `boundsTraverseOrder` controls which child is visited first. Returning
+	 * `CONTAINED` from `intersectsBounds` skips further child traversal and intersects all
+	 * primitives in that subtree immediately.
+	 *
+	 * @param {Object} callbacks
+	 * @param {IntersectsBoundsCallback} callbacks.intersectsBounds
+	 * @param {IntersectsRangeCallback} [callbacks.intersectsRange]
+	 * @param {BoundsTraverseOrderCallback} [callbacks.boundsTraverseOrder]
+	 * @returns {boolean}
+	 */
 	// TODO: see if we can get rid of "iterateFunc" here as well as the primitive so the function
 	// API aligns with the "shapecast" implementation
 	shapecast( callbacks ) {
@@ -1822,6 +1938,17 @@ class BVH {
 
 	}
 
+	/**
+	 * Simultaneously traverses two BVH structures to find intersecting primitive pairs. Returns
+	 * `true` as soon as any intersection is reported. Both trees are traversed depth-first with
+	 * alternating descent. `matrixToLocal` transforms `otherBvh` into the local space of this BVH.
+	 *
+	 * @param {BVH} otherBvh
+	 * @param {Matrix4} matrixToLocal
+	 * @param {Object} callbacks
+	 * @param {IntersectsRangesCallback} callbacks.intersectsRanges
+	 * @returns {boolean}
+	 */
 	bvhcast( otherBvh, matrixToLocal, callbacks ) {
 
 		let { intersectsRanges } = callbacks;
@@ -2032,6 +2159,8 @@ function getRootPrimitiveRanges( geo, range, stride ) {
 
 }
 
+/** @import { BufferGeometry } from 'three' */
+
 // construct a new buffer that points to the set of triangles represented by the given ranges
 function generateIndirectBuffer( ranges, useSharedArrayBuffer ) {
 
@@ -2063,8 +2192,32 @@ function generateIndirectBuffer( ranges, useSharedArrayBuffer ) {
 
 }
 
+/**
+ * Abstract base class for geometry-backed BVH implementations. Handles geometry
+ * indexing, indirect mode, and bounding box initialization. Subclasses implement
+ * primitive-specific bounds computation and raycasting via `writePrimitiveBounds`
+ * and `raycastObject3D`.
+ *
+ * @param {BufferGeometry} geometry
+ * @param {Object} [options]
+ * @param {number} [options.strategy=CENTER] - Split strategy: `CENTER`, `AVERAGE`, or `SAH`.
+ * @param {number} [options.maxDepth=40] - Maximum tree depth.
+ * @param {number} [options.maxLeafSize=10] - Maximum primitives per leaf node.
+ * @param {boolean} [options.setBoundingBox=true] - Set `geometry.boundingBox` if not already present.
+ * @param {boolean} [options.useSharedArrayBuffer=false] - Use `SharedArrayBuffer` for BVH root buffers.
+ * @param {boolean} [options.indirect=false] - Build using an indirect buffer, leaving the original index unmodified.
+ * @param {boolean} [options.verbose=true] - Log build progress to the console.
+ * @param {Function|null} [options.onProgress=null] - Called with a progress value in [0, 1] during build.
+ * @param {Object|null} [options.range=null] - Restrict the BVH to a specific geometry group range.
+ * @extends BVH
+ */
 class GeometryBVH extends BVH {
 
+	/**
+	 * Whether the BVH was built in indirect mode.
+	 * @type {boolean}
+	 * @readonly
+	 */
 	get indirect() {
 
 		return ! ! this._indirectBuffer;
@@ -2113,6 +2266,12 @@ class GeometryBVH extends BVH {
 
 		// retain references to the geometry so we can use them it without having to
 		// take a geometry reference in every function.
+
+		/**
+		 * The geometry this BVH was built from.
+		 * @type {BufferGeometry}
+		 * @readonly
+		 */
 		this.geometry = geometry;
 		this.resolvePrimitiveIndex = options.indirect ? i => this._indirectBuffer[ i ] : i => i;
 		this.primitiveBuffer = null;
@@ -2513,6 +2672,8 @@ const sphereIntersectTriangle = ( function () {
 
 } )();
 
+/** @import { Sphere } from 'three' */
+
 const componentKeys = [ 'x', 'y', 'z' ];
 const ZERO_EPSILON = 1e-15;
 const ZERO_EPSILON_SQR = ZERO_EPSILON * ZERO_EPSILON;
@@ -2522,6 +2683,12 @@ function isNearZero( value ) {
 
 }
 
+/**
+ * An extended version of three.js' Triangle class. A variety of derivative values are cached on
+ * the object to accelerate the intersection functions. `.needsUpdate` must be set to true when
+ * modifying the triangle parameters.
+ * @extends Triangle
+ */
 class ExtendedTriangle extends Triangle {
 
 	constructor( ...args ) {
@@ -2536,10 +2703,22 @@ class ExtendedTriangle extends Triangle {
 		this.isDegenerateIntoSegment = false;
 		this.isDegenerateIntoPoint = false;
 		this.degenerateSegment = new Line3();
+
+		/**
+		 * Indicates that the triangle fields have changed so cached variables to accelerate other
+		 * function execution can be updated. Must be set to true after modifying the triangle
+		 * `a`, `b`, `c` fields.
+		 * @type {boolean}
+		 */
 		this.needsUpdate = true;
 
 	}
 
+	/**
+	 * Returns whether the triangle intersects the given sphere.
+	 * @param {Sphere} sphere
+	 * @returns {boolean}
+	 */
 	intersectsSphere( sphere ) {
 
 		return sphereIntersectTriangle( sphere, this );
@@ -2627,6 +2806,15 @@ class ExtendedTriangle extends Triangle {
 
 }
 
+/**
+ * Returns the distance to the provided line segment. `target1` and `target2` are set to the
+ * closest points on the triangle and segment respectively.
+ * @function
+ * @param {Line3} segment
+ * @param {Vector3} [target1]
+ * @param {Vector3} [target2]
+ * @returns {number}
+ */
 ExtendedTriangle.prototype.closestPointToSegment = ( function () {
 
 	const point1 = /* @__PURE__ */ new Vector3();
@@ -2687,6 +2875,15 @@ ExtendedTriangle.prototype.closestPointToSegment = ( function () {
 
 } )();
 
+/**
+ * Returns whether the triangles intersect. `target` is set to the line segment representing
+ * the intersection.
+ * @function
+ * @param {Triangle} other
+ * @param {Line3} [target]
+ * @param {boolean} [suppressLog=false]
+ * @returns {boolean}
+ */
 ExtendedTriangle.prototype.intersectsTriangle = ( function () {
 
 	const saTri2 = /* @__PURE__ */ new ExtendedTriangle();
@@ -2784,7 +2981,7 @@ ExtendedTriangle.prototype.intersectsTriangle = ( function () {
 	 * Calculates intersection segment of a triangle with intersection line.
 	 * Intersection line is snapped to its biggest component.
 	 * And triangle points are passed as a projection on that component.
-	 * @returns whether this is a coplanar case or not
+	 * @returns {boolean} whether this is a coplanar case or not
 	 */
 	function findIntersectionLineBounds( self, aProj, bProj, cProj, abDist, acDist, aDist, bDist, cDist, bounds, edge ) {
 
@@ -3218,6 +3415,12 @@ ExtendedTriangle.prototype.intersectsTriangle = ( function () {
 } )();
 
 
+/**
+ * Returns the distance to the provided point.
+ * @function
+ * @param {Vector3} point
+ * @returns {number}
+ */
 ExtendedTriangle.prototype.distanceToPoint = ( function () {
 
 	const target = /* @__PURE__ */ new Vector3();
@@ -3231,6 +3434,14 @@ ExtendedTriangle.prototype.distanceToPoint = ( function () {
 } )();
 
 
+/**
+ * Returns the distance to the provided triangle.
+ * @function
+ * @param {Triangle} other
+ * @param {Vector3} [target1]
+ * @param {Vector3} [target2]
+ * @returns {number}
+ */
 ExtendedTriangle.prototype.distanceToTriangle = ( function () {
 
 	const point = /* @__PURE__ */ new Vector3();
@@ -3242,7 +3453,11 @@ ExtendedTriangle.prototype.distanceToTriangle = ( function () {
 	return function distanceToTriangle( other, target1 = null, target2 = null ) {
 
 		const lineTarget = target1 || target2 ? line1 : null;
-		if ( this.intersectsTriangle( other, lineTarget ) ) {
+		// `intersectsTriangle` returns a zero-length segment for coplanar
+		// intersecting triangles, which is fine for our purposes here. We
+		// don't need the segment itself in this function. So we can suppress
+		// the warning about coplanar triangles.
+		if ( this.intersectsTriangle( other, lineTarget, true ) ) {
 
 			if ( target1 || target2 ) {
 
@@ -3323,19 +3538,45 @@ ExtendedTriangle.prototype.distanceToTriangle = ( function () {
 
 } )();
 
+/** @import { Box3, Triangle } from 'three' */
+
+/**
+ * An oriented version of three.js' Box3 class. A variety of derivative values are cached on the
+ * object to accelerate the intersection functions. `.needsUpdate` must be set to true when
+ * modifying the box parameters.
+ *
+ * @param {Vector3} [min]
+ * @param {Vector3} [max]
+ * @param {Matrix4} [matrix]
+ */
 class OrientedBox {
 
 	constructor( min, max, matrix ) {
 
 		this.isOrientedBox = true;
+
+		/** @type {Vector3} */
 		this.min = new Vector3();
+
+		/** @type {Vector3} */
 		this.max = new Vector3();
+
+		/**
+		 * Matrix transformation applied to the box.
+		 * @type {Matrix4}
+		 */
 		this.matrix = new Matrix4();
 		this.invMatrix = new Matrix4();
 		this.points = new Array( 8 ).fill().map( () => new Vector3() );
 		this.satAxes = new Array( 3 ).fill().map( () => new Vector3() );
 		this.satBounds = new Array( 3 ).fill().map( () => new SeparatingAxisBounds() );
 		this.alignedSatBounds = new Array( 3 ).fill().map( () => new SeparatingAxisBounds() );
+		/**
+		 * Indicates that the bounding box fields have changed so cached variables to accelerate
+		 * other function execution can be updated. Must be set to true after modifying the
+		 * oriented box `min`, `max`, `matrix` fields.
+		 * @type {boolean}
+		 */
 		this.needsUpdate = false;
 
 		if ( min ) this.min.copy( min );
@@ -3344,6 +3585,12 @@ class OrientedBox {
 
 	}
 
+	/**
+	 * Sets the oriented box parameters.
+	 * @param {Vector3} min
+	 * @param {Vector3} max
+	 * @param {Matrix4} matrix
+	 */
 	set( min, max, matrix ) {
 
 		this.min.copy( min );
@@ -3420,6 +3667,12 @@ OrientedBox.prototype.update = ( function () {
 
 } )();
 
+/**
+ * Returns true if intersecting with the provided box.
+ * @function
+ * @param {Box3} box
+ * @returns {boolean}
+ */
 OrientedBox.prototype.intersectsBox = ( function () {
 
 	const aabbBounds = /* @__PURE__ */ new SeparatingAxisBounds();
@@ -3465,6 +3718,12 @@ OrientedBox.prototype.intersectsBox = ( function () {
 
 } )();
 
+/**
+ * Returns true if intersecting with the provided triangle.
+ * @function
+ * @param {Triangle} triangle
+ * @returns {boolean}
+ */
 OrientedBox.prototype.intersectsTriangle = ( function () {
 
 	const saTri = /* @__PURE__ */ new ExtendedTriangle();
@@ -3542,6 +3801,14 @@ OrientedBox.prototype.intersectsTriangle = ( function () {
 
 } )();
 
+/**
+ * Returns the distance to the provided point. Sets `target` to the closest point on the surface
+ * of the box if provided.
+ * @function
+ * @param {Vector3} point
+ * @param {Vector3} target
+ * @returns {number}
+ */
 OrientedBox.prototype.closestPointToPoint = ( function () {
 
 	return function closestPointToPoint( point, target1 ) {
@@ -3564,6 +3831,12 @@ OrientedBox.prototype.closestPointToPoint = ( function () {
 
 } )();
 
+/**
+ * Returns the distance to the provided point.
+ * @function
+ * @param {Vector3} point
+ * @returns {number}
+ */
 OrientedBox.prototype.distanceToPoint = ( function () {
 
 	const target = new Vector3();
@@ -3576,6 +3849,17 @@ OrientedBox.prototype.distanceToPoint = ( function () {
 
 } )();
 
+/**
+ * Returns the distance to the provided box. `threshold` is an optional distance to return early
+ * if the distance is found to be within it. `target1` and `target2` are set to the points on the
+ * surface of this box and the `box` argument respectively.
+ * @function
+ * @param {Box3} box
+ * @param {number} [threshold=0]
+ * @param {Vector3} [target1]
+ * @param {Vector3} [target2]
+ * @returns {number}
+ */
 OrientedBox.prototype.distanceToBox = ( function () {
 
 	const xyzFields = [ 'x', 'y', 'z' ];
@@ -4058,6 +4342,8 @@ function intersectTri( geometry, materialOrSide, ray, tri, intersections, near, 
 
 }
 
+/** @import { BufferGeometry } from 'three' */
+
 // sets the vertices of triangle `tri` with the 3 vertices after i
 function setTriangle( tri, i, index, pos ) {
 
@@ -4097,6 +4383,28 @@ const tempUV1 = /* @__PURE__ */ new Vector2();
 const tempUV2 = /* @__PURE__ */ new Vector2();
 const tempUV3 = /* @__PURE__ */ new Vector2();
 
+/**
+ * @typedef {Object} HitTriangleInfo
+ * @property {{ a: number, b: number, c: number, materialIndex: number, normal: Vector3 }} face
+ *   Triangle vertex indices, material index, and face normal.
+ * @property {Vector2|null} uv - UV coordinates at the hit point, or `null` if no UV attribute is present.
+ * @property {Vector3} barycoord - Barycentric coordinates of the hit point within the triangle.
+ */
+
+/**
+ * Computes hit-point information for a point on a triangle within a `BufferGeometry`. Returns
+ * the face vertex indices, face normal, material index, UV coordinates, and barycentric coordinates.
+ * Useful for retrieving detailed hit data after a call to `MeshBVH.closestPointToPoint` or
+ * `MeshBVH.closestPointToGeometry`.
+ *
+ * @section Functions
+ * @param {Vector3} point - The point on the triangle surface (in the geometry's local space).
+ * @param {BufferGeometry} geometry - The geometry containing the triangle.
+ * @param {number} triangleIndex - The index of the triangle within the geometry.
+ * @param {HitTriangleInfo} [target] - Optional object to write results into. Reuses existing
+ *   `face`, `uv`, and `barycoord` sub-objects if present.
+ * @returns {HitTriangleInfo}
+ */
 function getTriangleHitPointInfo( point, geometry, triangleIndex, target ) {
 
 	const indices = geometry.getIndex().array;
@@ -4425,11 +4733,10 @@ function refit( bvh, nodeIndices = null ) {
 
 }
 
-/**
- * This function performs intersection tests similar to Ray.intersectBox in three.js,
- * with the difference that the box values are read from an array to improve performance.
- */
-function intersectRay( nodeIndex32, array, ray, near, far ) {
+function intersectsNodeBounds( nodeIndex32, array, ray, near, far ) {
+
+	// This function performs intersection tests similar to Ray.intersectBox in three.js,
+	// with the difference that the box values are read from an array to improve performance.
 
 	let tmin, tmax, tymin, tymax, tzmin, tzmax;
 
@@ -4607,14 +4914,14 @@ function _raycast$1( nodeIndex32, bvh, materialOrSide, ray, intersects, near, fa
 	} else {
 
 		const leftIndex = LEFT_NODE( nodeIndex32 );
-		if ( intersectRay( leftIndex, float32Array, ray, near, far ) ) {
+		if ( intersectsNodeBounds( leftIndex, float32Array, ray, near, far ) ) {
 
 			_raycast$1( leftIndex, bvh, materialOrSide, ray, intersects, near, far );
 
 		}
 
 		const rightIndex = RIGHT_NODE( nodeIndex32, uint32Array );
-		if ( intersectRay( rightIndex, float32Array, ray, near, far ) ) {
+		if ( intersectsNodeBounds( rightIndex, float32Array, ray, near, far ) ) {
 
 			_raycast$1( rightIndex, bvh, materialOrSide, ray, intersects, near, far );
 
@@ -4679,7 +4986,7 @@ function _raycastFirst$1( nodeIndex32, bvh, materialOrSide, ray, near, far ) {
 
 		}
 
-		const c1Intersection = intersectRay( c1, float32Array, ray, near, far );
+		const c1Intersection = intersectsNodeBounds( c1, float32Array, ray, near, far );
 		const c1Result = c1Intersection ? _raycastFirst$1( c1, bvh, materialOrSide, ray, near, far ) : null;
 
 		// if we got an intersection in the first node and it's closer than the second node's bounding
@@ -4703,7 +5010,7 @@ function _raycastFirst$1( nodeIndex32, bvh, materialOrSide, ray, near, far ) {
 
 		// either there was no intersection in the first node, or there could still be a closer
 		// intersection in the second, so check the second node and then take the better of the two
-		const c2Intersection = intersectRay( c2, float32Array, ray, near, far );
+		const c2Intersection = intersectsNodeBounds( c2, float32Array, ray, near, far );
 		const c2Result = c2Intersection ? _raycastFirst$1( c2, bvh, materialOrSide, ray, near, far ) : null;
 
 		if ( c1Result && c2Result ) {
@@ -5334,14 +5641,14 @@ function _raycast( nodeIndex32, bvh, materialOrSide, ray, intersects, near, far 
 	} else {
 
 		const leftIndex = LEFT_NODE( nodeIndex32 );
-		if ( intersectRay( leftIndex, float32Array, ray, near, far ) ) {
+		if ( intersectsNodeBounds( leftIndex, float32Array, ray, near, far ) ) {
 
 			_raycast( leftIndex, bvh, materialOrSide, ray, intersects, near, far );
 
 		}
 
 		const rightIndex = RIGHT_NODE( nodeIndex32, uint32Array );
-		if ( intersectRay( rightIndex, float32Array, ray, near, far ) ) {
+		if ( intersectsNodeBounds( rightIndex, float32Array, ray, near, far ) ) {
 
 			_raycast( rightIndex, bvh, materialOrSide, ray, intersects, near, far );
 
@@ -5404,7 +5711,7 @@ function _raycastFirst( nodeIndex32, bvh, materialOrSide, ray, near, far ) {
 
 		}
 
-		const c1Intersection = intersectRay( c1, float32Array, ray, near, far );
+		const c1Intersection = intersectsNodeBounds( c1, float32Array, ray, near, far );
 		const c1Result = c1Intersection ? _raycastFirst( c1, bvh, materialOrSide, ray, near, far ) : null;
 
 		// if we got an intersection in the first node and it's closer than the second node's bounding
@@ -5428,7 +5735,7 @@ function _raycastFirst( nodeIndex32, bvh, materialOrSide, ray, near, far ) {
 
 		// either there was no intersection in the first node, or there could still be a closer
 		// intersection in the second, so check the second node and then take the better of the two
-		const c2Intersection = intersectRay( c2, float32Array, ray, near, far );
+		const c2Intersection = intersectsNodeBounds( c2, float32Array, ray, near, far );
 		const c2Result = c2Intersection ? _raycastFirst( c2, bvh, materialOrSide, ray, near, far ) : null;
 
 		if ( c1Result && c2Result ) {
@@ -5872,6 +6179,10 @@ function convertRaycastIntersect( hit, object, raycaster ) {
 
 }
 
+/** @import { BufferGeometry, Sphere, Box3, Intersection, Material, Object3D, Raycaster } from 'three' */
+/** @import { ExtendedTriangle } from '../math/ExtendedTriangle.js' */
+/** @import { IntersectsBoundsCallback, IntersectsRangeCallback, BoundsTraverseOrderCallback, IntersectsRangesCallback } from './BVH.js' */
+
 const _obb = /* @__PURE__ */ new OrientedBox();
 const _ray$4 = /* @__PURE__ */ new Ray();
 const _direction = /* @__PURE__ */ new Vector3();
@@ -5879,8 +6190,83 @@ const _inverseMatrix$4 = /* @__PURE__ */ new Matrix4();
 const _worldScale = /* @__PURE__ */ new Vector3();
 const _getters$1 = [ 'getX', 'getY', 'getZ' ];
 
+/**
+ * @callback IntersectsTriangleCallback
+ * @param {ExtendedTriangle} triangle - The triangle primitive in local space.
+ * @param {number} triangleIndex - The index of the triangle in the geometry.
+ * @param {boolean} contained - Whether the node bounds are fully contained by the query shape.
+ * @param {number} depth - The depth of the node in the tree.
+ * @returns {boolean} Return `true` to stop traversal.
+ */
+
+/**
+ * @callback IntersectsTrianglesCallback
+ * @param {ExtendedTriangle} triangle1 - Triangle from this BVH in local space.
+ * @param {ExtendedTriangle} triangle2 - Triangle from `otherBvh`, transformed into local space.
+ * @param {number} triangleIndex1 - Triangle index in the first geometry.
+ * @param {number} triangleIndex2 - Triangle index in the second geometry.
+ * @param {number} depth1 - Depth of the node in the first BVH.
+ * @param {number} nodeIndex1 - Node index in the first BVH.
+ * @param {number} depth2 - Depth of the node in the second BVH.
+ * @param {number} nodeIndex2 - Node index in the second BVH.
+ * @returns {boolean} Return `true` to stop traversal.
+ */
+
+/**
+ * Plain-object representation of a `MeshBVH` produced by `MeshBVH.serialize` and
+ * consumed by `MeshBVH.deserialize`. Suitable for transfer across WebWorker boundaries
+ * or storage, with optional buffer sharing via `SharedArrayBuffer`.
+ *
+ * @typedef {Object} SerializedBVH
+ * @property {Array<ArrayBuffer>} roots - BVH root node buffers.
+ * @property {Int32Array|Uint32Array|Uint16Array|null} index - Serialized geometry index buffer.
+ * @property {Uint32Array|Uint16Array|null} indirectBuffer - Indirect primitive index buffer, or `null`
+ *   if the BVH was not built in indirect mode.
+ */
+
+/**
+ * @typedef {Object} HitPointInfo
+ * @property {Vector3} point - The closest point on the mesh surface.
+ * @property {number} distance - Distance from the query point to the closest point.
+ * @property {number} faceIndex - Index of the triangle containing the closest point. Can be
+ *   passed to `getTriangleHitPointInfo` to retrieve UV, normal, and material index.
+ */
+
+/**
+ * The MeshBVH generation process modifies the geometry's index bufferAttribute in place to save
+ * memory. The BVH construction will use the geometry's boundingBox if it exists or set it if it
+ * does not. The BVH will no longer work correctly if the index buffer is modified.
+ *
+ * Only triangles within the geometry's draw range (or provided `range` option) are included in the
+ * BVH. When a geometry has multiple groups, only triangles within the defined group ranges are
+ * included. Triangles in gaps between groups are excluded.
+ *
+ * Note that all query functions expect arguments in local space of the BVH and return results in
+ * local space, as well. If world space results are needed they must be transformed into world space
+ * using `object.matrixWorld`.
+ *
+ * @param {BufferGeometry} geometry
+ * @param {Object} [options] - Same options as {@link GeometryBVH}.
+ * @extends GeometryBVH
+ */
 class MeshBVH extends GeometryBVH {
 
+	/**
+	 * Generates a representation of the complete bounds tree and the geometry index buffer which
+	 * can be used to recreate a bounds tree using the `deserialize` function. The `serialize` and
+	 * `deserialize` functions can be used to generate a MeshBVH asynchronously in a background web
+	 * worker to prevent the main thread from stuttering. The BVH roots buffer stored in the
+	 * serialized representation are the same as the ones used by the original BVH so they should
+	 * not be modified. If `SharedArrayBuffers` are used then the same BVH memory can be used for
+	 * multiple BVH in multiple WebWorkers.
+	 *
+	 * @static
+	 * @param {MeshBVH} bvh - The BVH to serialize.
+	 * @param {Object} [options]
+	 * @param {boolean} [options.cloneBuffers=true] - If `true`, the index and BVH root buffers
+	 *   are cloned so the serialized data is independent of the live BVH.
+	 * @returns {SerializedBVH}
+	 */
 	static serialize( bvh, options = {} ) {
 
 		options = {
@@ -5916,6 +6302,19 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Returns a new MeshBVH instance from the serialized data. `geometry` is the geometry used
+	 * to generate the original BVH `data` was derived from. The root buffers stored in `data`
+	 * are set directly on the new BVH so the memory is shared.
+	 *
+	 * @static
+	 * @param {SerializedBVH} data - Serialized BVH data.
+	 * @param {BufferGeometry} geometry - The geometry the BVH was originally built from.
+	 * @param {Object} [options]
+	 * @param {boolean} [options.setIndex=true] - If `true`, sets `geometry.index` from the
+	 *   serialized index buffer (creating one if none exists).
+	 * @returns {MeshBVH}
+	 */
 	static deserialize( data, geometry, options = {} ) {
 
 		options = {
@@ -5996,6 +6395,13 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Helper function for use when `indirect` is set to true. This function takes a triangle
+	 * index in the BVH layout and returns the associated triangle index in the geometry index
+	 * buffer or position attribute.
+	 * @type {function(number): number}
+	 * @readonly
+	 */
 	get resolveTriangleIndex() {
 
 		return this.resolvePrimitiveIndex;
@@ -6018,6 +6424,16 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Adjusts all triangle offsets stored in the BVH by the given offset. This is useful when the
+	 * triangle data has been compacted or shifted in the geometry buffers (e.g. in `BatchedMesh`
+	 * when geometries are compacted using the 'optimize' function or constructing a 'merged' BVH).
+	 * This function only adjusts the BVH to point to different triangles in the geometry. The
+	 * geometry's index buffer and/or position attributes must be updated separately to match.
+	 *
+	 * @param {number} offset
+	 * @returns {void}
+	 */
 	// implement abstract methods from BVH base class
 	shiftTriangleOffsets( offset ) {
 
@@ -6177,6 +6593,15 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * A convenience function for performing a raycast based on a mesh. Results are formed like
+	 * three.js raycast results in world frame.
+	 *
+	 * @param {Object3D} object
+	 * @param {Raycaster} raycaster
+	 * @param {Array<Intersection>} [intersects=[]]
+	 * @returns {Array<Intersection>}
+	 */
 	raycastObject3D( object, raycaster, intersects = [] ) {
 
 		const { material } = object;
@@ -6226,6 +6651,14 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Refit the node bounds to the current triangle positions. This is quicker than regenerating
+	 * a new BVH but will not be optimal after significant changes to the vertices. `nodeIndices`
+	 * is a set of node indices (provided by the `shapecast` function) that need to be refit
+	 * including all internal nodes.
+	 *
+	 * @param {Set<number>|Array<number>|null} [nodeIndices=null]
+	 */
 	refit( nodeIndices = null ) {
 
 		const refitFunc = this.indirect ? refit_indirect : refit;
@@ -6234,6 +6667,26 @@ class MeshBVH extends GeometryBVH {
 	}
 
 	/* Core Cast Functions */
+
+	/**
+	 * Returns all raycast triangle hits in unsorted order. It is expected that `ray` is in the
+	 * frame of the BVH already. Likewise the returned results are also provided in the local
+	 * frame of the BVH. The `side` identifier is used to determine the side to check when
+	 * raycasting or a material with the given side field can be passed. If an array of materials
+	 * is provided then it is expected that the geometry has groups and the appropriate material
+	 * side is used per group.
+	 *
+	 * Note that unlike three.js' Raycaster results the points and distances in the intersections
+	 * returned from this function are relative to the local frame of the MeshBVH. When using the
+	 * `acceleratedRaycast` function as an override for `Mesh.raycast` they are transformed into
+	 * world space to be consistent with three's results.
+	 *
+	 * @param {Ray} ray
+	 * @param {number|Material|Array<Material>} [materialOrSide=FrontSide]
+	 * @param {number} [near=0]
+	 * @param {number} [far=Infinity]
+	 * @returns {Array<Intersection>}
+	 */
 	raycast( ray, materialOrSide = FrontSide, near = 0, far = Infinity ) {
 
 		const roots = this._roots;
@@ -6249,6 +6702,17 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Returns the first raycast hit in the model. This is typically much faster than returning
+	 * all hits. See `raycast` for information on the side and material options as well as the
+	 * frame of the returned intersections.
+	 *
+	 * @param {Ray} ray
+	 * @param {number|Material|Array<Material>} [materialOrSide=FrontSide]
+	 * @param {number} [near=0]
+	 * @param {number} [far=Infinity]
+	 * @returns {Intersection|null}
+	 */
 	raycastFirst( ray, materialOrSide = FrontSide, near = 0, far = Infinity ) {
 
 		const roots = this._roots;
@@ -6270,6 +6734,18 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Returns whether or not the mesh intersects the given geometry.
+	 *
+	 * The `geometryToBvh` parameter is the transform of the geometry in the BVH's local frame.
+	 *
+	 * Performance improves considerably if the provided geometry also has a `boundsTree`.
+	 *
+	 * @param {BufferGeometry} otherGeometry
+	 * @param {Matrix4} geometryToBvh - Transform of `otherGeometry` into the local space of
+	 *   this BVH.
+	 * @returns {boolean}
+	 */
 	intersectsGeometry( otherGeometry, geomToMesh ) {
 
 		let result = false;
@@ -6291,6 +6767,19 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * A generalized cast function that can be used to implement intersection logic for custom
+	 * shapes. This is used internally for `intersectsBox`, `intersectsSphere`, and more. The
+	 * function returns as soon as a triangle has been reported as intersected and returns `true`
+	 * if a triangle has been intersected.
+	 *
+	 * @param {Object} callbacks
+	 * @param {IntersectsBoundsCallback} callbacks.intersectsBounds
+	 * @param {IntersectsTriangleCallback} [callbacks.intersectsTriangle]
+	 * @param {IntersectsRangeCallback} [callbacks.intersectsRange]
+	 * @param {BoundsTraverseOrderCallback} [callbacks.boundsTraverseOrder]
+	 * @returns {boolean}
+	 */
 	shapecast( callbacks ) {
 
 		const triangle = ExtendedTrianglePool.getPrimitive();
@@ -6311,6 +6800,22 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * A generalized cast function that traverses two BVH structures simultaneously to perform
+	 * intersection tests between them. This is used internally by `intersectsGeometry`. The
+	 * function returns `true` as soon as a triangle pair has been reported as intersected by
+	 * the callbacks.
+	 *
+	 * `matrixToLocal` is a Matrix4 that transforms `otherBvh` into the local space of this BVH.
+	 * The other BVH's triangles are transformed by this matrix before intersection tests.
+	 *
+	 * @param {MeshBVH} otherBvh
+	 * @param {Matrix4} matrixToLocal - Transforms `otherBvh` into the local space of this BVH.
+	 * @param {Object} callbacks
+	 * @param {IntersectsRangesCallback} [callbacks.intersectsRanges]
+	 * @param {IntersectsTrianglesCallback} [callbacks.intersectsTriangles]
+	 * @returns {boolean}
+	 */
 	bvhcast( otherBvh, matrixToLocal, callbacks ) {
 
 		let {
@@ -6420,6 +6925,16 @@ class MeshBVH extends GeometryBVH {
 
 
 	/* Derived Cast Functions */
+
+	/**
+	 * Returns whether or not the mesh intersects the given box.
+	 *
+	 * The `boxToBvh` parameter is the transform of the box in the meshes frame.
+	 *
+	 * @param {Box3} box
+	 * @param {Matrix4} boxToBvh - Transform of the box in the local space of this BVH.
+	 * @returns {boolean}
+	 */
 	intersectsBox( box, boxToMesh ) {
 
 		_obb.set( box.min, box.max, boxToMesh );
@@ -6434,6 +6949,12 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Returns whether or not the mesh intersects the given sphere.
+	 *
+	 * @param {Sphere} sphere
+	 * @returns {boolean}
+	 */
 	intersectsSphere( sphere ) {
 
 		return this.shapecast(
@@ -6445,6 +6966,35 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Computes the closest distance from the geometry to the mesh and puts the closest point on
+	 * the mesh in `target1` (in the frame of the BVH) and the closest point on the other
+	 * geometry in `target2` (in the geometry frame). If `target1` is not provided a new Object
+	 * is created and returned from the function.
+	 *
+	 * The `geometryToBvh` parameter is the transform of the geometry in the BVH's local frame.
+	 *
+	 * If a point is found that is closer than `minThreshold` then the function will return that
+	 * result early. Any triangles or points outside of `maxThreshold` are ignored. If no point
+	 * is found within the min / max thresholds then `null` is returned and the target objects
+	 * are not modified.
+	 *
+	 * The returned faceIndex in `target1` and `target2` can be used with the standalone function
+	 * `getTriangleHitPointInfo` to obtain more information like UV coordinates, triangle normal
+	 * and materialIndex.
+	 *
+	 * _Note that this function can be very slow if `geometry` does not have a
+	 * `geometry.boundsTree` computed._
+	 *
+	 * @param {BufferGeometry} otherGeometry
+	 * @param {Matrix4} geometryToBvh - Transform of `otherGeometry` into the local space of
+	 *   this BVH.
+	 * @param {HitPointInfo} [target1={}]
+	 * @param {HitPointInfo} [target2={}]
+	 * @param {number} [minThreshold=0]
+	 * @param {number} [maxThreshold=Infinity]
+	 * @returns {HitPointInfo|null}
+	 */
 	closestPointToGeometry( otherGeometry, geometryToBvh, target1 = { }, target2 = { }, minThreshold = 0, maxThreshold = Infinity ) {
 
 		const closestPointToGeometryFunc = this.indirect ? closestPointToGeometry_indirect : closestPointToGeometry;
@@ -6460,6 +7010,25 @@ class MeshBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Computes the closest distance from the point to the mesh and gives additional information
+	 * in `target`. The target can be left undefined to default to a new object which is
+	 * ultimately returned by the function.
+	 *
+	 * If a point is found that is closer than `minThreshold` then the function will return that
+	 * result early. Any triangles or points outside of `maxThreshold` are ignored. If no point
+	 * is found within the min / max thresholds then `null` is returned and the `target` object
+	 * is not modified.
+	 *
+	 * The returned faceIndex can be used with the standalone function `getTriangleHitPointInfo`
+	 * to obtain more information like UV coordinates, triangle normal and materialIndex.
+	 *
+	 * @param {Vector3} point
+	 * @param {HitPointInfo} [target={}]
+	 * @param {number} [minThreshold=0]
+	 * @param {number} [maxThreshold=Infinity]
+	 * @returns {HitPointInfo|null}
+	 */
 	closestPointToPoint( point, target = { }, minThreshold = 0, maxThreshold = Infinity ) {
 
 		return closestPointToPoint(
@@ -6474,6 +7043,9 @@ class MeshBVH extends GeometryBVH {
 
 }
 
+/** @import { BufferGeometry } from 'three' */
+/** @import { IntersectsBoundsCallback, IntersectsRangeCallback, BoundsTraverseOrderCallback } from './BVH.js' */
+
 const _inverseMatrix$3 = /* @__PURE__ */ new Matrix4();
 const _ray$3 = /* @__PURE__ */ new Ray();
 const _linePool = /* @__PURE__ */ new PrimitivePool( () => new Line3() );
@@ -6482,6 +7054,20 @@ const _intersectPointOnSegment = /*@__PURE__*/ new Vector3();
 const _box$2 = /* @__PURE__ */ new Box3();
 const _getters = [ 'getX', 'getY', 'getZ' ];
 
+/**
+ * @callback IntersectsLineCallback
+ * @param {Line3} line - The line segment primitive in local space.
+ * @param {number} index - The primitive index within the BVH buffer.
+ * @param {boolean} contained - Whether the node bounds are fully contained by the query shape.
+ * @param {number} depth - The depth of the node in the tree.
+ * @returns {boolean} Return `true` to stop traversal.
+ */
+
+/**
+ * BVH for `THREE.LineSegments` geometries. Each BVH primitive represents one line segment
+ * (two consecutive vertices).
+ * @extends GeometryBVH
+ */
 class LineSegmentsBVH extends GeometryBVH {
 
 	get primitiveStride() {
@@ -6528,6 +7114,17 @@ class LineSegmentsBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Performs a spatial query against the BVH. Extends the base `shapecast` with an
+	 * `intersectsLine` callback that is called once per line segment primitive in leaf nodes.
+	 *
+	 * @param {Object} callbacks
+	 * @param {IntersectsBoundsCallback} callbacks.intersectsBounds
+	 * @param {IntersectsLineCallback} [callbacks.intersectsLine]
+	 * @param {IntersectsRangeCallback} [callbacks.intersectsRange]
+	 * @param {BoundsTraverseOrderCallback} [callbacks.boundsTraverseOrder]
+	 * @returns {boolean}
+	 */
 	shapecast( callbacks ) {
 
 		const line = _linePool.getPrimitive();
@@ -6618,6 +7215,13 @@ class LineSegmentsBVH extends GeometryBVH {
 
 }
 
+/**
+ * BVH for `THREE.LineLoop` geometries. Forces indirect mode since the loop structure
+ * requires that the index buffer remain unmodified.
+ * @param {BufferGeometry} geometry
+ * @param {Object} [options] - Same options as {@link GeometryBVH}. `indirect` is always forced to `true`.
+ * @extends LineSegmentsBVH
+ */
 class LineLoopBVH extends LineSegmentsBVH {
 
 	get primitiveStride() {
@@ -6641,6 +7245,13 @@ class LineLoopBVH extends LineSegmentsBVH {
 
 }
 
+/**
+ * BVH for `THREE.Line` geometries. Like `LineLoopBVH` but excludes the final closing
+ * segment so the open line is accurately represented.
+ * @param {BufferGeometry} geometry
+ * @param {Object} [options] - Same options as {@link GeometryBVH}. `indirect` is always forced to `true`.
+ * @extends LineLoopBVH
+ */
 class LineBVH extends LineLoopBVH {
 
 	getRootRanges( ...args ) {
@@ -6695,11 +7306,26 @@ function iterateOverLines(
 
 }
 
+/** @import { IntersectsBoundsCallback, IntersectsRangeCallback, BoundsTraverseOrderCallback } from './BVH.js' */
+
 const _inverseMatrix$2 = /* @__PURE__ */ new Matrix4();
 const _ray$2 = /* @__PURE__ */ new Ray();
 const _pointPool = /* @__PURE__ */ new PrimitivePool( () => new Vector3() );
 const _box$1 = /* @__PURE__ */ new Box3();
 
+/**
+ * @callback IntersectsPointCallback
+ * @param {Vector3} point - The point primitive in local space.
+ * @param {number} index - The primitive index within the BVH buffer.
+ * @param {boolean} contained - Whether the node bounds are fully contained by the query shape.
+ * @param {number} depth - The depth of the node in the tree.
+ * @returns {boolean} Return `true` to stop traversal.
+ */
+
+/**
+ * BVH for `THREE.Points` geometries. Each BVH primitive represents a single point.
+ * @extends GeometryBVH
+ */
 class PointsBVH extends GeometryBVH {
 
 	get primitiveStride() {
@@ -6738,6 +7364,17 @@ class PointsBVH extends GeometryBVH {
 
 	}
 
+	/**
+	 * Performs a spatial query against the BVH. Extends the base `shapecast` with an
+	 * `intersectsPoint` callback that is called once per point primitive in leaf nodes.
+	 *
+	 * @param {Object} callbacks
+	 * @param {IntersectsBoundsCallback} callbacks.intersectsBounds
+	 * @param {IntersectsPointCallback} [callbacks.intersectsPoint]
+	 * @param {IntersectsRangeCallback} [callbacks.intersectsRange]
+	 * @param {BoundsTraverseOrderCallback} [callbacks.boundsTraverseOrder]
+	 * @returns {boolean}
+	 */
 	shapecast( callbacks ) {
 
 		// TODO: avoid unnecessary "iterate over points" function
@@ -6870,6 +7507,9 @@ function iterateOverPoints(
 
 }
 
+/** @import { Object3D } from 'three' */
+/** @import { IntersectsBoundsCallback, IntersectsRangeCallback, BoundsTraverseOrderCallback } from './BVH.js' */
+
 const _geometry = /* @__PURE__ */ new BufferGeometry();
 const _matrix$1 = /* @__PURE__ */ new Matrix4();
 const _inverseMatrix$1 = /* @__PURE__ */ new Matrix4();
@@ -6880,7 +7520,27 @@ const _ray$1 = /* @__PURE__ */ new Ray();
 const _mesh$1 = /* @__PURE__ */ new Mesh();
 const _geometryRange = {};
 
-class ObjectBVH extends BVH$1 {
+/**
+ * @callback IntersectsObjectCallback
+ * @param {Object3D} object - The scene object whose bounds were intersected.
+ * @param {number} instanceId - Instance index for InstancedMesh/BatchedMesh, or 0 for regular objects.
+ * @param {boolean} contained - Whether the node bounds are fully contained by the query shape.
+ * @param {number} depth - The depth of the node in the tree.
+ * @returns {boolean} Return `true` to stop traversal.
+ */
+
+/**
+ * BVH built from a scene hierarchy rather than a single geometry. Each leaf holds
+ * one Object3D (or one instance of an InstancedMesh/BatchedMesh), enabling
+ * accelerated raycasting and spatial queries across many objects at once.
+ *
+ * @param {Object3D | Array<Object3D>} root - Root object or array of objects.
+ * @param {Object} [options] - Accepts all standard BVH options plus:
+ * @param {boolean} [options.precise=false] - Use vertex-level bounds instead of cached bounding boxes.
+ * @param {boolean} [options.includeInstances=true] - Treat each instance of InstancedMesh/BatchedMesh as a separate primitive.
+ * @extends BVH
+ */
+class ObjectBVH extends BVH {
 
 	constructor( root, options = {} ) {
 
@@ -6919,6 +7579,11 @@ class ObjectBVH extends BVH$1 {
 
 	}
 
+	/**
+	 * Returns the `Object3D` associated with a composite id as provided to `intersectsObject`.
+	 * @param {number} compositeId
+	 * @returns {Object3D}
+	 */
 	getObjectFromId( compositeId ) {
 
 		const { idMask, objects } = this;
@@ -6927,6 +7592,11 @@ class ObjectBVH extends BVH$1 {
 
 	}
 
+	/**
+	 * Returns the instance index associated with a composite id as provided to `intersectsObject`.
+	 * @param {number} compositeId
+	 * @returns {number}
+	 */
 	getInstanceFromId( compositeId ) {
 
 		const { idMask, idBits } = this;
@@ -6968,6 +7638,17 @@ class ObjectBVH extends BVH$1 {
 
 	}
 
+	/**
+	 * Performs a spatial query against the BVH. Extends the base `shapecast` with an
+	 * `intersectsObject` callback that is called once per object primitive in leaf nodes.
+	 *
+	 * @param {Object} callbacks
+	 * @param {IntersectsBoundsCallback} callbacks.intersectsBounds
+	 * @param {IntersectsObjectCallback} [callbacks.intersectsObject]
+	 * @param {IntersectsRangeCallback} [callbacks.intersectsRange]
+	 * @param {BoundsTraverseOrderCallback} [callbacks.boundsTraverseOrder]
+	 * @returns {boolean}
+	 */
 	shapecast( callbacks ) {
 
 		return super.shapecast( {
@@ -7007,17 +7688,17 @@ class ObjectBVH extends BVH$1 {
 
 					if ( ! _ray$1.intersectBox( box, _vec ) ) {
 
-						return NOT_INTERSECTED$1;
+						return NOT_INTERSECTED;
 
 					}
 
 					// early out if the box is further than the closest raycast
 					_vec.applyMatrix4( matrixWorld );
-					return raycaster.ray.origin.distanceTo( _vec ) < closestDistance ? INTERSECTED$1 : NOT_INTERSECTED$1;
+					return raycaster.ray.origin.distanceTo( _vec ) < closestDistance ? INTERSECTED : NOT_INTERSECTED;
 
 				} else {
 
-					return _ray$1.intersectsBox( box ) ? INTERSECTED$1 : NOT_INTERSECTED$1;
+					return _ray$1.intersectsBox( box ) ? INTERSECTED : NOT_INTERSECTED;
 
 				}
 
@@ -7482,6 +8163,9 @@ function shrinkToSphere( box, sphere ) {
 
 }
 
+/** @import { SkinnedMesh } from 'three' */
+/** @import { IntersectsBoundsCallback, IntersectsRangeCallback, BoundsTraverseOrderCallback } from './BVH.js' */
+
 const _v0 = /* @__PURE__ */ new Vector3();
 const _v1 = /* @__PURE__ */ new Vector3();
 const _v2 = /* @__PURE__ */ new Vector3();
@@ -7500,7 +8184,25 @@ const _normalA = /* @__PURE__ */ new Vector3();
 const _normalB = /* @__PURE__ */ new Vector3();
 const _normalC = /* @__PURE__ */ new Vector3();
 
-class SkinnedMeshBVH extends GeometryBVH$1 {
+/**
+ * @callback IntersectsTriangleCallback
+ * @param {ExtendedTriangle} triangle - The triangle primitive in local space.
+ * @param {number} index - The primitive index within the BVH buffer.
+ * @param {boolean} contained - Whether the node bounds are fully contained by the query shape.
+ * @param {number} depth - The depth of the node in the tree.
+ * @returns {boolean} Return `true` to stop traversal.
+ */
+
+/**
+ * BVH for `SkinnedMesh` objects. Computes primitive bounds using
+ * `SkinnedMesh.getVertexPosition` so the tree reflects the current posed state
+ * of the mesh. Call `refit()` after updating the skeleton to keep bounds accurate.
+ *
+ * @param {SkinnedMesh} mesh
+ * @param {Object} [options] - Same options as {@link GeometryBVH}.
+ * @extends GeometryBVH
+ */
+class SkinnedMeshBVH extends GeometryBVH {
 
 	get primitiveStride() {
 
@@ -7521,11 +8223,11 @@ class SkinnedMeshBVH extends GeometryBVH$1 {
 		// responsible for calling "init" themselves?
 		super( mesh.geometry, {
 			...options,
-			[ SKIP_GENERATION$1 ]: true,
+			[ SKIP_GENERATION ]: true,
 		} );
 		this.mesh = mesh;
 
-		if ( ! options[ SKIP_GENERATION$1 ] ) {
+		if ( ! options[ SKIP_GENERATION ] ) {
 
 			this.init( options );
 
@@ -7585,9 +8287,20 @@ class SkinnedMeshBVH extends GeometryBVH$1 {
 
 	}
 
+	/**
+	 * Performs a spatial query against the BVH. Extends the base `shapecast` with an
+	 * `intersectsTriangle` callback that is called once per triangle primitive in leaf nodes.
+	 *
+	 * @param {Object} callbacks
+	 * @param {IntersectsBoundsCallback} callbacks.intersectsBounds
+	 * @param {IntersectsTriangleCallback} [callbacks.intersectsTriangle]
+	 * @param {IntersectsRangeCallback} [callbacks.intersectsRange]
+	 * @param {BoundsTraverseOrderCallback} [callbacks.boundsTraverseOrder]
+	 * @returns {boolean}
+	 */
 	shapecast( callbacks ) {
 
-		const triangle = new ExtendedTriangle$1();
+		const triangle = new ExtendedTriangle();
 		return super.shapecast(
 			{
 				...callbacks,
@@ -7625,7 +8338,7 @@ class SkinnedMeshBVH extends GeometryBVH$1 {
 			},
 			intersectsBounds: box => {
 
-				return _ray.intersectsBox( box ) ? INTERSECTED$1 : NOT_INTERSECTED$1;
+				return _ray.intersectsBox( box ) ? INTERSECTED : NOT_INTERSECTED;
 
 			},
 			intersectsTriangle: ( tri, triIndex ) => {
@@ -7829,6 +8542,9 @@ function iterateOverTriangles(
 	return false;
 
 }
+
+/** @import { Color } from 'three' */
+/** @import { GeometryBVH } from '../core/GeometryBVH.js' */
 
 const boundingBox = /* @__PURE__ */ new Box3();
 const matrix = /* @__PURE__ */ new Matrix4();
@@ -8081,14 +8797,35 @@ class BVHRootHelper extends Object3D {
 
 }
 
+/**
+ * A `THREE.Group` that visualizes a BVH as wireframe bounding boxes or solid
+ * face overlays. Attach it as a sibling of the mesh in the scene graph and
+ * call `update()` whenever the mesh's BVH or world transform changes.
+ *
+ * @param {Object3D | GeometryBVH | null} [mesh=null] - The mesh whose `geometry.boundsTree`
+ *   should be displayed, or a `GeometryBVH` to display directly.
+ * @param {GeometryBVH | number | null} [bvh=null] - The BVH to visualize. When the first
+ *   argument is a `GeometryBVH`, this argument is interpreted as `depth`.
+ * @param {number} [depth=10] - Maximum tree depth to display.
+ * @extends Group
+ */
 class BVHHelper extends Group {
 
+	/**
+	 * Shortcut to `edgeMaterial.color`.
+	 * @type {Color}
+	 * @readonly
+	 */
 	get color() {
 
 		return this.edgeMaterial.color;
 
 	}
 
+	/**
+	 * Opacity applied to both edge and mesh materials.
+	 * @type {number}
+	 */
 	get opacity() {
 
 		return this.edgeMaterial.opacity;
@@ -8138,12 +8875,25 @@ class BVHHelper extends Group {
 		super();
 
 		this.name = 'BVHHelper';
+
+		/** @type {number} */
 		this.depth = depth;
+
+		/** @type {Object3D | null} */
 		this.mesh = mesh;
+
+		/** @type {GeometryBVH | null} */
 		this.bvh = bvh;
+
+		/** @type {boolean} */
 		this.displayParents = false;
+
+		/** @type {boolean} */
 		this.displayEdges = true;
+
+		/** @type {number} */
 		this.instanceId = 0;
+
 		this._roots = [];
 
 		const edgeMaterial = new LineBasicMaterial( {
@@ -8162,13 +8912,27 @@ class BVHHelper extends Group {
 
 		meshMaterial.color = edgeMaterial.color;
 
+		/**
+		 * Material used when rendering in wireframe edge mode.
+		 * @type {LineBasicMaterial}
+		 */
 		this.edgeMaterial = edgeMaterial;
+
+		/**
+		 * Material used when rendering in solid face mode.
+		 * @type {MeshBasicMaterial}
+		 */
 		this.meshMaterial = meshMaterial;
 
 		this.update();
 
 	}
 
+	/**
+	 * Rebuilds the helper's display geometry from the current BVH state. Must
+	 * be called after changes to the BVH, `depth`, `displayParents`, or
+	 * `displayEdges`.
+	 */
 	update() {
 
 		const mesh = this.mesh;
@@ -8280,6 +9044,9 @@ class BVHHelper extends Group {
 
 	}
 
+	/**
+	 * Disposes of the materials and geometries used by the helper.
+	 */
 	dispose() {
 
 		this.edgeMaterial.dispose();
@@ -8306,6 +9073,9 @@ class MeshBVHHelper extends BVHHelper {
 	}
 
 }
+
+/** @import { MeshBVH } from '../core/MeshBVH.js' */
+/** @import { BVH } from '../core/BVH.js' */
 
 const _box1 = /* @__PURE__ */ new Box3();
 const _box2 = /* @__PURE__ */ new Box3();
@@ -8401,12 +9171,40 @@ function getRootExtremes( bvh, group ) {
 
 }
 
+/**
+ * @section Debug Functions
+ * @typedef {Object} BVHExtremes
+ * @property {number} nodeCount Total number of nodes in the tree including leaf nodes.
+ * @property {number} leafNodeCount Total number of leaf nodes in the tree.
+ * @property {number} surfaceAreaScore Total tree score based on the surface area heuristic.
+ * Lower is better. Useful for comparing tree quality and performance, and for detecting
+ * degradation after `MeshBVH.refit` calls.
+ * @property {{ min: number, max: number }} depth Min and max depth of leaf nodes.
+ * @property {{ min: number, max: number }} tris Min and max triangle count in leaf nodes.
+ * @property {Array<number>} splits Number of splits on each axis as a three-element array `[X, Y, Z]`.
+ */
+
+/**
+ * Measures the min and max extremes of the BVH tree structure, including node
+ * depth, leaf primitive count, split axis distribution, and a surface-area
+ * heuristic score. Returns one entry per root group in the BVH.
+ * @section Debug Functions
+ * @param {MeshBVH} bvh
+ * @returns {Array<BVHExtremes>}
+ */
 function getBVHExtremes( bvh ) {
 
 	return bvh._roots.map( ( root, i ) => getRootExtremes( bvh, i ) );
 
 }
 
+/**
+ * Roughly estimates the amount of memory in bytes used by a BVH by walking
+ * its object graph and summing typed-array byte lengths and primitive sizes.
+ * @section Debug Functions
+ * @param {BVH} bvh
+ * @returns {number}
+ */
 function estimateMemoryInBytes( obj ) {
 
 	const traversed = new Set();
@@ -8470,6 +9268,14 @@ function estimateMemoryInBytes( obj ) {
 
 }
 
+/**
+ * Validates that every node's bounding box fully contains its children and,
+ * for leaf nodes, fully contains all of its primitives. Uses `console.assert`
+ * to log failures and returns `false` if any check fails.
+ * @section Debug Functions
+ * @param {MeshBVH} bvh
+ * @returns {boolean}
+ */
 function validateBounds( bvh ) {
 
 	const depthStack = [];
@@ -8523,7 +9329,15 @@ function validateBounds( bvh ) {
 
 }
 
-// Returns a simple, human readable object that represents the BVH.
+/**
+ * Returns a plain-object tree that mirrors the BVH hierarchy, useful for
+ * inspecting or serialising the structure for debugging. Each node has a
+ * `bounds` (`Box3`) and either `{ count, offset }` (leaf) or `{ left, right }`
+ * (internal) fields.
+ * @section Debug Functions
+ * @param {BVH} bvh
+ * @returns {Object}
+ */
 function getJSONStructure( bvh ) {
 
 	const depthStack = [];
@@ -8570,6 +9384,9 @@ function getJSONStructure( bvh ) {
 
 }
 
+/** @import { Raycaster, Intersection } from 'three' */
+/** @import { GeometryBVH } from '../core/GeometryBVH.js' */
+
 const IS_REVISION_166 = parseInt( REVISION ) >= 166;
 
 // TODO: how can we expand these raycast functions?
@@ -8585,6 +9402,22 @@ const _raycastFunctions = {
 const _mesh = /* @__PURE__ */ new Mesh();
 const _batchIntersects = [];
 
+/**
+ * An accelerated raycast function with the same signature as `THREE.Mesh.raycast`. Uses the BVH
+ * for raycasting if it's available otherwise it falls back to the built-in approach. The results
+ * of the function are designed to be identical to the results of the conventional
+ * `THREE.Mesh.raycast` results.
+ *
+ * If the raycaster object being used has a property `firstHitOnly` set to `true`, then the
+ * raycasting will terminate as soon as it finds the closest intersection to the ray's origin and
+ * return only that intersection. This is typically several times faster than searching for all
+ * intersections.
+ *
+ * @section Extension Utilities
+ * @param {Raycaster} raycaster
+ * @param {Array<Intersection>} intersects
+ * @returns {void}
+ */
 function acceleratedRaycast( raycaster, intersects ) {
 
 	if ( this.isBatchedMesh ) {
@@ -8711,6 +9544,19 @@ function acceleratedBatchedMeshRaycast( raycaster, intersects ) {
 
 }
 
+/**
+ * A pre-made BufferGeometry extension function that builds a new BVH, assigns it to `boundsTree`
+ * for BufferGeometry, and applies the new index buffer to the geometry. Comparable to
+ * `computeBoundingBox` and `computeBoundingSphere`.
+ *
+ * ```js
+ * THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+ * ```
+ *
+ * @section Extension Utilities
+ * @param {Object} [options]
+ * @returns {GeometryBVH}
+ */
 function computeBoundsTree( options = {} ) {
 
 	const { type = MeshBVH } = options;
@@ -8719,12 +9565,38 @@ function computeBoundsTree( options = {} ) {
 
 }
 
+/**
+ * A BufferGeometry extension function that disposes of the BVH.
+ *
+ * ```js
+ * THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+ * ```
+ *
+ * @section Extension Utilities
+ * @returns {void}
+ */
 function disposeBoundsTree() {
 
 	this.boundsTree = null;
 
 }
 
+/**
+ * Equivalent of `computeBoundsTree` for `BatchedMesh`. Creates the
+ * `BatchedMesh.boundsTrees` array if it does not exist. If `index` is `-1`
+ * BVHs for all available geometries are generated and the full array is
+ * returned; otherwise only the BVH at that geometry index is generated and
+ * returned.
+ *
+ * ```js
+ * THREE.BatchedMesh.prototype.computeBoundsTree = computeBatchedBoundsTree;
+ * ```
+ *
+ * @section Extension Utilities
+ * @param {number} [index=-1]
+ * @param {Object} [options]
+ * @returns {GeometryBVH | Array<GeometryBVH> | null}
+ */
 function computeBatchedBoundsTree( index = - 1, options = {} ) {
 
 	if ( ! IS_REVISION_166 ) {
@@ -8779,6 +9651,19 @@ function computeBatchedBoundsTree( index = - 1, options = {} ) {
 
 }
 
+/**
+ * Equivalent of `disposeBoundsTree` for `BatchedMesh`. Sets entries in
+ * `BatchedMesh.boundsTrees` to `null`. If `index` is `-1` all BVHs are
+ * disposed; otherwise only the BVH at that geometry index is disposed.
+ *
+ * ```js
+ * THREE.BatchedMesh.prototype.disposeBoundsTree = disposeBatchedBoundsTree;
+ * ```
+ *
+ * @section Extension Utilities
+ * @param {number} [index=-1]
+ * @returns {void}
+ */
 function disposeBatchedBoundsTree( index = - 1 ) {
 
 	if ( index < 0 ) {
@@ -8796,6 +9681,8 @@ function disposeBatchedBoundsTree( index = - 1 ) {
 	}
 
 }
+
+/** @import { BufferAttribute } from 'three' */
 
 function countToStringFormat( count ) {
 
@@ -8838,6 +9725,16 @@ function countToIntFormat( count ) {
 
 }
 
+/**
+ * Float, Uint, and Int VertexAttributeTexture implementations are designed to simplify the
+ * efficient packing of a three.js BufferAttribute into a texture. An instance can be treated as a
+ * texture and when passing as a uniform to a shader they should be used as a `sampler2d`,
+ * `usampler2d`, and `isampler2d` when using the Float, Uint, and Int texture types respectively.
+ *
+ * _extends THREE.DataTexture_
+ *
+ * @section Shader and Texture Packing API
+ */
 class VertexAttributeTexture extends DataTexture {
 
 	constructor() {
@@ -8846,11 +9743,30 @@ class VertexAttributeTexture extends DataTexture {
 		this.minFilter = NearestFilter;
 		this.magFilter = NearestFilter;
 		this.generateMipmaps = false;
+
+		/**
+		 * Treats `BufferAttribute.itemSize` as though it were set to this value when packing the
+		 * buffer attribute texture. Throws an error if the value does not divide evenly into the
+		 * length of the BufferAttribute buffer (`count * itemSize % overrideItemSize`).
+		 *
+		 * Specifically used to pack geometry indices into an RGB texture rather than an Red texture.
+		 * @type {number}
+		 */
 		this.overrideItemSize = null;
 		this._forcedType = null;
 
 	}
 
+	/**
+	 * Updates the texture to have the data contained in the passed BufferAttribute using the
+	 * BufferAttribute `itemSize` field, `normalized` field, and TypedArray layout to determine
+	 * the appropriate texture layout, format, and type. The texture dimensions will always be
+	 * square. Because these are intended to be sampled as 1D arrays the width of the texture must
+	 * be taken into account to derive a sampling uv. See `texelFetch1D` in shaderFunctions.
+	 *
+	 * @param {BufferAttribute} attribute
+	 * @returns {void}
+	 */
 	updateFrom( attr ) {
 
 		const overrideItemSize = this.overrideItemSize;
@@ -9052,6 +9968,11 @@ class VertexAttributeTexture extends DataTexture {
 
 }
 
+/**
+ * A VertexAttributeTexture that forces the unsigned integer texture type.
+ * @extends VertexAttributeTexture
+ * @section Shader and Texture Packing API
+ */
 class UIntVertexAttributeTexture extends VertexAttributeTexture {
 
 	constructor() {
@@ -9063,6 +9984,11 @@ class UIntVertexAttributeTexture extends VertexAttributeTexture {
 
 }
 
+/**
+ * A VertexAttributeTexture that forces the signed integer texture type.
+ * @extends VertexAttributeTexture
+ * @section Shader and Texture Packing API
+ */
 class IntVertexAttributeTexture extends VertexAttributeTexture {
 
 	constructor() {
@@ -9075,6 +10001,11 @@ class IntVertexAttributeTexture extends VertexAttributeTexture {
 
 }
 
+/**
+ * A VertexAttributeTexture that forces the float texture type.
+ * @extends VertexAttributeTexture
+ * @section Shader and Texture Packing API
+ */
 class FloatVertexAttributeTexture extends VertexAttributeTexture {
 
 	constructor() {
@@ -9086,6 +10017,16 @@ class FloatVertexAttributeTexture extends VertexAttributeTexture {
 
 }
 
+/** @import { MeshBVH } from '../core/MeshBVH.js' */
+
+/**
+ * A shader uniform object corresponding to the `BVH` shader struct defined in shaderStructs. The
+ * object contains four textures containing information about the BVH and geometry so it can be
+ * queried in a shader using the bvh intersection functions defined in shaderFunctions. This object
+ * is intended to be used as a shader uniform and read in the shader as a `BVH` struct.
+ *
+ * @section Shader and Texture Packing API
+ */
 class MeshBVHUniformStruct {
 
 	constructor() {
@@ -9100,6 +10041,12 @@ class MeshBVHUniformStruct {
 
 	}
 
+	/**
+	 * Updates the object and associated textures with data from the provided BVH.
+	 *
+	 * @param {MeshBVH} bvh
+	 * @returns {void}
+	 */
 	updateFrom( bvh ) {
 
 		const { geometry } = bvh;
@@ -9140,6 +10087,11 @@ class MeshBVHUniformStruct {
 
 	}
 
+	/**
+	 * Dispose of the associated textures.
+	 *
+	 * @returns {void}
+	 */
 	dispose() {
 
 		const { index, position, bvhBounds, bvhContents } = this;
@@ -9253,6 +10205,8 @@ function bvhToTextures( bvh, boundsTexture, contentsTexture ) {
 	contentsTexture.dispose();
 
 }
+
+/** @import { Mesh, Material, Object3D } from 'three' */
 
 const _positionVector = /*@__PURE__*/ new Vector3();
 const _normalVector = /*@__PURE__*/ new Vector3();
@@ -9709,8 +10663,17 @@ class GeometryDiff {
 
 }
 
+/**
+ * A utility class for taking a set of SkinnedMeshes or morph target geometry and baking it into
+ * a single, static geometry that a BVH can be generated for.
+ */
 class StaticGeometryGenerator {
 
+	/**
+	 * Takes an array of object hierarchies to bake into a single static geometry.
+	 *
+	 * @param {Object3D|Array<Object3D>} meshes
+	 */
 	constructor( meshes ) {
 
 		if ( ! Array.isArray( meshes ) ) {
@@ -9734,15 +10697,39 @@ class StaticGeometryGenerator {
 
 		} );
 
+		/**
+		 * @type {Array<Mesh>}
+		 */
 		this.meshes = finalMeshes;
+
+		/**
+		 * If true then groups are used to support an array of materials on the mesh.
+		 * @type {boolean}
+		 */
 		this.useGroups = true;
+
+		/**
+		 * Whether to transform the vertices of the geometry by the world transforms of each mesh when generating.
+		 * @type {boolean}
+		 */
 		this.applyWorldTransforms = true;
+
+		/**
+		 * The set of attributes to copy onto the static geometry.
+		 * @type {Array<string>}
+		 */
 		this.attributes = [ 'position', 'normal', 'color', 'tangent', 'uv', 'uv2' ];
 		this._intermediateGeometry = new Array( finalMeshes.length ).fill().map( () => new BufferGeometry() );
 		this._diffMap = new WeakMap();
 
 	}
 
+	/**
+	 * Returns an array of materials for the meshes to be merged. These can be used alongside the
+	 * generated geometry when creating a mesh: `new Mesh( geometry, generator.getMaterials() )`.
+	 *
+	 * @returns {Array<Material>}
+	 */
 	getMaterials() {
 
 		const materials = [];
@@ -9763,6 +10750,20 @@ class StaticGeometryGenerator {
 
 	}
 
+	/**
+	 * Generates a single, static geometry for the passed meshes. When generating for the first
+	 * time an empty target geometry is expected. The same generated geometry can be passed into
+	 * the function on subsequent calls to update the geometry in place to save memory. An error
+	 * will be thrown if the attributes or geometry on the meshes to bake has been changed and
+	 * are incompatible lengths, types, etc.
+	 *
+	 * On subsequent calls the "index" buffer will not be modified so any BVH generated for the
+	 * geometry is unaffected. Once the geometry is updated the `MeshBVH.refit` function can be
+	 * called to update the BVH.
+	 *
+	 * @param {BufferGeometry} [targetGeometry]
+	 * @returns {BufferGeometry}
+	 */
 	generate( targetGeometry = new BufferGeometry() ) {
 
 		// track which attributes have been updated and which to skip to avoid unnecessary attribute copies
@@ -10027,6 +11028,17 @@ class StaticGeometryGenerator {
 
 }
 
+/**
+ * Set of shader functions used for interacting with the packed BVH in a shader and sampling
+ * VertexAttributeTextures. Provides common utility functions including `texelFetch1D`. See
+ * [src/webgl/glsl](https://github.com/gkjohnson/three-mesh-bvh/tree/master/src/webgl/glsl)
+ * for full implementations and declarations.
+ *
+ * Accessed as `BVHShaderGLSL.common_functions`.
+ *
+ * @section Shader and Texture Packing API
+ * @type {string}
+ */
 const common_functions = /* glsl */`
 
 // A stack of uint32 indices can can store the indices for
@@ -10112,6 +11124,18 @@ void ndcToCameraRay(
 `;
 
 // Distance to Point
+
+/**
+ * Set of shader functions used for interacting with the packed BVH in a shader and sampling
+ * VertexAttributeTextures. Provides distance query functions. See
+ * [src/webgl/glsl](https://github.com/gkjohnson/three-mesh-bvh/tree/master/src/webgl/glsl)
+ * for full implementations and declarations.
+ *
+ * Accessed as `BVHShaderGLSL.bvh_distance_functions`.
+ *
+ * @section Shader and Texture Packing API
+ * @type {string}
+ */
 const bvh_distance_functions = /* glsl */`
 
 float dot2( vec3 v ) {
@@ -10307,6 +11331,17 @@ float _bvhClosestPointToPoint(
 }
 `;
 
+/**
+ * Set of shader functions used for interacting with the packed BVH in a shader and sampling
+ * VertexAttributeTextures. Provides ray intersection functions. See
+ * [src/webgl/glsl](https://github.com/gkjohnson/three-mesh-bvh/tree/master/src/webgl/glsl)
+ * for full implementations and declarations.
+ *
+ * Accessed as `BVHShaderGLSL.bvh_ray_functions`.
+ *
+ * @section Shader and Texture Packing API
+ * @type {string}
+ */
 const bvh_ray_functions = /* glsl */`
 
 #ifndef TRI_INTERSECT_EPSILON
@@ -10524,6 +11559,17 @@ bool _bvhIntersectFirstHit(
 // Note that a struct cannot be used for the hit record including faceIndices, faceNormal, barycoord,
 // side, and dist because on some mobile GPUS (such as Adreno) numbers are afforded less precision specifically
 // when in a struct leading to inaccurate hit results. See KhronosGroup/WebGL#3351 for more details.
+
+/**
+ * Set of shader structs and defined constants used for interacting with the packed BVH in a
+ * shader. See [src/webgl/glsl/bvh_struct_definitions.glsl.js](https://github.com/gkjohnson/three-mesh-bvh/blob/master/src/webgl/glsl/bvh_struct_definitions.glsl.js)
+ * for full implementations and declarations.
+ *
+ * Accessed as `BVHShaderGLSL.bvh_struct_definitions`.
+ *
+ * @section Shader and Texture Packing API
+ * @type {string}
+ */
 const bvh_struct_definitions = /* glsl */`
 struct BVH {
 
