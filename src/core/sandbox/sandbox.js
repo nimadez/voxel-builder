@@ -317,11 +317,11 @@ class Sandbox {
         this.plane.visible = ui.domRenderPlane.value > 0;
         this.plane.material.color = new THREE.Color(parseInt(ui.domRenderPlaneColor.value.replace('#', '0x')));
 
-        this.plane.position.set(center.x, builder.minY - 0.5, center.z);
+        this.plane.position.set(center.x, builder.minY - 0.51, center.z);
         this.plane.scale.set(ui.domRenderPlane.value, ui.domRenderPlane.value, 1);
         this.plane.updateMatrix();
 
-        this.shadowGround.position.set(center.x, builder.minY - 0.51, center.z);
+        this.shadowGround.position.set(center.x, builder.minY - 0.52, center.z);
         this.shadowGround.updateMatrix();
     }
 
