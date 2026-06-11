@@ -9,13 +9,18 @@ Using server.js: import { builder } from "../core/core.js";
 
 
 // Exports
-MODE, pointer, axisView, bakery, builder, camera, faceNormalProbe, ghosts, hdri, helper, light, mainScene, memory, material, pool, postFx, preferences, project, renderTarget, snapshot, symmetry, tool, toolMesh, ui, uix, vMesh, xformer
+MODE, pointer, axisView, bakery, builder, camera,
+faceNormalProbe, ghosts, hdri, helper, light, mainScene,
+memory, material, pool, postFx, preferences, project,
+renderTarget, snapshot, symmetry, tool, toolMesh,
+ui, uix, vMesh, xformer
 
 
 // Modes
 MODE == 0   // model
 MODE == 1   // render
 MODE == 2   // export
+ui.setMode(0);
 
 
 // Voxel

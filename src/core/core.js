@@ -47,7 +47,7 @@
 */
 
 
-import { VERSION } from '../app.js';
+import { VERSION, CDN_INSPECTOR } from '../app.js';
 import { config } from '../config.js';
 import { scene } from '../main.js';
 import * as modules from './modules.js';
@@ -5223,7 +5223,7 @@ class UserInterface {
         if (!this.inspectorModule) {
             this.inspectorModule = document.createElement('script');
             this.inspectorModule.type = 'module';
-            this.inspectorModule.src = config.cdn_babylonjs_inspector;
+            this.inspectorModule.src = CDN_INSPECTOR;
             document.body.appendChild(this.inspectorModule);
 
             console.log('load babylon-inspector');
