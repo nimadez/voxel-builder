@@ -47,7 +47,7 @@
 */
 
 
-import { VERSION, CDN_INSPECTOR } from '../app.js';
+import { VERSION } from '../app.js';
 import { config } from '../config.js';
 import { scene } from '../main.js';
 import * as modules from './modules.js';
@@ -4831,7 +4831,6 @@ class UserInterface {
 
         this.colorWheel = undefined;
         this.notificationTimer = undefined;
-        this.inspectorModule = undefined;
     }
 
     init() {
@@ -5220,21 +5219,8 @@ class UserInterface {
     }
 
     toggleInspector() {
-        if (!this.inspectorModule) {
-            this.inspectorModule = document.createElement('script');
-            this.inspectorModule.type = 'module';
-            this.inspectorModule.src = CDN_INSPECTOR;
-            document.body.appendChild(this.inspectorModule);
-
-            console.log('load babylon-inspector');
-        }
-
         if (scene.debugLayer.isVisible()) {
             scene.debugLayer.hide();
-            document.body.removeChild(this.inspectorModule);
-            this.inspectorModule = undefined;
-
-            console.log('unload babylon-inspector');
         } else {
             scene.debugLayer.show({
                 embedMode: false,
