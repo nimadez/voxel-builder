@@ -62,7 +62,7 @@ class RaycastMesh {
         geometry.computeBoundsTree({
             strategy: 0,
             maxDepth: 40,
-            maxLeafSize: 10,
+            targetLeafSize: 10,
             indirect: true
         });
     }
