@@ -149,9 +149,6 @@ Also, the FPS depends on many factors, such as the material (CEL is faster) and 
 > -- **Save snapshots to ZIP archive** *(easy to share, browser storage limits, speed is variable)*<br>
 > -- **Save to VOX format** *(supports MagicaVoxel, very fast)*
 
-#### Will WebGPU be supported?
-> It was supported to some extent before, but was removed due to unnecessary complexity. But once it matures enough to be enabled by default in browsers, this upgrade will be possible with a few simple changes.
-
 #### How to merge vertices after export to GLB?
 > 1- Open exported GLB file in Blender<br>
 > 2- Go to "Modeling" tab and choose vertex selection mode<br>
