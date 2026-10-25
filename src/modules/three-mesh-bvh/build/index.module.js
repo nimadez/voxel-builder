@@ -6,6 +6,7 @@ import { Box3, Matrix4, BufferAttribute, Vector3, Vector2, Plane, Line3, Triangl
  * Option for splitting each BVH node down the center of the longest axis of the bounds.
  *
  * This is the fastest construction option and will yield a good, performant bounds.
+ * @type {number}
  */
 const CENTER = 0;
 
@@ -14,6 +15,7 @@ const CENTER = 0;
  * all triangle centroids in the bounds.
  *
  * This strategy may be better than `CENTER` with some geometry.
+ * @type {number}
  */
 const AVERAGE = 1;
 
@@ -24,6 +26,7 @@ const AVERAGE = 1;
  *
  * This is the slowest construction option but will yield the best bounds of the three
  * options and use the least memory.
+ * @type {number}
  */
 const SAH = 2;
 
@@ -31,16 +34,19 @@ const SAH = 2;
 
 /**
  * Indicates the shape did not intersect the given bounding box.
+ * @type {number}
  */
 const NOT_INTERSECTED = 0;
 
 /**
  * Indicates the shape did intersect the given bounding box.
+ * @type {number}
  */
 const INTERSECTED = 1;
 
 /**
  * Indicate the shape entirely contains the given bounding box.
+ * @type {number}
  */
 const CONTAINED = 2;
 
@@ -70,7 +76,7 @@ const SKIP_GENERATION = Symbol( 'SKIP_GENERATION' );
 const DEFAULT_OPTIONS = {
 	strategy: CENTER,
 	maxDepth: 40,
-	maxLeafSize: 10,
+	targetLeafSize: 10,
 	useSharedArrayBuffer: false,
 	setBoundingBox: true,
 	onProgress: null,
@@ -784,7 +790,8 @@ function buildTree( bvh, primitiveBounds, offset, count, options, loadRange ) {
 	const {
 		maxDepth,
 		verbose,
-		maxLeafSize,
+		targetLeafSize,
+		_strictLeafSize = Infinity,
 		strategy,
 		onProgress,
 	} = options;
@@ -826,8 +833,12 @@ function buildTree( bvh, primitiveBounds, offset, count, options, loadRange ) {
 
 		}
 
-		// early out if we've met our capacity
-		if ( count <= maxLeafSize || depth >= maxDepth ) {
+		// A hard guarantee that no leaf exceeds "_strictLeafSize" primitives. When this node is over
+		// that limit it must keep splitting regardless of the heuristic.
+		const mustSplit = count > _strictLeafSize;
+
+		// early out if we've met our capacity - unless the strict guarantee still requires a split
+		if ( ( count <= targetLeafSize && ! mustSplit ) || depth >= maxDepth ) {
 
 			triggerProgress( offset + count );
 			node.offset = offset;
@@ -838,47 +849,47 @@ function buildTree( bvh, primitiveBounds, offset, count, options, loadRange ) {
 
 		// Find where to split the volume
 		const split = getOptimalSplit( node.boundingData, centroidBoundingData, primitiveBounds, offset, count, strategy );
-		if ( split.axis === - 1 ) {
+		let splitOffset = split.axis === - 1 ? - 1 : partition( partitionBuffer, partitionStride, primitiveBounds, offset, count, split );
 
-			triggerProgress( offset + count );
-			node.offset = offset;
-			node.count = count;
-			return node;
+		// If the heuristic can't produce a usable split then make a leaf unless the strict guarantee requires the split -
+		// in which case force an arbitrary median split. The axis comes from the node bounds so parallel and serial
+		// builds produce identical trees.
+		if ( split.axis === - 1 || splitOffset === offset || splitOffset === offset + count ) {
+
+			if ( ! mustSplit ) {
+
+				triggerProgress( offset + count );
+				node.offset = offset;
+				node.count = count;
+				return node;
+
+			}
+
+			split.axis = Math.max( 0, getLongestEdgeIndex( node.boundingData ) );
+			splitOffset = offset + Math.max( 1, Math.floor( count / 2 ) );
 
 		}
-
-		const splitOffset = partition( partitionBuffer, partitionStride, primitiveBounds, offset, count, split );
 
 		// create the two new child nodes
-		if ( splitOffset === offset || splitOffset === offset + count ) {
+		node.splitAxis = split.axis;
 
-			triggerProgress( offset + count );
-			node.offset = offset;
-			node.count = count;
+		// create the left child and compute its bounding box
+		const left = new BVHNode();
+		const lstart = offset;
+		const lcount = splitOffset - offset;
+		node.left = left;
 
-		} else {
+		getBounds( primitiveBounds, lstart, lcount, left.boundingData, cacheCentroidBoundingData );
+		splitNode( left, lstart, lcount, cacheCentroidBoundingData, depth + 1 );
 
-			node.splitAxis = split.axis;
+		// repeat for right
+		const right = new BVHNode();
+		const rstart = splitOffset;
+		const rcount = count - lcount;
+		node.right = right;
 
-			// create the left child and compute its bounding box
-			const left = new BVHNode();
-			const lstart = offset;
-			const lcount = splitOffset - offset;
-			node.left = left;
-
-			getBounds( primitiveBounds, lstart, lcount, left.boundingData, cacheCentroidBoundingData );
-			splitNode( left, lstart, lcount, cacheCentroidBoundingData, depth + 1 );
-
-			// repeat for right
-			const right = new BVHNode();
-			const rstart = splitOffset;
-			const rcount = count - lcount;
-			node.right = right;
-
-			getBounds( primitiveBounds, rstart, rcount, right.boundingData, cacheCentroidBoundingData );
-			splitNode( right, rstart, rcount, cacheCentroidBoundingData, depth + 1 );
-
-		}
+		getBounds( primitiveBounds, rstart, rcount, right.boundingData, cacheCentroidBoundingData );
+		splitNode( right, rstart, rcount, cacheCentroidBoundingData, depth + 1 );
 
 		return node;
 
@@ -1513,6 +1524,136 @@ function _traverse(
 
 }
 
+const BVHTraversalHelper = new ( class {
+
+	constructor() {
+
+		let buffer = null;
+		let uint32Array = null;
+		let uint16Array = null;
+		let traversing = false;
+
+		this.root = null;
+		this.buffer = null;
+		this.uint32Array = null;
+		this.uint16Array = null;
+
+		this.setBVH = ( bvh, root ) => {
+
+			if ( traversing ) {
+
+				throw new Error( 'BVHTraversalHelper: cannot call setBVH during an active traversal.' );
+
+			}
+
+			this.root = root;
+			this.buffer = buffer = bvh._roots[ root ];
+			this.uint16Array = uint16Array = new Uint16Array( buffer );
+			this.uint32Array = uint32Array = new Uint32Array( buffer );
+
+		};
+
+		this.reset = () => {
+
+			this.root = null;
+			this.buffer = buffer = null;
+			this.uint16Array = uint16Array = null;
+			this.uint32Array = uint32Array = null;
+
+		};
+
+		this.getRangeStart = node32Index => {
+
+			let node16Index = node32Index * 2;
+			while ( ! IS_LEAF( node16Index, uint16Array ) ) {
+
+				node32Index = LEFT_NODE( node32Index );
+				node16Index = node32Index * 2;
+
+			}
+
+			return OFFSET( node32Index, uint32Array );
+
+		};
+
+		this.getRangeEnd = node32Index => {
+
+			let node16Index = node32Index * 2;
+			while ( ! IS_LEAF( node16Index, uint16Array ) ) {
+
+				node32Index = RIGHT_NODE( node32Index, uint32Array );
+				node16Index = node32Index * 2;
+
+			}
+
+			return OFFSET( node32Index, uint32Array ) + COUNT( node16Index, uint16Array );
+
+		};
+
+		// internal recursive walk - the public "traverseBuffer" wraps this with the re-entrancy guard
+		const walk = ( callback, node32Index, depth ) => {
+
+			const node16Index = node32Index * 2;
+			const isLeaf = IS_LEAF( node16Index, uint16Array );
+			const stopTraversal = callback( depth, isLeaf, node32Index );
+			if ( ! stopTraversal && ! isLeaf ) {
+
+				const left = LEFT_NODE( node32Index );
+				const right = RIGHT_NODE( node32Index, uint32Array );
+				walk( callback, left, depth + 1 );
+				walk( callback, right, depth + 1 );
+
+			}
+
+		};
+
+		this.traverseBuffer = callback => {
+
+			if ( traversing ) {
+
+				throw new Error( 'BVHTraversalHelper: cannot start a traversal during an active traversal.' );
+
+			}
+
+			traversing = true;
+			try {
+
+				walk( callback, 0, 0 );
+
+			} finally {
+
+				traversing = false;
+
+			}
+
+		};
+
+		this.traverse = callback => {
+
+			this.traverseBuffer( ( depth, isLeaf, node32Index ) => {
+
+				if ( isLeaf ) {
+
+					const node16Index = node32Index * 2;
+					const offset = uint32Array[ node32Index + 6 ];
+					const count = uint16Array[ node16Index + 14 ];
+					return callback( depth, isLeaf, new Float32Array( buffer, node32Index * 4, 6 ), offset, count );
+
+				} else {
+
+					const splitAxis = SPLIT_AXIS( node32Index, uint32Array );
+					return callback( depth, isLeaf, new Float32Array( buffer, node32Index * 4, 6 ), splitAxis );
+
+				}
+
+			} );
+
+		};
+
+	}
+
+} )();
+
 /** @import { Matrix4 } from 'three' */
 
 const _tempBox = /* @__PURE__ */ new Box3();
@@ -1579,6 +1720,16 @@ class BVH {
 			...DEFAULT_OPTIONS,
 			...options,
 		};
+
+		if ( 'maxLeafSize' in options ) {
+
+			console.warn( 'BVH: "maxLeafSize" option has been deprecated. Use "targetLeafSize", instead.' );
+			options = {
+				...options,
+				targetLeafSize: options.maxLeafSize,
+			};
+
+		}
 
 		buildPackedTree( this, options );
 
@@ -1729,38 +1880,9 @@ class BVH {
 	 */
 	traverse( callback, rootIndex = 0 ) {
 
-		const buffer = this._roots[ rootIndex ];
-		const uint32Array = new Uint32Array( buffer );
-		const uint16Array = new Uint16Array( buffer );
-		_traverse( 0 );
-
-		function _traverse( node32Index, depth = 0 ) {
-
-			const node16Index = node32Index * 2;
-			const isLeaf = IS_LEAF( node16Index, uint16Array );
-			if ( isLeaf ) {
-
-				const offset = uint32Array[ node32Index + 6 ];
-				const count = uint16Array[ node16Index + 14 ];
-				callback( depth, isLeaf, new Float32Array( buffer, node32Index * 4, 6 ), offset, count );
-
-			} else {
-
-				const left = LEFT_NODE( node32Index );
-				const right = RIGHT_NODE( node32Index, uint32Array );
-				const splitAxis = SPLIT_AXIS( node32Index, uint32Array );
-				const stopTraversal = callback( depth, isLeaf, new Float32Array( buffer, node32Index * 4, 6 ), splitAxis );
-
-				if ( ! stopTraversal ) {
-
-					_traverse( left, depth + 1 );
-					_traverse( right, depth + 1 );
-
-				}
-
-			}
-
-		}
+		BVHTraversalHelper.setBVH( this, rootIndex );
+		BVHTraversalHelper.traverse( callback );
+		BVHTraversalHelper.reset();
 
 	}
 
@@ -2201,8 +2323,10 @@ function generateIndirectBuffer( ranges, useSharedArrayBuffer ) {
  * @param {BufferGeometry} geometry
  * @param {Object} [options]
  * @param {number} [options.strategy=CENTER] - Split strategy: `CENTER`, `AVERAGE`, or `SAH`.
- * @param {number} [options.maxDepth=40] - Maximum tree depth.
- * @param {number} [options.maxLeafSize=10] - Maximum primitives per leaf node.
+ * @param {number} [options.maxDepth=40] - Maximum tree depth. Note that this can cause the target leaf size to not
+ * be met if the tree is truncated.
+ * @param {number} [options.targetLeafSize=10] - The target number of primitives per leaf node. Note that this is
+ * a soft limit and generation strategies like SAH will terminate early if the heuristic determines.
  * @param {boolean} [options.setBoundingBox=true] - Set `geometry.boundingBox` if not already present.
  * @param {boolean} [options.useSharedArrayBuffer=false] - Use `SharedArrayBuffer` for BVH root buffers.
  * @param {boolean} [options.indirect=false] - Build using an indirect buffer, leaving the original index unmodified.
@@ -6412,10 +6536,10 @@ class MeshBVH extends GeometryBVH {
 
 		if ( options.maxLeafTris ) {
 
-			console.warn( 'MeshBVH: "maxLeafTris" option has been deprecated. Use maxLeafSize, instead.' );
+			console.warn( 'MeshBVH: "maxLeafTris" option has been deprecated. Use "targetLeafSize", instead.' );
 			options = {
 				...options,
-				maxLeafSize: options.maxLeafTris,
+				targetLeafSize: options.maxLeafTris,
 			};
 
 		}
@@ -7052,6 +7176,7 @@ const _linePool = /* @__PURE__ */ new PrimitivePool( () => new Line3() );
 const _intersectPointOnRay = /*@__PURE__*/ new Vector3();
 const _intersectPointOnSegment = /*@__PURE__*/ new Vector3();
 const _box$2 = /* @__PURE__ */ new Box3();
+const _vec$3 = /* @__PURE__ */ new Vector3();
 const _getters = [ 'getX', 'getY', 'getZ' ];
 
 /**
@@ -7162,9 +7287,36 @@ class LineSegmentsBVH extends GeometryBVH {
 			},
 			intersectsBounds: box => {
 
-				// TODO: for some reason trying to early-out here is causing firstHitOnly tests to fail
-				_box$2.copy( box ).expandByScalar( Math.abs( localThreshold ) );
-				return _ray$3.intersectsBox( _box$2 ) ? INTERSECTED : NOT_INTERSECTED;
+				_box$2.copy( box ).expandByScalar( localThreshold );
+
+				if ( firstHitOnly ) {
+
+					if ( ! _ray$3.intersectBox( _box$2, _vec$3 ) ) {
+
+						return NOT_INTERSECTED;
+
+					}
+
+					let dist;
+					if ( _box$2.containsPoint( _ray$3.origin ) ) {
+
+						dist = 0;
+
+					} else {
+
+						_vec$3.applyMatrix4( matrixWorld );
+						dist = raycaster.ray.origin.distanceTo( _vec$3 );
+
+					}
+
+					// early out if the box is further than the closest raycast
+					return dist < closestDistance ? INTERSECTED : NOT_INTERSECTED;
+
+				} else {
+
+					return _ray$3.intersectsBox( _box$2 ) ? INTERSECTED : NOT_INTERSECTED;
+
+				}
 
 			},
 			intersectsLine: ( line, index ) => {
@@ -7312,6 +7464,7 @@ const _inverseMatrix$2 = /* @__PURE__ */ new Matrix4();
 const _ray$2 = /* @__PURE__ */ new Ray();
 const _pointPool = /* @__PURE__ */ new PrimitivePool( () => new Vector3() );
 const _box$1 = /* @__PURE__ */ new Box3();
+const _vec$2 = /* @__PURE__ */ new Vector3();
 
 /**
  * @callback IntersectsPointCallback
@@ -7416,14 +7569,42 @@ class PointsBVH extends GeometryBVH {
 			},
 			intersectsBounds: box => {
 
-				// TODO: for some reason trying to early-out here is causing firstHitOnly tests to fail
-				_box$1.copy( box ).expandByScalar( Math.abs( localThreshold ) );
-				return _ray$2.intersectsBox( _box$1 ) ? INTERSECTED : NOT_INTERSECTED;
+				_box$1.copy( box ).expandByScalar( localThreshold );
+
+				if ( firstHitOnly ) {
+
+					if ( ! _ray$2.intersectBox( _box$1, _vec$2 ) ) {
+
+						return NOT_INTERSECTED;
+
+					}
+
+					let dist;
+					if ( _box$1.containsPoint( _ray$2.origin ) ) {
+
+						dist = 0;
+
+					} else {
+
+						_vec$2.applyMatrix4( matrixWorld );
+						dist = raycaster.ray.origin.distanceTo( _vec$2 );
+
+					}
+
+					// early out if the box is further than the closest raycast
+					return dist < closestDistance ? INTERSECTED : NOT_INTERSECTED;
+
+				} else {
+
+					return _ray$2.intersectsBox( _box$1 ) ? INTERSECTED : NOT_INTERSECTED;
+
+				}
 
 			},
 			intersectsPoint: ( point, index ) => {
 
 				const rayPointDistanceSq = _ray$2.distanceSqToPoint( point );
+
 				if ( rayPointDistanceSq < localThresholdSq ) {
 
 					const intersectPoint = new Vector3();
@@ -7515,7 +7696,7 @@ const _matrix$1 = /* @__PURE__ */ new Matrix4();
 const _inverseMatrix$1 = /* @__PURE__ */ new Matrix4();
 const _box = /* @__PURE__ */ new Box3();
 const _sphere = /* @__PURE__ */ new Sphere();
-const _vec = /* @__PURE__ */ new Vector3();
+const _vec$1 = /* @__PURE__ */ new Vector3();
 const _ray$1 = /* @__PURE__ */ new Ray();
 const _mesh$1 = /* @__PURE__ */ new Mesh();
 const _geometryRange = {};
@@ -7548,7 +7729,7 @@ class ObjectBVH extends BVH {
 			precise: false,
 			includeInstances: true,
 			matrixWorld: Array.isArray( root ) ? new Matrix4() : root.matrixWorld,
-			maxLeafSize: 1,
+			targetLeafSize: 1,
 			...options,
 		};
 
@@ -7562,7 +7743,7 @@ class ObjectBVH extends BVH {
 		// for the instanceId count
 		const objects = Array.from( objectSet );
 		const idBits = Math.ceil( Math.log2( objects.length ) );
-		const idMask = constructIdMask( idBits );
+		const idMask = ( 1 << idBits ) - 1;
 
 		this.objects = objects;
 		this.idBits = idBits;
@@ -7606,7 +7787,11 @@ class ObjectBVH extends BVH {
 
 	init( options ) {
 
-		const { objects, idBits } = this;
+		const { objects, idBits, matrixWorld } = this;
+
+		// pre-cache the inverse matrix for use in the "getPrimitiveBoundingBox" function
+		_inverseMatrix$1.copy( matrixWorld ).invert();
+
 		this.primitiveBuffer = new Uint32Array( this._countPrimitives( objects ) );
 		this._fillPrimitiveBuffer( objects, idBits, this.primitiveBuffer );
 
@@ -7614,15 +7799,21 @@ class ObjectBVH extends BVH {
 
 	}
 
-	writePrimitiveBounds( i, targetBuffer, writeOffset ) {
+	refit( ...args ) {
 
-		// TODO: it would be best to cache this matrix inversion
-		const { primitiveBuffer } = this;
+		// pre-cache the inverse matrix for use in the "getPrimitiveBoundingBox" function
 		_inverseMatrix$1.copy( this.matrixWorld ).invert();
 
-		this._getPrimitiveBoundingBox( primitiveBuffer[ i ], _inverseMatrix$1, _box );
-		const { min, max } = _box;
+		super.refit( ...args );
 
+	}
+
+	writePrimitiveBounds( i, targetBuffer, writeOffset ) {
+
+		const { primitiveBuffer } = this;
+		this._getPrimitiveBoundingBox( primitiveBuffer[ i ], _inverseMatrix$1, _box );
+
+		const { min, max } = _box;
 		targetBuffer[ writeOffset + 0 ] = min.x;
 		targetBuffer[ writeOffset + 1 ] = min.y;
 		targetBuffer[ writeOffset + 2 ] = min.z;
@@ -7686,15 +7877,26 @@ class ObjectBVH extends BVH {
 
 				if ( firstHitOnly ) {
 
-					if ( ! _ray$1.intersectBox( box, _vec ) ) {
+					if ( ! _ray$1.intersectBox( box, _vec$1 ) ) {
 
 						return NOT_INTERSECTED;
 
 					}
 
+					let dist;
+					if ( box.containsPoint( _ray$1.origin ) ) {
+
+						dist = 0;
+
+					} else {
+
+						_vec$1.applyMatrix4( matrixWorld );
+						dist = raycaster.ray.origin.distanceTo( _vec$1 );
+
+					}
+
 					// early out if the box is further than the closest raycast
-					_vec.applyMatrix4( matrixWorld );
-					return raycaster.ray.origin.distanceTo( _vec ) < closestDistance ? INTERSECTED : NOT_INTERSECTED;
+					return dist < closestDistance ? INTERSECTED : NOT_INTERSECTED;
 
 				} else {
 
@@ -8051,20 +8253,6 @@ class ObjectBVH extends BVH {
 }
 
 // id functions
-// construct a mask with the given number of bits set to 1
-function constructIdMask( idBits ) {
-
-	let mask = 0;
-	for ( let i = 0; i < idBits; i ++ ) {
-
-		mask = mask << 1 | 1;
-
-	}
-
-	return mask;
-
-}
-
 // extract the primary object id given the provided mask
 function getObjectId( id, idMask ) {
 
@@ -8075,7 +8263,7 @@ function getObjectId( id, idMask ) {
 // extract the instance id given the mask and number of bits to shift
 function getInstanceId( id, idBits, idMask ) {
 
-	return ( id & ( ~ idMask ) ) >> idBits;
+	return ( id & ( ~ idMask ) ) >>> idBits;
 
 }
 
@@ -8122,8 +8310,8 @@ function getPreciseBounds( geometry, matrix, target ) {
 
 		}
 
-		_vec.fromBufferAttribute( posAttr, vi ).applyMatrix4( matrix );
-		target.expandByPoint( _vec );
+		_vec$1.fromBufferAttribute( posAttr, vi ).applyMatrix4( matrix );
+		target.expandByPoint( _vec$1 );
 
 	}
 
@@ -8155,11 +8343,11 @@ function iterateOverObjects( offset, count, bvh, callback, contained, depth, /* 
 
 function shrinkToSphere( box, sphere ) {
 
-	_vec.copy( sphere.center ).addScalar( - sphere.radius );
-	box.min.max( _vec );
+	_vec$1.copy( sphere.center ).addScalar( - sphere.radius );
+	box.min.max( _vec$1 );
 
-	_vec.copy( sphere.center ).addScalar( sphere.radius );
-	box.max.min( _vec );
+	_vec$1.copy( sphere.center ).addScalar( sphere.radius );
+	box.max.min( _vec$1 );
 
 }
 
@@ -8172,6 +8360,7 @@ const _v2 = /* @__PURE__ */ new Vector3();
 const _ray = /* @__PURE__ */ new Ray();
 const _inverseMatrix = /* @__PURE__ */ new Matrix4();
 const _localPoint = /* @__PURE__ */ new Vector3();
+const _vec = /* @__PURE__ */ new Vector3();
 const _axes = [ 'x', 'y', 'z' ];
 
 const IS_GT_REVISION_169 = parseInt( REVISION ) >= 169;
@@ -8338,7 +8527,34 @@ class SkinnedMeshBVH extends GeometryBVH {
 			},
 			intersectsBounds: box => {
 
-				return _ray.intersectsBox( box ) ? INTERSECTED : NOT_INTERSECTED;
+				if ( firstHitOnly ) {
+
+					if ( ! _ray.intersectBox( box, _vec ) ) {
+
+						return NOT_INTERSECTED;
+
+					}
+
+					let dist;
+					if ( box.containsPoint( _ray.origin ) ) {
+
+						dist = 0;
+
+					} else {
+
+						_vec.applyMatrix4( matrixWorld );
+						dist = raycaster.ray.origin.distanceTo( _vec );
+
+					}
+
+					// early out if the box is further than the closest raycast
+					return dist < closestDistance ? INTERSECTED : NOT_INTERSECTED;
+
+				} else {
+
+					return _ray.intersectsBox( box ) ? INTERSECTED : NOT_INTERSECTED;
+
+				}
 
 			},
 			intersectsTriangle: ( tri, triIndex ) => {
@@ -11144,7 +11360,8 @@ float dot2( vec3 v ) {
 
 }
 
-// https://www.shadertoy.com/view/ttfGWl
+// implementation from https://www.shadertoy.com/view/ttfGWl, though method 2 has been removed
+// and is now available at this fork: https://www.shadertoy.com/view/WlB3zW
 vec3 closestPointToTriangle( vec3 p, vec3 v0, vec3 v1, vec3 v2, out vec3 barycoord ) {
 
     vec3 v10 = v1 - v0;
@@ -11184,7 +11401,8 @@ vec3 closestPointToTriangle( vec3 p, vec3 v0, vec3 v1, vec3 v2, out vec3 barycoo
 
 	}
 
-	barycoord = vec3( u, v, w );
+	// output the barycoord in v0, v1, v2 weight order
+	barycoord = vec3( w, u, v );
     return u * v1 + v * v2 + w * v0;
 
 }

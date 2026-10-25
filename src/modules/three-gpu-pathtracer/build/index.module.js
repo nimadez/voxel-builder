@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Matrix4, Vector3, Vector4, Matrix3, MeshBasicMaterial, Mesh, ShaderMaterial, NoBlending, Vector2, WebGLRenderTarget, FloatType, RGBAFormat, NearestFilter, PerspectiveCamera, DataUtils, HalfFloatType, Source, DataTexture, LinearFilter, RepeatWrapping, RedFormat, ClampToEdgeWrapping, Quaternion, DataArrayTexture, DoubleSide, BackSide, FrontSide, Color, WebGLArrayRenderTarget, UnsignedByteType, NoToneMapping, RGFormat, NormalBlending, Spherical, EquirectangularReflectionMapping, LinearMipMapLinearFilter, Clock, Scene, AdditiveBlending, Camera, SpotLight, RectAreaLight, PMREMGenerator, MeshStandardMaterial } from 'three';
+import { BufferAttribute, BufferGeometry, Matrix4, Vector3, Vector4, Matrix3, MeshBasicMaterial, Mesh, ShaderMaterial, NoBlending, Vector2, WebGLRenderTarget, FloatType, RGBAFormat, NearestFilter, PerspectiveCamera, DataUtils, HalfFloatType, TextureSource, DataTexture, LinearFilter, RepeatWrapping, RedFormat, ClampToEdgeWrapping, Quaternion, DataArrayTexture, DoubleSide, BackSide, FrontSide, Color, WebGLArrayRenderTarget, UnsignedByteType, NoToneMapping, RGFormat, NormalBlending, Spherical, EquirectangularReflectionMapping, LinearMipMapLinearFilter, Clock, Scene, AdditiveBlending, Camera, SpotLight, RectAreaLight, PMREMGenerator, MeshStandardMaterial } from 'three';
 import { SAH, MeshBVH, FloatVertexAttributeTexture, MeshBVHUniformStruct, UIntVertexAttributeTexture, BVHShaderGLSL } from 'three-mesh-bvh';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 
@@ -1449,7 +1449,7 @@ class PathTracingSceneGenerator {
 
 				const bvhOptions = {
 					strategy: SAH,
-					maxLeafSize: 1,
+					targetLeafSize: 1,
 					indirect: true,
 					onProgress,
 					...this.bvhOptions,
@@ -2110,7 +2110,7 @@ function colorToLuminance( r, g, b ) {
 function preprocessEnvMap( envMap, targetType = HalfFloatType ) {
 
 	const map = envMap.clone();
-	map.source = new Source( { ...map.image } );
+	map.source = new TextureSource( { ...map.image } );
 	const { width, height, data } = map.image;
 
 	// TODO: is there a simple way to avoid cloning and adjusting the env map data here?

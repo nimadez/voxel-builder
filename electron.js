@@ -7,7 +7,6 @@ if (!require('electron').app.requestSingleInstanceLock())
     require('electron').app.exit(0);
 
 
-const isWayland = (process.env.XDG_SESSION_TYPE && process.env.XDG_SESSION_TYPE === 'wayland') || process.env.WAYLAND_DISPLAY;
 const { app, BrowserWindow, Menu } = require('electron');
 
 
@@ -15,7 +14,7 @@ function createWindow() {
     const mainWindow = new BrowserWindow({
         icon: './src/assets/appicon.png',
         width: 1200,
-        height: isWayland ? 830 : 800,
+        height: 800,
         autoHideMenuBar: true,
         resizable: true,
         alwaysOnTop: false,
